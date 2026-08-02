@@ -11,6 +11,22 @@ For initial OVHcloud provisioning, SSH hardening, Squarespace DNS, credential ro
 | Staging | `staging-hr.nevgiuai.com` | `staging-api.hr.nevgiuai.com` |
 | Production | `hr.nevgiuai.com` | `api.hr.nevgiuai.com` |
 
+## Caddy's role
+
+Caddy is the public HTTPS gateway for the Compose stack:
+
+```text
+Internet
+  |-- frontend hostname --> Caddy --> frontend Nginx --> Angular files
+  `-- API hostname -------> Caddy --> Spring Boot backend
+```
+
+Caddy is the only service that publishes host ports `80` and `443`. It redirects HTTP to HTTPS, obtains and renews TLS certificates, selects the destination from the requested hostname, and proxies traffic over the private Docker `edge` network. This keeps the backend's port `8080` and the frontend container's port `80` off the public host interface.
+
+Frontend Nginx remains necessary: it serves the compiled Angular files and provides single-page-application route fallback. Caddy operates above it and handles public domains, certificates, and routing. Caddy does not execute Angular or backend business logic, store PostgreSQL data, authenticate application users, or perform deployment rollback.
+
+Caddy is replaceable by a correctly configured reverse proxy or managed load balancer such as Nginx, Traefik, or HAProxy. Removing it without replacing its responsibilities risks unencrypted CV and credential traffic, expired certificates, direct backend exposure, missing HTTP-to-HTTPS redirects, incorrect frontend/API routing, and inconsistent security policy. Any replacement must provide automated or operationally reliable TLS renewal, hostname routing, private upstream networking, redirects, security policy, and external health verification.
+
 ## Security properties
 
 - Only Caddy publishes host ports.

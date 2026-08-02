@@ -258,7 +258,11 @@ Recommended directory layout on each VPS:
     `-- postgres/
 ```
 
-Use Caddy or Traefik as the public reverse proxy and automatic TLS terminator.
+The implemented stack uses Caddy as its public reverse proxy and automatic TLS terminator. Only Caddy publishes ports `80` and `443`. It redirects HTTP to HTTPS, obtains and renews certificates, routes the frontend hostname to the frontend Nginx container, and routes the API hostname to Spring Boot over the private Docker network.
+
+Frontend Nginx and Caddy have separate responsibilities: Nginx serves compiled Angular assets and handles single-page-application route fallback, while Caddy owns public domains, TLS, and upstream routing. Caddy does not implement application authentication, business logic, data persistence, or deployment rollback.
+
+Caddy is not mandatory as a product choice, but its gateway responsibilities are mandatory. A replacement such as Nginx, Traefik, HAProxy, or a managed load balancer must preserve automatic or reliably operated certificate renewal, HTTP-to-HTTPS redirects, hostname-based routing, private upstream ports, appropriate security policy, and external health verification. Removing the gateway without replacement would expose sensitive recruitment traffic to transport, certificate, routing, and direct-service-exposure risks.
 
 Canonical HR AI hostnames:
 

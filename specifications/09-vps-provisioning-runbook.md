@@ -561,6 +561,14 @@ Validation completed:
 
 No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed environment file was added to Git or documentation.
 
+### Rollback boundary observed in staging
+
+The deployment script records the current backend and frontend images before replacement. If database, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.
+
+This does not restore PostgreSQL data or schema, `.env`, Compose or Caddy configuration, secrets, or other deployment files. Public HTTPS smoke tests run after the script returns; a failure at that stage currently leaves the new images running. Errors during Compose validation, pulling, or initial startup can also occur before automatic rollback begins.
+
+Before enabling production releases, extend and test rollback so public smoke-test failures and recoverable pre-health failures restore the previous compatible application and configuration, then verify both internal health and external HTTPS. Database restoration must remain a separate, explicitly approved recovery operation.
+
 ## Production checklist
 
 Repeat the staging procedure with these changes:
@@ -580,6 +588,10 @@ Repeat the staging procedure with these changes:
 - [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
 - [ ] Configure the GitHub `production` environment with separate variables and secrets.
 - [ ] Require production deployment approval where supported.
+- [ ] Verify public HTTPS smoke-test failure automatically restores the previous production images.
+- [ ] Verify recoverable Compose validation, pull, and startup failures enter the rollback path.
+- [ ] Version and restore compatible Compose and Caddy configuration during rollback.
+- [ ] Run a controlled staging rollback drill before enabling the production release workflow.
 - [ ] Configure Docker and system log rotation with documented disk limits.
 - [ ] Configure restricted, encrypted off-server production log collection and retention.
 - [ ] Verify logs exclude CV text, prompts, credentials, tokens, and unnecessary personal data before accepting real candidates.

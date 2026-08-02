@@ -112,6 +112,18 @@ Automated deployments write immutable image references to `.images.env` and invo
 
 The first automated deployment creates `.images.env` before inspecting the manually deployed containers. This preserves the manual images as rollback candidates while allowing Compose to resolve its required image variables.
 
+Current rollback boundary:
+
+- Before replacement, the script records the backend and frontend image references used by the running containers.
+- It waits up to 36 attempts at five-second intervals, approximately three minutes, for the database, backend, and frontend to become healthy and for Caddy to be running.
+- If that internal validation times out, it restores the previous application image references, recreates the stack, and validates health again. The workflow remains failed even when rollback succeeds.
+- PostgreSQL data and schema, `.env`, Compose and Caddy configuration, deployment files, and secrets are not rolled back.
+- A failure in Compose validation, image pulling, or initial startup can terminate the script before its health-based rollback branch.
+- Public HTTPS smoke tests currently run in GitHub after `deploy.sh` succeeds. If those tests fail after internal health passes, GitHub reports failure but the new images remain deployed.
+- Rollback assumes the previous images remain available in the local Docker cache or registry.
+
+Before production, public smoke-test failure and pre-health deployment errors must enter the same rollback path. Configuration changes require versioned backup and restoration, while database migration recovery remains a separate reviewed procedure.
+
 ## Automatic staging flow
 
 1. A push or pull request runs `CI`.
@@ -119,7 +131,7 @@ The first automated deployment creates `.images.env` before inspecting the manua
 3. The workflow builds backend and frontend images once and publishes commit-SHA tags under the current `github.repository` GHCR namespace.
 4. GitHub copies only the deployment bundle to the VPS and authenticates the VPS to GHCR with its read-only token.
 5. `deploy.sh` pulls the immutable images, starts the stack, and waits for health.
-6. GitHub smoke-tests both public HTTPS endpoints.
+6. GitHub smoke-tests both public HTTPS endpoints. Until rollback orchestration is extended, failure here does not automatically restore the previous images.
 7. Successful images receive `staging-validated-<commit-sha>` aliases for later production promotion.
 
 CI also supports `workflow_dispatch`, which makes a **Run workflow** button available without requiring a placeholder source commit.

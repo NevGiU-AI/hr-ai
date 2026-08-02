@@ -63,6 +63,10 @@ FRONTEND_IMAGE=ghcr.io/<owner>/<repository>/hr-ai-frontend@sha256:<digest>
 
 `API_URL` is generated from `API_HOST` when the frontend container starts. The frontend image is therefore identical in staging and production.
 
+`ACME_EMAIL` is the monitored operational contact Caddy passes to the ACME certificate authority when registering the account used to obtain and renew HTTPS certificates. It may receive certificate expiration, renewal-failure, policy, or account-recovery notices. It is not an application login, SMTP setting, OpenAI credential, or frontend value, and it is not normally embedded in the public certificate.
+
+Staging and production may use the same monitored address because it identifies the certificate administrator rather than an environment credential. Configure it as `ACME_EMAIL=<monitored operational email>` and prefer a shared role mailbox over a personal address. Although the address itself is not a secret, keep the concrete value in each VPS `.env` rather than in repository examples, and keep the completed file private because it also contains database and OpenAI credentials.
+
 ## GitHub environment configuration
 
 Create separate `staging` and `production` environments in the repository settings.

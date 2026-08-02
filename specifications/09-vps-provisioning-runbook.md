@@ -302,6 +302,8 @@ POSTGRES_PASSWORD=<generated staging password>
 OPENAI_API_KEY=<staging OpenAI key>
 ```
 
+`ACME_EMAIL` is the monitored operational contact Caddy supplies to the ACME certificate authority for automatic HTTPS certificate issuance and renewal. It can receive expiration, renewal-failure, policy, or recovery notices. It is not used to sign in to the application, send application email, or authenticate to OpenAI. Use a role mailbox where possible; staging and production may share this contact because it is administrative metadata, not an environment credential.
+
 Confirm these environment-specific values remain:
 
 ```env

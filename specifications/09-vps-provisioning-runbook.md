@@ -578,6 +578,10 @@ Repeat the staging procedure with these changes:
 - [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
 - [ ] Configure the GitHub `production` environment with separate variables and secrets.
 - [ ] Require production deployment approval where supported.
+- [ ] Configure Docker and system log rotation with documented disk limits.
+- [ ] Configure restricted, encrypted off-server production log collection and retention.
+- [ ] Verify logs exclude CV text, prompts, credentials, tokens, and unnecessary personal data before accepting real candidates.
+- [ ] Document who may access or export production logs and how incident extracts are redacted.
 - [ ] Do not perform the first production deployment until a release commit has a successful staging-validation image alias.
 - [ ] Run production-safe HTTPS and read-only smoke tests after deployment.
 

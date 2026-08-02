@@ -464,6 +464,8 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Add automatic application-image rollback.
 - [x] Publish deployment URL and commit in the workflow summary.
 - [x] Mark successfully smoke-tested images with staging-validation aliases.
+- [ ] Configure staging log rotation and retention limits for Docker and system services.
+- [ ] Validate that operators can retrieve staging logs and that candidate data, prompts, and secrets are redacted before logs are shared.
 
 **Exit condition:** a successful merge reaches staging automatically and is accepted only when application checks pass.
 
@@ -477,12 +479,17 @@ Validated on 2 August 2026: CI published immutable backend and frontend images f
 - [ ] Require production approval where supported.
 - [ ] Check backup readiness before deployment.
 - [x] Add production health checks, application rollback, and deployment summaries.
+- [ ] Configure production log rotation, retention, restricted operator access, and encrypted off-server collection before processing real candidate data.
+- [ ] Validate production log redaction and define the approved incident-log export procedure.
 
 **Exit condition:** an approved release promotes the exact staging-tested artifacts and can safely return to the previous application version.
 
 ### Phase 5 - Operational hardening
 
 - [ ] Add uptime, resource, certificate, disk, container, and backup monitoring.
+- [ ] Implement structured application logs with correlation IDs and no CV text, prompts, credentials, tokens, or unnecessary personal data.
+- [ ] Select and configure centralized log aggregation for staging and production with separate access controls and retention policies.
+- [ ] Alert on repeated deployment failures, unhealthy services, authentication failures, and critical backend errors without including sensitive payloads.
 - [ ] Add dependency and image vulnerability scanning.
 - [ ] Add alert routing and an incident runbook.
 - [ ] Test recovery from server loss and database corruption.
@@ -505,4 +512,5 @@ Validated on 2 August 2026: CI published immutable backend and frontend images f
 - [ ] Backups are encrypted, stored off-server, monitored, retained according to policy, and restore-tested.
 - [x] Application rollback is automated and database recovery is documented separately.
 - [x] The deployed commit, release, actor, timestamp, and image digests are traceable.
+- [ ] Staging and production logs have documented retention, rotation, access control, redaction, and incident-export procedures.
 - [ ] Real candidate data is prohibited until the documented privacy and security blockers are resolved.

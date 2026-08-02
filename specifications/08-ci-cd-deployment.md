@@ -331,25 +331,33 @@ Required changes:
 
 Use separate GitHub `staging` and `production` environments. Environment secrets become available only to jobs targeting that environment and, when protection rules are configured, only after approval.
 
-Suggested environment secrets:
+The implemented workflows use these environment variables:
 
 ```text
 DEPLOY_HOST
-DEPLOY_PORT
 DEPLOY_USER
-DEPLOY_SSH_KEY
-GHCR_PULL_USERNAME
-GHCR_PULL_TOKEN
-OPENAI_API_KEY
-POSTGRES_PASSWORD
 ```
 
-Suggested non-secret GitHub environment variables include:
+They use these environment secrets:
 
 ```text
+DEPLOY_SSH_KEY
+DEPLOY_KNOWN_HOSTS
+GHCR_USERNAME
+GHCR_TOKEN
+```
+
+For staging, `DEPLOY_HOST` is `141.94.33.197` and `DEPLOY_USER` is `deploy`. `GHCR_TOKEN` is a classic personal access token limited to `read:packages`; authorize it for organization SSO when applicable. `GHCR_USERNAME` is the account that created the token. `DEPLOY_KNOWN_HOSTS` must contain the previously verified SSH host-key entry.
+
+The following application configuration remains in the VPS-only `/opt/nevgiu/deploy/.env` file and is deliberately not stored in GitHub:
+
+```text
+OPENAI_API_KEY
+POSTGRES_PASSWORD
+FRONTEND_HOST
+API_HOST
 FRONTEND_URL
-API_URL
-APP_CORS_ALLOWED_ORIGINS
+INITIAL_IMPORT_ENABLED
 ```
 
 Prefer a dedicated read-only GHCR token on the VPS if private packages require authentication. Do not place secrets in Compose files, workflow logs, image layers, repository variables, or command-line output.
@@ -417,7 +425,7 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Remove public database and backend ports from the deployment topology.
 - [x] Add environment-driven production Spring settings.
 - [x] Make built-in CV import environment-controlled and document that production disables it.
-- [ ] Add deployment and rollback scripts.
+- [x] Add deployment and rollback scripts.
 - [ ] Add database backup and restore scripts and test restoration.
 
 **Exit condition:** the application can be deployed manually to a clean VPS over HTTPS without development credentials or public data services.
@@ -436,7 +444,7 @@ The deployment pipeline can be built before these items are complete, but the en
 
 ### Phase 3 - Automatic staging
 
-- [ ] Configure the GitHub `staging` environment and secrets.
+- [x] Configure the GitHub `staging` environment and secrets.
 - [x] Add automatic deployment of every successful `main` image to staging.
 - [x] Add concurrency protection, health waiting, and smoke tests.
 - [x] Add automatic application-image rollback.
@@ -444,6 +452,8 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Mark successfully smoke-tested images with staging-validation aliases.
 
 **Exit condition:** a successful merge reaches staging automatically and is accepted only when application checks pass.
+
+Validated on 2 August 2026: CI published immutable backend and frontend images from the transferred `NevGiU-AI/hr-ai` repository, deployed them automatically to the staging VPS, passed public HTTPS smoke tests, and completed the job-offer generation, approval, CV ingestion, and candidate-evaluation functional path. GitHub Action dependencies were upgraded to Node.js 24-compatible major versions during this validation.
 
 ### Phase 4 - Approved production promotion
 
@@ -470,15 +480,15 @@ The deployment pipeline can be built before these items are complete, but the en
 ## Acceptance criteria
 
 - [ ] Pull requests cannot merge unless required backend and frontend checks pass.
-- [ ] A passing `main` commit publishes immutable images and deploys automatically to staging.
+- [x] A passing `main` commit publishes immutable images and deploys automatically to staging.
 - [ ] Staging deployment fails and rolls back when health or smoke tests fail.
 - [ ] Production deployment uses the same image digests validated in staging.
 - [ ] Production requires a versioned release and an explicit approval gate where supported.
-- [ ] Staging and production use separate hosts or an explicitly accepted temporary isolation model.
-- [ ] Environment secrets are isolated and never written to logs or the repository.
-- [ ] PostgreSQL and backend application ports are not publicly exposed.
-- [ ] HTTPS is enforced for all public traffic.
+- [x] Staging and production use separate hosts or an explicitly accepted temporary isolation model.
+- [x] Environment secrets are isolated and never written to logs or the repository.
+- [x] PostgreSQL and backend application ports are not publicly exposed.
+- [x] HTTPS is enforced for all public traffic.
 - [ ] Backups are encrypted, stored off-server, monitored, retained according to policy, and restore-tested.
-- [ ] Application rollback is automated and database recovery is documented separately.
-- [ ] The deployed commit, release, actor, timestamp, and image digests are traceable.
+- [x] Application rollback is automated and database recovery is documented separately.
+- [x] The deployed commit, release, actor, timestamp, and image digests are traceable.
 - [ ] Real candidate data is prohibited until the documented privacy and security blockers are resolved.

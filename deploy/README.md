@@ -70,6 +70,27 @@ GHCR_TOKEN
 - `GHCR_USERNAME` is the GitHub account permitted to pull the repository's packages.
 - `GHCR_TOKEN` is a dedicated token with the minimum package-read permission required by the VPS.
 
+Validated staging values:
+
+```text
+Environment: staging
+DEPLOY_HOST=141.94.33.197
+DEPLOY_USER=deploy
+Environment URL=https://staging-hr.nevgiuai.com
+```
+
+Create `GHCR_TOKEN` as a classic personal access token with only `read:packages`. If the organization enforces SSO, authorize the token for the organization. Store the token immediately because GitHub displays it only once. `GHCR_USERNAME` must be the personal or bot account that created that token, not the organization name.
+
+Populate `DEPLOY_KNOWN_HOSTS` from a host key already verified during an interactive SSH connection. For example, from Windows PowerShell:
+
+```powershell
+ssh-keygen -F 141.94.33.197 -f "$env:USERPROFILE\.ssh\known_hosts" |
+  Where-Object { $_ -notmatch '^#' } |
+  Set-Clipboard
+```
+
+Do not generate this value with an unverified network lookup and do not disable SSH host-key checking.
+
 Protect the `production` environment with required reviewers and release-tag restrictions where the repository visibility and GitHub plan support them.
 
 The real application secrets (`OPENAI_API_KEY` and `POSTGRES_PASSWORD`) remain only in `/opt/nevgiu/deploy/.env` on each VPS. They are not GitHub Actions secrets because the deployment workflow does not transmit or rewrite them.
@@ -88,6 +109,20 @@ docker compose --env-file .env ps
 For the first manual staging deployment, build the local tags defined in `.env` before starting Compose.
 
 Automated deployments write immutable image references to `.images.env` and invoke `deploy.sh`. The script waits for database, backend, and frontend health, requires Caddy to be running, and restores the previously running application images if validation fails. It does not roll back database contents.
+
+The first automated deployment creates `.images.env` before inspecting the manually deployed containers. This preserves the manual images as rollback candidates while allowing Compose to resolve its required image variables.
+
+## Automatic staging flow
+
+1. A push or pull request runs `CI`.
+2. A successful `main` CI run starts `Deploy staging` through `workflow_run`.
+3. The workflow builds backend and frontend images once and publishes commit-SHA tags under the current `github.repository` GHCR namespace.
+4. GitHub copies only the deployment bundle to the VPS and authenticates the VPS to GHCR with its read-only token.
+5. `deploy.sh` pulls the immutable images, starts the stack, and waits for health.
+6. GitHub smoke-tests both public HTTPS endpoints.
+7. Successful images receive `staging-validated-<commit-sha>` aliases for later production promotion.
+
+CI also supports `workflow_dispatch`, which makes a **Run workflow** button available without requiring a placeholder source commit.
 
 ## Verify
 

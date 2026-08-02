@@ -488,6 +488,39 @@ docker compose --env-file .env ps
 
 Confirm both services are healthy.
 
+## Validated GitHub staging automation
+
+The GitHub `staging` environment was configured and the first complete automated rollout was validated on 2 August 2026.
+
+Configured non-secret variables:
+
+```text
+DEPLOY_HOST=141.94.33.197
+DEPLOY_USER=deploy
+```
+
+Configured secret names, with values retained only by GitHub:
+
+```text
+DEPLOY_SSH_KEY
+DEPLOY_KNOWN_HOSTS
+GHCR_USERNAME
+GHCR_TOKEN
+```
+
+Validation completed:
+
+- CI backend, frontend, and container-build jobs passed.
+- Commit-addressed backend and frontend images were published under the transferred repository's dynamic GHCR namespace.
+- GitHub connected to the VPS using the dedicated `deploy` key and verified host key.
+- The VPS authenticated to GHCR with a classic token limited to `read:packages`.
+- The deployment script initialized `.images.env`, retained previous images for rollback, and brought the stack to a healthy state.
+- GitHub smoke tests passed for the public frontend and backend health URLs.
+- The deployed images received staging-validation aliases.
+- A human functional test successfully generated and approved a job offer, ingested CV data, and evaluated a candidate against the approved job.
+
+No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed environment file was added to Git or documentation.
+
 ## Production checklist
 
 Repeat the staging procedure with these changes:

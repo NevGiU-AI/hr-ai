@@ -14,6 +14,17 @@ We started working on this project for the 1st Edition of [KLx, Crédit Agricole
 - Spring AI with OpenAI
 - Docker Compose for local development
 
+## Docker Compose file responsibilities
+
+The repository deliberately has two active Compose contexts:
+
+| File | Environment | How it is used |
+| --- | --- | --- |
+| `docker-compose.yml` | Local development | Docker Compose selects it automatically when `docker compose ...` runs from the repository root. It builds the local frontend and backend and publishes development ports. |
+| `deploy/compose.yml` | Staging and production | GitHub Actions copies this deployment bundle to each VPS, and `deploy/deploy.sh` runs it with environment-specific secrets and immutable container images. |
+
+There is intentionally no root `docker-compose.prod.yml`. The previous file was obsolete and bypassed the current Caddy, private-network, health-check, immutable-image, and rollback design. Do not recreate or use a separate root production Compose path; make shared VPS deployment changes in `deploy/compose.yml` and keep environment differences in each VPS `.env` file.
+
 ## Run locally with Docker
 
 ### Prerequisites

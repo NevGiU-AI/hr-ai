@@ -4,6 +4,8 @@ This directory contains the provider-neutral Docker Compose deployment used by s
 
 For initial OVHcloud provisioning, SSH hardening, Squarespace DNS, credential rotation, troubleshooting, and the production checklist, see `specifications/09-vps-provisioning-runbook.md`.
 
+`deploy/compose.yml` is the only production-capable Compose definition. The root `docker-compose.yml` is exclusively for local development. There is intentionally no `docker-compose.prod.yml`; maintaining a second production definition would allow security, networking, health checks, and rollback behavior to drift from the deployment tested by CI/CD.
+
 ## Domain mapping
 
 | Environment | Frontend | Backend API |

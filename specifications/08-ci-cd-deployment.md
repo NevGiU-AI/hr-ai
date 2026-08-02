@@ -278,6 +278,10 @@ The reusable Nevgiu AI convention is:
 
 For this application, `<project>` is `hr`. The apex `nevgiuai.com` remains available for the Nevgiu AI company and project portal.
 
+Use DNS TTL `300` seconds while provisioning, migrating, or troubleshooting an environment. The short cache lifetime allows an incorrect VPS address to be corrected quickly. After HTTPS, deployment, and functional checks remain stable, increase the TTL to `3600` seconds to reduce unnecessary DNS queries and cache churn.
+
+Before a planned IP migration, lower a stable `3600`-second TTL back to `300` at least one hour before changing the address. This allows records cached under the previous TTL to expire. After the new address is verified, restore `3600`. TTL controls resolver cache duration but does not guarantee that every provider refreshes immediately.
+
 Environment configuration must use:
 
 | Environment | Angular API URL | `APP_CORS_ALLOWED_ORIGINS` |

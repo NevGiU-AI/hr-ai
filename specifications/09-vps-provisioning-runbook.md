@@ -37,7 +37,9 @@ nsa4.squarespacedns.com
 | Production frontend | A | `hr` | `hr.nevgiuai.com` | `141.94.94.198` | Pending |
 | Production API | A | `api.hr` | `api.hr.nevgiuai.com` | `141.94.94.198` | Pending |
 
-Use TTL `300` during initial setup and troubleshooting. Increase it to `3600` after the environment is stable if faster DNS changes are no longer required.
+Use TTL `300` seconds during initial setup, migration, and troubleshooting. A five-minute cache lifetime makes incorrect VPS addresses faster to correct. After DNS resolution, HTTPS, automated deployment, and functional checks are stable, increase it to `3600` seconds to reduce DNS queries and cache churn.
+
+Before a planned VPS IP change, lower a stable `3600`-second TTL back to `300` at least one hour before updating the A record. This gives records cached under the old TTL time to expire. Restore `3600` only after the new address and HTTPS endpoints are verified. TTL is a cache instruction and does not guarantee an exact global propagation time.
 
 Do not change existing Google Workspace MX or TXT records when adding application hosts.
 
@@ -232,7 +234,7 @@ In Squarespace:
 2. Select `nevgiuai.com`.
 3. Open **DNS** or **DNS Settings**.
 4. Under custom records, create the two staging A records listed in the DNS inventory.
-5. Use TTL `300` during setup.
+5. Use TTL `300` during setup; after all staging validation succeeds, increase it to `3600`.
 6. Do not modify Google Workspace email records.
 
 Verify from Windows PowerShell:

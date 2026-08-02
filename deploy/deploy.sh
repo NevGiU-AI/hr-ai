@@ -52,6 +52,11 @@ wait_for_stack() {
   return 1
 }
 
+if [ ! -r .images.env ]; then
+  printf 'BACKEND_IMAGE=%s\nFRONTEND_IMAGE=%s\n' "$backend_image" "$frontend_image" > .images.env
+  chmod 600 .images.env
+fi
+
 previous_backend_id=$(compose ps -q backend)
 previous_frontend_id=$(compose ps -q frontend)
 previous_backend=$(docker inspect --format '{{.Config.Image}}' "$previous_backend_id" 2>/dev/null || true)

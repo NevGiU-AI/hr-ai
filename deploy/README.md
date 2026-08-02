@@ -131,6 +131,39 @@ curl --fail https://staging-api.hr.nevgiuai.com/actuator/health
 curl --fail --head https://staging-hr.nevgiuai.com/
 ```
 
+## Access deployment and application logs
+
+For CI/CD logs, open the current repository on GitHub, select **Actions**, choose `CI` or `Deploy staging`, open the relevant run, and expand the job step. Start with the first failed step; later steps may be skipped as a consequence. GitHub masks configured secrets, but application output can still contain personal data.
+
+For staging container logs, connect from the administrator workstation:
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\nevgiu_hr_staging" deploy@141.94.33.197
+```
+
+On the VPS, inspect service state and recent logs:
+
+```bash
+cd /opt/nevgiu/deploy
+docker compose --env-file .env --env-file .images.env ps
+docker compose --env-file .env --env-file .images.env logs --tail 100 backend frontend caddy
+```
+
+Follow live output and stop following with `Ctrl+C`; this does not stop the containers:
+
+```bash
+docker compose --env-file .env --env-file .images.env logs --tail 100 -f backend frontend caddy
+```
+
+Limit investigation by service or time when possible:
+
+```bash
+docker compose --env-file .env --env-file .images.env logs --since 30m backend
+docker compose --env-file .env --env-file .images.env logs --tail 200 db
+```
+
+Never publish raw logs without reviewing them for candidate names, email addresses, CV content, prompts, API keys, tokens, database details, and other personal or secret data. Do not print or share `.env`, `.images.env`, private keys, or `docker compose config` output.
+
 ## Stop
 
 ```bash

@@ -386,6 +386,44 @@ In the staging frontend:
 7. Confirm the overall score, all eight metrics, and explanation appear.
 8. Restart the Compose services and confirm persisted jobs, candidates, documents, and evaluations remain.
 
+### 15. Access operational logs
+
+GitHub pipeline logs:
+
+1. Open the current repository on GitHub and select **Actions**.
+2. Select `CI`, `Deploy staging`, or `Deploy production`.
+3. Open the run for the affected commit.
+4. Expand the first failed job step and inspect later steps only if they ran.
+
+Staging application logs require the dedicated deployment key. From Windows PowerShell:
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\nevgiu_hr_staging" deploy@141.94.33.197
+```
+
+Then run on the VPS:
+
+```bash
+cd /opt/nevgiu/deploy
+docker compose --env-file .env --env-file .images.env ps
+docker compose --env-file .env --env-file .images.env logs --tail 100 backend frontend caddy
+```
+
+Follow live logs:
+
+```bash
+docker compose --env-file .env --env-file .images.env logs --tail 100 -f backend frontend caddy
+```
+
+Press `Ctrl+C` to stop following output; containers continue running. To narrow the output:
+
+```bash
+docker compose --env-file .env --env-file .images.env logs --since 30m backend
+docker compose --env-file .env --env-file .images.env logs --tail 200 db
+```
+
+Review and redact output before sharing it. Logs may contain candidate personal data, extracted CV content, prompts, or operational details. Never display or transmit `.env`, `.images.env`, private SSH keys, access tokens, or expanded Compose configuration.
+
 ## Troubleshooting learned during staging
 
 ### Frontend reported unhealthy while Nginx was running

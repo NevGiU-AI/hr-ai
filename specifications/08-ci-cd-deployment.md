@@ -370,6 +370,20 @@ GitHub documentation:
 
 Required-reviewer availability depends on repository visibility and GitHub plan. Confirm those constraints before relying on GitHub approval as the only production gate.
 
+## Deployment logging and diagnosis
+
+GitHub Actions is the source of truth for pipeline execution. Operators inspect the relevant `CI`, `Deploy staging`, or `Deploy production` run and begin with the first failed step. Workflow summaries identify the deployed commit and public environment URLs.
+
+Runtime diagnosis is performed as the environment's `deploy` user from `/opt/nevgiu/deploy`. Compose commands must load both the private application environment and the generated immutable image references:
+
+```bash
+docker compose --env-file .env --env-file .images.env ps
+docker compose --env-file .env --env-file .images.env logs --since 30m backend
+docker compose --env-file .env --env-file .images.env logs --tail 100 -f backend frontend caddy
+```
+
+Log access is privileged because candidate data, extracted CV text, AI prompts, or operational details may appear until structured redaction is implemented. Logs must not be pasted into public issues, pull requests, chat, or incident reports without review and redaction. Environment files, SSH keys, tokens, and expanded Compose configuration must never be included in diagnostic output.
+
 ## Database backup and recovery
 
 Provider snapshots and VPS backups do not replace application-aware PostgreSQL backups.

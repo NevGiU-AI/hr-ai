@@ -111,6 +111,7 @@ jobs:
               "docker login ghcr.io --username '$GHCR_USERNAME' --password-stdin"
 
       - name: Deploy staging-validated images
+        id: deploy
         shell: bash
         run: |
           backend_image="$REGISTRY/$BACKEND_IMAGE_NAME:$REVISION"
@@ -119,6 +120,22 @@ jobs:
             "chmod 750 /opt/nevgiu/deploy/deploy.sh && /opt/nevgiu/deploy/deploy.sh '$backend_image' '$frontend_image'"
 
       - name: Smoke-test production
+        id: smoke_test
+        run: |
+          curl --fail --show-error --silent --retry 12 --retry-delay 5 \
+            https://api.hr.nevgiuai.com/actuator/health
+          curl --fail --show-error --silent --head --retry 12 --retry-delay 5 \
+            https://hr.nevgiuai.com/
+
+      - name: Roll back after failed public smoke test
+        if: failure() && steps.deploy.outcome == 'success' && steps.smoke_test.outcome == 'failure'
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "/opt/nevgiu/deploy/deploy.sh --rollback"
+
+      - name: Verify production after rollback
+        if: failure() && steps.deploy.outcome == 'success' && steps.smoke_test.outcome == 'failure'
         run: |
           curl --fail --show-error --silent --retry 12 --retry-delay 5 \
             https://api.hr.nevgiuai.com/actuator/health

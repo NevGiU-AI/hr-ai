@@ -13,6 +13,8 @@ Production database backups use `backup-postgres.sh` with the accompanying units
 
 The timer is intentionally installed but left disabled during provisioning. Enable it only after the production stack exists, a manual encrypted upload succeeds, Object Lock is verified on the uploaded object, and an isolated restore succeeds. Its daily schedule is 02:30 UTC with up to thirty minutes of randomized delay and persistent catch-up after downtime.
 
+Object Storage lifecycle retains current objects under `postgresql/` for thirty days, removes incomplete multipart uploads after one day, and cleans eligible non-current versions and expired delete markers. Seven-day Governance Object Lock always takes precedence over lifecycle deletion. Apply or change lifecycle policy only with the offline bucket-owner profile, never with credentials installed on the VPS.
+
 `deploy/compose.yml` is the only production-capable Compose definition. The root `docker-compose.yml` is exclusively for local development. There is intentionally no `docker-compose.prod.yml`; maintaining a second production definition would allow security, networking, health checks, and rollback behavior to drift from the deployment tested by CI/CD.
 
 ## Domain mapping
@@ -155,7 +157,7 @@ docker compose --env-file .env ps
 
 For the first manual staging deployment, build the local tags defined in `.env` before starting Compose.
 
-Automated deployments write immutable image references to `.images.env` and invoke `deploy.sh`. The script waits for database, backend, and frontend health, requires Caddy to be running, and restores the previously running application images if validation fails. It does not roll back database contents.
+Automated deployments write immutable image references to `.images.env` and invoke `deploy.sh`. The script validates the candidate Compose model, pulls both candidate application images before changing the active manifest, waits for database, backend, and frontend health, requires Caddy to be running, and restores the previously running application images if startup or internal validation fails. It does not roll back database contents.
 
 The first automated deployment creates `.images.env` before inspecting the manually deployed containers. This preserves the manual images as rollback candidates while allowing Compose to resolve its required image variables.
 
@@ -163,13 +165,14 @@ Current rollback boundary:
 
 - Before replacement, the script records the backend and frontend image references used by the running containers.
 - It waits up to 36 attempts at five-second intervals, approximately three minutes, for the database, backend, and frontend to become healthy and for Caddy to be running.
-- If that internal validation times out, it restores the previous application image references, recreates the stack, and validates health again. The workflow remains failed even when rollback succeeds.
+- The previous image references are retained in `.images.env.previous`. `deploy.sh --rollback` restores that manifest, recreates the stack, and validates internal health.
+- If initial Compose startup fails or internal validation times out, the script invokes that rollback path. The workflow remains failed even when rollback succeeds.
+- If a GitHub public HTTPS smoke test fails, the staging and production workflows invoke `deploy.sh --rollback` and then verify both public endpoints against the restored deployment. The original smoke-test failure keeps the workflow failed.
 - PostgreSQL data and schema, `.env`, Compose and Caddy configuration, deployment files, and secrets are not rolled back.
-- A failure in Compose validation, image pulling, or initial startup can terminate the script before its health-based rollback branch.
-- Public HTTPS smoke tests currently run in GitHub after `deploy.sh` succeeds. If those tests fail after internal health passes, GitHub reports failure but the new images remain deployed.
+- Candidate Compose validation and application-image pulls occur before the active image manifest changes, so their failure leaves the running deployment unchanged.
 - Rollback assumes the previous images remain available in the local Docker cache or registry.
 
-Before production, public smoke-test failure and pre-health deployment errors must enter the same rollback path. Configuration changes require versioned backup and restoration, while database migration recovery remains a separate reviewed procedure.
+Configuration changes still require versioned backup and restoration, while database migration recovery remains a separate reviewed procedure. Exercise the image rollback path on staging before enabling production releases.
 
 ## Automatic staging flow
 
@@ -178,7 +181,7 @@ Before production, public smoke-test failure and pre-health deployment errors mu
 3. The workflow builds backend and frontend images once and publishes commit-SHA tags under the current `github.repository` GHCR namespace.
 4. GitHub copies only the deployment bundle to the VPS and authenticates the VPS to GHCR with its read-only token.
 5. `deploy.sh` pulls the immutable images, starts the stack, and waits for health.
-6. GitHub smoke-tests both public HTTPS endpoints. Until rollback orchestration is extended, failure here does not automatically restore the previous images.
+6. GitHub smoke-tests both public HTTPS endpoints. Failure invokes application-image rollback and verifies the restored public endpoints while leaving the workflow failed.
 7. Successful images receive `staging-validated-<commit-sha>` aliases for later production promotion.
 
 CI also supports `workflow_dispatch`, which makes a **Run workflow** button available without requiring a placeholder source commit.

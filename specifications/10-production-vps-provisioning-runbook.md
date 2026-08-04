@@ -867,6 +867,18 @@ root:root 644 /etc/systemd/system/nevgiu-postgres-backup.timer
 
 The timer targets 02:30 UTC daily, adds up to thirty minutes of randomized delay, and uses `Persistent=true` so a missed run occurs after the VPS returns. Do not enable or start it until the production Compose stack exists, `.images.env` has been generated, a manual encrypted upload succeeds, and an isolated restoration test proves recoverability.
 
+The script and units were installed with the expected root ownership and modes. `systemd-analyze verify` also printed warnings that `CPUAccounting=` is removed and ignored in Ubuntu's packaged `xfs_scrub_all.service` and `system-xfs_scrub.slice`. Those warnings originate from unrelated XFS maintenance units and do not invalidate the NevGiU backup service or timer. Verify their own load state directly:
+
+```bash
+sudo systemctl show \
+  -p LoadState \
+  -p UnitFileState \
+  nevgiu-postgres-backup.service \
+  nevgiu-postgres-backup.timer
+```
+
+Expected before activation: both units are `loaded` and `disabled`. The disabled state is intentional.
+
 The next production step is installing and verifying these tracked service files without enabling the timer.
 
 ### 21. Credential and recovery-key rotation boundaries
@@ -891,6 +903,54 @@ Recovery-identity rotation is different: changing the public recipient does not 
 5. Keep the old recovery identity until every backup encrypted to it has expired and been deleted according to policy.
 
 The precise lifecycle policy, manual backup verification, Object Lock inspection on uploaded objects, isolated restore procedure, monitoring, and timer activation remain pending. Add their validated commands and results to this runbook as those steps are performed; do not mark backup readiness complete merely because the script and timer files exist.
+
+### 22. Configure rolling Object Storage lifecycle retention
+
+The initial production policy keeps approximately thirty encrypted daily database recovery points. Seven-day Governance Object Lock prevents early deletion, while lifecycle expiration limits long-term storage of CV-related database data and controls cost.
+
+Apply lifecycle changes only from local PowerShell with the offline bucket-owner profile. Never install owner credentials on the VPS. The validated policy applies only to the `postgresql/` prefix:
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "ExpireProductionDatabaseBackups",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "postgresql/"
+      },
+      "Expiration": {
+        "Days": 30
+      },
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 1
+      },
+      "AbortIncompleteMultipartUpload": {
+        "DaysAfterInitiation": 1
+      }
+    },
+    {
+      "ID": "RemoveExpiredDeleteMarkers",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "postgresql/"
+      },
+      "Expiration": {
+        "ExpiredObjectDeleteMarker": true
+      }
+    }
+  ]
+}
+```
+
+The configuration was accepted and read back successfully through the authenticated S3 API. Its effects are:
+
+- Current encrypted backups and checksum objects expire after thirty days.
+- A current-version expiration in the versioned bucket creates a delete marker; the underlying non-current version becomes eligible for removal after one additional day, subject to Object Lock.
+- Incomplete multipart-upload fragments are removed after one day.
+- Delete markers with no retained versions are cleaned up.
+
+Object Lock takes precedence over lifecycle deletion. OVHcloud will not permanently delete a protected object version before its seven-day Governance retention expires. Longer weekly or monthly archives are deliberately postponed until candidate-data retention and deletion policy is formally approved.
 
 ## Production checklist
 
@@ -923,13 +983,14 @@ Repeat the staging procedure with these changes:
 - [x] Install and validate only the public `age` recipient on the production VPS.
 - [x] Install `age` and AWS CLI and verify their production versions.
 - [x] Install the upload-only writer credentials as a root-only AWS profile and recheck allowed and denied operations.
-- [ ] Install and validate the root-owned streaming backup script and systemd units without enabling the timer.
+- [x] Install and validate the root-owned streaming backup script and systemd units without enabling the timer.
+- [x] Configure and read back thirty-day lifecycle retention for encrypted PostgreSQL backups.
 - [ ] Run a manual encrypted backup, verify Object Lock, and restore it in isolation before enabling the timer.
 - [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
 - [ ] Configure the GitHub `production` environment with separate variables and secrets.
 - [ ] Require production deployment approval where supported.
-- [ ] Verify public HTTPS smoke-test failure automatically restores the previous production images.
-- [ ] Verify recoverable Compose validation, pull, and startup failures enter the rollback path.
+- [x] Configure public HTTPS smoke-test failure to restore the previous application images and verify the restored public endpoints.
+- [x] Validate Compose and pull candidate application images before changing the active manifest; route initial startup failure through image rollback.
 - [ ] Version and restore compatible Compose and Caddy configuration during rollback.
 - [ ] Run a controlled staging rollback drill before enabling the production release workflow.
 - [x] Configure Docker container log rotation with a documented per-container disk limit.

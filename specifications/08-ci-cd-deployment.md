@@ -414,9 +414,9 @@ Minimum policy:
 
 ## Rollback strategy
 
-The implemented `deploy.sh` currently provides health-gated application-image rollback. Before replacement, it records the backend and frontend image references used by the running containers, deploys the new immutable images, and polls for approximately three minutes. Success requires a healthy database, backend, and frontend and a running Caddy service.
+The implemented `deploy.sh` provides health-gated application-image rollback. Before replacement, it records the backend and frontend image references used by the running containers in `.images.env.previous`, validates the candidate Compose model, pulls the candidate images, deploys them, and polls for approximately three minutes. Success requires a healthy database, backend, and frontend and a running Caddy service.
 
-If internal health validation times out, the script:
+If initial startup or internal health validation fails, the script:
 
 1. Retains the last 100 Compose log lines in the failed GitHub job.
 2. Restores the previous backend and frontend image references in `.images.env`.
@@ -424,15 +424,16 @@ If internal health validation times out, the script:
 4. Repeats internal health validation.
 5. Keeps the workflow failed even if rollback restores service successfully.
 
+The staging and production workflows also invoke `deploy.sh --rollback` when a public HTTPS smoke test fails, then repeat both public checks against the restored deployment. The original failure remains visible because the workflow remains failed even after a successful recovery.
+
 Current limitations:
 
-- Public HTTPS smoke tests run in GitHub after `deploy.sh` has exited successfully. Their failure marks the workflow failed but does not currently invoke image rollback.
-- `compose config`, image-pull, or initial `compose up` errors can exit the script before the health-validation rollback branch.
+- Compose validation and application-image pull failures leave the running deployment unchanged; they do not require rollback because the active image manifest has not yet changed.
 - Compose, Caddy, `.env`, secret, and deployment-file changes are not restored.
 - PostgreSQL data and schema are never automatically restored.
 - Rollback depends on the previous images remaining available locally or in GHCR.
 
-Required production behavior is to route internal health failure, public smoke-test failure, and recoverable pre-health deployment errors through one rollback orchestration path. Versioned deployment configuration must be restored alongside image references where configuration compatibility requires it, and rollback success must be verified using both internal health and public smoke tests.
+Before the first production release, exercise a controlled staging failure and verify internal recovery and public availability. Versioned deployment configuration must still be restored alongside image references where configuration compatibility requires it.
 
 Do not automatically restore a database backup for ordinary application failure. Database restoration is destructive and requires an explicit incident decision based on the migration and data-loss impact.
 
@@ -486,7 +487,7 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Add automatic deployment of every successful `main` image to staging.
 - [x] Add concurrency protection, health waiting, and smoke tests.
 - [x] Add automatic application-image rollback.
-- [ ] Extend automatic rollback to public HTTPS smoke-test failures and recoverable Compose validation, pull, and startup errors.
+- [x] Extend automatic rollback to public HTTPS smoke-test and initial Compose startup failures; validate and pull candidates before switching the active manifest.
 - [ ] Version and restore compatible Compose and Caddy configuration during application rollback.
 - [ ] Exercise a controlled failed staging deployment and verify both rollback health and public availability.
 - [x] Publish deployment URL and commit in the workflow summary.
@@ -506,7 +507,8 @@ Validated on 2 August 2026: CI published immutable backend and frontend images f
 - [ ] Require production approval where supported.
 - [ ] Check backup readiness before deployment.
 - [x] Add production health checks, application rollback, and deployment summaries.
-- [ ] Block production until public smoke-test failure invokes rollback and rollback is verified externally.
+- [x] Make public smoke-test failure invoke application-image rollback and external verification.
+- [ ] Block production until this rollback path has been exercised successfully on staging.
 - [ ] Configure production log rotation, retention, restricted operator access, and encrypted off-server collection before processing real candidate data.
 - [ ] Validate production log redaction and define the approved incident-log export procedure.
 

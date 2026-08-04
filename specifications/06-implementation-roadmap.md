@@ -8,8 +8,13 @@
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.
-- [ ] Define production observability standards.
-- [ ] Replace development credentials and confirm secrets are never committed.
+- [x] Implement CI, immutable container publication, automatic staging deployment, and staging validation aliases.
+- [x] Provision and harden separate staging and production VPSs with environment-specific keys and credentials.
+- [x] Configure production Premium VPS backup and prepare private cross-region Object Storage.
+- [ ] Complete production observability, off-server log collection, redaction, and alerting standards.
+- [ ] Complete encrypted PostgreSQL backup automation and an isolated restoration test.
+- [ ] Finish production GitHub environment protection, approval, rollback, and release-promotion validation.
+- [ ] Confirm all development, staging, production, and backup credentials are isolated, rotated when needed, and absent from Git.
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
@@ -45,7 +50,7 @@
 
 ## Phase 3 - Add semantic indexing and web chat
 
-- [ ] Enable pgvector integration currently present but disabled in backend dependencies.
+- [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
 - [ ] Create embeddings and index CV chunks with authorization metadata.
 - [ ] Implement retrieval, filtering, candidate detail, and comparison tools.
 - [ ] Persist scoped conversation memory.
@@ -65,7 +70,22 @@
 
 **Exit condition:** Recruiters can monitor roles and candidate evaluations and reach source records from every aggregate view.
 
-## Phase 5 - Add external messaging
+## Phase 5 - Publish backend Swagger/OpenAPI documentation
+
+This phase starts after the dashboard is complete so the documented API includes the stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an incomplete surface.
+
+- [ ] Add and configure Springdoc OpenAPI for the Spring Boot backend.
+- [ ] Document every supported endpoint, request model, response model, validation rule, and HTTP status.
+- [ ] Document the shared API error contract and provide safe example payloads without candidate personal data or credentials.
+- [ ] Describe authentication and authorization requirements after the production security model is finalized.
+- [ ] Group APIs by business capability and add operation summaries suitable for frontend and integration developers.
+- [ ] Expose Swagger UI in local development and approved non-production environments; make production exposure an explicit security decision.
+- [ ] Add automated validation that the OpenAPI document is generated and that critical endpoints remain represented.
+- [ ] Publish or export the versioned OpenAPI document for consumers and keep it synchronized with releases.
+
+**Exit condition:** Backend consumers can discover and test the stable API through reviewed, versioned, security-conscious Swagger/OpenAPI documentation.
+
+## Phase 6 - Add external messaging
 
 - [ ] Implement the selected provider behind a channel-neutral messaging interface.
 - [ ] Link messaging identities to authenticated application users securely.
@@ -75,7 +95,7 @@
 
 **Exit condition:** External chat has security and answer quality equivalent to the web channel.
 
-## Phase 6 - Release readiness
+## Phase 7 - Release readiness
 
 - [ ] Run full unit, integration, end-to-end, performance, and security test suites.
 - [ ] Verify backup, restore, retention, deletion, and incident procedures.

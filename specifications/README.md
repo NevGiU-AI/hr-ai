@@ -22,8 +22,9 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 3. Extend the implemented CV ingestion and evaluation workflow with review, governance, and reproducibility features.
 4. Add vector indexing and conversational candidate search.
 5. Build dashboard APIs and UI from persisted recruitment data.
-6. Add the selected messaging integration after the web chat is stable.
-7. Validate security, privacy, AI quality, performance, and usability before release.
+6. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
+7. Add the selected messaging integration after the web chat and documented backend APIs are stable.
+8. Validate security, privacy, AI quality, performance, and usability before release.
 
 ## Current repository snapshot
 
@@ -34,9 +35,10 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
 | CV database chat | Planned | pgvector is available in the database image, but vector indexing, retrieval, and conversation memory are not implemented. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |
+| Backend Swagger/OpenAPI | Planned after dashboard | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable. |
 | External messaging | Planned | Telegram/WhatsApp choice and integration remain open. |
 | Production security | Planned | Authentication, authorization, tenant isolation, restricted CORS, audit logging, malware scanning, and retention controls remain. |
-| CI/CD and VPS deployment | Implemented, environment setup pending | CI, immutable GHCR publication, automatic staging deployment, staging validation, and release-gated production promotion are implemented. GitHub environments and production VPS setup remain. |
+| CI/CD and VPS deployment | Staging implemented, production in progress | CI, immutable GHCR publication, automatic staging deployment, and staging validation are implemented. Production VPS hardening and Premium backup are complete; PostgreSQL backup restoration, production GitHub protection, rollback hardening, and release validation remain. |
 | VPS provisioning | Staging complete, production in progress | Staging is hardened and deployed. Production has independent SSH, firewall, Docker, DNS, logging, Premium VPS backup, and private Object Storage preparation; database backup restoration and production release controls remain. Separate runbooks prevent environment-specific credentials and procedures from being mixed. |
 
 The application uses an Angular 19 frontend, a Spring Boot 3 / Java 21 backend, PostgreSQL with the pgvector image, and Spring AI with OpenAI.

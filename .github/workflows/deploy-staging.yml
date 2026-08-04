@@ -128,9 +128,8 @@ jobs:
       - name: Smoke-test staging
         id: smoke_test
         run: |
-          # Controlled rollback drill: this deliberately nonexistent endpoint must fail.
           curl --fail --show-error --silent --retry 12 --retry-delay 5 \
-            https://staging-api.hr.nevgiuai.com/actuator/health/rollback-drill
+            https://staging-api.hr.nevgiuai.com/actuator/health
           curl --fail --show-error --silent --head --retry 12 --retry-delay 5 \
             https://staging-hr.nevgiuai.com/
 

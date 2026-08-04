@@ -992,7 +992,7 @@ Repeat the staging procedure with these changes:
 - [x] Configure public HTTPS smoke-test failure to restore the previous application images and verify the restored public endpoints.
 - [x] Validate Compose and pull candidate application images before changing the active manifest; route initial startup failure through image rollback.
 - [ ] Version and restore compatible Compose and Caddy configuration during rollback.
-- [ ] Run a controlled staging rollback drill before enabling the production release workflow.
+- [x] Run a controlled staging rollback drill before enabling the production release workflow.
 - [x] Configure Docker container log rotation with a documented per-container disk limit.
 - [x] Configure bounded systemd journal retention and verify restricted system-log access.
 - [ ] Configure restricted, encrypted off-server production log collection and retention.

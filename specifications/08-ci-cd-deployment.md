@@ -489,7 +489,7 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Add automatic application-image rollback.
 - [x] Extend automatic rollback to public HTTPS smoke-test and initial Compose startup failures; validate and pull candidates before switching the active manifest.
 - [ ] Version and restore compatible Compose and Caddy configuration during application rollback.
-- [ ] Exercise a controlled failed staging deployment and verify both rollback health and public availability.
+- [x] Exercise a controlled failed staging deployment and verify both rollback health and public availability.
 - [x] Publish deployment URL and commit in the workflow summary.
 - [x] Mark successfully smoke-tested images with staging-validation aliases.
 - [ ] Configure staging log rotation and retention limits for Docker and system services.
@@ -498,6 +498,8 @@ The deployment pipeline can be built before these items are complete, but the en
 **Exit condition:** a successful merge reaches staging automatically and is accepted only when application checks pass.
 
 Validated on 2 August 2026: CI published immutable backend and frontend images from the transferred `NevGiU-AI/hr-ai` repository, deployed them automatically to the staging VPS, passed public HTTPS smoke tests, and completed the job-offer generation, approval, CV ingestion, and candidate-evaluation functional path. GitHub Action dependencies were upgraded to Node.js 24-compatible major versions during this validation.
+
+Validated on 4 August 2026: a controlled staging drill deliberately failed the public API smoke test after a successful application deployment. GitHub Actions invoked `deploy.sh --rollback`, restored the previous backend and frontend images, and successfully rechecked both public HTTPS endpoints. The workflow remained failed as intended, preserving a visible deployment incident while confirming service recovery.
 
 ### Phase 4 - Approved production promotion
 
@@ -508,7 +510,7 @@ Validated on 2 August 2026: CI published immutable backend and frontend images f
 - [ ] Check backup readiness before deployment.
 - [x] Add production health checks, application rollback, and deployment summaries.
 - [x] Make public smoke-test failure invoke application-image rollback and external verification.
-- [ ] Block production until this rollback path has been exercised successfully on staging.
+- [x] Exercise the public smoke-test rollback path successfully on staging before enabling production.
 - [ ] Configure production log rotation, retention, restricted operator access, and encrypted off-server collection before processing real candidate data.
 - [ ] Validate production log redaction and define the approved incident-log export procedure.
 
@@ -532,7 +534,7 @@ Validated on 2 August 2026: CI published immutable backend and frontend images f
 
 - [ ] Pull requests cannot merge unless required backend and frontend checks pass.
 - [x] A passing `main` commit publishes immutable images and deploys automatically to staging.
-- [ ] Staging deployment fails and rolls back when health or smoke tests fail.
+- [x] Staging deployment fails and rolls back when health or smoke tests fail.
 - [ ] Production deployment uses the same image digests validated in staging.
 - [ ] Production requires a versioned release and an explicit approval gate where supported.
 - [x] Staging and production use separate hosts or an explicitly accepted temporary isolation model.
@@ -540,7 +542,7 @@ Validated on 2 August 2026: CI published immutable backend and frontend images f
 - [x] PostgreSQL and backend application ports are not publicly exposed.
 - [x] HTTPS is enforced for all public traffic.
 - [ ] Backups are encrypted, stored off-server, monitored, retained according to policy, and restore-tested.
-- [ ] Application rollback covers internal health and public smoke-test failures; database recovery is documented and tested separately.
+- [ ] Application rollback covers internal health and public smoke-test failures; application coverage is verified, but database recovery must still be restore-tested separately.
 - [x] The deployed commit, release, actor, timestamp, and image digests are traceable.
 - [ ] Staging and production logs have documented retention, rotation, access control, redaction, and incident-export procedures.
 - [ ] Real candidate data is prohibited until the documented privacy and security blockers are resolved.

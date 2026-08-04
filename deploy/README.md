@@ -2,7 +2,12 @@
 
 This directory contains the provider-neutral Docker Compose deployment used by staging and production.
 
-For initial OVHcloud provisioning, SSH hardening, Squarespace DNS, credential rotation, troubleshooting, and the production checklist, see `specifications/09-vps-provisioning-runbook.md`.
+Use the environment-specific runbook for initial OVHcloud provisioning, SSH hardening, Squarespace DNS, credentials, backups, troubleshooting, and readiness checks:
+
+- Staging: `specifications/09-staging-vps-provisioning-runbook.md`
+- Production: `specifications/10-production-vps-provisioning-runbook.md`
+
+Never copy an environment file, SSH key, API key, database password, backup credential, or GitHub environment secret from one procedure to the other.
 
 `deploy/compose.yml` is the only production-capable Compose definition. The root `docker-compose.yml` is exclusively for local development. There is intentionally no `docker-compose.prod.yml`; maintaining a second production definition would allow security, networking, health checks, and rollback behavior to drift from the deployment tested by CI/CD.
 

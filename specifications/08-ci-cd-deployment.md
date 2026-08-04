@@ -396,10 +396,14 @@ Log access is privileged because candidate data, extracted CV text, AI prompts, 
 
 Provider snapshots and VPS backups do not replace application-aware PostgreSQL backups.
 
+The production VPS uses OVHcloud Premium automated backup, ordered and confirmed active in the OVHcloud Control Panel on 2026-08-04. It adds seven rolling daily whole-VPS restore points; staging continues to use the included Standard plan with one daily restore point retained for 24 hours. Premium is an infrastructure recovery layer, not a substitute for database-aware, encrypted, off-server backups. The appearance of daily restore points must be verified in the OVHcloud Control Panel before production receives real candidate data.
+
 Minimum policy:
 
 - Run an encrypted daily `pg_dump` or equivalent PostgreSQL backup.
-- Keep backups outside the application VPS and preferably in a separate account or object-storage service.
+- Keep backups outside the application VPS and preferably in a separate account or object-storage service. Production uses a private S3-compatible bucket in OVHcloud `GRA`, separate from the `RBX` production VPS.
+- Enable versioning and Object Lock with a seven-day Governance retention target; do not use Compliance mode or Legal Hold by default because candidate-data deletion obligations must remain enforceable. The OVHcloud Control Panel incorrectly saved one year during setup, so the bucket must remain empty until the S3 API replaces and verifies the default as seven days.
+- Use a dedicated service identity restricted to the production backup bucket; never use personal, administrative, staging, or application credentials.
 - Define retention tiers, for example seven daily, four weekly, and three monthly copies, subject to candidate-data retention policy.
 - Record and alert on backup success or failure.
 - Test restoration regularly on an isolated environment.

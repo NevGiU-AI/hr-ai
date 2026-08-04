@@ -12,7 +12,8 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 6. [Implementation roadmap](./06-implementation-roadmap.md)
 7. [Open decisions](./07-open-decisions.md)
 8. [CI/CD and VPS deployment](./08-ci-cd-deployment.md)
-9. [OVHcloud VPS provisioning runbook](./09-vps-provisioning-runbook.md)
+9. [Staging VPS provisioning and operations](./09-staging-vps-provisioning-runbook.md)
+10. [Production VPS provisioning and operations](./10-production-vps-provisioning-runbook.md)
 
 ## Recommended delivery order
 
@@ -36,7 +37,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | External messaging | Planned | Telegram/WhatsApp choice and integration remain open. |
 | Production security | Planned | Authentication, authorization, tenant isolation, restricted CORS, audit logging, malware scanning, and retention controls remain. |
 | CI/CD and VPS deployment | Implemented, environment setup pending | CI, immutable GHCR publication, automatic staging deployment, staging validation, and release-gated production promotion are implemented. GitHub environments and production VPS setup remain. |
-| VPS provisioning | Staging complete, production pending | OVHcloud staging is hardened and serving HTTPS through Squarespace DNS. The validated procedure is documented for production reuse. |
+| VPS provisioning | Staging complete, production in progress | Staging is hardened and deployed. Production has independent SSH, firewall, Docker, DNS, logging, Premium VPS backup, and private Object Storage preparation; database backup restoration and production release controls remain. Separate runbooks prevent environment-specific credentials and procedures from being mixed. |
 
 The application uses an Angular 19 frontend, a Spring Boot 3 / Java 21 backend, PostgreSQL with the pgvector image, and Spring AI with OpenAI.
 

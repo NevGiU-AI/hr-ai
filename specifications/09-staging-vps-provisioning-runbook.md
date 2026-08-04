@@ -1,83 +1,33 @@
-# OVHcloud VPS Provisioning Runbook
+# Staging VPS Provisioning and Operations Runbook
 
 ## Purpose
 
-Provide a repeatable, security-conscious procedure for preparing the HR AI staging and production VPSs before GitHub Actions performs automated deployments.
+Provide the detailed, validated procedure for provisioning, securing, deploying, testing, operating, and troubleshooting the HR AI staging VPS. This environment validates every passing `main` revision before any production release.
 
-This runbook records the staging procedure validated in August 2026. Use the same sequence for production, changing only environment-specific hosts, keys, credentials, and policy choices.
+## Staging inventory
 
-## Infrastructure inventory
-
-Public IP addresses and DNS records are not credentials. Private SSH keys, passwords, API keys, recovery codes, and real environment files must never be added to this document or committed to Git.
-
-| Environment | OVHcloud VPS | Operating system | Public IP | Status |
-| --- | --- | --- | --- | --- |
-| Staging | VPS-2 | Ubuntu Server 26.04 LTS | `141.94.33.197` | Provisioned and manually deployed |
-| Production | VPS-2 | Ubuntu Server 26.04 LTS | `141.94.94.198` | Provisioned; configuration pending |
-
-VPS-2 was selected as the initial size because its 4 vCores, 8 GB RAM, and NVMe storage provide a reasonable baseline for PostgreSQL, Spring Boot, Nginx, Caddy, Docker, and lightweight monitoring.
-
-## DNS inventory
-
-The `nevgiuai.com` domain is registered and authoritatively served through Squarespace DNS. It is not managed by OVHcloud DNS.
-
-Authoritative nameservers at the time of setup:
-
-```text
-nsa1.squarespacedns.com
-nsa2.squarespacedns.com
-nsa3.squarespacedns.com
-nsa4.squarespacedns.com
-```
-
-| Environment | Type | Squarespace host | Fully qualified name | Target | Status |
-| --- | --- | --- | --- | --- | --- |
-| Staging frontend | A | `staging-hr` | `staging-hr.nevgiuai.com` | `141.94.33.197` | Configured |
-| Staging API | A | `staging-api.hr` | `staging-api.hr.nevgiuai.com` | `141.94.33.197` | Configured |
-| Production frontend | A | `hr` | `hr.nevgiuai.com` | `141.94.94.198` | Pending |
-| Production API | A | `api.hr` | `api.hr.nevgiuai.com` | `141.94.94.198` | Pending |
-
-Use TTL `300` seconds during initial setup, migration, and troubleshooting. A five-minute cache lifetime makes incorrect VPS addresses faster to correct. After DNS resolution, HTTPS, automated deployment, and functional checks are stable, increase it to `3600` seconds to reduce DNS queries and cache churn.
-
-Before a planned VPS IP change, lower a stable `3600`-second TTL back to `300` at least one hour before updating the A record. This gives records cached under the old TTL time to expire. Restore `3600` only after the new address and HTTPS endpoints are verified. TTL is a cache instruction and does not guarantee an exact global propagation time.
-
-Do not change existing Google Workspace MX or TXT records when adding application hosts.
-
-## Account model
-
-Each VPS uses two Linux accounts:
-
-| User | Purpose |
+| Item | Value |
 | --- | --- |
-| `ubuntu` | Human administration, package updates, firewall, SSH policy, and recovery |
-| `deploy` | Application deployment through Docker and GitHub Actions |
+| OVHcloud plan | VPS-2 |
+| Operating system | Ubuntu Server 26.04 LTS |
+| Public IP | `141.94.33.197` |
+| Frontend | `https://staging-hr.nevgiuai.com` |
+| Backend API | `https://staging-api.hr.nevgiuai.com` |
+| Initial administrator | `ubuntu` |
+| Deployment account | `deploy` |
+| VPS backup | OVHcloud Standard; one daily restore point retained for 24 hours |
 
-Direct root SSH login and password-based SSH login are disabled after key access is verified.
+The domain is authoritatively served by Squarespace DNS. Keep setup TTL at `300` seconds until validation is stable, then use `3600`. Do not modify Google Workspace MX or TXT records.
 
-The `deploy` account is a member of the `docker` group. Docker group membership is effectively root-equivalent, so its SSH key must be treated as a privileged deployment credential. Staging and production require different key pairs.
+## Staging-specific rules
 
-## Secret-handling rules
-
-- Store real runtime credentials only in `/opt/nevgiu/deploy/.env` on the corresponding VPS.
-- Keep `deploy/.env.example` safe to commit by leaving secret values empty.
-- Never copy real values into `.env.example`, Markdown, issue comments, workflow YAML, screenshots, or terminal transcripts.
-- Never send private SSH keys, OpenAI API keys, PostgreSQL passwords, or recovery credentials through chat.
-- Keep staging and production credentials separate.
-- Store only deployment transport credentials in GitHub environments. The deployment workflow does not need the application OpenAI or PostgreSQL secrets.
-- Revoke and rotate a credential immediately if it appears in a tracked file or unexpected output, even when GitHub Push Protection blocks the push.
-
-## Backup selection
-
-OVHcloud Standard automatic backup is included and retains one daily VPS backup for 24 hours.
-
-Recommended policy:
-
-- Staging: Standard backup is sufficient during initial development.
-- Production: upgrade to Premium before storing real candidate data to retain seven rolling daily restore points.
-- Both environments: add encrypted, application-aware PostgreSQL backups stored outside the VPS and preferably outside the same data centre/account.
-- Before risky releases: take a manual snapshot after confirming the snapshot policy and cost.
-
-Provider backups do not replace tested PostgreSQL restore procedures.
+- Use staging-only SSH keys, OpenAI credentials, PostgreSQL credentials, GitHub environment secrets, and container image aliases.
+- Real candidate data is prohibited; staging uses synthetic or approved test data only.
+- Store runtime secrets only in `/opt/nevgiu/deploy/.env`, owned by `deploy` with mode `600`.
+- The GitHub `staging` environment deploys immutable images after CI passes on `main`.
+- `deploy` belongs to the root-equivalent `docker` group; protect and rotate its key accordingly.
+- OVHcloud Standard backup is an infrastructure recovery layer, not a replacement for database-aware backup testing.
+- Expose only SSH, HTTP, and HTTPS through UFW. PostgreSQL and backend container ports remain private.
 
 ## Staging procedure
 
@@ -200,13 +150,22 @@ printf '%s\n' \
   'PasswordAuthentication no' \
   'KbdInteractiveAuthentication no' \
   'PermitRootLogin no' \
-  | sudo tee /etc/ssh/sshd_config.d/99-nevgiu-hardening.conf
+  'PubkeyAuthentication yes' \
+  | sudo tee /etc/ssh/sshd_config.d/00-nevgiu-hardening.conf
 
 sudo sshd -t
 sudo systemctl reload ssh
 ```
 
-Keep the current session open and test a new key-based connection. If `sshd -t` fails, do not reload SSH; correct the reported configuration error first.
+OpenSSH uses the first obtained value for each setting. The `00-` prefix ensures this file is evaluated before Ubuntu cloud-init files such as `50-cloud-init.conf`, which may explicitly enable password authentication. A later `99-` file does not reliably override an earlier value.
+
+Verify the effective configuration rather than assuming the file was applied:
+
+```bash
+sudo sshd -T | grep -E 'passwordauthentication|kbdinteractiveauthentication|permitrootlogin|pubkeyauthentication'
+```
+
+Keep the current session open and test new key-based connections for both accounts. If `sshd -t` fails, do not reload SSH; correct the reported configuration error first. Staging was initially configured with a `99-` file and its audit found `passwordauthentication yes`. The file was migrated to `00-nevgiu-hardening.conf`; all four effective settings then matched the expected secure values. Fresh `ubuntu` and `deploy` key sessions succeeded, and a password-only attempt was rejected with `Permission denied (publickey)`.
 
 ### 7. Prepare the application directory
 
@@ -571,49 +530,16 @@ This does not restore PostgreSQL data or schema, `.env`, Compose or Caddy config
 
 Before enabling production releases, extend and test rollback so public smoke-test failures and recoverable pre-health failures restore the previous compatible application and configuration, then verify both internal health and external HTTPS. Database restoration must remain a separate, explicitly approved recovery operation.
 
-## Production checklist
-
-Repeat the staging procedure with these changes:
-
-- [ ] Use public IP `141.94.94.198`.
-- [ ] Set hostname `nevgiu-hr-production`.
-- [ ] Generate a separate production deployment SSH key.
-- [ ] Do not copy staging private keys or credentials.
-- [ ] Create Squarespace A records `hr` and `api.hr` targeting the production IP.
-- [ ] Verify `hr.nevgiuai.com` and `api.hr.nevgiuai.com` resolve correctly.
-- [ ] Use production-only OpenAI and PostgreSQL credentials.
-- [ ] Set `FRONTEND_HOST=hr.nevgiuai.com`.
-- [ ] Set `API_HOST=api.hr.nevgiuai.com`.
-- [ ] Set `FRONTEND_URL=https://hr.nevgiuai.com`.
-- [ ] Set `INITIAL_IMPORT_ENABLED=false`.
-- [ ] Upgrade the OVHcloud production backup to Premium before real candidate data.
-- [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
-- [ ] Configure the GitHub `production` environment with separate variables and secrets.
-- [ ] Require production deployment approval where supported.
-- [ ] Verify public HTTPS smoke-test failure automatically restores the previous production images.
-- [ ] Verify recoverable Compose validation, pull, and startup failures enter the rollback path.
-- [ ] Version and restore compatible Compose and Caddy configuration during rollback.
-- [ ] Run a controlled staging rollback drill before enabling the production release workflow.
-- [ ] Configure Docker and system log rotation with documented disk limits.
-- [ ] Configure restricted, encrypted off-server production log collection and retention.
-- [ ] Verify logs exclude CV text, prompts, credentials, tokens, and unnecessary personal data before accepting real candidates.
-- [ ] Document who may access or export production logs and how incident extracts are redacted.
-- [ ] Do not perform the first production deployment until a release commit has a successful staging-validation image alias.
-- [ ] Run production-safe HTTPS and read-only smoke tests after deployment.
-
 ## Completion criteria
 
-A VPS is ready for GitHub Actions only when:
+Staging is ready for automated validation only when:
 
-- Key-only SSH works for `deploy`.
-- Administrative recovery access works for `ubuntu`.
-- Password and root SSH login are disabled.
+- Key-only SSH works for both `ubuntu` and `deploy`, while password and root login are disabled.
 - UFW exposes only SSH, HTTP, and HTTPS.
 - Docker and Compose work for `deploy` without `sudo`.
-- `/opt/nevgiu/deploy/.env` exists, belongs to `deploy`, has mode 600, and contains only that environment's credentials.
-- PostgreSQL and backend ports are not public.
-- Both DNS names resolve to the correct VPS.
-- Caddy serves valid HTTPS.
-- Database, backend, and frontend are healthy; Caddy is running.
-- Functional smoke tests pass and persistence survives a container restart.
-- GitHub environment host, SSH, known-host, and GHCR pull credentials are configured separately for that environment.
+- The staging `.env` has mode `600` and contains only staging credentials.
+- Both staging DNS names serve valid HTTPS.
+- Database, backend, frontend, and Caddy health checks pass.
+- Functional smoke tests and persistence checks pass with non-production data.
+- The GitHub `staging` environment holds separate deployment credentials.
+

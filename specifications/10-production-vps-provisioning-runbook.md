@@ -556,7 +556,7 @@ Selected bucket safeguards:
 - Private visibility; anonymous or public access is prohibited.
 - Version management enabled to recover from accidental replacement or deletion.
 - Object Lock enabled when the bucket is created because it cannot be added later.
-- Governance retention targeted at seven days; do not use Compliance mode without an approved legal and data-retention requirement.
+- Governance retention confirmed at seven days through the authenticated S3 API; do not use Compliance mode without an approved legal and data-retention requirement.
 - No Legal Hold by default.
 - Lifecycle rules will remove expired current versions, non-current versions, and delete markers according to the approved candidate-data retention policy.
 
@@ -570,21 +570,114 @@ Validated Control Panel state on 2026-08-04:
 - Version management: enabled.
 - Object Lock: enabled.
 - Default mode: Governance.
-- The Control Panel incorrectly changed a selected seven-day duration to one year and did not allow an unconfigured default. The bucket remains empty. Do not upload backups until an authenticated S3 API call replaces the bucket default with `Days: 7` and a follow-up read verifies the effective configuration.
+- The Control Panel displayed one year after seven days was selected, but an authenticated `get-object-lock-configuration` call through the S3 endpoint confirmed the effective default is `GOVERNANCE` with `Days: 7`. The discrepancy was a Control Panel display bug; the API result is authoritative.
 
-Create a dedicated Object Storage service user named `hr-production-backup` with the `ObjectStore Operator` role. Do not reuse the OVHcloud administrator, a personal identity, or staging credentials. After bucket creation, restrict this identity to only the production backup bucket using an OVHcloud IAM user policy or bucket policy; the initial project-wide operator role is broader than the steady-state requirement.
+The reproducible Control Panel path is:
 
-The generated access key and secret access key are production credentials. Save them immediately in the approved password manager because the secret may only be displayed once. Never place them in Git, Markdown, screenshots, terminal transcripts, chat, Compose output, or GitHub Actions. They will be installed in a root-readable credential file on the production VPS and used only by the database backup process.
+1. Open `Public Cloud` and select the dedicated `NevGiU AI Production Backups` project.
+2. Open `Storage` > `Object Storage`.
+3. Create the private S3-compatible container `nevgiu-hr-production-db-backups` in Gravelines (`GRA`) using Standard storage.
+4. Enable version management and Object Lock during creation; Object Lock cannot be added later.
+5. Select Governance mode and seven days. Do not select Compliance or Legal Hold.
+6. After creation, use the authenticated S3 API—not the displayed duration alone—to verify the effective configuration.
+
+The project home page also displays tiles for instances, Kubernetes, block storage, networks, and databases. Labels such as `Create an instance` are service shortcuts, not evidence that those resources exist. Keep this project dedicated to production backups.
+
+The bucket lives in the dedicated Public Cloud project `NevGiU AI Production Backups`. The project contains no unrelated resources; the service tiles on its home page are creation shortcuts rather than running instances, databases, networks, or volumes.
+
+Two Object Storage identities separate administration from unattended upload:
+
+| Identity | Effective purpose | Credential location |
+| --- | --- | --- |
+| `hr-production-backup` / `user-DhAjQNmpDxX7` | Bucket owner, retention administration, and controlled recovery | Approved password manager and an administrator's local AWS CLI profile only |
+| `hr-production-backup-writer` | Automated production backup uploads | Approved password manager initially; later a root-readable production VPS credential file |
+
+The owner description cannot be renamed in the Control Panel. Treat it operationally as the backup administrator and never install its credentials on the VPS. The writer was created separately, enabled for S3 in `Object Storage` > `Users`, and assigned an imported S3 user policy limited to:
+
+- `s3:GetBucketLocation`, `s3:ListBucket`, and `s3:ListBucketMultipartUploads` on `arn:aws:s3:::nevgiu-hr-production-db-backups`.
+- `s3:PutObject`, `s3:AbortMultipartUpload`, and `s3:ListMultipartUploadParts` on `arn:aws:s3:::nevgiu-hr-production-db-backups/*`.
+
+The writer policy deliberately excludes object download and deletion, ACL changes, retention changes, and bucket administration. A local writer profile successfully completed `head-bucket`, while `get-object-lock-configuration` returned the expected `AccessDenied`. This proves required bucket access and rejected retention administration. Keep the dedicated project free of unrelated resources as an additional isolation boundary.
+
+In the current Control Panel, create project identities under `Project management` > `Users & Roles`. S3 enablement, credentials, and JSON policies are managed separately under `Storage` > `Object Storage` > `Users`. A project user initially shows `S3 disabled`; enable S3 there before retrieving its access key and secret key. Import the following policy into the writer only, never the bucket owner:
+
+```json
+{
+  "Statement": [
+    {
+      "Sid": "ListProductionBackupBucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketLocation",
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads"
+      ],
+      "Resource": [
+        "arn:aws:s3:::nevgiu-hr-production-db-backups"
+      ]
+    },
+    {
+      "Sid": "UploadProductionBackups",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Resource": [
+        "arn:aws:s3:::nevgiu-hr-production-db-backups/*"
+      ]
+    }
+  ]
+}
+```
+
+The owner was configured locally as `nevgiu-hr-production-backup`. The writer uses a distinct profile:
+
+```powershell
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2-User.msi
+
+aws configure --profile nevgiu-hr-production-backup-writer
+```
+
+For each profile, enter the corresponding access key and secret key interactively, region `gra`, and output format `json`. Never place credentials directly in a command because shell history may retain them. Verify the writer's allowed operation:
+
+```powershell
+aws s3api head-bucket `
+  --bucket nevgiu-hr-production-db-backups `
+  --endpoint-url https://s3.gra.io.cloud.ovh.net `
+  --profile nevgiu-hr-production-backup-writer
+```
+
+Success produces no output. Verify rejected administration:
+
+```powershell
+aws s3api get-object-lock-configuration `
+  --bucket nevgiu-hr-production-db-backups `
+  --endpoint-url https://s3.gra.io.cloud.ovh.net `
+  --profile nevgiu-hr-production-backup-writer
+```
+
+Expected: `AccessDenied`. Use the offline owner profile for controlled retention inspection:
+
+```powershell
+aws s3api get-object-lock-configuration `
+  --bucket nevgiu-hr-production-db-backups `
+  --endpoint-url https://s3.gra.io.cloud.ovh.net `
+  --profile nevgiu-hr-production-backup
+```
+
+The effective output must contain `ObjectLockEnabled`, mode `GOVERNANCE`, and `Days: 7`.
+
+Both access-key pairs are production credentials. Save them in the approved password manager because a secret may only be displayed once. Never place them in Git, Markdown, screenshots, terminal transcripts, chat, Compose output, or GitHub Actions.
 
 Provisioning this bucket does not complete backup readiness. Before production receives real candidate data, the remaining work is to:
 
-1. Replace the erroneous one-year Control Panel default with seven-day Governance retention through the S3 API and verify it before uploading any object.
-2. Restrict the service user to that bucket.
-3. Generate and protect a client-side encryption recovery key.
-4. Install an application-consistent PostgreSQL dump and encrypted upload script.
-5. Schedule it and monitor failures.
-6. Configure lifecycle retention.
-7. Restore a backup into an isolated PostgreSQL instance and record the result.
+1. Generate and protect a client-side encryption recovery key.
+2. Install an application-consistent PostgreSQL dump and encrypted upload script.
+3. Schedule it and monitor failures.
+4. Configure lifecycle retention.
+5. Restore a backup into an isolated PostgreSQL instance and record the result.
 
 Official references:
 
@@ -592,7 +685,212 @@ Official references:
 - [OVHcloud Object Storage versioning guide](https://help.ovhcloud.com/csm/es-public-cloud-storage-s3-versioning?id=kb_article_view&sysparm_article=KB0063862)
 - [OVHcloud Object Storage lifecycle guide](https://help.ovhcloud.com/csm/en-public-cloud-storage-s3-bucket-lifecycle?id=kb_article_view&sysparm_article=KB0066009)
 
-The next production step is verifying bucket configuration and securely connecting the production VPS before GitHub production deployment is enabled.
+### 18. Generate and install the client-side encryption recipient
+
+Use `age` for client-side backup encryption. Generate the recovery identity on the administrator workstation, protect it with a strong passphrase, and store both the encrypted identity file and its passphrase in approved recovery storage. Never copy the private identity or recovery passphrase to the VPS, Object Storage, Git, GitHub Actions, documentation, or chat.
+
+Install the official Windows package and reopen PowerShell so `PATH` refreshes:
+
+```powershell
+winget install --id FiloSottile.age --exact
+age --version
+age-keygen --version
+```
+
+Validated local version: `1.3.1`. Generate the identity as an encrypted stream so an unencrypted private identity is never written to disk:
+
+```powershell
+$recoveryDir = Join-Path $env:USERPROFILE "Documents\NevGiU-Recovery"
+New-Item -ItemType Directory -Force -Path $recoveryDir
+
+age-keygen |
+  age --passphrase --output "$recoveryDir\hr-production-backup-identity.age"
+```
+
+Enter a strong, unique passphrase interactively and store it separately in the approved password manager. Attach a protected copy of the encrypted identity file to the recovery record or retain another approved offline copy. Losing the encrypted file or its passphrase without a second protected copy makes all backups encrypted to this identity unrecoverable.
+
+Derive the public recipient without writing an unencrypted private identity to disk:
+
+```powershell
+age --decrypt "$recoveryDir\hr-production-backup-identity.age" |
+  age-keygen -y |
+  Set-Content -Encoding ascii "$recoveryDir\hr-production-backup-recipient.txt"
+
+$recipient = (Get-Content "$recoveryDir\hr-production-backup-recipient.txt" -Raw).Trim()
+
+if ($recipient -match '^age1[0-9a-z]+$') {
+    "Valid age recipient"
+} else {
+    "Invalid recipient - stop"
+}
+```
+
+Expected: `Valid age recipient`. The decryption passphrase unlocks only the local encrypted recovery identity; do not confuse it with either production SSH-key passphrase.
+
+The validated local artifacts are:
+
+```text
+hr-production-backup-identity.age   passphrase-encrypted private recovery identity
+hr-production-backup-recipient.txt public recipient used only for encryption
+```
+
+Only the public recipient was copied with the passphrase-protected production administrative SSH key. It was installed on the production VPS as:
+
+```text
+root:root 644 /etc/nevgiu/backup-recipient.txt
+```
+
+Transfer only the public recipient from local PowerShell:
+
+```powershell
+scp -i "$env:USERPROFILE\.ssh\nevgiu_hr_production_admin" `
+  "$recoveryDir\hr-production-backup-recipient.txt" `
+  ubuntu@141.94.94.198:/tmp/hr-production-backup-recipient.txt
+```
+
+The prompt here requests the production administrative SSH-key passphrase, not the `age` recovery passphrase. Install the public recipient on the VPS as `ubuntu`:
+
+```bash
+sudo install -d -m 700 -o root -g root /etc/nevgiu
+sudo install -m 644 -o root -g root \
+  /tmp/hr-production-backup-recipient.txt \
+  /etc/nevgiu/backup-recipient.txt
+rm /tmp/hr-production-backup-recipient.txt
+```
+
+PowerShell wrote the public recipient using a Windows CRLF line ending. The initial Linux regular-expression validation therefore produced no success message. The public file was normalized safely on the VPS:
+
+```bash
+sudo sed -i 's/\r$//' /etc/nevgiu/backup-recipient.txt
+```
+
+Validation then passed:
+
+```bash
+sudo grep -Eq '^age1[0-9a-z]+$' /etc/nevgiu/backup-recipient.txt \
+  && echo "Production backup recipient is valid"
+sudo stat -c '%U:%G %a %n' /etc/nevgiu/backup-recipient.txt
+```
+
+The public recipient can encrypt new backups but cannot decrypt existing backups. Recovery requires both the separately stored encrypted private identity and its passphrase. Losing either recovery component without another protected copy would make every encrypted database backup unrecoverable.
+
+### 19. Install backup tools and the root-only writer profile
+
+Install the encryption and S3 clients from Ubuntu packages:
+
+```bash
+sudo apt update
+sudo apt install -y age awscli
+age --version
+aws --version
+```
+
+Validated production versions:
+
+```text
+age 1.2.1
+aws-cli 2.31.35
+```
+
+The scheduled service runs as root because it must access the Docker API, the Compose-managed PostgreSQL container, the protected recipient file, and root-only Object Storage credentials. Configure only the upload-only writer profile under `/root/.aws`; never install the bucket-owner credentials on the VPS:
+
+```bash
+sudo install -d -m 700 -o root -g root /root/.aws
+sudo aws configure --profile nevgiu-hr-production-backup-writer
+sudo chmod 600 /root/.aws/credentials /root/.aws/config
+```
+
+Validated permissions:
+
+```text
+root:root 600 /root/.aws/credentials
+root:root 600 /root/.aws/config
+```
+
+The root profile successfully completed `head-bucket` against `https://s3.gra.io.cloud.ovh.net`. Its `get-object-lock-configuration` request returned the expected `AccessDenied`, proving the unattended VPS identity can reach the bucket but cannot administer retention.
+
+### 20. Install the tracked streaming backup service
+
+The repository contains:
+
+```text
+deploy/backup-postgres.sh
+deploy/systemd/nevgiu-postgres-backup.service
+deploy/systemd/nevgiu-postgres-backup.timer
+```
+
+The script verifies the Compose database is healthy, streams a custom-format compressed `pg_dump` directly into `age`, writes only the temporary encrypted artifact and its SHA-256 checksum, uploads both with the writer profile, and removes its temporary files on every exit path. No plaintext database dump is written to disk.
+
+From local PowerShell at the current repository root, copy the three tracked files to `/tmp` with the production administrative SSH key:
+
+```powershell
+scp -i "$env:USERPROFILE\.ssh\nevgiu_hr_production_admin" `
+  "deploy/backup-postgres.sh" `
+  "deploy/systemd/nevgiu-postgres-backup.service" `
+  "deploy/systemd/nevgiu-postgres-backup.timer" `
+  ubuntu@141.94.94.198:/tmp/
+```
+
+Install the script outside the deployment-writable directory so the root service never executes a mutable file from `/opt/nevgiu/deploy`:
+
+```bash
+sudo install -m 750 -o root -g root \
+  /tmp/backup-postgres.sh \
+  /usr/local/sbin/nevgiu-postgres-backup
+
+sudo install -m 644 -o root -g root \
+  /tmp/nevgiu-postgres-backup.service \
+  /etc/systemd/system/nevgiu-postgres-backup.service
+
+sudo install -m 644 -o root -g root \
+  /tmp/nevgiu-postgres-backup.timer \
+  /etc/systemd/system/nevgiu-postgres-backup.timer
+
+rm \
+  /tmp/backup-postgres.sh \
+  /tmp/nevgiu-postgres-backup.service \
+  /tmp/nevgiu-postgres-backup.timer
+
+sudo systemctl daemon-reload
+sudo systemd-analyze verify \
+  /etc/systemd/system/nevgiu-postgres-backup.service \
+  /etc/systemd/system/nevgiu-postgres-backup.timer
+```
+
+Expected permissions:
+
+```text
+root:root 750 /usr/local/sbin/nevgiu-postgres-backup
+root:root 644 /etc/systemd/system/nevgiu-postgres-backup.service
+root:root 644 /etc/systemd/system/nevgiu-postgres-backup.timer
+```
+
+The timer targets 02:30 UTC daily, adds up to thirty minutes of randomized delay, and uses `Persistent=true` so a missed run occurs after the VPS returns. Do not enable or start it until the production Compose stack exists, `.images.env` has been generated, a manual encrypted upload succeeds, and an isolated restoration test proves recoverability.
+
+The next production step is installing and verifying these tracked service files without enabling the timer.
+
+### 21. Credential and recovery-key rotation boundaries
+
+Writer credential rotation must preserve service continuity without ever installing owner credentials on the VPS:
+
+1. Generate replacement S3 credentials for the upload-only writer through the Object Storage `Users` interface and store them in the password manager.
+2. Configure a temporary local AWS CLI profile and repeat both the allowed `head-bucket` test and denied Object Lock administration test.
+3. Replace `/root/.aws/credentials` through an interactive root-owned configuration step without printing either key.
+4. Run a manual encrypted backup and confirm upload success.
+5. Revoke the previous writer credentials only after the new credentials pass validation.
+6. Record the rotation date and operator without recording secret values.
+
+If OVHcloud regenerates rather than adds credentials, arrange a controlled backup window because regeneration may revoke the existing pair immediately. Never rotate the bucket owner and writer simultaneously.
+
+Recovery-identity rotation is different: changing the public recipient does not make old backups decryptable with the new identity. Before rotating it:
+
+1. Confirm the old encrypted identity and passphrase remain recoverable for every retained old backup.
+2. Generate and protect a new encrypted identity using the same no-plaintext procedure.
+3. Install only its public recipient on the VPS.
+4. Run and restore-test a new backup.
+5. Keep the old recovery identity until every backup encrypted to it has expired and been deleted according to policy.
+
+The precise lifecycle policy, manual backup verification, Object Lock inspection on uploaded objects, isolated restore procedure, monitoring, and timer activation remain pending. Add their validated commands and results to this runbook as those steps are performed; do not mark backup readiness complete merely because the script and timer files exist.
 
 ## Production checklist
 
@@ -618,8 +916,15 @@ Repeat the staging procedure with these changes:
 - [x] Confirm OVHcloud Premium automated backup is active in the Control Panel.
 - [ ] Verify daily restore points begin appearing in the OVHcloud Control Panel.
 - [x] Verify the private `GRA` backup bucket endpoint, versioning, and Object Lock settings.
-- [ ] Replace the erroneous one-year Governance default with seven days through the S3 API and verify the result before uploading data.
-- [ ] Restrict the `hr-production-backup` service user to the production backup bucket.
+- [x] Verify through the authenticated S3 API that the effective Object Lock default is seven days in Governance mode.
+- [x] Separate the offline bucket-owner identity from the unattended upload-only writer identity.
+- [x] Import and verify the writer policy: bucket access succeeds and Object Lock administration is denied.
+- [x] Generate and protect the encrypted client-side recovery identity off-server.
+- [x] Install and validate only the public `age` recipient on the production VPS.
+- [x] Install `age` and AWS CLI and verify their production versions.
+- [x] Install the upload-only writer credentials as a root-only AWS profile and recheck allowed and denied operations.
+- [ ] Install and validate the root-owned streaming backup script and systemd units without enabling the timer.
+- [ ] Run a manual encrypted backup, verify Object Lock, and restore it in isolation before enabling the timer.
 - [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
 - [ ] Configure the GitHub `production` environment with separate variables and secrets.
 - [ ] Require production deployment approval where supported.

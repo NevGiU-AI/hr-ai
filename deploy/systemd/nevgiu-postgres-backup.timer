@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the NevGiU HR AI PostgreSQL backup daily
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+RandomizedDelaySec=30m
+Persistent=true
+Unit=nevgiu-postgres-backup.service
+
+[Install]
+WantedBy=timers.target

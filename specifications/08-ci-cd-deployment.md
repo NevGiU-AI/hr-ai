@@ -401,9 +401,10 @@ The production VPS uses OVHcloud Premium automated backup, ordered and confirmed
 Minimum policy:
 
 - Run an encrypted daily `pg_dump` or equivalent PostgreSQL backup.
+- Encrypt each dump on the VPS with the public `age` recipient before upload. Keep the passphrase-encrypted recovery identity and its passphrase off-server in approved recovery storage.
 - Keep backups outside the application VPS and preferably in a separate account or object-storage service. Production uses a private S3-compatible bucket in OVHcloud `GRA`, separate from the `RBX` production VPS.
-- Enable versioning and Object Lock with a seven-day Governance retention target; do not use Compliance mode or Legal Hold by default because candidate-data deletion obligations must remain enforceable. The OVHcloud Control Panel incorrectly saved one year during setup, so the bucket must remain empty until the S3 API replaces and verifies the default as seven days.
-- Use a dedicated service identity restricted to the production backup bucket; never use personal, administrative, staging, or application credentials.
+- Enable versioning and Object Lock with seven-day Governance retention; do not use Compliance mode or Legal Hold by default because candidate-data deletion obligations must remain enforceable. The OVHcloud Control Panel displayed one year during setup, but an authenticated S3 API read confirmed the effective default is seven days; operational checks must trust and record the API result.
+- Keep the bucket in the dedicated `NevGiU AI Production Backups` project. Retain bucket-owner credentials only for controlled administration and recovery, and install only the separately verified upload-only writer identity on the VPS; never use personal, staging, or application credentials.
 - Define retention tiers, for example seven daily, four weekly, and three monthly copies, subject to candidate-data retention policy.
 - Record and alert on backup success or failure.
 - Test restoration regularly on an isolated environment.

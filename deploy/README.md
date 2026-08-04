@@ -9,6 +9,10 @@ Use the environment-specific runbook for initial OVHcloud provisioning, SSH hard
 
 Never copy an environment file, SSH key, API key, database password, backup credential, or GitHub environment secret from one procedure to the other.
 
+Production database backups use `backup-postgres.sh` with the accompanying units in `systemd/`. Install the script root-owned as `/usr/local/sbin/nevgiu-postgres-backup`; do not execute a root service from a deployment-writable path. The service streams a custom-format `pg_dump` directly into `age`, uploads only the encrypted artifact and its SHA-256 checksum to private Object Storage, and removes its temporary encrypted files on exit. It requires the production `.env`, generated `.images.env`, root-only AWS writer profile, and `/etc/nevgiu/backup-recipient.txt`; the private recovery identity must never exist on the VPS.
+
+The timer is intentionally installed but left disabled during provisioning. Enable it only after the production stack exists, a manual encrypted upload succeeds, Object Lock is verified on the uploaded object, and an isolated restore succeeds. Its daily schedule is 02:30 UTC with up to thirty minutes of randomized delay and persistent catch-up after downtime.
+
 `deploy/compose.yml` is the only production-capable Compose definition. The root `docker-compose.yml` is exclusively for local development. There is intentionally no `docker-compose.prod.yml`; maintaining a second production definition would allow security, networking, health checks, and rollback behavior to drift from the deployment tested by CI/CD.
 
 ## Domain mapping

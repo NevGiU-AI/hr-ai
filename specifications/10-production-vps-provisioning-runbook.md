@@ -987,8 +987,8 @@ Repeat the staging procedure with these changes:
 - [x] Configure and read back thirty-day lifecycle retention for encrypted PostgreSQL backups.
 - [ ] Run a manual encrypted backup, verify Object Lock, and restore it in isolation before enabling the timer.
 - [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
-- [ ] Configure the GitHub `production` environment with separate variables and secrets.
-- [ ] Require production deployment approval where supported.
+- [x] Configure the GitHub `production` environment with separate variables and secrets.
+- [x] Require production deployment approval where supported.
 - [x] Configure public HTTPS smoke-test failure to restore the previous application images and verify the restored public endpoints.
 - [x] Validate Compose and pull candidate application images before changing the active manifest; route initial startup failure through image rollback.
 - [ ] Version and restore compatible Compose and Caddy configuration during rollback.

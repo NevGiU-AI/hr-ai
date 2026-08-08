@@ -20,11 +20,13 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 1. Confirm the unresolved product and scoring decisions.
 2. Harden the implemented job-offer workflow and complete its production controls.
 3. Extend the implemented CV ingestion and evaluation workflow with review, governance, and reproducibility features.
-4. Add vector indexing and conversational candidate search.
-5. Build dashboard APIs and UI from persisted recruitment data.
-6. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
-7. Add the selected messaging integration after the web chat and documented backend APIs are stable.
-8. Validate security, privacy, AI quality, performance, and usability before release.
+4. Add governed OCR fallback, vector indexing, and evidence-backed candidate search.
+5. Extend secure CV chat with editable speech-to-text input and optional text-to-speech playback.
+6. Build dashboard APIs and UI from persisted recruitment data.
+7. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
+8. Add the selected messaging integration after the web chat and documented backend APIs are stable.
+9. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
+10. Validate security, privacy, AI quality, performance, accessibility, and usability before release.
 
 ## Current repository snapshot
 
@@ -33,10 +35,11 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Job-offer generation | Implemented, needs hardening | Generate, edit, approve, persist, and list are available. Direct approval, schema-constrained output, lifecycle management, and production security remain. |
 | CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, per-file results, and Angular UI. OCR, original-file storage, correction, and governance remain. |
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
-| CV database chat | Planned | pgvector is available in the database image, but vector indexing, retrieval, and conversation memory are not implemented. |
+| CV database chat | Planned | pgvector is available, but indexing, retrieval, memory, citations, editable speech input, and optional speech playback remain. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |
 | Backend Swagger/OpenAPI | Planned after dashboard | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable. |
 | External messaging | Planned | Telegram/WhatsApp choice and integration remain open. |
+| Generated media | Optional, gated | Human-reviewed employer-branding images may be evaluated after core workflows; video follows only if value is proven. Candidate imagery, synthetic interviewers, and multimodal candidate scoring are prohibited. |
 | Production security | Planned | Authentication, authorization, tenant isolation, restricted CORS, audit logging, malware scanning, and retention controls remain. |
 | CI/CD and VPS deployment | Staging implemented, production in progress | CI, immutable GHCR publication, automatic staging deployment, and staging validation are implemented. Production VPS hardening and Premium backup are complete; PostgreSQL backup restoration, production GitHub protection, rollback hardening, and release validation remain. |
 | VPS provisioning | Staging complete, production in progress | Staging is hardened and deployed. Production has independent SSH, firewall, Docker, DNS, logging, Premium VPS backup, and private Object Storage preparation; database backup restoration and production release controls remain. Separate runbooks prevent environment-specific credentials and procedures from being mixed. |

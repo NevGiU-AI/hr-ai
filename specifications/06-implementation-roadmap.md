@@ -39,7 +39,9 @@
 - [x] Implement validated per-request weight configuration in the backend API.
 - [x] Build candidate/job selection and current evaluation-result UI.
 - [ ] Store original CV binaries behind a governed storage abstraction.
-- [ ] Add OCR, metadata correction, and document reprocessing.
+- [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
+- [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
+- [ ] Add metadata correction and document reprocessing without duplicating candidates.
 - [ ] Add metric-level evidence and separate reliability confidence from candidate fit.
 - [ ] Expose approved weight configuration in the frontend.
 - [ ] Persist prompt, model, weights, source-document version, and evaluation audit history.
@@ -48,7 +50,7 @@
 
 **Exit condition:** Uploaded candidates receive explainable, reproducible, human-reviewable evaluations.
 
-## Phase 3 - Add semantic indexing and web chat
+## Phase 3 - Add semantic indexing and multimodal web chat
 
 - [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
 - [ ] Create embeddings and index CV chunks with authorization metadata.
@@ -56,8 +58,13 @@
 - [ ] Persist scoped conversation memory.
 - [ ] Build the Angular chat interface and structured result cards.
 - [ ] Add citations, clarification, injection defenses, and evaluation tests.
+- [ ] Add push-to-talk speech input with a visible, editable transcript before submission.
+- [ ] Delete raw voice input after transcription by default and document any approved retention exception.
+- [ ] Add optional text-to-speech playback with pause, speed, accessibility, and privacy controls.
+- [ ] Measure transcription accuracy, speech latency, playback usage, and modality-specific cost.
+- [ ] Prohibit voice identification, accent or fluency ranking, emotion inference, personality inference, and candidate scoring from audio.
 
-**Exit condition:** Authorized users can reliably find and compare candidates through the web chat with evidence-backed answers.
+**Exit condition:** Authorized users can reliably find and compare candidates through typed or spoken queries, with editable transcripts, evidence-backed answers, and optional accessible playback.
 
 ## Phase 4 - Build the dashboard
 
@@ -92,14 +99,28 @@ This phase starts after the dashboard is complete so the documented API includes
 - [ ] Reuse the same authorization, retrieval, and conversation services as web chat.
 - [ ] Minimize sensitive candidate data in messages and links.
 - [ ] Add provider signature validation, rate limiting, retry, and audit logging.
+- [ ] Add consent-based voice-note transcription only after web speech controls and retention behavior are validated.
 
 **Exit condition:** External chat has security and answer quality equivalent to the web channel.
 
-## Phase 7 - Release readiness
+## Phase 7 - Add optional generated media
+
+- [ ] Validate a measurable employer-branding or communication need before implementing generated media.
+- [ ] Add image generation only for human-reviewed job-post, employer-branding, or interface assets.
+- [ ] Require accessibility text, moderation, brand controls, provenance, and clear AI-generated-content labeling.
+- [ ] Prohibit candidate-photo generation or alteration and prohibit candidate assessment from images or appearance.
+- [ ] Keep video generation behind a separate product and compliance gate after image-generation value is proven.
+- [ ] Limit approved video use to human-reviewed job explainers, employer branding, recruiter training, or onboarding.
+- [ ] Require captions, transcripts, provenance, moderation, disclosure, retention limits, and cost controls for generated video.
+- [ ] Prohibit synthetic interviewers and candidate scoring from face, gesture, attention, emotion, appearance, or behavior.
+
+**Exit condition:** Optional generated media has a validated communication benefit, is clearly disclosed, and remains completely outside candidate evaluation and ranking.
+
+## Phase 8 - Release readiness
 
 - [ ] Run full unit, integration, end-to-end, performance, and security test suites.
 - [ ] Verify backup, restore, retention, deletion, and incident procedures.
-- [ ] Add model, token, latency, error, retrieval-quality, and cost monitoring.
+- [ ] Add model, token, latency, error, retrieval-quality, transcription-quality, media, and cost monitoring.
 - [ ] Conduct recruiter acceptance testing with representative workflows.
 - [ ] Document deployment, rollback, support, and model-change procedures.
 

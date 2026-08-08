@@ -19,6 +19,7 @@ Allow authenticated HR users to retrieve, summarize, filter, and compare indexed
 Inputs:
 
 - Natural-language query
+- Optional push-to-talk audio that is transcribed into a visible, editable query
 - Authenticated user and organization identifier
 - Conversation/session identifier
 - Authorized conversation history
@@ -33,6 +34,7 @@ Outputs:
 - Evidence references supporting the answer
 - Updated conversation state
 - Clarification, empty-result, or error response when appropriate
+- Optional synthetic speech generated from the same authorized answer shown on screen
 
 ## Implementation steps
 
@@ -49,7 +51,12 @@ Outputs:
 11. Protect against prompt injection in CV content and user queries.
 12. Add authorization tests proving users cannot retrieve another organization’s candidates.
 13. Evaluate retrieval precision, answer faithfulness, latency, and token cost against a fixed test set.
-14. Add the selected external messaging channel only after web-chat acceptance criteria pass.
+14. Add push-to-talk speech-to-text as an input adapter around the same authorized chat service.
+15. Display the transcript for correction and delete raw audio after transcription by default.
+16. Add optional text-to-speech playback without removing candidate cards, citations, or visual review.
+17. Add pause, resume, speed, language, accessibility, and sensitive-content playback controls.
+18. Measure transcription accuracy, voice latency, playback usage, and cost without profiling the speaker.
+19. Add the selected external messaging channel only after web-chat acceptance criteria pass.
 
 ## Acceptance criteria
 
@@ -60,3 +67,7 @@ Outputs:
 - Ambiguous questions trigger clarification instead of guessed answers.
 - No-result and service-failure states are explicit and actionable.
 - CV prompt injection cannot override system policy or expose unrelated records.
+- Spoken queries produce an editable transcript before submission and follow the same authorization path as typed queries.
+- Raw query audio is not retained by default, and retention exceptions require explicit policy and consent.
+- Text-to-speech is optional, visibly synthetic, and never reads sensitive candidate details automatically.
+- Voice characteristics are never used for identity, emotion, personality, accent, fluency, or candidate-fit scoring.

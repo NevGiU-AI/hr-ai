@@ -81,3 +81,15 @@ Define:
 - Ground-truth datasets for CV metric evaluation.
 - Retrieval precision and answer-faithfulness thresholds.
 - Owners and cadence for prompt/model regression review.
+
+## 10. Multimodal provider and governance boundaries
+
+Decide separately for OCR, speech-to-text, text-to-speech, image generation, and video generation:
+
+- Whether processing is self-hosted or uses an approved managed provider.
+- Permitted regions, subprocessors, retention behavior, and zero-data-retention requirements.
+- Maximum file size, duration, latency, quality, and cost budgets.
+- Whether raw audio or generated media may be persisted and for how long.
+- Required consent, disclosure, provenance, moderation, and accessibility behavior.
+
+Recommended approach: implement OCR first, add speech input and optional speech playback only after secure text CV chat exists, and keep generated images and videos behind separate evidence-based product gates. Never use voice, face, emotion, appearance, gesture, attention, personality, or behavior to score or rank candidates.

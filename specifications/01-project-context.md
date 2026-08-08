@@ -18,6 +18,8 @@ The functional design defines four capabilities:
 3. Search, filter, summarize, and compare candidates using natural-language chat.
 4. Monitor recruitment activity and candidate metrics through an interactive dashboard.
 
+Supporting capabilities may include OCR for scanned CVs and optional speech input and playback for authorized CV chat. Human-reviewed image or video generation may later support employer communications, but it is not part of candidate evaluation.
+
 ## Guiding principles
 
 - Keep hiring decisions human-controlled; AI output is advisory.
@@ -26,6 +28,7 @@ The functional design defines four capabilities:
 - Record model version, prompt version, weights, and source data for reproducibility.
 - Protect candidate data with authentication, authorization, retention rules, and audit logs.
 - Make ambiguous or low-confidence AI output visible to users.
+- Keep audio, image, and video features assistive; never infer candidate suitability from voice, face, emotion, appearance, gesture, attention, personality, or behavior.
 
 ## High-level workflow
 
@@ -51,3 +54,5 @@ The functional design defines four capabilities:
 - Diversity scoring based on protected personal characteristics.
 - Direct job-board publishing, which the source identifies as a future integration.
 - Production messaging integration before the web chat and security model are stable.
+- Synthetic interviewers and automated candidate assessment from audio, photographs, or video.
+- Candidate voice cloning, photo generation or alteration, emotion recognition, biometric categorization, or appearance-based ranking.

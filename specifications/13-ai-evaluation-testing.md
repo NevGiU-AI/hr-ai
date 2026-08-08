@@ -100,6 +100,7 @@ Recruiters, product owners, and appropriate risk reviewers must label representa
 - Quarantine provider outages separately from product-quality failures, but never convert an evaluation failure into a silent pass.
 - Store privacy-safe evaluation summaries, model and prompt versions, thresholds, and failure identifiers as CI artifacts.
 - Require reviewed threshold changes through the same pull-request process as prompts and scoring rules.
+- Correlate privacy-safe model, prompt, retrieval, tool, scoring, dataset, and threshold versions with operational latency, error, token, cost, and throttling observations; never copy production candidate content automatically into evaluation fixtures.
 
 ## Initial release gates
 

@@ -13,7 +13,7 @@
 - [x] Configure production Premium VPS backup and prepare private cross-region Object Storage.
 - [ ] Complete production observability, off-server log collection, redaction, and alerting standards.
 - [ ] Complete encrypted PostgreSQL backup automation and an isolated restoration test.
-- [ ] Finish production release-promotion validation; GitHub environment protection, approval, and image rollback are configured.
+- [x] Validate production release promotion with GitHub environment protection, approval, and image rollback configured.
 - [ ] Confirm all development, staging, production, and backup credentials are isolated, rotated when needed, and absent from Git.
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.

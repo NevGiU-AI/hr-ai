@@ -122,9 +122,9 @@ jobs:
       - name: Smoke-test production
         id: smoke_test
         run: |
-          curl --fail --show-error --silent --retry 12 --retry-delay 5 \
+          curl --fail --show-error --silent --retry 12 --retry-delay 5 --retry-all-errors \
             https://api.hr.nevgiuai.com/actuator/health
-          curl --fail --show-error --silent --head --retry 12 --retry-delay 5 \
+          curl --fail --show-error --silent --head --retry 12 --retry-delay 5 --retry-all-errors \
             https://hr.nevgiuai.com/
 
       - name: Roll back after failed public smoke test
@@ -137,9 +137,9 @@ jobs:
       - name: Verify production after rollback
         if: failure() && steps.deploy.outcome == 'success' && steps.smoke_test.outcome == 'failure'
         run: |
-          curl --fail --show-error --silent --retry 12 --retry-delay 5 \
+          curl --fail --show-error --silent --retry 12 --retry-delay 5 --retry-all-errors \
             https://api.hr.nevgiuai.com/actuator/health
-          curl --fail --show-error --silent --head --retry 12 --retry-delay 5 \
+          curl --fail --show-error --silent --head --retry 12 --retry-delay 5 --retry-all-errors \
             https://hr.nevgiuai.com/
 
       - name: Summarize deployment

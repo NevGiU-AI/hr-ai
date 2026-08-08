@@ -55,9 +55,15 @@
 - [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
 - [ ] Create embeddings and index CV chunks with authorization metadata.
 - [ ] Implement retrieval, filtering, candidate detail, and comparison tools.
+- [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
+- [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
+- [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.
+- [ ] Add prompt-injection tests proving CV text and chat input cannot expand tool access or cross organization boundaries.
+- [ ] Add preview-only command tools, then require explicit confirmation, idempotency, and audit records before any state change or external communication.
+- [ ] Pin tool implementation to the current Spring AI version and evaluate the 2.x `ToolCallingAdvisor` migration separately with regression tests.
 - [ ] Persist scoped conversation memory.
 - [ ] Build the Angular chat interface and structured result cards.
-- [ ] Add citations, clarification, injection defenses, and evaluation tests.
+- [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
 - [ ] Add push-to-talk speech input with a visible, editable transcript before submission.
 - [ ] Delete raw voice input after transcription by default and document any approved retention exception.
 - [ ] Add optional text-to-speech playback with pause, speed, accessibility, and privacy controls.

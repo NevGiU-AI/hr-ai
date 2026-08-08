@@ -43,14 +43,14 @@ Outputs:
 3. Index normalized CV content and evaluation summaries after ingestion.
 4. Implement organization- and role-based retrieval filters before semantic search.
 5. Build a retrieval service that returns relevant chunks plus structured candidate data.
-6. Build agent tools for candidate search, candidate detail, filtering, and comparison.
+6. Build Spring AI tools for candidate search, candidate detail, filtering, comparison, evidence, document status, and governed dashboard aggregates. Make tools request-scoped, inject authenticated user and organization context outside model-controlled arguments, and separate bounded query tools from preview-and-confirm command tools.
 7. Require responses to cite candidate records or source excerpts and prohibit unsupported claims.
 8. Persist conversation state with clear retention and deletion rules.
 9. Implement the web chat UI with text responses, result cards, loading states, and follow-up prompts.
 10. Add ambiguity detection, clarification, no-result, timeout, and partial-failure behavior.
-11. Protect against prompt injection in CV content and user queries.
+11. Protect against prompt injection in CV content, OCR text, transcripts, messages, and user queries, including attempts to expand tool access or bypass confirmation.
 12. Add authorization tests proving users cannot retrieve another organization’s candidates.
-13. Evaluate retrieval precision, answer faithfulness, latency, and token cost against a fixed test set.
+13. Evaluate retrieval precision, answer faithfulness, tool selection, latency, and token cost against a fixed test set.
 14. Add push-to-talk speech-to-text as an input adapter around the same authorized chat service.
 15. Display the transcript for correction and delete raw audio after transcription by default.
 16. Add optional text-to-speech playback without removing candidate cards, citations, or visual review.
@@ -71,3 +71,6 @@ Outputs:
 - Raw query audio is not retained by default, and retention exceptions require explicit policy and consent.
 - Text-to-speech is optional, visibly synthetic, and never reads sensitive candidate details automatically.
 - Voice characteristics are never used for identity, emotion, personality, accent, fluency, or candidate-fit scoring.
+- The model cannot provide or override authenticated user, organization, role, or policy context used by tools.
+- Read tools are bounded and minimized; command tools require a deterministic preview and explicit confirmation.
+- Tool calls are authorized, limited, idempotent where necessary, and audited without logging sensitive content.

@@ -97,3 +97,7 @@ Recommended approach: implement OCR first, add speech input and optional speech 
 ## 11. Backend concurrency and virtual threads
 
 Define the representative workload, concurrency, downstream quotas, database connection budget, and minimum improvement required before enabling Java virtual threads in production. Virtual threads should orchestrate blocking I/O; CPU-heavy PDF, ZIP, local OCR, and media work must remain explicitly bounded. The decision must be based on staging load tests, tail latency, resource consumption, provider throttling, pinned-thread diagnostics, and graceful-shutdown behavior.
+
+## 12. Spring AI tool calling and version strategy
+
+Define the initial read-only tool allowlist, role-to-tool mapping, command confirmation policy, maximum tool-call loop, telemetry policy, and evidence required for tool-produced answers. Decide whether the first rollout remains on the pinned Spring AI 1.1 line or includes a separately reviewed 2.x migration. Do not combine a framework upgrade with privileged command-tool rollout without independent regression and security validation.

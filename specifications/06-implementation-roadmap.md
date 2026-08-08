@@ -27,6 +27,7 @@
 - [ ] Version request, response, prompt, and persistence schemas.
 - [ ] Add direct approval, job details, lifecycle maintenance, and production-grade failure handling.
 - [ ] Add controller integration and full end-to-end coverage.
+- [ ] Create a privacy-safe, human-reviewed job-generation evaluation dataset and regression gates for grounding, constraints, inclusivity, and prohibited inventions.
 - [ ] Measure latency and draft acceptance/edit rates.
 
 **Exit condition:** A recruiter can generate, review, edit, approve, save, and reopen a job offer reliably.
@@ -47,6 +48,7 @@
 - [ ] Persist prompt, model, weights, source-document version, and evaluation audit history.
 - [ ] Build candidate details, ingestion history, and evaluation history UI/API.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
+- [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.
 
 **Exit condition:** Uploaded candidates receive explainable, reproducible, human-reviewable evaluations.
 
@@ -64,6 +66,7 @@
 - [ ] Persist scoped conversation memory.
 - [ ] Build the Angular chat interface and structured result cards.
 - [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
+- [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
 - [ ] Add push-to-talk speech input with a visible, editable transcript before submission.
 - [ ] Delete raw voice input after transcription by default and document any approved retention exception.
 - [ ] Add optional text-to-speech playback with pause, speed, accessibility, and privacy controls.
@@ -125,6 +128,10 @@ This phase starts after the dashboard is complete so the documented API includes
 ## Phase 8 - Release readiness
 
 - [ ] Run full unit, integration, end-to-end, performance, and security test suites.
+- [ ] Run deterministic AI invariants on every pull request and a stable provider-backed evaluation smoke set where cost and availability permit.
+- [ ] Run the complete versioned AI evaluation suite nightly, before model or prompt promotion, and before production release.
+- [ ] Calibrate Spring AI and custom evaluator judgments against human labels; track false passes, false failures, and drift.
+- [ ] Version generation and evaluator models, prompts, retrieval settings, tools, weights, datasets, and thresholds together.
 - [ ] Establish platform-thread load-test baselines for AI, JDBC, ingestion, chat, dashboard, and messaging workloads.
 - [ ] Evaluate Spring Boot virtual threads in staging for blocking orchestration, with `spring.main.keep-alive` and a reversible environment setting.
 - [ ] Bound PostgreSQL, OpenAI, OCR, speech, messaging, image, and video concurrency independently with timeouts, rate limits, bulkheads or semaphores.

@@ -74,3 +74,5 @@ Outputs:
 - The model cannot provide or override authenticated user, organization, role, or policy context used by tools.
 - Read tools are bounded and minimized; command tools require a deterministic preview and explicit confirmation.
 - Tool calls are authorized, limited, idempotent where necessary, and audited without logging sensitive content.
+- A versioned evaluation suite measures retrieval recall, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
+- Automated semantic evaluators are calibrated against human-reviewed answers and never replace deterministic authorization or privacy assertions.

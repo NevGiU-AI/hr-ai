@@ -16,6 +16,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 10. [Production VPS provisioning and operations](./10-production-vps-provisioning-runbook.md)
 11. [Backend concurrency and virtual threads](./11-backend-concurrency-and-virtual-threads.md)
 12. [Spring AI tools and controlled agent actions](./12-spring-ai-tools-and-agent-actions.md)
+13. [AI evaluation testing](./13-ai-evaluation-testing.md)
 
 ## Recommended delivery order
 
@@ -45,6 +46,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Generated media | Optional, gated | Human-reviewed employer-branding images may be evaluated after core workflows; video follows only if value is proven. Candidate imagery, synthetic interviewers, and multimodal candidate scoring are prohibited. |
 | Backend concurrency | Planned validation | Java 21 and blocking Spring MVC/JPA/AI workflows are suitable for a virtual-thread experiment, but production enablement requires staging benchmarks, downstream limits, and pinned-thread monitoring. |
 | Spring AI tools | Planned with CV chat | Request-scoped read tools will support authorized retrieval, evidence, comparison, and dashboard queries. State-changing tools require deterministic previews, explicit confirmation, idempotency, and audits. |
+| AI evaluation testing | Planned cross-cutting capability | Deterministic assertions, versioned golden datasets, Spring AI evaluators, task metrics, adversarial tests, and calibrated human review will gate model, prompt, retrieval, tool, OCR, and speech changes. |
 | Production security | Planned | Authentication, authorization, tenant isolation, restricted CORS, audit logging, malware scanning, and retention controls remain. |
 | CI/CD and VPS deployment | Staging implemented, production in progress | CI, immutable GHCR publication, automatic staging deployment, and staging validation are implemented. Production VPS hardening and Premium backup are complete; PostgreSQL backup restoration, production GitHub protection, rollback hardening, and release validation remain. |
 | VPS provisioning | Staging complete, production in progress | Staging is hardened and deployed. Production has independent SSH, firewall, Docker, DNS, logging, Premium VPS backup, and private Object Storage preparation; database backup restoration and production release controls remain. Separate runbooks prevent environment-specific credentials and procedures from being mixed. |

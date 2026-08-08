@@ -81,6 +81,9 @@ Define:
 - Ground-truth datasets for CV metric evaluation.
 - Retrieval precision and answer-faithfulness thresholds.
 - Owners and cadence for prompt/model regression review.
+- Initial retrieval, groundedness, citation, OCR, transcription, latency, cost, and severity-weighted release thresholds.
+- Which evaluation sets run on pull requests, nightly, before model promotion, and before release.
+- Which evaluator model and prompt are used, how they are calibrated against human labels, and what disagreement requires manual review.
 
 ## 10. Multimodal provider and governance boundaries
 

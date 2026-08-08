@@ -210,3 +210,5 @@ OpenAI configuration is supplied through `OPENAI_API_KEY`. Generation errors or 
 - [ ] Authentication, authorization, CORS restrictions, and audit history are enforced.
 - [ ] Integration and end-to-end tests cover the complete workflow.
 - [ ] At least 90% of users accept the generated draft with no or minimal edits, using an agreed measurement definition.
+- [ ] A versioned, privacy-safe evaluation set detects unsupported salary, benefits, qualifications, employer facts, and other prohibited inventions.
+- [ ] Deterministic schema and policy assertions plus calibrated relevance, groundedness, clarity, and inclusivity evaluations pass approved release thresholds.

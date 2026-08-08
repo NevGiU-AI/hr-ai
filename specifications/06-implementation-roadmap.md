@@ -12,6 +12,7 @@
 - [x] Provision and harden separate staging and production VPSs with environment-specific keys and credentials.
 - [x] Configure production Premium VPS backup and prepare private cross-region Object Storage.
 - [ ] Complete production observability, off-server log collection, redaction, and alerting standards.
+- [ ] Approve telemetry classification, content exclusions, low-cardinality labels, access, retention, incident export, and alert-routing policy.
 - [ ] Complete encrypted PostgreSQL backup automation and an isolated restoration test.
 - [x] Validate production release promotion with GitHub environment protection, approval, and image rollback configured.
 - [ ] Confirm all development, staging, production, and backup credentials are isolated, rotated when needed, and absent from Git.
@@ -139,6 +140,11 @@ This phase starts after the dashboard is complete so the documented API includes
 - [ ] Monitor pinned virtual threads, carrier starvation, database-pool waits, tail latency, provider throttling, cancellation, and shutdown behavior.
 - [ ] Verify backup, restore, retention, deletion, and incident procedures.
 - [ ] Add model, token, latency, error, retrieval-quality, transcription-quality, media, and cost monitoring.
+- [ ] Add privacy-safe Spring AI observations for chat, advisors, models, embeddings, tools, and vector stores with all content-bearing telemetry disabled.
+- [ ] Add custom OCR, speech, messaging, backup, evaluation-run, confirmation, and background-job observations.
+- [ ] Export metrics, traces, and logs through encrypted, authenticated, environment-separated off-server collection without exposing Actuator publicly.
+- [ ] Validate trace propagation across virtual threads, streaming, scheduled work, background jobs, and provider callbacks.
+- [ ] Build and test actionable dashboards, alerts, telemetry-pipeline monitoring, operator access, redaction, and incident-export procedures.
 - [ ] Conduct recruiter acceptance testing with representative workflows.
 - [ ] Document deployment, rollback, support, and model-change procedures.
 

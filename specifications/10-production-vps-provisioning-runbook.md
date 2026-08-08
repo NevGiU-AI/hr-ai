@@ -996,8 +996,11 @@ Repeat the staging procedure with these changes:
 - [x] Configure Docker container log rotation with a documented per-container disk limit.
 - [x] Configure bounded systemd journal retention and verify restricted system-log access.
 - [ ] Configure restricted, encrypted off-server production log collection and retention.
+- [ ] Configure restricted, encrypted off-server metrics and trace collection with private Actuator access and environment-separated credentials.
 - [ ] Verify logs exclude CV text, prompts, credentials, tokens, and unnecessary personal data before accepting real candidates.
+- [ ] Verify metrics and traces exclude prompts, completions, CV or vector content, transcripts, tool arguments/results, record identifiers, and high-cardinality personal data.
 - [ ] Document who may access or export production logs and how incident extracts are redacted.
+- [ ] Test privacy-safe AI, vector, tool, OCR, speech, backup, infrastructure, and telemetry-export alerts with synthetic data.
 - [x] Do not perform the first production deployment until a release commit has a successful staging-validation image alias.
 - [x] Run production-safe HTTPS and read-only smoke tests after deployment.
 

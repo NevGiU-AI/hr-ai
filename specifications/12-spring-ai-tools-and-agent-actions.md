@@ -67,6 +67,7 @@ CVs, chat messages, OCR text, transcripts, and external messages are untrusted i
 - Keep content-bearing tool telemetry disabled by default.
 - Monitor tool errors, timeouts, denied calls, repeated invocation, provider throttling, and unusual result volumes.
 - Apply chat, candidate, audio, and audit retention policies to corresponding tool-call metadata.
+- Correlate tool duration, outcome, denial, confirmation, timeout, retry, and result count through privacy-safe metrics and traces while keeping arguments and results disabled.
 
 ## Multichannel reuse
 

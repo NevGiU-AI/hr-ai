@@ -119,6 +119,11 @@ This phase starts after the dashboard is complete so the documented API includes
 ## Phase 8 - Release readiness
 
 - [ ] Run full unit, integration, end-to-end, performance, and security test suites.
+- [ ] Establish platform-thread load-test baselines for AI, JDBC, ingestion, chat, dashboard, and messaging workloads.
+- [ ] Evaluate Spring Boot virtual threads in staging for blocking orchestration, with `spring.main.keep-alive` and a reversible environment setting.
+- [ ] Bound PostgreSQL, OpenAI, OCR, speech, messaging, image, and video concurrency independently with timeouts, rate limits, bulkheads or semaphores.
+- [ ] Keep PDF parsing, ZIP decompression, local OCR, and media encoding on bounded CPU-oriented workers.
+- [ ] Monitor pinned virtual threads, carrier starvation, database-pool waits, tail latency, provider throttling, cancellation, and shutdown behavior.
 - [ ] Verify backup, restore, retention, deletion, and incident procedures.
 - [ ] Add model, token, latency, error, retrieval-quality, transcription-quality, media, and cost monitoring.
 - [ ] Conduct recruiter acceptance testing with representative workflows.

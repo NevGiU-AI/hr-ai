@@ -14,6 +14,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 8. [CI/CD and VPS deployment](./08-ci-cd-deployment.md)
 9. [Staging VPS provisioning and operations](./09-staging-vps-provisioning-runbook.md)
 10. [Production VPS provisioning and operations](./10-production-vps-provisioning-runbook.md)
+11. [Backend concurrency and virtual threads](./11-backend-concurrency-and-virtual-threads.md)
 
 ## Recommended delivery order
 
@@ -26,7 +27,8 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 7. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
 8. Add the selected messaging integration after the web chat and documented backend APIs are stable.
 9. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
-10. Validate security, privacy, AI quality, performance, accessibility, and usability before release.
+10. Benchmark bounded backend concurrency and Java virtual threads in staging.
+11. Validate security, privacy, AI quality, performance, accessibility, and usability before release.
 
 ## Current repository snapshot
 
@@ -40,6 +42,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Backend Swagger/OpenAPI | Planned after dashboard | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable. |
 | External messaging | Planned | Telegram/WhatsApp choice and integration remain open. |
 | Generated media | Optional, gated | Human-reviewed employer-branding images may be evaluated after core workflows; video follows only if value is proven. Candidate imagery, synthetic interviewers, and multimodal candidate scoring are prohibited. |
+| Backend concurrency | Planned validation | Java 21 and blocking Spring MVC/JPA/AI workflows are suitable for a virtual-thread experiment, but production enablement requires staging benchmarks, downstream limits, and pinned-thread monitoring. |
 | Production security | Planned | Authentication, authorization, tenant isolation, restricted CORS, audit logging, malware scanning, and retention controls remain. |
 | CI/CD and VPS deployment | Staging implemented, production in progress | CI, immutable GHCR publication, automatic staging deployment, and staging validation are implemented. Production VPS hardening and Premium backup are complete; PostgreSQL backup restoration, production GitHub protection, rollback hardening, and release validation remain. |
 | VPS provisioning | Staging complete, production in progress | Staging is hardened and deployed. Production has independent SSH, firewall, Docker, DNS, logging, Premium VPS backup, and private Object Storage preparation; database backup restoration and production release controls remain. Separate runbooks prevent environment-specific credentials and procedures from being mixed. |

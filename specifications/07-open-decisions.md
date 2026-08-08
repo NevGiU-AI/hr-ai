@@ -93,3 +93,7 @@ Decide separately for OCR, speech-to-text, text-to-speech, image generation, and
 - Required consent, disclosure, provenance, moderation, and accessibility behavior.
 
 Recommended approach: implement OCR first, add speech input and optional speech playback only after secure text CV chat exists, and keep generated images and videos behind separate evidence-based product gates. Never use voice, face, emotion, appearance, gesture, attention, personality, or behavior to score or rank candidates.
+
+## 11. Backend concurrency and virtual threads
+
+Define the representative workload, concurrency, downstream quotas, database connection budget, and minimum improvement required before enabling Java virtual threads in production. Virtual threads should orchestrate blocking I/O; CPU-heavy PDF, ZIP, local OCR, and media work must remain explicitly bounded. The decision must be based on staging load tests, tail latency, resource consumption, provider throttling, pinned-thread diagnostics, and graceful-shutdown behavior.

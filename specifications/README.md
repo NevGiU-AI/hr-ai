@@ -18,6 +18,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 12. [Spring AI tools and controlled agent actions](./12-spring-ai-tools-and-agent-actions.md)
 13. [AI evaluation testing](./13-ai-evaluation-testing.md)
 14. [Spring AI observability](./14-spring-ai-observability.md)
+15. [Authentication and authorization](./15-authentication-and-authorization.md)
 
 ## Recommended delivery order
 
@@ -49,7 +50,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Spring AI tools | Planned with CV chat | Request-scoped read tools will support authorized retrieval, evidence, comparison, and dashboard queries. State-changing tools require deterministic previews, explicit confirmation, idempotency, and audits. |
 | AI evaluation testing | Planned cross-cutting capability | Deterministic assertions, versioned golden datasets, Spring AI evaluators, task metrics, adversarial tests, and calibrated human review will gate model, prompt, retrieval, tool, OCR, and speech changes. |
 | Spring AI observability | Planned production control | Privacy-safe Micrometer metrics, traces, dashboards, and alerts will cover models, tokens, cost, RAG, tools, OCR, speech, messaging, backups, and infrastructure without exporting candidate content. |
-| Production security | Planned | Authentication, authorization, tenant isolation, restricted CORS, audit logging, malware scanning, and retention controls remain. |
+| Production security | Authentication foundation implemented | Email/password login, bcrypt hashes, server sessions, CSRF, route protection, four roles, and admin-only built-in CV import are implemented. Tenant row isolation, account administration, throttling, security audit logs, malware scanning, and retention controls remain. |
 | CI/CD and VPS deployment | Staging and production operational | CI, immutable GHCR publication, automatic staging deployment, protected production promotion, and production smoke validation are working. PostgreSQL backup restoration testing, observability, security controls, and further rollback hardening remain. |
 | VPS provisioning | Staging and production deployed | Staging and production are independently hardened and deployed. Production has dedicated SSH access, firewall rules, Docker, DNS, TLS, logging, Premium VPS backup, and private Object Storage preparation. Database backup automation and isolated restoration testing remain; separate runbooks prevent environment-specific credentials and procedures from being mixed. |
 

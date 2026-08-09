@@ -1,0 +1,8 @@
+.login-shell { display: grid; min-height: calc(100vh - 6.3rem); place-items: center; padding: 2rem 1rem; }
+.login-card { background: #fff; border: 1px solid #dbe2ee; border-radius: 0.8rem; box-shadow: 0 1rem 2.5rem rgba(23, 35, 60, 0.12); display: grid; gap: 1rem; max-width: 28rem; padding: 2rem; width: 100%; }
+.login-card h1, .login-card p { margin: 0; }
+.eyebrow { color: #52698f; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+label { display: grid; font-weight: 600; gap: 0.35rem; }
+input { border: 1px solid #aab7ca; border-radius: 0.4rem; font: inherit; padding: 0.7rem; }
+input:focus { border-color: #315da8; box-shadow: 0 0 0 0.2rem rgba(49, 93, 168, 0.15); outline: none; }
+small { color: #b42318; font-weight: 400; }

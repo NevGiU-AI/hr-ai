@@ -35,6 +35,9 @@
 nav { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 nav a { border-radius: 0.4rem; color: #dce5f5; padding: 0.5rem 0.75rem; text-decoration: none; }
 nav a:hover, nav a.active { background: #2d4169; color: #fff; }
+.signed-in-user { align-self: center; color: #bfcce2; font-size: 0.85rem; margin-left: 0.5rem; }
+nav button { background: transparent; border: 1px solid #7083a3; border-radius: 0.4rem; color: #fff; cursor: pointer; padding: 0.45rem 0.7rem; }
+nav button:hover { background: #2d4169; }
 
 @media (max-width: 680px) {
   .app-header { align-items: flex-start; flex-direction: column; gap: 0.5rem; }

@@ -418,6 +418,10 @@ OPENAI_API_KEY=<production-only OpenAI key>
 
 SPRING_JPA_HIBERNATE_DDL_AUTO=update
 INITIAL_IMPORT_ENABLED=false
+BOOTSTRAP_ADMIN_EMAIL=<production administrator email>
+BOOTSTRAP_ADMIN_PASSWORD=<random production-only password of at least 12 characters>
+BOOTSTRAP_ADMIN_ORGANIZATION=default
+SESSION_TIMEOUT=30m
 ```
 
 Remove the staging-manual `BACKEND_IMAGE` and `FRONTEND_IMAGE` lines from production `.env`. The release workflow supplies immutable production image references through the generated `.images.env` file.
@@ -434,7 +438,9 @@ Expected: `deploy:deploy 600 .env`. Validate required values without printing th
 for name in \
   FRONTEND_HOST API_HOST FRONTEND_URL ACME_EMAIL \
   POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD OPENAI_API_KEY \
-  SPRING_JPA_HIBERNATE_DDL_AUTO INITIAL_IMPORT_ENABLED
+  SPRING_JPA_HIBERNATE_DDL_AUTO INITIAL_IMPORT_ENABLED \
+  BOOTSTRAP_ADMIN_EMAIL BOOTSTRAP_ADMIN_PASSWORD \
+  BOOTSTRAP_ADMIN_ORGANIZATION SESSION_TIMEOUT
 do
   grep -q "^${name}=.\+" .env || echo "Missing or empty: $name"
 done
@@ -453,6 +459,8 @@ echo "Production environment validation passed"
 ```
 
 Permissions and all safety checks passed. No environment value was added to Git or displayed during validation. Do not start Compose until logging, backup readiness, GitHub production protection, and release prerequisites are addressed.
+
+After the first successful administrator login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env` and recreate only the backend container. Verify that the existing administrator can still sign in; the stored bcrypt hash remains in PostgreSQL.
 
 ### 15. Configure bounded Docker log rotation
 

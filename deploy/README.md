@@ -63,6 +63,10 @@ FRONTEND_HOST=hr.nevgiuai.com
 API_HOST=api.hr.nevgiuai.com
 FRONTEND_URL=https://hr.nevgiuai.com
 INITIAL_IMPORT_ENABLED=false
+BOOTSTRAP_ADMIN_EMAIL=<initial administrator email>
+BOOTSTRAP_ADMIN_PASSWORD=<random password of at least 12 characters>
+BOOTSTRAP_ADMIN_ORGANIZATION=default
+SESSION_TIMEOUT=30m
 ```
 
 Use immutable GHCR image digests once image publication is implemented:
@@ -73,6 +77,8 @@ FRONTEND_IMAGE=ghcr.io/<owner>/<repository>/hr-ai-frontend@sha256:<digest>
 ```
 
 `API_URL` is generated from `API_HOST` when the frontend container starts. The frontend image is therefore identical in staging and production.
+
+The bootstrap administrator variables are required for the first secured startup only. Confirm login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env`, and recreate the backend. The Argon2id hash and account remain in PostgreSQL; never commit or print the bootstrap password.
 
 `ACME_EMAIL` is the monitored operational contact Caddy passes to the ACME certificate authority when registering the account used to obtain and renew HTTPS certificates. It may receive certificate expiration, renewal-failure, policy, or account-recovery notices. It is not an application login, SMTP setting, OpenAI credential, or frontend value, and it is not normally embedded in the public certificate.
 

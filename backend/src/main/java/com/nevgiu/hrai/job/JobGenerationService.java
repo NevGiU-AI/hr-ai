@@ -5,7 +5,6 @@ import com.nevgiu.hrai.job.dto.ApproveJobRequest;
 import com.nevgiu.hrai.job.dto.GeneratedJobOffer;
 import com.nevgiu.hrai.job.dto.JobGenerationRequest;
 import com.nevgiu.hrai.job.dto.JobGenerationResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
@@ -13,13 +12,17 @@ import java.io.IOException;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class JobGenerationService {
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
     private final JobRepository jobRepository;
 
+    public JobGenerationService(ChatClient chatClient, ObjectMapper objectMapper, JobRepository jobRepository) {
+        this.chatClient = chatClient;
+        this.objectMapper = objectMapper;
+        this.jobRepository = jobRepository;
+    }
 
     /**
      * Calls the LLM to generate a job offer draft.

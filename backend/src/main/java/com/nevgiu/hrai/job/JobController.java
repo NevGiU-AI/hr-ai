@@ -3,7 +3,6 @@ package com.nevgiu.hrai.job;
 import com.nevgiu.hrai.job.dto.ApproveJobRequest;
 import com.nevgiu.hrai.job.dto.JobGenerationRequest;
 import com.nevgiu.hrai.job.dto.JobGenerationResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,11 +12,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/jobs")
-@RequiredArgsConstructor
 public class JobController {
 
     private final JobGenerationService jobGenerationService;
     private final JobRepository jobRepository;
+
+    public JobController(JobGenerationService jobGenerationService, JobRepository jobRepository) {
+        this.jobGenerationService = jobGenerationService;
+        this.jobRepository = jobRepository;
+    }
 
     @PostMapping("/generate")
     public JobGenerationResponse generate(@RequestBody JobGenerationRequest request) {

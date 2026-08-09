@@ -1,12 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { provideRouter } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
+import { AuthUser } from './core/auth/auth.models';
+import { AuthService } from './core/auth/auth.service';
 
 describe('AppComponent', () => {
+  const user: AuthUser = { id: 1, email: 'admin@example.com', organizationId: 'default', roles: ['ADMIN'] };
+  const auth = {
+    user$: new BehaviorSubject<AuthUser | null>(user),
+    logout: jasmine.createSpy('logout').and.returnValue(of(void 0)),
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: AuthService, useValue: auth }],
     }).compileComponents();
   });
 

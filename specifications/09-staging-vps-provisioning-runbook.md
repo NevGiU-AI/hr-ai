@@ -259,6 +259,10 @@ Set real staging values only in `.env`:
 ACME_EMAIL=<operations email>
 POSTGRES_PASSWORD=<generated staging password>
 OPENAI_API_KEY=<staging OpenAI key>
+BOOTSTRAP_ADMIN_EMAIL=<staging administrator email>
+BOOTSTRAP_ADMIN_PASSWORD=<random staging-only password of at least 12 characters>
+BOOTSTRAP_ADMIN_ORGANIZATION=staging
+SESSION_TIMEOUT=30m
 ```
 
 `ACME_EMAIL` is the monitored operational contact Caddy supplies to the ACME certificate authority for automatic HTTPS certificate issuance and renewal. It can receive expiration, renewal-failure, policy, or recovery notices. It is not used to sign in to the application, send application email, or authenticate to OpenAI. Use a role mailbox where possible; staging and production may share this contact because it is administrative metadata, not an environment credential.
@@ -271,6 +275,8 @@ API_HOST=staging-api.hr.nevgiuai.com
 FRONTEND_URL=https://staging-hr.nevgiuai.com
 INITIAL_IMPORT_ENABLED=true
 ```
+
+After the first successful administrator login, remove `BOOTSTRAP_ADMIN_PASSWORD` and recreate only the backend container. Do not reuse this account or password in production.
 
 Do not display or transmit the completed file.
 

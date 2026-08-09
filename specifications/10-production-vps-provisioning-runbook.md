@@ -460,7 +460,7 @@ echo "Production environment validation passed"
 
 Permissions and all safety checks passed. No environment value was added to Git or displayed during validation. Do not start Compose until logging, backup readiness, GitHub production protection, and release prerequisites are addressed.
 
-After the first successful administrator login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env` and recreate only the backend container. Verify that the existing administrator can still sign in; the stored Argon2id hash remains in PostgreSQL.
+After the first successful administrator login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env` and recreate only the backend container. Verify that the existing administrator can still sign in; the stored bcrypt hash remains in PostgreSQL.
 
 ### 15. Configure bounded Docker log rotation
 

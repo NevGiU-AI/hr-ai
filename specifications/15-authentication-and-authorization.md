@@ -8,7 +8,7 @@ This choice keeps immediate logout, account disablement, and role changes under 
 
 ## Implemented foundation
 
-- `AppUser` persists a normalized email, Argon2id password hash, enabled state, organization identifier, and roles.
+- `AppUser` persists a normalized email, bcrypt password hash, enabled state, organization identifier, and roles.
 - Supported roles are `ADMIN`, `RECRUITER`, `REVIEWER`, and `READ_ONLY`.
 - A bootstrap administrator can be created idempotently on the first secured startup.
 - All `/api/**` business endpoints require an authenticated session.
@@ -40,7 +40,7 @@ BOOTSTRAP_ADMIN_PASSWORD=<random password of at least 12 characters>
 BOOTSTRAP_ADMIN_ORGANIZATION=default
 ```
 
-The password is Argon2id-hashed before persistence. After confirming login, remove `BOOTSTRAP_ADMIN_PASSWORD` from the deployment environment and recreate the backend container. Existing accounts remain in PostgreSQL and the initializer never replaces an existing account or password.
+The password is bcrypt-hashed with work factor 12 before persistence. After confirming login, remove `BOOTSTRAP_ADMIN_PASSWORD` from the deployment environment and recreate the backend container. Existing accounts remain in PostgreSQL and the initializer never replaces an existing account or password.
 
 ## Security boundaries
 

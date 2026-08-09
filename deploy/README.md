@@ -78,7 +78,7 @@ FRONTEND_IMAGE=ghcr.io/<owner>/<repository>/hr-ai-frontend@sha256:<digest>
 
 `API_URL` is generated from `API_HOST` when the frontend container starts. The frontend image is therefore identical in staging and production.
 
-The bootstrap administrator variables are required for the first secured startup only. Confirm login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env`, and recreate the backend. The Argon2id hash and account remain in PostgreSQL; never commit or print the bootstrap password.
+The bootstrap administrator variables are required for the first secured startup only. Confirm login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env`, and recreate the backend. The bcrypt hash and account remain in PostgreSQL; never commit or print the bootstrap password.
 
 `ACME_EMAIL` is the monitored operational contact Caddy passes to the ACME certificate authority when registering the account used to obtain and renew HTTPS certificates. It may receive certificate expiration, renewal-failure, policy, or account-recovery notices. It is not an application login, SMTP setting, OpenAI credential, or frontend value, and it is not normally embedded in the public certificate.
 

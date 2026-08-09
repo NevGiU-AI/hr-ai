@@ -52,15 +52,32 @@ cd <repository-directory>
 
 Use the HTTPS or SSH URL shown by the **Code** button on the current GitHub repository. This keeps the instructions valid if the repository is transferred or renamed.
 
-### 2. Configure the OpenAI API key
+### 2. Configure local secrets and the first administrator
 
-Create a `.env` file in the repository root:
+Copy the safe template to the ignored local environment file:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` and provide private local-development values:
 
 ```env
 OPENAI_API_KEY=your-openai-api-key
+APP_SECURITY_BOOTSTRAP_ADMIN_EMAIL=admin@localhost
+APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD=<local-only password of at least 12 characters>
+APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION=local
+APP_SECURITY_SECURE_COOKIE=false
+APP_SECURITY_SESSION_TIMEOUT=30m
 ```
 
-The key is passed to the backend container and is required for AI job-offer generation. Do not commit the `.env` file or expose the key in logs or screenshots.
+The OpenAI key is passed to the backend container and is required for AI job-offer generation. The bootstrap credentials create the first local `ADMIN` account; the password is stored in PostgreSQL only as a bcrypt hash. Do not reuse staging or production credentials locally. Do not commit `.env` or expose its values in logs, screenshots, or chat.
 
 CV ingestion and text extraction do not call OpenAI. An API key is required only when generating a job offer or explicitly evaluating a candidate against an approved job.
 
@@ -97,10 +114,25 @@ Expected response:
 ### 5. Open the application
 
 - Frontend: [http://localhost:4200](http://localhost:4200)
-- Jobs API: [http://localhost:8080/api/jobs](http://localhost:8080/api/jobs)
-- Candidates API: [http://localhost:8080/api/candidates](http://localhost:8080/api/candidates)
+- Authentication API: [http://localhost:8080/api/auth/csrf](http://localhost:8080/api/auth/csrf)
 - Backend health: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
 - PostgreSQL: `localhost:5433`
+
+Sign in through the frontend with the local bootstrap email and password. Jobs, candidates, evaluations, and other business APIs require the authenticated browser session and are expected to return `401` when opened anonymously.
+
+After the first successful login, remove this line from local `.env`:
+
+```env
+APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD=...
+```
+
+Recreate only the local backend:
+
+```bash
+docker compose up -d --force-recreate backend
+```
+
+Sign in again with the same password. The account remains in the persisted local PostgreSQL data and the backend no longer receives the plaintext bootstrap password. Rebuilding containers does not reset this account. Changing the bootstrap password later does not update an existing user; password administration is a separate planned feature.
 
 The PostgreSQL container listens on port `5432` inside the Docker network and is exposed as `5433` on the host to avoid conflicts with another local PostgreSQL instance.
 

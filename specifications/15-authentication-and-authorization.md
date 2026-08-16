@@ -17,6 +17,9 @@ This choice keeps immediate logout, account disablement, and role changes under 
 - Actuator health and info plus the CSRF bootstrap endpoint remain public.
 - State-changing requests require the server-issued CSRF token.
 - Angular sends credentials on every API request, applies the CSRF header to unsafe methods, protects business routes, and provides login/logout UI.
+- The login password is hidden by default and has an accessible show/hide control for verification before submission.
+- Logout state is synchronized across tabs, with session heartbeats plus focus and visibility revalidation handling
+  browsers that throttle background tabs.
 - Production cookies are `HttpOnly`, `Secure`, and `SameSite=Lax`; the default idle timeout is 30 minutes.
 
 ## Authentication API
@@ -37,7 +40,7 @@ Before the first secured deployment, configure:
 ```dotenv
 BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 BOOTSTRAP_ADMIN_PASSWORD=<random password of at least 12 characters>
-BOOTSTRAP_ADMIN_ORGANIZATION=default
+BOOTSTRAP_ADMIN_ORGANIZATION=<environment organization, such as local, staging, or production>
 ```
 
 The password is bcrypt-hashed with work factor 12 before persistence. After confirming login, remove `BOOTSTRAP_ADMIN_PASSWORD` from the deployment environment and recreate the backend container. Existing accounts remain in PostgreSQL and the initializer never replaces an existing account or password.
@@ -48,13 +51,21 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Execute and verify the documented organization backfill and CV uniqueness migration in each existing environment before deploying tenant-aware application code.
 - Add administrator APIs/UI for account creation, role changes, disabling, and session revocation.
 - Add login throttling, temporary lockout, and security-event audit records.
 - Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
 - Add concurrent-session policy and a shared Spring Session store before horizontal backend scaling.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
-- Perform production security and browser end-to-end testing before release promotion.
+
+## Validated rollout
+
+- Staging organization backfill, tenant-aware uniqueness, authentication, and tenant-scoped workflows were validated
+  before production promotion.
+- Production was backed up and migrated to organization `production` before release `v0.2.0` (`33d8a04`) on
+  16 August 2026.
+- Production login and tenant-scoped application features were accepted after deployment. The one-time bootstrap
+  password was removed and the backend recreated; repeat login against the persisted account remains the explicit final
+  operator check for secret-removal closure.
 
 ## Future external channels
 

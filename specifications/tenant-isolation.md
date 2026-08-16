@@ -74,3 +74,16 @@ expected administrator organization, and only then repeat it in production.
 
 Application-level tenant scoping is mandatory in this milestone. PostgreSQL row-level security and versioned Flyway or
 Liquibase migrations are recommended defense-in-depth improvements before allowing untrusted organizations to onboard.
+
+## Validated environment rollout
+
+- Staging was backed up, migrated to organization `staging`, deployed, and functionally verified before production.
+- Production was backed up with a custom-format PostgreSQL dump and migrated to organization `production` on
+  16 August 2026.
+- Production verification confirmed one existing candidate, job, CV document, and evaluation under `production`,
+  `NOT NULL` ownership columns, and `UNIQUE (organization_id, sha256)` CV deduplication.
+- Release `v0.2.0`, commit `33d8a04`, deployed the tenant-aware application successfully and passed authentication,
+  tenant-data, and public smoke validation.
+
+The current migration procedure is a controlled operational workaround while Hibernate schema update remains enabled.
+All future schema evolution should move to reviewed Flyway or Liquibase migrations before onboarding untrusted tenants.

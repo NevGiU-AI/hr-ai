@@ -33,4 +33,18 @@ describe('AuthService session heartbeat', () => {
     discardPeriodicTasks();
     void auth;
   }));
+
+  it('revalidates immediately when a background tab receives focus', fakeAsync(() => {
+    auth = TestBed.inject(AuthService);
+    session.authenticate({ id: 1, email: 'admin@example.com', organizationId: 'staging', roles: ['ADMIN'] });
+
+    window.dispatchEvent(new Event('focus'));
+
+    const request = http.expectOne(`${environment.apiUrl}/auth/me`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ id: 1, email: 'admin@example.com', organizationId: 'staging', roles: ['ADMIN'] });
+    session.expire(false, false);
+    discardPeriodicTasks();
+    void auth;
+  }));
 });

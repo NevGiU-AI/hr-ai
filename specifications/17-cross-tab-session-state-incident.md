@@ -16,6 +16,9 @@ The HTTP interceptor added cookies and CSRF headers but did not react to HTTP 40
 `ensureAuthenticated()` returned immediately whenever a cached user existed, so guarded navigation could trust stale
 memory without revalidating the server session.
 
+Staging also demonstrated that Chrome can throttle timers in a background tab. The five-second heartbeat continued in
+the active tab but could be delayed while another tab remained backgrounded.
+
 ## Security impact
 
 This was not an authorization bypass. The server-side session was invalid and protected APIs rejected the second tab.
@@ -31,6 +34,7 @@ Authentication state now lives in a dedicated `AuthSessionState` service:
 - receiving tabs clear their cached user and CSRF token and redirect to login;
 - while a user is cached as signed in, each tab independently revalidates `/api/auth/me` every five seconds, so a
   suppressed browser event cannot leave an idle tab stale indefinitely;
+- a tab also revalidates immediately when it becomes visible or receives focus, bypassing background timer throttling;
 - the HTTP interceptor expires local state and redirects whenever a protected request returns HTTP 401;
 - login HTTP 401 responses remain with the login form so it can show the generic credential error; and
 - guarded navigation rechecks `/api/auth/me` instead of trusting a cached user indefinitely.
@@ -47,6 +51,7 @@ Frontend tests verify that:
 - a logout event received from another tab clears state and redirects;
 - the `localStorage` fallback immediately clears state and redirects;
 - the session heartbeat calls `/api/auth/me` without navigation or user interaction;
+- a returning background tab calls `/api/auth/me` immediately on focus;
 - protected-request HTTP 401 responses expire the session; and
 - login failures do not trigger the protected-request redirect behavior.
 

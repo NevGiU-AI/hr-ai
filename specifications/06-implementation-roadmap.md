@@ -9,7 +9,9 @@
 - [x] Add organization ownership to existing business records and enforce tenant-scoped repository access.
 - [x] Back up and migrate staging and production data to explicit organizations, deploy release `v0.2.0`, and validate
   authentication plus tenant-scoped workflows.
-- [ ] Add account administration, login throttling/lockout, session revocation, and security-event auditing.
+- [ ] Complete account administration, login throttling/lockout, session revocation, and security-event auditing.
+  Tenant-scoped administrator APIs for listing and creating accounts are implemented; role updates, disabling, UI,
+  revocation, throttling, and audit events remain.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.

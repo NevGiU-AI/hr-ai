@@ -33,6 +33,21 @@ This choice keeps immediate logout, account disablement, and role changes under 
 
 Login failures always return the generic message `Invalid email or password`; the API does not reveal whether an account exists or is disabled.
 
+## Account administration API
+
+The first administration slice exposes tenant-scoped account listing and creation. Both endpoints require `ADMIN`.
+The organization is always copied from the authenticated administrator; request bodies cannot select it.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/admin/users` | List accounts in the administrator's organization, ordered by email. |
+| `POST` | `/api/admin/users` | Create an enabled account in that organization with one or more approved roles. |
+
+Creation normalizes email, requires a 12–128 character initial password, hashes it with bcrypt, and returns `409` for a
+globally unavailable email. Responses include account identity, organization, enabled state, and roles; they never
+include password hashes or credentials. The Angular administration UI, role changes, disabling, and revocation remain
+separate delivery slices.
+
 ## Bootstrap administrator
 
 Before the first secured deployment, configure:
@@ -51,7 +66,9 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Add administrator APIs/UI for account creation, role changes, disabling, and session revocation.
+- Tenant-scoped administrator APIs now list and create accounts, derive organization ownership from the authenticated
+  administrator, normalize emails, hash initial passwords with bcrypt, and exclude password hashes from responses.
+- Add administrator UI plus APIs for role changes, disabling, and session revocation.
 - Add login throttling, temporary lockout, and security-event audit records.
 - Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
 - Add concurrent-session policy and a shared Spring Session store before horizontal backend scaling.

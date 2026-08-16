@@ -44,12 +44,11 @@ The password is bcrypt-hashed with work factor 12 before persistence. After conf
 
 ## Security boundaries
 
-The organization identifier is resolved from the authenticated principal and must never be accepted from model-controlled tool arguments. However, the current `Job`, `Candidate`, `CvDocument`, and `CandidateEvaluation` tables predate authentication and do not yet contain organization ownership. Authentication prevents anonymous access, but full tenant isolation is not complete until those entities and every repository query are scoped.
+The organization identifier is resolved from the authenticated principal and must never be accepted from request bodies or model-controlled tool arguments. `Job`, `Candidate`, `CvDocument`, and `CandidateEvaluation` records carry organization ownership, and their business queries are scoped to the authenticated organization. Cross-organization candidate and job identifiers resolve as not found, and CV duplicate detection is isolated per organization.
 
 ## Remaining work
 
-- Add organization ownership to all business entities and migrate existing rows explicitly.
-- Enforce organization predicates in services/repositories and add cross-organization denial tests.
+- Execute and verify the documented organization backfill and CV uniqueness migration in each existing environment before deploying tenant-aware application code.
 - Add administrator APIs/UI for account creation, role changes, disabling, and session revocation.
 - Add login throttling, temporary lockout, and security-event audit records.
 - Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.

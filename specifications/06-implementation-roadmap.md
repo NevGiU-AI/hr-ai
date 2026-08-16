@@ -7,7 +7,9 @@
 - [x] Define session-based email/password authentication, initial roles, organization boundary, and audit requirements.
 - [x] Implement the authentication foundation with bcrypt, server sessions, CSRF, protected Angular routes, and admin-only built-in CV import.
 - [x] Add organization ownership to existing business records and enforce tenant-scoped repository access.
-- [ ] Add account administration, login throttling/lockout, session revocation, and security-event auditing.
+- [ ] Complete account administration, login throttling/lockout, session revocation, and security-event auditing.
+  Tenant-scoped administrator APIs for listing and creating accounts are implemented; role updates, disabling, UI,
+  revocation, throttling, and audit events remain.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.

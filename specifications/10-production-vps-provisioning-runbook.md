@@ -420,7 +420,7 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=update
 INITIAL_IMPORT_ENABLED=false
 BOOTSTRAP_ADMIN_EMAIL=<production administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random production-only password of at least 12 characters>
-BOOTSTRAP_ADMIN_ORGANIZATION=default
+BOOTSTRAP_ADMIN_ORGANIZATION=production
 SESSION_TIMEOUT=30m
 ```
 
@@ -453,6 +453,7 @@ grep -q '^FRONTEND_HOST=hr\.nevgiuai\.com$' .env &&
 grep -q '^API_HOST=api\.hr\.nevgiuai\.com$' .env &&
 grep -q '^FRONTEND_URL=https://hr\.nevgiuai\.com$' .env &&
 grep -q '^INITIAL_IMPORT_ENABLED=false$' .env &&
+grep -q '^BOOTSTRAP_ADMIN_ORGANIZATION=production$' .env &&
 ! grep -q 'staging' .env &&
 ! grep -q 'staging-manual' .env &&
 echo "Production environment validation passed"
@@ -461,6 +462,29 @@ echo "Production environment validation passed"
 Permissions and all safety checks passed. No environment value was added to Git or displayed during validation. Do not start Compose until logging, backup readiness, GitHub production protection, and release prerequisites are addressed.
 
 After the first successful administrator login, remove `BOOTSTRAP_ADMIN_PASSWORD` from `.env` and recreate only the backend container. Verify that the existing administrator can still sign in; the stored bcrypt hash remains in PostgreSQL.
+
+### 14.1 Validated authentication and tenant rollout
+
+Validated on 16 August 2026 for release `v0.2.0`, commit `33d8a04`:
+
+- A custom-format `pg_dump` was created before the tenant migration, confirmed non-empty, checksummed, and validated
+  with `pg_restore --list`.
+- The existing production candidate, job, CV document, and evaluation were assigned to organization `production`.
+- All four business-table `organization_id` columns were verified `NOT NULL`.
+- The former global `UNIQUE (sha256)` CV constraint was replaced with
+  `UNIQUE (organization_id, sha256)`.
+- The release promoted the exact staging-validated images and passed the protected production deployment and public
+  smoke checks.
+- The first production administrator was bootstrapped in organization `production`. The one-time password was then
+  removed from `.env` and only the backend was recreated; repeat login after that recreation is the final operator check
+  before closing bootstrap-secret removal.
+- Login and tenant-scoped application features were accepted in production after deployment.
+- Operational Compose commands load both private configuration sources with
+  `docker compose --env-file .env --env-file .images.env`; plain `docker compose` cannot resolve the immutable backend
+  and frontend image variables stored in `.images.env`.
+
+The pre-tenant dump remains a controlled recovery artifact. Retain it according to the approved backup and personal-data
+retention policy; do not leave an unencrypted long-lived copy on the application VPS.
 
 ### 15. Configure bounded Docker log rotation
 

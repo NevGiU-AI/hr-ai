@@ -180,6 +180,9 @@ Candidate names are conservatively inferred from filenames and email addresses f
 
 ## Run automated tests
 
+The organization ownership model, isolation rules, and existing-database rollout procedure are documented in
+[`specifications/tenant-isolation.md`](specifications/tenant-isolation.md).
+
 Run backend tests:
 
 ```bash

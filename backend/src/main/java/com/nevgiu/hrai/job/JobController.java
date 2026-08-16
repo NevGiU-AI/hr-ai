@@ -3,6 +3,8 @@ package com.nevgiu.hrai.job;
 import com.nevgiu.hrai.job.dto.ApproveJobRequest;
 import com.nevgiu.hrai.job.dto.JobGenerationRequest;
 import com.nevgiu.hrai.job.dto.JobGenerationResponse;
+import com.nevgiu.hrai.security.AppUserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,17 +30,17 @@ public class JobController {
     }
 
     @PostMapping("/approve")
-    public Job approve(@RequestBody ApproveJobRequest request) {
-        return jobGenerationService.approveJob(request);
+    public Job approve(@RequestBody ApproveJobRequest request, @AuthenticationPrincipal AppUserPrincipal principal) {
+        return jobGenerationService.approveJob(request, principal.organizationId());
     }
 
     @GetMapping
-    public Iterable<Job> findAll() {
-        return jobRepository.findAll();
+    public Iterable<Job> findAll(@AuthenticationPrincipal AppUserPrincipal principal) {
+        return jobRepository.findAllByOrganizationId(principal.organizationId());
     }
 
     @GetMapping("/{id}")
-    public Job findById(@PathVariable Long id) {
-        return jobRepository.findById(id).orElseThrow();
+    public Job findById(@PathVariable Long id, @AuthenticationPrincipal AppUserPrincipal principal) {
+        return jobRepository.findByIdAndOrganizationId(id, principal.organizationId()).orElseThrow();
     }
 }

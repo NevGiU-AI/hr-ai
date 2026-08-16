@@ -439,18 +439,16 @@ Do not automatically restore a database backup for ordinary application failure.
 
 ## Data protection and production blockers
 
-CVs contain personal data. Before real candidate information is deployed, resolve:
+Authentication, role-based authorization, restricted CORS, administrator-only built-in import, and organization tenant
+isolation are implemented and were validated in production on 16 August 2026. Before real candidate information is
+processed beyond the approved validation dataset, resolve the remaining controls:
 
-- Authentication and role-based authorization.
 - Candidate lawful processing basis, notice/consent, retention, deletion, correction, and audit policies.
-- Organization or tenant isolation.
-- Restricted CORS.
 - Malware scanning for uploads.
 - Whether and where original CV files will be retained.
 - OpenAI data-processing terms and disclosure that CV text is sent to the provider only during explicit evaluation.
 - Prompt-injection defenses for untrusted CV content.
 - Log and monitoring redaction.
-- Administrator-only access to built-in dataset import, or disable it in production.
 
 The deployment pipeline can be built before these items are complete, but the environment must not be described as production-ready for real candidate data until the blockers are addressed.
 
@@ -503,11 +501,11 @@ Validated on 4 August 2026: a controlled staging drill deliberately failed the p
 
 ### Phase 4 - Approved production promotion
 
-- [ ] Configure the protected `production` environment and separate secrets.
+- [x] Configure the protected `production` environment and separate secrets.
 - [x] Trigger promotion from a semantic version GitHub Release.
 - [x] Require staging-validation aliases for the release commit.
-- [ ] Require production approval where supported.
-- [ ] Check backup readiness before deployment.
+- [x] Require production approval where supported.
+- [x] Check backup readiness before deployment.
 - [x] Add production health checks, application rollback, and deployment summaries.
 - [x] Make public smoke-test failure invoke application-image rollback and external verification.
 - [x] Exercise the public smoke-test rollback path successfully on staging before enabling production.
@@ -515,6 +513,10 @@ Validated on 4 August 2026: a controlled staging drill deliberately failed the p
 - [ ] Validate production log redaction and define the approved incident-log export procedure.
 
 **Exit condition:** an approved release promotes the exact staging-tested artifacts and can safely return to the previous application version.
+
+Validated on 16 August 2026: release `v0.2.0` promoted commit `33d8a04` after a validated pre-tenant database backup and
+controlled production organization migration. The protected deployment completed successfully, public smoke checks
+passed, and authentication plus tenant-scoped application workflows were accepted in production.
 
 ### Phase 5 - Operational hardening
 

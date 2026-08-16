@@ -53,7 +53,8 @@ Existing persistence and tenant-isolation tests remain in place.
 
 - No records were lost or assigned to the wrong organization.
 - The organization backfill and composite CV uniqueness index remain correct.
-- The pre-migration staging backup remains valid and should be retained through production rollout.
+- The pre-migration staging backup was retained through the completed production rollout. Staging and production
+  recovery artifacts now follow their approved backup and personal-data retention policies.
 - No corrective database update or restore is required for this incident.
 
 ## Staging verification

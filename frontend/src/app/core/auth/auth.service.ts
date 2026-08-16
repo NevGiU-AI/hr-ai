@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { EMPTY, Observable, catchError, exhaustMap, filter, map, of, switchMap, tap, throwError, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, fromEvent, map, merge, of, switchMap, tap, throwError, timer } from 'rxjs';
 import { environment } from '../../../environments/environments';
 import { AuthUser, CsrfResponse } from './auth.models';
 import { AuthSessionState } from './auth-session-state.service';
@@ -17,7 +17,13 @@ export class AuthService {
   get user(): AuthUser | null { return this.session.user; }
 
   constructor() {
-    timer(5_000, 5_000).pipe(
+    merge(
+      timer(5_000, 5_000),
+      fromEvent(window, 'focus'),
+      fromEvent(document, 'visibilitychange').pipe(
+        filter(() => document.visibilityState === 'visible'),
+      ),
+    ).pipe(
       filter(() => this.session.user !== null),
       exhaustMap(() => this.http.get<AuthUser>(`${this.apiUrl}/auth/me`).pipe(
         tap((user) => this.session.authenticate(user)),

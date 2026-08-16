@@ -1,0 +1,66 @@
+<section class="accounts-shell">
+  <header>
+    <p class="eyebrow">Security administration</p>
+    <h1>User accounts</h1>
+    <p>Create accounts for your organization and assign their initial access roles.</p>
+  </header>
+
+  <div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>
+  <div class="alert alert-success" role="status" *ngIf="success">{{ success }}</div>
+
+  <section class="panel" aria-labelledby="create-account-title">
+    <h2 id="create-account-title">Create account</h2>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Email
+        <input type="email" formControlName="email" autocomplete="off" />
+        <small *ngIf="form.controls.email.touched && form.controls.email.invalid">Enter a valid email address.</small>
+      </label>
+
+      <label>
+        Initial password
+        <span class="password-field">
+          <input [type]="passwordVisible ? 'text' : 'password'" formControlName="password" autocomplete="new-password" />
+          <button class="password-toggle" type="button"
+                  [attr.aria-label]="passwordVisible ? 'Hide password' : 'Show password'"
+                  [attr.aria-pressed]="passwordVisible" (click)="togglePasswordVisibility()">
+            {{ passwordVisible ? 'Hide' : 'Show' }}
+          </button>
+        </span>
+        <small *ngIf="form.controls.password.touched && form.controls.password.invalid">
+          Use between 12 and 128 characters.
+        </small>
+      </label>
+
+      <fieldset formGroupName="roles">
+        <legend>Roles</legend>
+        <label *ngFor="let role of availableRoles">
+          <input type="checkbox" [formControlName]="role" />
+          {{ role.replace('_', ' ') }}
+        </label>
+      </fieldset>
+
+      <button class="btn btn-primary" type="submit" [disabled]="submitting">
+        {{ submitting ? 'Creating…' : 'Create account' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="account-list-title">
+    <h2 id="account-list-title">Organization accounts</h2>
+    <p *ngIf="loading">Loading accounts…</p>
+    <p *ngIf="!loading && accounts.length === 0">No accounts found.</p>
+    <div class="table-wrapper" *ngIf="!loading && accounts.length > 0">
+      <table>
+        <thead><tr><th>Email</th><th>Roles</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let account of accounts">
+            <td>{{ account.email }}</td>
+            <td>{{ account.roles.join(', ').replace('_', ' ') }}</td>
+            <td><span class="status" [class.disabled]="!account.enabled">{{ account.enabled ? 'Enabled' : 'Disabled' }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

@@ -45,8 +45,9 @@ The organization is always copied from the authenticated administrator; request 
 
 Creation normalizes email, requires a 12–128 character initial password, hashes it with bcrypt, and returns `409` for a
 globally unavailable email. Responses include account identity, organization, enabled state, and roles; they never
-include password hashes or credentials. The Angular administration UI, role changes, disabling, and revocation remain
-separate delivery slices.
+include password hashes or credentials. The Angular `/admin/users` UI lists the current organization's accounts and
+creates enabled accounts with initial roles. Its route and navigation entry are administrator-only. Role changes,
+disabling, and session revocation remain separate delivery slices.
 
 ## Bootstrap administrator
 
@@ -68,7 +69,7 @@ The organization identifier is resolved from the authenticated principal and mus
 
 - Tenant-scoped administrator APIs now list and create accounts, derive organization ownership from the authenticated
   administrator, normalize emails, hash initial passwords with bcrypt, and exclude password hashes from responses.
-- Add administrator UI plus APIs for role changes, disabling, and session revocation.
+- Add APIs and administrator UI for role changes, disabling, and session revocation.
 - Add login throttling, temporary lockout, and security-event audit records.
 - Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
 - Add concurrent-session policy and a shared Spring Session store before horizontal backend scaling.

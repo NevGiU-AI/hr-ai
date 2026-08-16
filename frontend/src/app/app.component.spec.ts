@@ -13,6 +13,8 @@ describe('AppComponent', () => {
   };
 
   beforeEach(async () => {
+    auth.user$.next(user);
+    auth.logout.calls.reset();
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [provideRouter([]), { provide: AuthService, useValue: auth }],
@@ -31,16 +33,24 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('HR AI Recruitment');
   });
 
-  it('links job generation, approved jobs, and candidate evaluation', () => {
+  it('shows account administration in the navigation for administrators', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const links = Array.from(fixture.nativeElement.querySelectorAll('nav a')) as HTMLAnchorElement[];
     expect(links.map((link) => link.textContent?.trim())).toEqual([
-      'Generate job', 'Approved jobs', 'CVs & Evaluation',
+      'Generate job', 'Approved jobs', 'CVs & Evaluation', 'Users',
     ]);
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/jobs/job-offer', '/jobs/job-listing', '/candidates/import',
+      '/jobs/job-offer', '/jobs/job-listing', '/candidates/import', '/admin/users',
     ]);
+  });
+
+  it('hides account administration from non-administrators', () => {
+    auth.user$.next({ ...user, roles: ['RECRUITER'] });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const links = Array.from(fixture.nativeElement.querySelectorAll('nav a')) as HTMLAnchorElement[];
+    expect(links.map((link) => link.textContent?.trim())).not.toContain('Users');
   });
 
   it('renders the NevGiu logo as the accessible home link', () => {

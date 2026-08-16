@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { LoginComponent } from './core/auth/login.component';
+import { adminGuard } from './core/auth/admin.guard';
 
 export const routes: Routes = [
     {
@@ -17,6 +18,13 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () =>
             import("./features/job-offer/job-offer.routes").then((m) => m.JOB_ROUTES),
+    },
+    {
+        path: "admin/users",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+            import("./features/account-administration/account-administration.component")
+                .then((m) => m.AccountAdministrationComponent),
     },
     {
         path: "candidates",

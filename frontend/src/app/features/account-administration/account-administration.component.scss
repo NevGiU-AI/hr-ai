@@ -1,0 +1,21 @@
+.accounts-shell { display: grid; gap: 1.5rem; margin: 0 auto; max-width: 70rem; padding: 2rem 1rem; }
+.accounts-shell header h1, .accounts-shell header p, .panel h2 { margin: 0; }
+.accounts-shell header { display: grid; gap: 0.45rem; }
+.eyebrow { color: #315da8; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.panel { background: #fff; border: 1px solid #dbe2ee; border-radius: 0.8rem; box-shadow: 0 0.5rem 1.5rem rgba(23, 35, 60, 0.08); padding: 1.5rem; }
+form { display: grid; gap: 1rem; margin-top: 1rem; max-width: 38rem; }
+label { display: grid; font-weight: 600; gap: 0.35rem; }
+input[type='email'], input[type='password'], input[type='text'] { border: 1px solid #aab7ca; border-radius: 0.4rem; font: inherit; padding: 0.7rem; width: 100%; }
+input:focus { border-color: #315da8; box-shadow: 0 0 0 0.2rem rgba(49, 93, 168, 0.15); outline: none; }
+.password-field { display: grid; position: relative; }
+.password-field input { padding-right: 4.5rem; }
+.password-toggle { background: transparent; border: 0; color: #315da8; cursor: pointer; font-weight: 700; height: 100%; position: absolute; right: 0.4rem; }
+fieldset { border: 1px solid #dbe2ee; border-radius: 0.5rem; display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.8rem 1rem 1rem; }
+fieldset label { align-items: center; display: flex; font-weight: 500; gap: 0.4rem; }
+small { color: #b42318; font-weight: 400; }
+.table-wrapper { overflow-x: auto; }
+table { border-collapse: collapse; margin-top: 1rem; width: 100%; }
+th, td { border-bottom: 1px solid #e5eaf2; padding: 0.8rem; text-align: left; }
+th { color: #52698f; font-size: 0.8rem; text-transform: uppercase; }
+.status { background: #e7f6ec; border-radius: 999px; color: #18733b; display: inline-block; padding: 0.25rem 0.6rem; }
+.status.disabled { background: #f2f4f7; color: #667085; }

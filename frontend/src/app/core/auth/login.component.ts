@@ -24,7 +24,12 @@ export class LoginComponent {
     password: ['', Validators.required],
   });
   submitting = false;
+  passwordVisible = false;
   error = '';
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
+  }
 
   submit(): void {
     if (this.form.invalid || this.submitting) {

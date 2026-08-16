@@ -11,16 +11,22 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 
 @Entity
-@Table(name = "cv_documents")
+@Table(name = "cv_documents", uniqueConstraints = @UniqueConstraint(
+        name = "uk_cv_documents_organization_sha256", columnNames = {"organization_id", "sha256"}))
 public class CvDocument {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "organization_id", nullable = false, length = 100,
+            columnDefinition = "varchar(100) default 'default'")
+    private String organizationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Candidate candidate;
@@ -33,7 +39,7 @@ public class CvDocument {
 
     private long fileSize;
 
-    @Column(nullable = false, unique = true, length = 64)
+    @Column(nullable = false, length = 64)
     private String sha256;
 
     @Enumerated(EnumType.STRING)
@@ -55,6 +61,8 @@ public class CvDocument {
     private Instant importedAt = Instant.now();
 
     public Long getId() { return id; }
+    public String getOrganizationId() { return organizationId; }
+    public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
     public Candidate getCandidate() { return candidate; }
     public void setCandidate(Candidate candidate) { this.candidate = candidate; }
     public String getOriginalFilename() { return originalFilename; }

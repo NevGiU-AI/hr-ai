@@ -60,32 +60,33 @@ public class CvIngestionService {
     }
 
     @Transactional
-    public CvImportResult importPdf(MultipartFile file) {
+    public CvImportResult importPdf(MultipartFile file, String organizationId) {
         if (file == null || file.isEmpty()) {
             throw new CvIngestionException(HttpStatus.BAD_REQUEST, "A non-empty PDF file is required");
         }
         try {
-            return importPdf(file.getOriginalFilename(), file.getContentType(), file.getBytes(), CvDocumentSource.USER_UPLOAD);
+            return importPdf(file.getOriginalFilename(), file.getContentType(), file.getBytes(),
+                    CvDocumentSource.USER_UPLOAD, organizationId);
         } catch (IOException e) {
             throw new CvIngestionException(HttpStatus.BAD_REQUEST, "Unable to read the uploaded PDF");
         }
     }
 
     @Transactional
-    public CvArchiveImportResult importArchive(MultipartFile file) {
+    public CvArchiveImportResult importArchive(MultipartFile file, String organizationId) {
         if (file == null || file.isEmpty()) {
             throw new CvIngestionException(HttpStatus.BAD_REQUEST, "A non-empty ZIP file is required");
         }
         validateArchiveName(file.getOriginalFilename());
         try {
-            return importArchive(file.getInputStream(), file.getSize(), CvDocumentSource.USER_UPLOAD);
+            return importArchive(file.getInputStream(), file.getSize(), CvDocumentSource.USER_UPLOAD, organizationId);
         } catch (IOException e) {
             throw new CvIngestionException(HttpStatus.BAD_REQUEST, "Unable to read the uploaded ZIP archive");
         }
     }
 
     @Transactional
-    public CvArchiveImportResult importInitialArchive() {
+    public CvArchiveImportResult importInitialArchive(String organizationId) {
         if (!properties.initialImportEnabled()) {
             throw new CvIngestionException(HttpStatus.FORBIDDEN, "Initial CV import is disabled");
         }
@@ -94,13 +95,14 @@ public class CvIngestionService {
             throw new CvIngestionException(HttpStatus.NOT_FOUND, "Initial CV archive was not found");
         }
         try (InputStream input = resource.getInputStream()) {
-            return importArchive(input, resource.contentLength(), CvDocumentSource.INITIAL_DATA);
+            return importArchive(input, resource.contentLength(), CvDocumentSource.INITIAL_DATA, organizationId);
         } catch (IOException e) {
             throw new CvIngestionException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to read the initial CV archive");
         }
     }
 
-    CvArchiveImportResult importArchive(InputStream input, long archiveSize, CvDocumentSource source) throws IOException {
+    CvArchiveImportResult importArchive(InputStream input, long archiveSize, CvDocumentSource source,
+                                        String organizationId) throws IOException {
         if (archiveSize > properties.maxArchiveSize()) {
             throw new CvIngestionException(HttpStatus.PAYLOAD_TOO_LARGE, "ZIP archive exceeds the configured size limit");
         }
@@ -138,7 +140,7 @@ public class CvIngestionService {
                             && ((double) content.length / entry.getCompressedSize()) > properties.maxCompressionRatio()) {
                         throw new CvIngestionException(HttpStatus.PAYLOAD_TOO_LARGE, "ZIP entry has an unsafe compression ratio: " + entryName);
                     }
-                    results.add(importPdf(entryName, PDF_CONTENT_TYPE, content, source));
+                    results.add(importPdf(entryName, PDF_CONTENT_TYPE, content, source, organizationId));
                 } catch (CvIngestionException e) {
                     if (e.getStatus() == HttpStatus.PAYLOAD_TOO_LARGE) {
                         throw e;
@@ -156,10 +158,11 @@ public class CvIngestionService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public CvImportResult importPdf(String filename, String contentType, byte[] content, CvDocumentSource source) {
+    public CvImportResult importPdf(String filename, String contentType, byte[] content, CvDocumentSource source,
+                                    String organizationId) {
         String safeFilename = validatePdf(filename, contentType, content);
         String hash = sha256(content);
-        Optional<CvDocument> existing = documentRepository.findBySha256(hash);
+        Optional<CvDocument> existing = documentRepository.findByOrganizationIdAndSha256(organizationId, hash);
         if (existing.isPresent()) {
             CvDocument document = existing.get();
             Long candidateId = document.getCandidate() == null ? null : document.getCandidate().getId();
@@ -168,6 +171,7 @@ public class CvIngestionService {
         }
 
         CvDocument document = new CvDocument();
+        document.setOrganizationId(organizationId);
         document.setOriginalFilename(safeFilename);
         document.setContentType(PDF_CONTENT_TYPE);
         document.setFileSize(content.length);
@@ -189,6 +193,7 @@ public class CvIngestionService {
             }
 
             Candidate candidate = new Candidate();
+            candidate.setOrganizationId(organizationId);
             candidate.setName(deriveName(safeFilename));
             candidate.setEmail(extractEmail(text));
             candidate.setCvText(text);

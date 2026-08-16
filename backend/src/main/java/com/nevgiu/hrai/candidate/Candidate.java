@@ -11,6 +11,9 @@ public class Candidate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100, columnDefinition = "varchar(100) default 'default'")
+    private String organizationId;
+
     private String name;
     private String email;
     private String location;
@@ -24,6 +27,8 @@ public class Candidate {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getOrganizationId() { return organizationId; }
+    public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

@@ -43,7 +43,7 @@ class CvIngestionServiceTest {
                 "classpath:intial/CVs.zip", true);
         service = new CvIngestionService(candidateRepository, documentRepository, extractor, properties, new DefaultResourceLoader());
 
-        when(documentRepository.findBySha256(any())).thenReturn(Optional.empty());
+        when(documentRepository.findByOrganizationIdAndSha256(any(), any())).thenReturn(Optional.empty());
         when(candidateRepository.save(any(Candidate.class))).thenAnswer(invocation -> {
             Candidate candidate = invocation.getArgument(0);
             candidate.setId(ids.getAndIncrement());
@@ -55,7 +55,7 @@ class CvIngestionServiceTest {
     @Test
     void importsPdfAndCreatesCandidate() {
         CvImportResult result = service.importPdf(
-                "ada-lovelace-resume.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD);
+                "ada-lovelace-resume.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a");
 
         assertThat(result.status()).isEqualTo(CvIngestionStatus.IMPORTED);
         assertThat(result.candidateId()).isNotNull();
@@ -65,7 +65,7 @@ class CvIngestionServiceTest {
     @Test
     void rejectsNonPdfContent() {
         assertThatThrownBy(() -> service.importPdf(
-                "candidate.pdf", "application/pdf", "not-pdf".getBytes(), CvDocumentSource.USER_UPLOAD))
+                "candidate.pdf", "application/pdf", "not-pdf".getBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a"))
                 .isInstanceOf(CvIngestionException.class)
                 .satisfies(error -> assertThat(((CvIngestionException) error).getStatus())
                         .isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE));
@@ -79,7 +79,7 @@ class CvIngestionServiceTest {
         );
 
         CvArchiveImportResult result = service.importArchive(
-                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD);
+                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD, "tenant-a");
 
         assertThat(result.totalFiles()).isEqualTo(2);
         assertThat(result.imported()).isEqualTo(1);
@@ -91,7 +91,7 @@ class CvIngestionServiceTest {
         byte[] archive = zip(new Entry("../candidate.pdf", minimalPdfBytes()));
 
         assertThatThrownBy(() -> service.importArchive(
-                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD))
+                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD, "tenant-a"))
                 .isInstanceOf(CvIngestionException.class)
                 .hasMessage("ZIP archive contains path traversal");
     }
@@ -101,7 +101,7 @@ class CvIngestionServiceTest {
         byte[] archive = zip(new Entry("C:/private/candidate.pdf", minimalPdfBytes()));
 
         assertThatThrownBy(() -> service.importArchive(
-                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD))
+                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD, "tenant-a"))
                 .isInstanceOf(CvIngestionException.class)
                 .hasMessage("ZIP archive contains an absolute path");
     }
@@ -115,7 +115,7 @@ class CvIngestionServiceTest {
         byte[] archive = zip(entries);
 
         assertThatThrownBy(() -> service.importArchive(
-                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD))
+                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD, "tenant-a"))
                 .isInstanceOf(CvIngestionException.class)
                 .hasMessage("ZIP archive contains too many files");
     }
@@ -123,7 +123,7 @@ class CvIngestionServiceTest {
     @Test
     void rejectsArchiveLargerThanConfiguredLimitBeforeReading() {
         assertThatThrownBy(() -> service.importArchive(
-                new ByteArrayInputStream(new byte[0]), 2_000_001, CvDocumentSource.USER_UPLOAD))
+                new ByteArrayInputStream(new byte[0]), 2_000_001, CvDocumentSource.USER_UPLOAD, "tenant-a"))
                 .isInstanceOf(CvIngestionException.class)
                 .satisfies(error -> assertThat(((CvIngestionException) error).getStatus())
                         .isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE));
@@ -139,7 +139,7 @@ class CvIngestionServiceTest {
                 candidateRepository, documentRepository, shortExtractor, properties, new DefaultResourceLoader());
 
         CvImportResult result = reviewService.importPdf(
-                "scan.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD);
+                "scan.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a");
 
         assertThat(result.status()).isEqualTo(CvIngestionStatus.NEEDS_REVIEW);
         assertThat(result.candidateId()).isNull();
@@ -157,7 +157,7 @@ class CvIngestionServiceTest {
         byte[] archive = zip(new Entry("candidate.pdf", minimalPdfBytes()));
 
         assertThatThrownBy(() -> limitedService.importArchive(
-                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD))
+                new ByteArrayInputStream(archive), archive.length, CvDocumentSource.USER_UPLOAD, "tenant-a"))
                 .isInstanceOf(CvIngestionException.class)
                 .satisfies(error -> assertThat(((CvIngestionException) error).getStatus())
                         .isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE));

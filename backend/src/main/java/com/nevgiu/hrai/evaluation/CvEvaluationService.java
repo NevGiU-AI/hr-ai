@@ -40,10 +40,10 @@ public class CvEvaluationService {
         this.evaluationRepository = evaluationRepository;
     }
 
-    public EvaluationResponse evaluateCandidate(EvaluationRequest request) {
-        Candidate candidate = candidateRepository.findById(request.candidateId())
+    public EvaluationResponse evaluateCandidate(EvaluationRequest request, String organizationId) {
+        Candidate candidate = candidateRepository.findByIdAndOrganizationId(request.candidateId(), organizationId)
                 .orElseThrow(() -> new EvaluationException(HttpStatus.NOT_FOUND, "Candidate not found"));
-        Job job = jobRepository.findById(request.jobId())
+        Job job = jobRepository.findByIdAndOrganizationId(request.jobId(), organizationId)
                 .orElseThrow(() -> new EvaluationException(HttpStatus.NOT_FOUND, "Job not found"));
 
         if (candidate.getCvText() == null || candidate.getCvText().isBlank()) {
@@ -72,6 +72,7 @@ public class CvEvaluationService {
         int overall = computeComposite(aiResult.scores(), weights);
 
         CandidateEvaluation entity = new CandidateEvaluation();
+        entity.setOrganizationId(organizationId);
         entity.setCandidate(candidate);
         entity.setJob(job);
         entity.setSkillsMatchScore(aiResult.scores().skillsMatchScore());

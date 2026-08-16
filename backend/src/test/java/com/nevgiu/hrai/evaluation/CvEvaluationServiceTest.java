@@ -121,11 +121,11 @@ class CvEvaluationServiceTest {
     @Test
     void evaluateCandidate_rejectsUnknownCandidateBeforeCallingProvider() {
         CandidateRepository candidates = mock(CandidateRepository.class);
-        when(candidates.findById(99L)).thenReturn(Optional.empty());
+        when(candidates.findByIdAndOrganizationId(99L, "tenant-a")).thenReturn(Optional.empty());
         CvEvaluationService service = new CvEvaluationService(
                 null, new ObjectMapper(), candidates, mock(JobRepository.class), null);
 
-        assertThatThrownBy(() -> service.evaluateCandidate(new EvaluationRequest(99L, 1L, null)))
+        assertThatThrownBy(() -> service.evaluateCandidate(new EvaluationRequest(99L, 1L, null), "tenant-a"))
                 .isInstanceOf(EvaluationException.class)
                 .hasMessage("Candidate not found")
                 .satisfies(error -> assertThat(((EvaluationException) error).getStatus().value()).isEqualTo(404));
@@ -137,12 +137,12 @@ class CvEvaluationServiceTest {
         candidate.setCvText("  ");
         CandidateRepository candidates = mock(CandidateRepository.class);
         JobRepository jobs = mock(JobRepository.class);
-        when(candidates.findById(1L)).thenReturn(Optional.of(candidate));
-        when(jobs.findById(2L)).thenReturn(Optional.of(new Job()));
+        when(candidates.findByIdAndOrganizationId(1L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(jobs.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(new Job()));
         CvEvaluationService service = new CvEvaluationService(
                 null, new ObjectMapper(), candidates, jobs, null);
 
-        assertThatThrownBy(() -> service.evaluateCandidate(new EvaluationRequest(1L, 2L, null)))
+        assertThatThrownBy(() -> service.evaluateCandidate(new EvaluationRequest(1L, 2L, null), "tenant-a"))
                 .isInstanceOf(EvaluationException.class)
                 .hasMessage("Candidate has no extracted CV text")
                 .satisfies(error -> assertThat(((EvaluationException) error).getStatus().value()).isEqualTo(422));

@@ -44,11 +44,11 @@ public class JobGenerationService {
     /**
      * Approves a (possibly edited) job offer and persists it as Job.
      */
-    public Job approveJob(ApproveJobRequest request) {
+    public Job approveJob(ApproveJobRequest request, String organizationId) {
         GeneratedJobOffer offer = request.finalJobOffer();
         JobGenerationRequest original = request.originalRequest();
 
-        return saveJob(offer, original);
+        return saveJob(offer, original, organizationId);
     }
 
     String buildUserPrompt(JobGenerationRequest request) {
@@ -116,8 +116,9 @@ public class JobGenerationService {
         }
     }
 
-    private Job saveJob(GeneratedJobOffer offer, JobGenerationRequest request) {
+    private Job saveJob(GeneratedJobOffer offer, JobGenerationRequest request, String organizationId) {
         Job job = new Job();
+        job.setOrganizationId(organizationId);
         job.setTitle(offer.inferredTitle());
         job.setLevel(offer.level());
         job.setSummary(offer.summary());

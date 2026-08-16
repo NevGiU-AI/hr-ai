@@ -13,6 +13,9 @@ public class CandidateEvaluation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100, columnDefinition = "varchar(100) default 'default'")
+    private String organizationId;
+
     @ManyToOne(optional = false)
     private Candidate candidate;
 
@@ -43,6 +46,8 @@ public class CandidateEvaluation {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getOrganizationId() { return organizationId; }
+    public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
 
     public Candidate getCandidate() { return candidate; }
     public void setCandidate(Candidate candidate) { this.candidate = candidate; }

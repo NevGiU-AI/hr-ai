@@ -142,12 +142,13 @@ class JobGenerationServiceTest {
         saved.setDepartment("Engineering");
         when(jobRepository.save(any(Job.class))).thenReturn(saved);
 
-        Job result = service.approveJob(approveReq);
+        Job result = service.approveJob(approveReq, "tenant-a");
 
         assertThat(result.getId()).isEqualTo(123L);
         assertThat(result.getTitle()).isEqualTo("Senior Backend Developer");
         assertThat(result.getDepartment()).isEqualTo("Engineering");
 
         verify(jobRepository, times(1)).save(any(Job.class));
+        verify(jobRepository).save(argThat(job -> "tenant-a".equals(job.getOrganizationId())));
     }
 }

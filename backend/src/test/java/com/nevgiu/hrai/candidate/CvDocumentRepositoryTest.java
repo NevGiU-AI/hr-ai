@@ -20,6 +20,7 @@ class CvDocumentRepositoryTest {
     @Test
     void persistsCandidateDocumentRelationshipAndLoadsItByHash() {
         Candidate candidate = new Candidate();
+        candidate.setOrganizationId("tenant-a");
         candidate.setName("Ada Lovelace");
         candidate.setCvText("Analytical engine programmer");
         candidate = candidates.save(candidate);
@@ -28,20 +29,30 @@ class CvDocumentRepositoryTest {
         document.setCandidate(candidate);
         documents.saveAndFlush(document);
 
-        CvDocument loaded = documents.findBySha256(document.getSha256()).orElseThrow();
+        CvDocument loaded = documents.findByOrganizationIdAndSha256("tenant-a", document.getSha256()).orElseThrow();
         assertThat(loaded.getCandidate().getId()).isEqualTo(candidate.getId());
         assertThat(loaded.getStatus()).isEqualTo(CvIngestionStatus.IMPORTED);
     }
 
     @Test
-    void enforcesUniqueContentHash() {
+    void enforcesUniqueContentHashWithinOrganization() {
         documents.saveAndFlush(document("b".repeat(64)));
         assertThatThrownBy(() -> documents.saveAndFlush(document("b".repeat(64))))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @Test
+    void permitsSameContentHashAcrossOrganizations() {
+        documents.saveAndFlush(document("c".repeat(64)));
+        CvDocument otherTenant = document("c".repeat(64));
+        otherTenant.setOrganizationId("tenant-b");
+        documents.saveAndFlush(otherTenant);
+        assertThat(documents.findByOrganizationIdAndSha256("tenant-b", otherTenant.getSha256())).isPresent();
+    }
+
     private CvDocument document(String hash) {
         CvDocument document = new CvDocument();
+        document.setOrganizationId("tenant-a");
         document.setOriginalFilename("candidate.pdf");
         document.setContentType("application/pdf");
         document.setFileSize(100);

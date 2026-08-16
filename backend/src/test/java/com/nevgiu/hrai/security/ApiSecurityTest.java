@@ -13,9 +13,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -49,9 +51,12 @@ class ApiSecurityTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void allowsInitialDatasetForAdministrators() throws Exception {
-        when(ingestion.importInitialArchive()).thenReturn(
+        when(ingestion.importInitialArchive("tenant-a")).thenReturn(
                 new CvArchiveImportResult(0, 0, 0, 0, 0, 0, List.of()));
-        mvc.perform(post("/api/candidates/import/initial").with(csrf())).andExpect(status().isOk());
+        AppUserPrincipal principal = new AppUserPrincipal(1L, "admin@example.com", "hash", "tenant-a", true,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        mvc.perform(post("/api/candidates/import/initial").with(user(principal)).with(csrf()))
+                .andExpect(status().isOk());
     }
 
     @Test

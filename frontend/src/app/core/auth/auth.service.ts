@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, map, of, switchMap, tap, throwError, timer } from 'rxjs';
 import { environment } from '../../../environments/environments';
 import { AuthUser, CsrfResponse } from './auth.models';
 import { AuthSessionState } from './auth-session-state.service';
@@ -15,6 +15,16 @@ export class AuthService {
 
   readonly user$ = this.session.user$;
   get user(): AuthUser | null { return this.session.user; }
+
+  constructor() {
+    timer(5_000, 5_000).pipe(
+      filter(() => this.session.user !== null),
+      exhaustMap(() => this.http.get<AuthUser>(`${this.apiUrl}/auth/me`).pipe(
+        tap((user) => this.session.authenticate(user)),
+        catchError(() => EMPTY),
+      )),
+    ).subscribe();
+  }
 
   ensureAuthenticated(): Observable<boolean> {
     return this.ensureCsrf().pipe(

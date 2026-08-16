@@ -26,14 +26,16 @@ and allowed protected controls to remain visible until their requests failed.
 
 Authentication state now lives in a dedicated `AuthSessionState` service:
 
-- successful logout broadcasts a content-free `{ type: "logout" }` event through `BroadcastChannel`;
+- successful logout broadcasts a content-free `{ type: "logout" }` event through `BroadcastChannel` and writes a
+  unique logout event ID to `localStorage` as a cross-browser fallback;
 - receiving tabs clear their cached user and CSRF token and redirect to login;
 - the HTTP interceptor expires local state and redirects whenever a protected request returns HTTP 401;
 - login HTTP 401 responses remain with the login form so it can show the generic credential error; and
 - guarded navigation rechecks `/api/auth/me` instead of trusting a cached user indefinitely.
 
-The channel never contains the user, session cookie, CSRF token, credentials, candidate information, or other sensitive
-data. The secure `HttpOnly` session cookie remains controlled by the browser and server.
+Neither cross-tab mechanism contains the user, session cookie, CSRF token, credentials, candidate information, or
+other sensitive data. The `localStorage` value is only a unique event ID. The secure `HttpOnly` session cookie remains
+controlled by the browser and server.
 
 ## Regression coverage
 
@@ -41,6 +43,7 @@ Frontend tests verify that:
 
 - local expiration clears user and CSRF state;
 - a logout event received from another tab clears state and redirects;
+- the `localStorage` fallback immediately clears state and redirects;
 - protected-request HTTP 401 responses expire the session; and
 - login failures do not trigger the protected-request redirect behavior.
 

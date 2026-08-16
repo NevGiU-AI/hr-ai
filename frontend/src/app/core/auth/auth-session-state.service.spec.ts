@@ -47,4 +47,20 @@ describe('AuthSessionState', () => {
     expect(csrf.token).toBe('');
     expect(router.url).toContain('/login');
   });
+
+  it('reacts immediately to the cross-tab local-storage logout signal', async () => {
+    state.authenticate({ id: 1, email: 'admin@example.com', organizationId: 'staging', roles: ['ADMIN'] });
+    csrf.token = 'csrf-token';
+    await router.navigateByUrl('/candidates/import');
+
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'hr-ai-auth-logout',
+      newValue: 'logout-event-id',
+    }));
+    await Promise.resolve();
+
+    expect(state.user).toBeNull();
+    expect(csrf.token).toBe('');
+    expect(router.url).toContain('/login');
+  });
 });

@@ -5,6 +5,7 @@ import { AuthUser } from './auth.models';
 import { CsrfTokenStore } from './csrf-token.store';
 
 const AUTH_CHANNEL = 'hr-ai-auth';
+const AUTH_LOGOUT_STORAGE_KEY = 'hr-ai-auth-logout';
 
 @Injectable({ providedIn: 'root' })
 export class AuthSessionState {
@@ -22,8 +23,15 @@ export class AuthSessionState {
   constructor() {
     this.channel?.addEventListener('message', (event: MessageEvent) => {
       if (event.data?.type !== 'logout') return;
-      this.zone.run(() => this.expire(false, true));
+      this.handleRemoteLogout();
     });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event: StorageEvent) => {
+        if (event.key !== AUTH_LOGOUT_STORAGE_KEY || event.newValue === null) return;
+        this.handleRemoteLogout();
+      });
+    }
   }
 
   authenticate(user: AuthUser): void {
@@ -35,9 +43,18 @@ export class AuthSessionState {
     this.userSubject.next(null);
     this.csrf.token = '';
 
-    if (broadcast) this.channel?.postMessage({ type: 'logout' });
+    if (broadcast) {
+      this.channel?.postMessage({ type: 'logout' });
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(AUTH_LOGOUT_STORAGE_KEY, `${Date.now()}-${crypto.randomUUID()}`);
+      }
+    }
     if (redirect && !returnUrl.startsWith('/login')) {
       void this.router.navigate(['/login'], { queryParams: { returnUrl } });
     }
+  }
+
+  private handleRemoteLogout(): void {
+    this.zone.run(() => this.expire(false, true));
   }
 }

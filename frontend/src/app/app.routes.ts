@@ -27,6 +27,13 @@ export const routes: Routes = [
                 .then((m) => m.AccountAdministrationComponent),
     },
     {
+        path: "admin/security-events",
+        canActivate: [adminGuard],
+        loadComponent: () =>
+            import("./features/security-audit/security-audit.component")
+                .then((m) => m.SecurityAuditComponent),
+    },
+    {
         path: "candidates",
         canActivate: [authGuard],
         loadChildren: () =>

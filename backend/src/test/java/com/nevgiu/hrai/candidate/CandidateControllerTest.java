@@ -6,6 +6,7 @@ import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
 import com.nevgiu.hrai.web.ApiExceptionHandler;
 import com.nevgiu.hrai.security.AppUserPrincipal;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +44,7 @@ class CandidateControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean CandidateRepository candidateRepository;
     @MockitoBean CvIngestionService ingestionService;
+    @MockitoBean SecurityAuditService securityAuditService;
 
     @BeforeEach
     void authenticate() {

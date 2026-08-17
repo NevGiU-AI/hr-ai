@@ -1,0 +1,16 @@
+package com.nevgiu.hrai.security.audit;
+
+public enum SecurityEventType {
+    LOGIN_SUCCEEDED,
+    LOGIN_FAILED,
+    LOGIN_THROTTLED,
+    ACCOUNT_LOCKED,
+    LOGOUT,
+    ACCOUNT_CREATED,
+    ROLES_CHANGED,
+    ACCOUNT_ENABLED,
+    ACCOUNT_DISABLED,
+    SESSIONS_REVOKED,
+    ACCOUNT_UNLOCKED,
+    ADMIN_ACTION_DENIED
+}

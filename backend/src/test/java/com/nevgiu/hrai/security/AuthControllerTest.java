@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,7 +20,8 @@ import static org.mockito.Mockito.when;
 class AuthControllerTest {
     private final AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     private final LoginThrottleService throttle = mock(LoginThrottleService.class);
-    private final AuthController controller = new AuthController(authenticationManager, throttle);
+    private final SecurityAuditService audit = mock(SecurityAuditService.class);
+    private final AuthController controller = new AuthController(authenticationManager, throttle, audit);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final HttpServletResponse response = mock(HttpServletResponse.class);
 

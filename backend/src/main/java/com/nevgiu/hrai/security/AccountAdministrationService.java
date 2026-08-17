@@ -4,6 +4,8 @@ import com.nevgiu.hrai.security.dto.AccountResponse;
 import com.nevgiu.hrai.security.dto.CreateAccountRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountRolesRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountStatusRequest;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
+import com.nevgiu.hrai.security.audit.SecurityEventType;
 import org.springframework.http.HttpStatus;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,13 +21,16 @@ public class AccountAdministrationService {
     private final PasswordEncoder passwordEncoder;
     private final AccountSessionService sessions;
     private final LoginThrottleService loginThrottle;
+    private final SecurityAuditService audit;
 
     public AccountAdministrationService(AppUserRepository users, PasswordEncoder passwordEncoder,
-                                        AccountSessionService sessions, LoginThrottleService loginThrottle) {
+                                        AccountSessionService sessions, LoginThrottleService loginThrottle,
+                                        SecurityAuditService audit) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.sessions = sessions;
         this.loginThrottle = loginThrottle;
+        this.audit = audit;
     }
 
     @Transactional(readOnly = true)
@@ -34,7 +39,7 @@ public class AccountAdministrationService {
     }
 
     @Transactional
-    public AccountResponse create(String organizationId, CreateAccountRequest request) {
+    public AccountResponse create(String organizationId, Long actorId, CreateAccountRequest request) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         if (users.findByEmailIgnoreCase(email).isPresent()) {
             throw duplicateEmail();
@@ -42,6 +47,8 @@ public class AccountAdministrationService {
         try {
             AppUser saved = users.saveAndFlush(new AppUser(email, passwordEncoder.encode(request.password()),
                     organizationId, request.roles()));
+            audit.administration(SecurityEventType.ACCOUNT_CREATED, actorId, organizationId, saved,
+                    "roles=" + sortedRoles(saved));
             return toResponse(saved);
         } catch (DataIntegrityViolationException exception) {
             throw duplicateEmail();
@@ -57,6 +64,8 @@ public class AccountAdministrationService {
         account.replaceRoles(request.roles());
         AccountResponse response = toResponse(users.saveAndFlush(account));
         sessions.revoke(account.getEmail());
+        audit.administration(SecurityEventType.ROLES_CHANGED, actorId, organizationId, account,
+                "roles=" + sortedRoles(account));
         return response;
     }
 
@@ -69,6 +78,8 @@ public class AccountAdministrationService {
         account.setEnabled(request.enabled());
         AccountResponse response = toResponse(users.saveAndFlush(account));
         if (!request.enabled()) sessions.revoke(account.getEmail());
+        audit.administration(request.enabled() ? SecurityEventType.ACCOUNT_ENABLED : SecurityEventType.ACCOUNT_DISABLED,
+                actorId, organizationId, account, null);
         return response;
     }
 
@@ -76,7 +87,10 @@ public class AccountAdministrationService {
     public int revokeSessions(String organizationId, Long actorId, Long accountId) {
         rejectSelfManagement(actorId, accountId, "revoke your own session");
         AppUser account = findAccount(organizationId, accountId);
-        return sessions.revoke(account.getEmail());
+        int revoked = sessions.revoke(account.getEmail());
+        audit.administration(SecurityEventType.SESSIONS_REVOKED, actorId, organizationId, account,
+                "revokedSessions=" + revoked);
+        return revoked;
     }
 
     @Transactional(readOnly = true)
@@ -84,6 +98,7 @@ public class AccountAdministrationService {
         rejectSelfManagement(actorId, accountId, "unlock your own account");
         AppUser account = findAccount(organizationId, accountId);
         loginThrottle.unlockAccount(account.getEmail());
+        audit.administration(SecurityEventType.ACCOUNT_UNLOCKED, actorId, organizationId, account, null);
         return toResponse(account);
     }
 
@@ -115,5 +130,9 @@ public class AccountAdministrationService {
         long remainingSeconds = loginThrottle.accountLockRemainingSeconds(user.getEmail());
         return new AccountResponse(user.getId(), user.getEmail(), user.getOrganizationId(), user.isEnabled(),
                 user.getRoles(), remainingSeconds > 0, remainingSeconds);
+    }
+
+    private String sortedRoles(AppUser user) {
+        return user.getRoles().stream().map(Enum::name).sorted().collect(java.util.stream.Collectors.joining(","));
     }
 }

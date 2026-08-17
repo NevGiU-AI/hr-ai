@@ -1,5 +1,7 @@
 package com.nevgiu.hrai.security;
 
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
+
 import com.nevgiu.hrai.security.dto.AccountResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ class AccountAdministrationControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean AccountAdministrationService accounts;
     @MockitoBean AppUserDetailsService userDetailsService;
+    @MockitoBean SecurityAuditService securityAuditService;
 
     @Test
     void administratorsOnlySeeAccountsFromTheirOrganization() throws Exception {
@@ -50,7 +53,8 @@ class AccountAdministrationControllerTest {
     @Test
     void administratorCreatesAnAccountInTheAuthenticatedOrganization() throws Exception {
         AppUserPrincipal principal = principal("tenant-a", "ROLE_ADMIN");
-        when(accounts.create(org.mockito.ArgumentMatchers.eq("tenant-a"), org.mockito.ArgumentMatchers.any()))
+        when(accounts.create(org.mockito.ArgumentMatchers.eq("tenant-a"), org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new AccountResponse(2L, "recruiter@example.com", "tenant-a", true,
                         Set.of(AppRole.RECRUITER), false, 0));
 
@@ -80,7 +84,8 @@ class AccountAdministrationControllerTest {
     @Test
     void returnsTheTypedApiErrorForDuplicateEmail() throws Exception {
         AppUserPrincipal principal = principal("tenant-a", "ROLE_ADMIN");
-        when(accounts.create(org.mockito.ArgumentMatchers.eq("tenant-a"), org.mockito.ArgumentMatchers.any()))
+        when(accounts.create(org.mockito.ArgumentMatchers.eq("tenant-a"), org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new AccountAdministrationException(org.springframework.http.HttpStatus.CONFLICT,
                         "An account could not be created with this email"));
 

@@ -77,6 +77,24 @@ Caddy edge network rather than directly from the public internet.
 Administrators see temporary account lock state in the tenant-scoped account list and may clear another account's lock.
 Unlock does not clear an IP-wide lock and cannot operate across organizations or on the administrator's own row.
 
+## Security-event auditing
+
+Authentication and account-administration outcomes are persisted in PostgreSQL. Known-account login events inherit the
+account's organization; account-management events inherit the authenticated administrator's organization. The API never
+accepts an organization identifier from the request. Unknown login emails and client IP addresses are stored only as
+SHA-256 hashes, and unknown-account events are not exposed in any tenant history. Credentials, passwords, session IDs,
+CSRF tokens, and raw client IP addresses are never recorded.
+
+The audit covers successful and failed login, throttled login, account lockout, logout, account creation, role changes,
+enable/disable, session revocation, administrator unlock, and denied administration operations. Audit writes use an
+independent transaction and fail safely, so an unavailable audit store is logged without changing the authentication or
+administration response. A scheduled cleanup removes records older than `APP_SECURITY_AUDIT_RETENTION` (365 days by
+default). Every backend replica may run the idempotent cleanup.
+
+`GET /api/admin/security-events?page=0&size=50` requires `ADMIN`, caps page size at 100, and returns only the caller's
+organization. The Angular **Security events** page provides the same tenant-scoped, paginated history. Identifier hashes
+remain internal and are not returned by the API.
+
 Staging validation must cover both independent limits. The account test uses one disposable recruiter: failures one
 through four return `401`, failure five returns `429` with `Retry-After`, correct credentials remain blocked during the
 lock, and administrator unlock restores access. The IP test uses a temporary Redis namespace, an isolated browser or
@@ -103,8 +121,8 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Persist tenant-scoped security-event audit records for authentication and every account-administration operation.
 - Add authenticated password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
+- Audit password change and reset outcomes as part of that implementation.
 - Add maximum concurrent-session limits using the indexed Spring Session repository.
 - Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
   staging smoke tests before closing the authentication foundation.
@@ -146,5 +164,5 @@ Telegram or WhatsApp account linking will associate a provider-verified identity
 - Repeated failures across different accounts from one client reach the independent IP limit.
 - Unknown, disabled, incorrect-password, and temporarily locked login attempts never disclose account existence.
 - Password hashes, session identifiers, CSRF tokens, and credentials never appear in logs or API responses.
-- Full security-foundation approval remains blocked until security auditing, password management, concurrent-session
+- Full security-foundation approval remains blocked until password management, concurrent-session
   policy, and their authorization and tenant-isolation tests are complete.

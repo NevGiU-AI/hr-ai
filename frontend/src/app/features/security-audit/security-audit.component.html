@@ -1,0 +1,28 @@
+<section class="audit-shell">
+  <header>
+    <p class="eyebrow">Security administration</p>
+    <h1>Security events</h1>
+    <p>Tenant-scoped authentication and account-administration history. {{ totalElements }} event(s).</p>
+  </header>
+  <div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>
+  <p *ngIf="loading">Loading security events…</p>
+  <p *ngIf="!loading && events.length === 0">No security events found.</p>
+  <div class="table-wrapper" *ngIf="!loading && events.length > 0">
+    <table>
+      <thead><tr><th>Time</th><th>Event</th><th>Outcome</th><th>Actor</th><th>Target</th><th>Details</th></tr></thead>
+      <tbody><tr *ngFor="let event of events">
+        <td>{{ event.createdAt | date:'medium' }}</td>
+        <td>{{ event.eventType.replaceAll('_', ' ') }}</td>
+        <td><span class="outcome" [class.failure]="event.outcome !== 'SUCCESS'">{{ event.outcome }}</span></td>
+        <td>{{ identity(event.actorEmail, event.actorUserId) }}</td>
+        <td>{{ identity(event.targetEmail, event.targetUserId) }}</td>
+        <td>{{ event.details || '—' }}</td>
+      </tr></tbody>
+    </table>
+  </div>
+  <nav class="pagination" aria-label="Security event pages" *ngIf="totalPages > 1">
+    <button type="button" class="btn btn-outline-secondary" [disabled]="page === 0 || loading" (click)="load(page - 1)">Previous</button>
+    <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+    <button type="button" class="btn btn-outline-secondary" [disabled]="page + 1 >= totalPages || loading" (click)="load(page + 1)">Next</button>
+  </nav>
+</section>

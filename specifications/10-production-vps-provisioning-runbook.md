@@ -498,6 +498,9 @@ Validated on 16 August 2026 for release `v0.2.0`, commit `33d8a04`:
   `UNIQUE (organization_id, sha256)`.
 - The release promoted the exact staging-validated images and passed the protected production deployment and public
   smoke checks.
+- Release `v0.4.0` deployed Redis-backed account/IP login throttling, temporary lockout, and administrator unlock to
+  production on 17 August 2026. Destructive threshold testing remains staging-only; production uses normal login and
+  health smoke checks after promotion.
 - The first production administrator was bootstrapped in organization `production`. The one-time password was then
   removed from `.env` and only the backend was recreated; repeat login after that recreation is the final operator check
   before closing bootstrap-secret removal.

@@ -544,6 +544,8 @@ Validation completed:
 - GitHub smoke tests passed for the public frontend and backend health URLs.
 - The deployed images received staging-validation aliases.
 - A human functional test successfully generated and approved a job offer, ingested CV data, and evaluated a candidate against the approved job.
+- Release `v0.4.0` deployed Redis-backed account/IP login throttling, temporary lockout, and administrator unlock to
+  staging on 17 August 2026. Section 14A is the repeatable behavioral validation procedure.
 
 No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed environment file was added to Git or documentation.
 

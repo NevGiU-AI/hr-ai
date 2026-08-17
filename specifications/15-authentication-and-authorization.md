@@ -118,6 +118,9 @@ The organization identifier is resolved from the authenticated principal and mus
 - Indexed Spring Session Redis was deployed and reported operational in staging and production on 17 August 2026.
   Redis authentication and application operation were accepted. Backend-restart persistence and distributed
   administrator revocation remain explicit smoke tests for every environment and future multi-replica deployment.
+- Redis-backed account/IP login throttling, temporary lockout, and administrator unlock were deployed to staging and
+  production in release `v0.4.0` on 17 August 2026. Deployment is complete; the documented account-limit and isolated
+  IP-limit procedures remain the repeatable release-validation evidence for policy behavior.
 
 ## Future external channels
 

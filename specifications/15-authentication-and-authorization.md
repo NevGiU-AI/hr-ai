@@ -94,6 +94,10 @@ The organization identifier is resolved from the authenticated principal and mus
 - Production login and tenant-scoped application features were accepted after deployment. The one-time bootstrap
   password was removed and the backend recreated; repeat login against the persisted account remains the explicit final
   operator check for secret-removal closure.
+- Staging account lifecycle administration from PR `#25` (`4984b82`) was accepted on 17 August 2026. Validation used
+  separate administrator and recruiter browser sessions and confirmed role updates, explicit session revocation,
+  automatic logout after disabling, rejected login while disabled, and successful login after re-enabling. The
+  administrator's own row remained non-editable, preserving the self-management safeguard.
 
 ## Future external channels
 

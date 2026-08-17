@@ -77,6 +77,14 @@ Caddy edge network rather than directly from the public internet.
 Administrators see temporary account lock state in the tenant-scoped account list and may clear another account's lock.
 Unlock does not clear an IP-wide lock and cannot operate across organizations or on the administrator's own row.
 
+Staging validation must cover both independent limits. The account test uses one disposable recruiter: failures one
+through four return `401`, failure five returns `429` with `Retry-After`, correct credentials remain blocked during the
+lock, and administrator unlock restores access. The IP test uses a temporary Redis namespace, an isolated browser or
+network, three distinct nonexistent email addresses, a three-attempt IP limit, and a one-minute lock. This proves the
+IP limit without triggering the account limit or contaminating normal staging counters. The original `.env` settings
+must be restored immediately afterward. The complete operator procedure is in
+[the staging runbook](./09-staging-vps-provisioning-runbook.md#14a-validate-login-throttling-and-temporary-lockout).
+
 ## Bootstrap administrator
 
 Before the first secured deployment, configure:

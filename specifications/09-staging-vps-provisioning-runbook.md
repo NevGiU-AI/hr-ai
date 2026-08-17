@@ -267,6 +267,18 @@ BOOTSTRAP_ADMIN_ORGANIZATION=staging
 SESSION_TIMEOUT=30m
 ```
 
+After deploying Redis-backed Spring Session, verify Redis authentication and service health without displaying the password:
+
+```bash
+docker compose --env-file .env --env-file .images.env \
+  exec -T redis sh -c 'redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping'
+docker compose --env-file .env --env-file .images.env ps backend redis
+```
+
+Expected: Redis returns `PONG`, Redis reports healthy, and the backend reaches healthy after startup. Sign in once after
+the initial cutover, restart only the backend, and verify the session remains authenticated. Also confirm administrator
+session revocation signs the target user out. This rollout was accepted in staging on 17 August 2026.
+
 `ACME_EMAIL` is the monitored operational contact Caddy supplies to the ACME certificate authority for automatic HTTPS certificate issuance and renewal. It can receive expiration, renewal-failure, policy, or recovery notices. It is not used to sign in to the application, send application email, or authenticate to OpenAI. Use a role mailbox where possible; staging and production may share this contact because it is administrative metadata, not an environment credential.
 
 Confirm these environment-specific values remain:

@@ -9,9 +9,15 @@
 - [x] Add organization ownership to existing business records and enforce tenant-scoped repository access.
 - [x] Back up and migrate staging and production data to explicit organizations, deploy release `v0.2.0`, and validate
   authentication plus tenant-scoped workflows.
-- [ ] Complete account administration, login throttling/lockout, session revocation, and security-event auditing.
-  Tenant-scoped administrator APIs and UI cover listing, creation, role updates, disabling, and Redis-backed session
-  revocation across restarts and replicas. Throttling, audit events, password management, and concurrent-session limits remain.
+- [x] Implement tenant-scoped account administration for listing, creation, role updates, enabling/disabling, and session revocation.
+- [x] Move browser sessions and administrator revocation to indexed Spring Session Redis so sessions survive backend
+  restarts and revocation works across replicas; validate the Redis deployment in staging and production.
+- [ ] Add Redis-backed login throttling, IP/account failure limits, temporary lockout, and administrator unlock.
+- [ ] Persist tenant-scoped security events for login outcomes, lockout/unlock, logout, account lifecycle changes,
+  password operations, and session revocation.
+- [ ] Add authenticated password change and administrator-assisted reset; defer email self-service reset until mail delivery is approved.
+- [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
+  audit-log, password, and session-policy validation.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.
@@ -25,6 +31,9 @@
 - [ ] Confirm all development, staging, production, and backup credentials are isolated, rotated when needed, and absent from Git.
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
+
+**Immediate delivery sequence:** login throttling/lockout -> security-event auditing -> password management ->
+concurrent-session limits -> final security validation -> governed CV file storage/OCR -> typed CV chat -> speech input/playback.
 
 ## Phase 1 - Stabilize job-offer generation
 

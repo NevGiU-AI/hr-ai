@@ -35,19 +35,24 @@ Login failures always return the generic message `Invalid email or password`; th
 
 ## Account administration API
 
-The first administration slice exposes tenant-scoped account listing and creation. Both endpoints require `ADMIN`.
+Account administration exposes tenant-scoped lifecycle operations. Every endpoint requires `ADMIN`.
 The organization is always copied from the authenticated administrator; request bodies cannot select it.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/admin/users` | List accounts in the administrator's organization, ordered by email. |
 | `POST` | `/api/admin/users` | Create an enabled account in that organization with one or more approved roles. |
+| `PUT` | `/api/admin/users/{id}/roles` | Replace another account's roles and revoke its active sessions. |
+| `PUT` | `/api/admin/users/{id}/status` | Enable or disable another account; disabling revokes active sessions. |
+| `POST` | `/api/admin/users/{id}/sessions/revoke` | Sign another account out of every active session. |
 
 Creation normalizes email, requires a 12–128 character initial password, hashes it with bcrypt, and returns `409` for a
 globally unavailable email. Responses include account identity, organization, enabled state, and roles; they never
 include password hashes or credentials. The Angular `/admin/users` UI lists the current organization's accounts and
-creates enabled accounts with initial roles. Its route and navigation entry are administrator-only. Role changes,
-disabling, and session revocation remain separate delivery slices.
+creates enabled accounts with initial roles. Its route and navigation entry are administrator-only. Administrators can
+also update another account's roles, enable or disable it, and revoke all its active sessions. Self-management is
+rejected, tenant-scoped lookup prevents cross-organization mutation, and pessimistic locking prevents concurrent
+changes from removing the organization's last enabled administrator.
 
 ## Bootstrap administrator
 
@@ -67,12 +72,12 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Tenant-scoped administrator APIs now list and create accounts, derive organization ownership from the authenticated
-  administrator, normalize emails, hash initial passwords with bcrypt, and exclude password hashes from responses.
-- Add APIs and administrator UI for role changes, disabling, and session revocation.
+- Tenant-scoped administrator APIs and UI now cover account listing, creation, role changes, enabling/disabling, and
+  session revocation while excluding password hashes and preventing removal of the last enabled administrator.
 - Add login throttling, temporary lockout, and security-event audit records.
 - Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
-- Add concurrent-session policy and a shared Spring Session store before horizontal backend scaling.
+- Add concurrent-session limits and replace the in-process registry with a shared Spring Session store before
+  horizontal backend scaling.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
 
 ## Validated rollout

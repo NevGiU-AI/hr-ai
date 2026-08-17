@@ -5,6 +5,7 @@ import com.nevgiu.hrai.security.dto.CsrfResponse;
 import com.nevgiu.hrai.security.dto.LoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +28,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthenticationManager authenticationManager;
+    private final ActiveSessionRegistry sessions;
     private final HttpSessionSecurityContextRepository contexts = new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, ActiveSessionRegistry sessions) {
         this.authenticationManager = authenticationManager;
+        this.sessions = sessions;
     }
 
     @GetMapping("/csrf")
@@ -49,6 +52,7 @@ public class AuthController {
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
             contexts.saveContext(context, servletRequest, servletResponse);
+            sessions.register(((AppUserPrincipal) authentication.getPrincipal()).id(), servletRequest.getSession(false));
             return ResponseEntity.ok(toResponse((AppUserPrincipal) authentication.getPrincipal()));
         } catch (AuthenticationException exception) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -64,6 +68,8 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response,
                                        Authentication authentication) {
+        HttpSession session = request.getSession(false);
+        if (session != null) sessions.unregister(session);
         new SecurityContextLogoutHandler().logout(request, response, authentication);
         return ResponseEntity.noContent().build();
     }

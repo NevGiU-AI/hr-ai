@@ -43,4 +43,12 @@ public class AppUser {
     public String getOrganizationId() { return organizationId; }
     public boolean isEnabled() { return enabled; }
     public Set<AppRole> getRoles() { return Set.copyOf(roles); }
+
+    public void replaceRoles(Set<AppRole> roles) {
+        this.roles = new LinkedHashSet<>(roles);
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 }

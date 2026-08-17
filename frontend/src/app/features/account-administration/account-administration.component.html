@@ -52,12 +52,36 @@
     <p *ngIf="!loading && accounts.length === 0">No accounts found.</p>
     <div class="table-wrapper" *ngIf="!loading && accounts.length > 0">
       <table>
-        <thead><tr><th>Email</th><th>Roles</th><th>Status</th></tr></thead>
+        <thead><tr><th>Email</th><th>Roles</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           <tr *ngFor="let account of accounts">
             <td>{{ account.email }}</td>
-            <td>{{ account.roles.join(', ').replace('_', ' ') }}</td>
+            <td>
+              <div class="role-editor">
+                <label *ngFor="let role of availableRoles">
+                  <input type="checkbox" [checked]="roleSelected(account, role)"
+                         [disabled]="account.id === currentUserId || busyAccountId === account.id"
+                         (change)="toggleAccountRole(account, role, $any($event.target).checked)" />
+                  {{ role.replace('_', ' ') }}
+                </label>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        [disabled]="account.id === currentUserId || busyAccountId === account.id || !rolesChanged(account)"
+                        (click)="saveRoles(account)">Save roles</button>
+              </div>
+            </td>
             <td><span class="status" [class.disabled]="!account.enabled">{{ account.enabled ? 'Enabled' : 'Disabled' }}</span></td>
+            <td>
+              <div class="account-actions">
+                <span *ngIf="account.id === currentUserId" class="current-account">Current account</span>
+                <ng-container *ngIf="account.id !== currentUserId">
+                  <button type="button" class="btn btn-sm" [class.btn-outline-danger]="account.enabled"
+                          [class.btn-outline-success]="!account.enabled" [disabled]="busyAccountId === account.id"
+                          (click)="toggleStatus(account)">{{ account.enabled ? 'Disable' : 'Enable' }}</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary"
+                          [disabled]="busyAccountId === account.id" (click)="revokeSessions(account)">Revoke sessions</button>
+                </ng-container>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>

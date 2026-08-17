@@ -35,4 +35,23 @@ describe('AccountAdministrationService', () => {
     expect(request.request.body.organizationId).toBeUndefined();
     request.flush({ id: 2, organizationId: 'default', enabled: true, ...payload });
   });
+
+  it('updates roles, status, and revokes sessions for a specific account', () => {
+    service.updateRoles(2, ['REVIEWER']).subscribe();
+    const roles = http.expectOne(`${environment.apiUrl}/admin/users/2/roles`);
+    expect(roles.request.method).toBe('PUT');
+    expect(roles.request.body).toEqual({ roles: ['REVIEWER'] });
+    roles.flush({ id: 2, email: 'user@example.com', organizationId: 'default', enabled: true, roles: ['REVIEWER'] });
+
+    service.updateStatus(2, false).subscribe();
+    const status = http.expectOne(`${environment.apiUrl}/admin/users/2/status`);
+    expect(status.request.method).toBe('PUT');
+    expect(status.request.body).toEqual({ enabled: false });
+    status.flush({ id: 2, email: 'user@example.com', organizationId: 'default', enabled: false, roles: ['REVIEWER'] });
+
+    service.revokeSessions(2).subscribe();
+    const sessions = http.expectOne(`${environment.apiUrl}/admin/users/2/sessions/revoke`);
+    expect(sessions.request.method).toBe('POST');
+    sessions.flush({ revokedSessions: 1 });
+  });
 });

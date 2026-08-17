@@ -1,6 +1,8 @@
 package com.nevgiu.hrai.security;
 
 import com.nevgiu.hrai.security.dto.CreateAccountRequest;
+import com.nevgiu.hrai.security.dto.UpdateAccountRolesRequest;
+import com.nevgiu.hrai.security.dto.UpdateAccountStatusRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -16,12 +18,14 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccountAdministrationServiceTest {
     @Mock AppUserRepository users;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock ActiveSessionRegistry sessions;
     @InjectMocks AccountAdministrationService service;
 
     @Test
@@ -64,5 +68,75 @@ class AccountAdministrationServiceTest {
                 "race@example.com", "a-secure-password", Set.of(AppRole.RECRUITER))))
                 .isInstanceOf(AccountAdministrationException.class)
                 .hasMessage("An account could not be created with this email");
+    }
+
+    @Test
+    void updatesRolesInsideTheActorsOrganizationAndRevokesExistingSessions() {
+        AppUser account = org.mockito.Mockito.mock(AppUser.class);
+        when(account.getId()).thenReturn(2L);
+        when(account.getEmail()).thenReturn("user@example.com");
+        when(account.getOrganizationId()).thenReturn("tenant-a");
+        when(account.isEnabled()).thenReturn(true);
+        when(account.getRoles()).thenReturn(Set.of(AppRole.RECRUITER));
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(account));
+        when(users.saveAndFlush(account)).thenReturn(account);
+
+        service.updateRoles("tenant-a", 1L, 2L,
+                new UpdateAccountRolesRequest(Set.of(AppRole.REVIEWER)));
+
+        verify(account).replaceRoles(Set.of(AppRole.REVIEWER));
+        verify(sessions).revoke(2L);
+    }
+
+    @Test
+    void rejectsCrossTenantAccountMutationAsNotFound() {
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.updateStatus("tenant-a", 1L, 2L,
+                new UpdateAccountStatusRequest(false)))
+                .isInstanceOf(AccountAdministrationException.class)
+                .hasMessage("Account not found");
+        verify(sessions, never()).revoke(2L);
+    }
+
+    @Test
+    void preventsRemovingTheLastEnabledAdministrator() {
+        AppUser account = org.mockito.Mockito.mock(AppUser.class);
+        when(account.isEnabled()).thenReturn(true);
+        when(account.getRoles()).thenReturn(Set.of(AppRole.ADMIN));
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(account));
+        when(users.findAllByOrganizationIdAndEnabledTrueAndRolesContaining("tenant-a", AppRole.ADMIN))
+                .thenReturn(java.util.List.of(account));
+
+        assertThatThrownBy(() -> service.updateRoles("tenant-a", 1L, 2L,
+                new UpdateAccountRolesRequest(Set.of(AppRole.RECRUITER))))
+                .isInstanceOf(AccountAdministrationException.class)
+                .hasMessage("The organization must retain at least one enabled administrator");
+    }
+
+    @Test
+    void disablesAnotherAccountAndRevokesItsSessions() {
+        AppUser account = org.mockito.Mockito.mock(AppUser.class);
+        when(account.getId()).thenReturn(2L);
+        when(account.getEmail()).thenReturn("user@example.com");
+        when(account.getOrganizationId()).thenReturn("tenant-a");
+        when(account.isEnabled()).thenReturn(false);
+        when(account.getRoles()).thenReturn(Set.of(AppRole.RECRUITER));
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(account));
+        when(users.saveAndFlush(account)).thenReturn(account);
+
+        service.updateStatus("tenant-a", 1L, 2L, new UpdateAccountStatusRequest(false));
+
+        verify(account).setEnabled(false);
+        verify(sessions).revoke(2L);
+    }
+
+    @Test
+    void rejectsSelfManagement() {
+        assertThatThrownBy(() -> service.revokeSessions("tenant-a", 1L, 1L))
+                .isInstanceOf(AccountAdministrationException.class)
+                .hasMessage("You cannot revoke your own session");
+        verify(users, never()).findByIdAndOrganizationId(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString());
     }
 }

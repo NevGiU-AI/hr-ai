@@ -75,6 +75,10 @@ APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD=<local-only password of at least 12 charac
 APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION=local
 APP_SECURITY_SECURE_COOKIE=false
 APP_SECURITY_SESSION_TIMEOUT=30m
+APP_REDIS_HOST=localhost
+APP_REDIS_PORT=6379
+APP_REDIS_PASSWORD=local-redis-secret
+APP_REDIS_SESSION_NAMESPACE=hr-ai:session:local
 ```
 
 The OpenAI key is passed to the backend container and is required for AI job-offer generation. The bootstrap credentials create the first local `ADMIN` account; the password is stored in PostgreSQL only as a bcrypt hash. Do not reuse staging or production credentials locally. Do not commit `.env` or expose its values in logs, screenshots, or chat.
@@ -89,7 +93,7 @@ From the repository root, run:
 docker compose up -d --build
 ```
 
-The first build can take several minutes because Docker downloads the Node, Maven, Java, Nginx, and PostgreSQL dependencies.
+The first build can take several minutes because Docker downloads the Node, Maven, Java, Nginx, PostgreSQL, and Redis dependencies.
 
 ### 4. Check service status
 
@@ -97,7 +101,7 @@ The first build can take several minutes because Docker downloads the Node, Mave
 docker compose ps
 ```
 
-The `db`, `backend`, and `frontend` services should be running. The database should report `healthy`, and the backend may briefly report `health: starting` while Spring Boot initializes.
+The `db`, `redis`, `backend`, and `frontend` services should be running. PostgreSQL and Redis should report `healthy`, and the backend may briefly report `health: starting` while Spring Boot initializes.
 
 Check backend health:
 

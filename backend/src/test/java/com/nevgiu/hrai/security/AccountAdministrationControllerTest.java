@@ -27,7 +27,6 @@ class AccountAdministrationControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean AccountAdministrationService accounts;
     @MockitoBean AppUserDetailsService userDetailsService;
-    @MockitoBean ActiveSessionRegistry activeSessions;
 
     @Test
     void administratorsOnlySeeAccountsFromTheirOrganization() throws Exception {

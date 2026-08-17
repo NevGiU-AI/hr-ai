@@ -26,6 +26,16 @@ spring:
     multipart:
       max-file-size: 20MB
       max-request-size: 100MB
+  data:
+    redis:
+      host: ${APP_REDIS_HOST:localhost}
+      port: ${APP_REDIS_PORT:6379}
+      password: ${APP_REDIS_PASSWORD:local-redis-secret}
+      timeout: 2s
+  session:
+    redis:
+      repository-type: indexed
+      namespace: ${APP_REDIS_SESSION_NAMESPACE:hr-ai:session}
 #      embedding:
 #    vectorstore:
 #      pgvector:

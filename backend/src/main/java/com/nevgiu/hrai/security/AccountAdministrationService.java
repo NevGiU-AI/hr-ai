@@ -17,10 +17,10 @@ import java.util.Locale;
 public class AccountAdministrationService {
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
-    private final ActiveSessionRegistry sessions;
+    private final AccountSessionService sessions;
 
     public AccountAdministrationService(AppUserRepository users, PasswordEncoder passwordEncoder,
-                                        ActiveSessionRegistry sessions) {
+                                        AccountSessionService sessions) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.sessions = sessions;
@@ -54,7 +54,7 @@ public class AccountAdministrationService {
         protectLastAdministrator(account, request.roles().contains(AppRole.ADMIN), organizationId);
         account.replaceRoles(request.roles());
         AccountResponse response = toResponse(users.saveAndFlush(account));
-        sessions.revoke(accountId);
+        sessions.revoke(account.getEmail());
         return response;
     }
 
@@ -66,15 +66,15 @@ public class AccountAdministrationService {
         if (!request.enabled()) protectLastAdministrator(account, false, organizationId);
         account.setEnabled(request.enabled());
         AccountResponse response = toResponse(users.saveAndFlush(account));
-        if (!request.enabled()) sessions.revoke(accountId);
+        if (!request.enabled()) sessions.revoke(account.getEmail());
         return response;
     }
 
     @Transactional(readOnly = true)
     public int revokeSessions(String organizationId, Long actorId, Long accountId) {
         rejectSelfManagement(actorId, accountId, "revoke your own session");
-        findAccount(organizationId, accountId);
-        return sessions.revoke(accountId);
+        AppUser account = findAccount(organizationId, accountId);
+        return sessions.revoke(account.getEmail());
     }
 
     private AppUser findAccount(String organizationId, Long accountId) {

@@ -325,6 +325,7 @@ Required changes:
 - Remove the PostgreSQL host port.
 - Do not expose backend port `8080` publicly.
 - Replace hardcoded database credentials with high-entropy environment secrets.
+- Run password-protected Redis only on the private data network and persist Spring Session data in a named volume.
 - Use separate staging and production database credentials.
 - Add explicit health checks and appropriate restart policies.
 - Add bounded CPU and memory configuration where supported.
@@ -362,6 +363,8 @@ The following application configuration remains in the VPS-only `/opt/nevgiu/dep
 ```text
 OPENAI_API_KEY
 POSTGRES_PASSWORD
+REDIS_PASSWORD
+REDIS_SESSION_NAMESPACE
 FRONTEND_HOST
 API_HOST
 FRONTEND_URL
@@ -414,7 +417,7 @@ Minimum policy:
 
 ## Rollback strategy
 
-The implemented `deploy.sh` provides health-gated application-image rollback. Before replacement, it records the backend and frontend image references used by the running containers in `.images.env.previous`, validates the candidate Compose model, pulls the candidate images, deploys them, and polls for approximately three minutes. Success requires a healthy database, backend, and frontend and a running Caddy service.
+The implemented `deploy.sh` provides health-gated application-image rollback. Before replacement, it records the backend and frontend image references used by the running containers in `.images.env.previous`, validates the candidate Compose model, pulls the candidate images, deploys them, and polls for approximately three minutes. Success requires healthy PostgreSQL, Redis, backend, and frontend services plus running Caddy.
 
 If initial startup or internal health validation fails, the script:
 

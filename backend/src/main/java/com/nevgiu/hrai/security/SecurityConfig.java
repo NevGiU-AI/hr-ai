@@ -3,7 +3,6 @@ package com.nevgiu.hrai.security;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
@@ -25,11 +24,6 @@ public class SecurityConfig {
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    ServletListenerRegistrationBean<ActiveSessionListener> activeSessionListener(ActiveSessionRegistry sessions) {
-        return new ServletListenerRegistrationBean<>(new ActiveSessionListener(sessions));
     }
 
     @Bean

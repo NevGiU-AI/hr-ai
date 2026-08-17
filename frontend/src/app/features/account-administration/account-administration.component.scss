@@ -19,6 +19,7 @@ th, td { border-bottom: 1px solid #e5eaf2; padding: 0.8rem; text-align: left; }
 th { color: #52698f; font-size: 0.8rem; text-transform: uppercase; }
 .status { background: #e7f6ec; border-radius: 999px; color: #18733b; display: inline-block; padding: 0.25rem 0.6rem; }
 .status.disabled { background: #f2f4f7; color: #667085; }
+.status.locked { background: #fff3cd; color: #7a4d00; }
 .role-editor, .account-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .role-editor { min-width: 20rem; }
 .role-editor label { align-items: center; display: flex; font-size: 0.85rem; font-weight: 500; gap: 0.25rem; }

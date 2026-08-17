@@ -260,11 +260,16 @@ ACME_EMAIL=<operations email>
 POSTGRES_PASSWORD=<generated staging password>
 REDIS_PASSWORD=<different generated staging password>
 REDIS_SESSION_NAMESPACE=hr-ai:session:staging
+REDIS_SECURITY_NAMESPACE=hr-ai:security:login:staging
 OPENAI_API_KEY=<staging OpenAI key>
 BOOTSTRAP_ADMIN_EMAIL=<staging administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random staging-only password of at least 12 characters>
 BOOTSTRAP_ADMIN_ORGANIZATION=staging
 SESSION_TIMEOUT=30m
+LOGIN_ACCOUNT_FAILURE_LIMIT=5
+LOGIN_IP_FAILURE_LIMIT=20
+LOGIN_FAILURE_WINDOW=15m
+LOGIN_LOCK_DURATION=15m
 ```
 
 After deploying Redis-backed Spring Session, verify Redis authentication and service health without displaying the password:

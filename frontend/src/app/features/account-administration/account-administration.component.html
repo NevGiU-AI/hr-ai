@@ -69,7 +69,11 @@
                         (click)="saveRoles(account)">Save roles</button>
               </div>
             </td>
-            <td><span class="status" [class.disabled]="!account.enabled">{{ account.enabled ? 'Enabled' : 'Disabled' }}</span></td>
+            <td>
+              <span class="status" [class.disabled]="!account.enabled" [class.locked]="account.enabled && account.locked">
+                {{ !account.enabled ? 'Disabled' : account.locked ? 'Temporarily locked' : 'Enabled' }}
+              </span>
+            </td>
             <td>
               <div class="account-actions">
                 <span *ngIf="account.id === currentUserId" class="current-account">Current account</span>
@@ -79,6 +83,8 @@
                           (click)="toggleStatus(account)">{{ account.enabled ? 'Disable' : 'Enable' }}</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary"
                           [disabled]="busyAccountId === account.id" (click)="revokeSessions(account)">Revoke sessions</button>
+                  <button *ngIf="account.locked" type="button" class="btn btn-sm btn-outline-secondary"
+                          [disabled]="busyAccountId === account.id" (click)="unlock(account)">Unlock</button>
                 </ng-container>
               </div>
             </td>

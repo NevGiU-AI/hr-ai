@@ -12,7 +12,7 @@
 - [x] Implement tenant-scoped account administration for listing, creation, role updates, enabling/disabling, and session revocation.
 - [x] Move browser sessions and administrator revocation to indexed Spring Session Redis so sessions survive backend
   restarts and revocation works across replicas; validate the Redis deployment in staging and production.
-- [ ] Add Redis-backed login throttling, IP/account failure limits, temporary lockout, and administrator unlock.
+- [x] Add Redis-backed login throttling, IP/account failure limits, temporary lockout, generic errors, and administrator unlock.
 - [ ] Persist tenant-scoped security events for login outcomes, lockout/unlock, logout, account lifecycle changes,
   password operations, and session revocation.
 - [ ] Add authenticated password change and administrator-assisted reset; defer email self-service reset until mail delivery is approved.
@@ -32,8 +32,8 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** login throttling/lockout -> security-event auditing -> password management ->
-concurrent-session limits -> final security validation -> governed CV file storage/OCR -> typed CV chat -> speech input/playback.
+**Immediate delivery sequence:** security-event auditing -> password management -> concurrent-session limits -> final
+security validation -> governed CV file storage/OCR -> typed CV chat -> speech input/playback.
 
 ## Phase 1 - Stabilize job-offer generation
 

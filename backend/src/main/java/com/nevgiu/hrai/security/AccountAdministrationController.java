@@ -59,4 +59,10 @@ public class AccountAdministrationController {
         return java.util.Map.of("revokedSessions",
                 accounts.revokeSessions(principal.organizationId(), principal.id(), accountId));
     }
+
+    @PostMapping("/{accountId}/lockout/unlock")
+    public AccountResponse unlock(@PathVariable Long accountId,
+                                  @AuthenticationPrincipal AppUserPrincipal principal) {
+        return accounts.unlock(principal.organizationId(), principal.id(), accountId);
+    }
 }

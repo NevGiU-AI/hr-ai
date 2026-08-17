@@ -365,6 +365,11 @@ OPENAI_API_KEY
 POSTGRES_PASSWORD
 REDIS_PASSWORD
 REDIS_SESSION_NAMESPACE
+REDIS_SECURITY_NAMESPACE
+LOGIN_ACCOUNT_FAILURE_LIMIT
+LOGIN_IP_FAILURE_LIMIT
+LOGIN_FAILURE_WINDOW
+LOGIN_LOCK_DURATION
 FRONTEND_HOST
 API_HOST
 FRONTEND_URL
@@ -389,6 +394,11 @@ Required-reviewer availability depends on repository visibility and GitHub plan.
 ## Deployment logging and diagnosis
 
 GitHub Actions is the source of truth for pipeline execution. Operators inspect the relevant `CI`, `Deploy staging`, or `Deploy production` run and begin with the first failed step. Workflow summaries identify the deployed commit and public environment URLs.
+
+The backend Docker build uses bounded Maven retries for dependency prefetch and packaging. A temporary Maven Central
+`5xx` response is retried with short backoff; persistent repository or dependency errors still fail the job. Re-run a
+failed job when its log identifies an upstream `502 Bad Gateway`, but investigate version or repository errors that
+remain after all attempts.
 
 Runtime diagnosis is performed as the environment's `deploy` user from `/opt/nevgiu/deploy`. Compose commands must load both the private application environment and the generated immutable image references:
 

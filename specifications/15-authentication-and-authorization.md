@@ -45,6 +45,7 @@ The organization is always copied from the authenticated administrator; request 
 | `PUT` | `/api/admin/users/{id}/roles` | Replace another account's roles and revoke its active sessions. |
 | `PUT` | `/api/admin/users/{id}/status` | Enable or disable another account; disabling revokes active sessions. |
 | `POST` | `/api/admin/users/{id}/sessions/revoke` | Sign another account out of every active session. |
+| `POST` | `/api/admin/users/{id}/lockout/unlock` | Clear another account's temporary failed-login lock. |
 
 Creation normalizes email, requires a 12–128 character initial password, hashes it with bcrypt, and returns `409` for a
 globally unavailable email. Responses include account identity, organization, enabled state, and roles; they never
@@ -59,6 +60,22 @@ The Spring Security principal email supplies the session index used by administr
 sessions across backend restarts, and a shared Redis instance makes revocation effective across every backend replica.
 Redis is reachable only on the private data network and requires an environment-specific password. Introducing this
 store invalidates the servlet sessions created by earlier releases, so users must sign in once after deployment.
+
+## Login throttling and temporary lockout
+
+Failed logins are counted atomically in Redis by normalized-email hash and client-IP hash. Raw email addresses and IP
+addresses are not included in Redis key names. By default, five account failures or twenty failures from one IP within
+fifteen minutes create a fifteen-minute lock. A successful authentication clears that account's pending failure count;
+it does not clear the shared IP counter. Account and IP locks expire automatically in Redis and work consistently across
+backend restarts and replicas.
+
+Locked requests return `429` with `Retry-After`; ordinary failures return `401`. Both use the same `Invalid email or
+password` message used for unknown, disabled, and incorrect-password accounts. Authentication is not attempted while a
+matching lock is active. The backend accepts forwarded client addresses because it is reachable through the trusted
+Caddy edge network rather than directly from the public internet.
+
+Administrators see temporary account lock state in the tenant-scoped account list and may clear another account's lock.
+Unlock does not clear an IP-wide lock and cannot operate across organizations or on the administrator's own row.
 
 ## Bootstrap administrator
 
@@ -78,7 +95,6 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Add Redis-backed login throttling, temporary account/IP lockout, and administrator unlock without account-enumerating errors.
 - Persist tenant-scoped security-event audit records for authentication and every account-administration operation.
 - Add authenticated password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
 - Add maximum concurrent-session limits using the indexed Spring Session repository.
@@ -114,6 +130,10 @@ Telegram or WhatsApp account linking will associate a provider-verified identity
 - Non-administrators receive `403` for built-in CV import.
 - Unsafe requests without a valid CSRF token receive `403`.
 - Login rotates the session identifier and logout invalidates it.
+- The configured account failure limit produces a temporary Redis lock, `429`, and `Retry-After`; expiry or an
+  administrator unlock permits authentication again.
+- Repeated failures across different accounts from one client reach the independent IP limit.
+- Unknown, disabled, incorrect-password, and temporarily locked login attempts never disclose account existence.
 - Password hashes, session identifiers, CSRF tokens, and credentials never appear in logs or API responses.
-- Full security-foundation approval remains blocked until login throttling/lockout, security auditing, password
-  management, concurrent-session policy, and their authorization and tenant-isolation tests are complete.
+- Full security-foundation approval remains blocked until security auditing, password management, concurrent-session
+  policy, and their authorization and tenant-isolation tests are complete.

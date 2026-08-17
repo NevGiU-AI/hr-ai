@@ -416,6 +416,7 @@ POSTGRES_USER=hr_user
 POSTGRES_PASSWORD=<new production-only password>
 REDIS_PASSWORD=<new production-only Redis password>
 REDIS_SESSION_NAMESPACE=hr-ai:session:production
+REDIS_SECURITY_NAMESPACE=hr-ai:security:login:production
 OPENAI_API_KEY=<production-only OpenAI key>
 
 SPRING_JPA_HIBERNATE_DDL_AUTO=update
@@ -424,6 +425,10 @@ BOOTSTRAP_ADMIN_EMAIL=<production administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random production-only password of at least 12 characters>
 BOOTSTRAP_ADMIN_ORGANIZATION=production
 SESSION_TIMEOUT=30m
+LOGIN_ACCOUNT_FAILURE_LIMIT=5
+LOGIN_IP_FAILURE_LIMIT=20
+LOGIN_FAILURE_WINDOW=15m
+LOGIN_LOCK_DURATION=15m
 ```
 
 Remove the staging-manual `BACKEND_IMAGE` and `FRONTEND_IMAGE` lines from production `.env`. The release workflow supplies immutable production image references through the generated `.images.env` file.
@@ -439,10 +444,11 @@ Expected: `deploy:deploy 600 .env`. Validate required values without printing th
 ```bash
 for name in \
   FRONTEND_HOST API_HOST FRONTEND_URL ACME_EMAIL \
-  POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD REDIS_PASSWORD REDIS_SESSION_NAMESPACE OPENAI_API_KEY \
+  POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD REDIS_PASSWORD REDIS_SESSION_NAMESPACE REDIS_SECURITY_NAMESPACE OPENAI_API_KEY \
   SPRING_JPA_HIBERNATE_DDL_AUTO INITIAL_IMPORT_ENABLED \
   BOOTSTRAP_ADMIN_EMAIL BOOTSTRAP_ADMIN_PASSWORD \
-  BOOTSTRAP_ADMIN_ORGANIZATION SESSION_TIMEOUT
+  BOOTSTRAP_ADMIN_ORGANIZATION SESSION_TIMEOUT LOGIN_ACCOUNT_FAILURE_LIMIT LOGIN_IP_FAILURE_LIMIT \
+  LOGIN_FAILURE_WINDOW LOGIN_LOCK_DURATION
 do
   grep -q "^${name}=.\+" .env || echo "Missing or empty: $name"
 done
@@ -457,6 +463,7 @@ grep -q '^FRONTEND_URL=https://hr\.nevgiuai\.com$' .env &&
 grep -q '^INITIAL_IMPORT_ENABLED=false$' .env &&
 grep -q '^BOOTSTRAP_ADMIN_ORGANIZATION=production$' .env &&
 grep -q '^REDIS_SESSION_NAMESPACE=hr-ai:session:production$' .env &&
+grep -q '^REDIS_SECURITY_NAMESPACE=hr-ai:security:login:production$' .env &&
 ! grep -q 'staging' .env &&
 ! grep -q 'staging-manual' .env &&
 echo "Production environment validation passed"

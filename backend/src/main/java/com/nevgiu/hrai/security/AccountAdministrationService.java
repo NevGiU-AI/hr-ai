@@ -18,12 +18,14 @@ public class AccountAdministrationService {
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final AccountSessionService sessions;
+    private final LoginThrottleService loginThrottle;
 
     public AccountAdministrationService(AppUserRepository users, PasswordEncoder passwordEncoder,
-                                        AccountSessionService sessions) {
+                                        AccountSessionService sessions, LoginThrottleService loginThrottle) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.sessions = sessions;
+        this.loginThrottle = loginThrottle;
     }
 
     @Transactional(readOnly = true)
@@ -77,6 +79,14 @@ public class AccountAdministrationService {
         return sessions.revoke(account.getEmail());
     }
 
+    @Transactional(readOnly = true)
+    public AccountResponse unlock(String organizationId, Long actorId, Long accountId) {
+        rejectSelfManagement(actorId, accountId, "unlock your own account");
+        AppUser account = findAccount(organizationId, accountId);
+        loginThrottle.unlockAccount(account.getEmail());
+        return toResponse(account);
+    }
+
     private AppUser findAccount(String organizationId, Long accountId) {
         return users.findByIdAndOrganizationId(accountId, organizationId)
                 .orElseThrow(() -> new AccountAdministrationException(HttpStatus.NOT_FOUND, "Account not found"));
@@ -102,7 +112,8 @@ public class AccountAdministrationService {
     }
 
     private AccountResponse toResponse(AppUser user) {
+        long remainingSeconds = loginThrottle.accountLockRemainingSeconds(user.getEmail());
         return new AccountResponse(user.getId(), user.getEmail(), user.getOrganizationId(), user.isEnabled(),
-                user.getRoles());
+                user.getRoles(), remainingSeconds > 0, remainingSeconds);
     }
 }

@@ -26,8 +26,8 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 ## Recommended delivery order
 
 1. Confirm the unresolved product and scoring decisions.
-2. Complete the authentication foundation: throttling/lockout, security auditing, password management,
-   concurrent-session limits, and final security validation.
+2. Complete the authentication foundation: security auditing, password management, concurrent-session limits, and
+   final security validation. Redis-backed throttling/lockout is implemented.
 3. Harden the implemented job-offer workflow and complete its production controls.
 4. Extend CV ingestion/evaluation with governed original-file storage, OCR, correction, evidence, and reproducibility.
 5. Add vector indexing and secure, evidence-backed typed CV chat.
@@ -55,7 +55,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Spring AI tools | Planned with CV chat | Request-scoped read tools will support authorized retrieval, evidence, comparison, and dashboard queries. State-changing tools require deterministic previews, explicit confirmation, idempotency, and audits. |
 | AI evaluation testing | Planned cross-cutting capability | Deterministic assertions, versioned golden datasets, Spring AI evaluators, task metrics, adversarial tests, and calibrated human review will gate model, prompt, retrieval, tool, OCR, and speech changes. |
 | Spring AI observability | Planned production control | Privacy-safe Micrometer metrics, traces, dashboards, and alerts will cover models, tokens, cost, RAG, tools, OCR, speech, messaging, backups, and infrastructure without exporting candidate content. |
-| Production security | Authentication and tenant foundation operational | Email/password login, bcrypt hashes, Redis-backed Spring Session validated in staging and production, CSRF, route protection, four roles, tenant row isolation, admin-only built-in CV import, and tenant-scoped account lifecycle administration are implemented. Throttling/lockout, security audit logs, password management, concurrent-session limits, malware scanning, and retention controls remain. |
+| Production security | Authentication and tenant foundation operational | Email/password login, bcrypt hashes, Redis-backed sessions/revocation, Redis-backed account/IP throttling and temporary lockout, CSRF, route protection, four roles, tenant isolation, and tenant-scoped account administration are implemented. Security audit logs, password management, concurrent-session limits, malware scanning, and retention controls remain. |
 | CI/CD and VPS deployment | Staging and production operational | CI, immutable GHCR publication, automatic staging deployment, protected production promotion, and production smoke validation are working. PostgreSQL backup restoration testing, observability, security controls, and further rollback hardening remain. |
 | VPS provisioning | Staging and production deployed | Staging and production are independently hardened and deployed. Production has dedicated SSH access, firewall rules, Docker, DNS, TLS, logging, Premium VPS backup, and private Object Storage preparation. Database backup automation and isolated restoration testing remain; separate runbooks prevent environment-specific credentials and procedures from being mixed. |
 

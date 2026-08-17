@@ -392,6 +392,27 @@ docker compose --env-file .env --env-file .images.env logs --tail 100 -f backend
 
 Log access is privileged because candidate data, extracted CV text, AI prompts, or operational details may appear until structured redaction is implemented. Logs must not be pasted into public issues, pull requests, chat, or incident reports without review and redaction. Environment files, SSH keys, tokens, and expanded Compose configuration must never be included in diagnostic output.
 
+### Newly deployed frontend controls are missing
+
+Angular JavaScript and CSS assets use content-hashed filenames and long-lived immutable browser caching. After a
+successful deployment, an already-open tab can therefore continue displaying the previous application until it loads
+the new `index.html`. First perform a hard refresh (`Ctrl+Shift+R` in Chrome on Windows/Linux) and revisit the affected
+route.
+
+If the feature is still absent, verify that the deployment manifest references the expected merge commit before
+investigating application code. On the environment VPS as `deploy`:
+
+```bash
+cd /opt/nevgiu/deploy
+grep '^BACKEND_IMAGE=' .images.env
+grep '^FRONTEND_IMAGE=' .images.env
+docker compose --env-file .env --env-file .images.env ps
+```
+
+Both image tags must end with the commit SHA identified by the corresponding successful deployment workflow. A hard
+refresh resolved the apparently missing account-lifecycle controls during staging validation of PR `#25`; the deployed
+images were correct and no rollback or redeployment was required.
+
 ## Database backup and recovery
 
 Provider snapshots and VPS backups do not replace application-aware PostgreSQL backups.

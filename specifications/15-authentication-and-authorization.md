@@ -78,11 +78,12 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Tenant-scoped administrator APIs and UI now cover account listing, creation, role changes, enabling/disabling, and
-  session revocation while excluding password hashes and preventing removal of the last enabled administrator.
-- Add login throttling, temporary lockout, and security-event audit records.
-- Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
-- Add concurrent-session limits before horizontal backend scaling.
+- Add Redis-backed login throttling, temporary account/IP lockout, and administrator unlock without account-enumerating errors.
+- Persist tenant-scoped security-event audit records for authentication and every account-administration operation.
+- Add authenticated password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
+- Add maximum concurrent-session limits using the indexed Spring Session repository.
+- Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
+  staging smoke tests before closing the authentication foundation.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
 
 ## Validated rollout
@@ -98,6 +99,9 @@ The organization identifier is resolved from the authenticated principal and mus
   separate administrator and recruiter browser sessions and confirmed role updates, explicit session revocation,
   automatic logout after disabling, rejected login while disabled, and successful login after re-enabling. The
   administrator's own row remained non-editable, preserving the self-management safeguard.
+- Indexed Spring Session Redis was deployed and reported operational in staging and production on 17 August 2026.
+  Redis authentication and application operation were accepted. Backend-restart persistence and distributed
+  administrator revocation remain explicit smoke tests for every environment and future multi-replica deployment.
 
 ## Future external channels
 
@@ -111,4 +115,5 @@ Telegram or WhatsApp account linking will associate a provider-verified identity
 - Unsafe requests without a valid CSRF token receive `403`.
 - Login rotates the session identifier and logout invalidates it.
 - Password hashes, session identifiers, CSRF tokens, and credentials never appear in logs or API responses.
-- Full production approval remains blocked until tenant row isolation, account administration, login throttling, and security auditing are complete.
+- Full security-foundation approval remains blocked until login throttling/lockout, security auditing, password
+  management, concurrent-session policy, and their authorization and tenant-isolation tests are complete.

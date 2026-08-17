@@ -371,6 +371,11 @@ FRONTEND_URL
 INITIAL_IMPORT_ENABLED
 ```
 
+`deploy/.env.example` intentionally leaves `REDIS_PASSWORD` empty. The CI Compose-rendering check supplies a fixed,
+validation-only placeholder because Compose requires a non-empty value; that placeholder never starts Redis and must
+never be used as an environment credential. Real staging and production passwords exist only in their protected VPS
+`.env` files and must be different.
+
 Prefer a dedicated read-only GHCR token on the VPS if private packages require authentication. Do not place secrets in Compose files, workflow logs, image layers, repository variables, or command-line output.
 
 GitHub documentation:

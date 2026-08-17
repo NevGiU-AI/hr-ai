@@ -456,10 +456,24 @@ grep -q '^API_HOST=api\.hr\.nevgiuai\.com$' .env &&
 grep -q '^FRONTEND_URL=https://hr\.nevgiuai\.com$' .env &&
 grep -q '^INITIAL_IMPORT_ENABLED=false$' .env &&
 grep -q '^BOOTSTRAP_ADMIN_ORGANIZATION=production$' .env &&
+grep -q '^REDIS_SESSION_NAMESPACE=hr-ai:session:production$' .env &&
 ! grep -q 'staging' .env &&
 ! grep -q 'staging-manual' .env &&
 echo "Production environment validation passed"
 ```
+
+After deploying Redis-backed Spring Session, verify Redis authentication without printing its password:
+
+```bash
+docker compose --env-file .env --env-file .images.env \
+  exec -T redis sh -c 'redis-cli --no-auth-warning -a "$REDIS_PASSWORD" ping'
+docker compose --env-file .env --env-file .images.env ps backend redis
+```
+
+Expected: Redis returns `PONG`, Redis reports healthy, and the backend reaches healthy after startup. Sign in once after
+the initial cutover, restart only the backend, and confirm the same browser session remains authenticated. The Redis
+deployment and application operation were reported successful in production on 17 August 2026; retain the restart test
+as a release smoke check and repeat it when introducing multiple backend replicas.
 
 Permissions and all safety checks passed. No environment value was added to Git or displayed during validation. Do not start Compose until logging, backup readiness, GitHub production protection, and release prerequisites are addressed.
 

@@ -62,11 +62,13 @@ wait_for_stack() {
   attempts=36
   while [ "$attempts" -gt 0 ]; do
     db_state=$(service_state db)
+    redis_state=$(service_state redis)
     backend_state=$(service_state backend)
     frontend_state=$(service_state frontend)
     caddy_state=$(service_state caddy)
 
     if [ "$db_state" = "healthy" ] \
+      && [ "$redis_state" = "healthy" ] \
       && [ "$backend_state" = "healthy" ] \
       && [ "$frontend_state" = "healthy" ] \
       && [ "$caddy_state" = "running" ]; then

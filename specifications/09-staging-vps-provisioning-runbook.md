@@ -258,6 +258,8 @@ Set real staging values only in `.env`:
 ```env
 ACME_EMAIL=<operations email>
 POSTGRES_PASSWORD=<generated staging password>
+REDIS_PASSWORD=<different generated staging password>
+REDIS_SESSION_NAMESPACE=hr-ai:session:staging
 OPENAI_API_KEY=<staging OpenAI key>
 BOOTSTRAP_ADMIN_EMAIL=<staging administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random staging-only password of at least 12 characters>
@@ -320,7 +322,7 @@ Wait approximately one minute:
 docker compose --env-file .env ps
 ```
 
-Expected services:
+Expected services include healthy `db`, `redis`, `backend`, and `frontend` containers plus running `caddy`:
 
 - `db`: healthy.
 - `backend`: healthy.
@@ -530,7 +532,7 @@ No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed en
 
 ### Rollback boundary observed in staging
 
-The deployment script records the current backend and frontend images before replacement. If database, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.
+The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.
 
 This does not restore PostgreSQL data or schema, `.env`, Compose or Caddy configuration, secrets, or other deployment files. Public HTTPS smoke tests run after the script returns; a failure at that stage currently leaves the new images running. Errors during Compose validation, pulling, or initial startup can also occur before automatic rollback begins.
 

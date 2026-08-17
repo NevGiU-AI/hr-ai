@@ -54,6 +54,12 @@ also update another account's roles, enable or disable it, and revoke all its ac
 rejected, tenant-scoped lookup prevents cross-organization mutation, and pessimistic locking prevents concurrent
 changes from removing the organization's last enabled administrator.
 
+Browser sessions are stored through Spring Session's indexed Redis repository under an environment-specific namespace.
+The Spring Security principal email supplies the session index used by administrator revocation. Redis persistence keeps
+sessions across backend restarts, and a shared Redis instance makes revocation effective across every backend replica.
+Redis is reachable only on the private data network and requires an environment-specific password. Introducing this
+store invalidates the servlet sessions created by earlier releases, so users must sign in once after deployment.
+
 ## Bootstrap administrator
 
 Before the first secured deployment, configure:
@@ -76,8 +82,7 @@ The organization identifier is resolved from the authenticated principal and mus
   session revocation while excluding password hashes and preventing removal of the last enabled administrator.
 - Add login throttling, temporary lockout, and security-event audit records.
 - Add password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
-- Add concurrent-session limits and replace the in-process registry with a shared Spring Session store before
-  horizontal backend scaling.
+- Add concurrent-session limits before horizontal backend scaling.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
 
 ## Validated rollout

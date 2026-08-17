@@ -76,4 +76,8 @@ jobs:
         run: docker build -t hr-ai-frontend:ci ./frontend
 
       - name: Validate deployment model
+        env:
+          # Compose requires a non-empty value. This check only renders the
+          # deployment model and does not start Redis or use a real secret.
+          REDIS_PASSWORD: ci-compose-validation-only
         run: docker compose --env-file deploy/.env.example -f deploy/compose.yml config --quiet

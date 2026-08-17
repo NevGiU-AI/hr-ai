@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 class AccountAdministrationServiceTest {
     @Mock AppUserRepository users;
     @Mock PasswordEncoder passwordEncoder;
-    @Mock ActiveSessionRegistry sessions;
+    @Mock AccountSessionService sessions;
     @InjectMocks AccountAdministrationService service;
 
     @Test
@@ -85,7 +85,7 @@ class AccountAdministrationServiceTest {
                 new UpdateAccountRolesRequest(Set.of(AppRole.REVIEWER)));
 
         verify(account).replaceRoles(Set.of(AppRole.REVIEWER));
-        verify(sessions).revoke(2L);
+        verify(sessions).revoke("user@example.com");
     }
 
     @Test
@@ -96,7 +96,7 @@ class AccountAdministrationServiceTest {
                 new UpdateAccountStatusRequest(false)))
                 .isInstanceOf(AccountAdministrationException.class)
                 .hasMessage("Account not found");
-        verify(sessions, never()).revoke(2L);
+        verify(sessions, never()).revoke(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
@@ -128,7 +128,7 @@ class AccountAdministrationServiceTest {
         service.updateStatus("tenant-a", 1L, 2L, new UpdateAccountStatusRequest(false));
 
         verify(account).setEnabled(false);
-        verify(sessions).revoke(2L);
+        verify(sessions).revoke("user@example.com");
     }
 
     @Test

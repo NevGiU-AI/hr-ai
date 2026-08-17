@@ -2,6 +2,8 @@ package com.nevgiu.hrai.security;
 
 import com.nevgiu.hrai.security.dto.AccountResponse;
 import com.nevgiu.hrai.security.dto.CreateAccountRequest;
+import com.nevgiu.hrai.security.dto.UpdateAccountRolesRequest;
+import com.nevgiu.hrai.security.dto.UpdateAccountStatusRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,10 +17,13 @@ import java.util.Locale;
 public class AccountAdministrationService {
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final ActiveSessionRegistry sessions;
 
-    public AccountAdministrationService(AppUserRepository users, PasswordEncoder passwordEncoder) {
+    public AccountAdministrationService(AppUserRepository users, PasswordEncoder passwordEncoder,
+                                        ActiveSessionRegistry sessions) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
+        this.sessions = sessions;
     }
 
     @Transactional(readOnly = true)
@@ -38,6 +43,56 @@ public class AccountAdministrationService {
             return toResponse(saved);
         } catch (DataIntegrityViolationException exception) {
             throw duplicateEmail();
+        }
+    }
+
+    @Transactional
+    public AccountResponse updateRoles(String organizationId, Long actorId, Long accountId,
+                                       UpdateAccountRolesRequest request) {
+        rejectSelfManagement(actorId, accountId, "change your own roles");
+        AppUser account = findAccount(organizationId, accountId);
+        protectLastAdministrator(account, request.roles().contains(AppRole.ADMIN), organizationId);
+        account.replaceRoles(request.roles());
+        AccountResponse response = toResponse(users.saveAndFlush(account));
+        sessions.revoke(accountId);
+        return response;
+    }
+
+    @Transactional
+    public AccountResponse updateStatus(String organizationId, Long actorId, Long accountId,
+                                        UpdateAccountStatusRequest request) {
+        rejectSelfManagement(actorId, accountId, "disable your own account");
+        AppUser account = findAccount(organizationId, accountId);
+        if (!request.enabled()) protectLastAdministrator(account, false, organizationId);
+        account.setEnabled(request.enabled());
+        AccountResponse response = toResponse(users.saveAndFlush(account));
+        if (!request.enabled()) sessions.revoke(accountId);
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public int revokeSessions(String organizationId, Long actorId, Long accountId) {
+        rejectSelfManagement(actorId, accountId, "revoke your own session");
+        findAccount(organizationId, accountId);
+        return sessions.revoke(accountId);
+    }
+
+    private AppUser findAccount(String organizationId, Long accountId) {
+        return users.findByIdAndOrganizationId(accountId, organizationId)
+                .orElseThrow(() -> new AccountAdministrationException(HttpStatus.NOT_FOUND, "Account not found"));
+    }
+
+    private void rejectSelfManagement(Long actorId, Long accountId, String action) {
+        if (actorId.equals(accountId)) {
+            throw new AccountAdministrationException(HttpStatus.CONFLICT, "You cannot " + action);
+        }
+    }
+
+    private void protectLastAdministrator(AppUser account, boolean remainsAdministrator, String organizationId) {
+        if (account.isEnabled() && account.getRoles().contains(AppRole.ADMIN) && !remainsAdministrator
+                && users.findAllByOrganizationIdAndEnabledTrueAndRolesContaining(organizationId, AppRole.ADMIN).size() <= 1) {
+            throw new AccountAdministrationException(HttpStatus.CONFLICT,
+                    "The organization must retain at least one enabled administrator");
         }
     }
 

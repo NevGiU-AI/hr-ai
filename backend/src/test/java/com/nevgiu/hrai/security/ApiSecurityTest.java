@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(CandidateController.class)
 @Import(SecurityConfig.class)
 class ApiSecurityTest {
+    @org.springframework.test.context.bean.override.mockito.MockitoBean ActiveSessionRegistry activeSessions;
     @Autowired MockMvc mvc;
     @MockitoBean CandidateRepository candidates;
     @MockitoBean CvIngestionService ingestion;

@@ -14,3 +14,7 @@ export interface CreateAccountRequest {
   password: string;
   roles: AccountRole[];
 }
+
+export interface RevokeSessionsResponse {
+  revokedSessions: number;
+}

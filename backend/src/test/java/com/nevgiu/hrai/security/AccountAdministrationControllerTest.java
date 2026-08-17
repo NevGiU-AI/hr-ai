@@ -17,6 +17,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +27,7 @@ class AccountAdministrationControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean AccountAdministrationService accounts;
     @MockitoBean AppUserDetailsService userDetailsService;
+    @MockitoBean ActiveSessionRegistry activeSessions;
 
     @Test
     void administratorsOnlySeeAccountsFromTheirOrganization() throws Exception {
@@ -92,6 +94,44 @@ class AccountAdministrationControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("An account could not be created with this email"));
+    }
+
+    @Test
+    void administratorUpdatesAnotherAccountsRoles() throws Exception {
+        when(accounts.updateRoles(org.mockito.ArgumentMatchers.eq("tenant-a"),
+                org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(2L),
+                org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new AccountResponse(2L, "reviewer@example.com", "tenant-a", true,
+                        Set.of(AppRole.REVIEWER)));
+
+        mvc.perform(put("/api/admin/users/2/roles").with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf())
+                        .contentType("application/json").content("{\"roles\":[\"REVIEWER\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roles[0]").value("REVIEWER"));
+    }
+
+    @Test
+    void administratorDisablesAnotherAccount() throws Exception {
+        when(accounts.updateStatus(org.mockito.ArgumentMatchers.eq("tenant-a"),
+                org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(2L),
+                org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new AccountResponse(2L, "user@example.com", "tenant-a", false,
+                        Set.of(AppRole.RECRUITER)));
+
+        mvc.perform(put("/api/admin/users/2/status").with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf())
+                        .contentType("application/json").content("{\"enabled\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(false));
+    }
+
+    @Test
+    void administratorRevokesAnotherAccountsSessions() throws Exception {
+        when(accounts.revokeSessions("tenant-a", 1L, 2L)).thenReturn(2);
+
+        mvc.perform(post("/api/admin/users/2/sessions/revoke")
+                        .with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.revokedSessions").value(2));
     }
 
     private AppUserPrincipal principal(String organizationId, String role) {

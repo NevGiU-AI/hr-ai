@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { AccountAdministrationComponent } from './account-administration.component';
 import { AccountAdministrationService } from './account-administration.service';
 import { Account } from './account.models';
+import { AuthService } from '../../core/auth/auth.service';
 
 describe('AccountAdministrationComponent', () => {
   let fixture: ComponentFixture<AccountAdministrationComponent>;
@@ -13,14 +14,24 @@ describe('AccountAdministrationComponent', () => {
   const api = {
     findAll: jasmine.createSpy('findAll'),
     create: jasmine.createSpy('create'),
+    updateRoles: jasmine.createSpy('updateRoles'),
+    updateStatus: jasmine.createSpy('updateStatus'),
+    revokeSessions: jasmine.createSpy('revokeSessions'),
   };
+  const auth = { user: { id: 1 } };
 
   beforeEach(async () => {
     api.findAll.and.returnValue(of([existing]));
     api.create.calls.reset();
+    api.updateRoles.calls.reset();
+    api.updateStatus.calls.reset();
+    api.revokeSessions.calls.reset();
     await TestBed.configureTestingModule({
       imports: [AccountAdministrationComponent],
-      providers: [{ provide: AccountAdministrationService, useValue: api }],
+      providers: [
+        { provide: AccountAdministrationService, useValue: api },
+        { provide: AuthService, useValue: auth },
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(AccountAdministrationComponent);
     component = fixture.componentInstance;
@@ -58,5 +69,32 @@ describe('AccountAdministrationComponent', () => {
     component.submit();
     expect(api.create).not.toHaveBeenCalled();
     expect(component.error).toBe('Select at least one role.');
+  });
+
+  it('updates roles for another account', () => {
+    const account: Account = {
+      id: 2, email: 'user@example.com', organizationId: 'default', enabled: true, roles: ['RECRUITER'],
+    };
+    component.accounts.push(account);
+    component.roleDrafts.set(account.id, new Set(['REVIEWER']));
+    api.updateRoles.and.returnValue(of({ ...account, roles: ['REVIEWER'] }));
+
+    component.saveRoles(account);
+
+    expect(api.updateRoles).toHaveBeenCalledWith(2, ['REVIEWER']);
+    expect(component.accounts.find(({ id }) => id === 2)?.roles).toEqual(['REVIEWER']);
+  });
+
+  it('revokes sessions after confirmation', () => {
+    const account: Account = {
+      id: 2, email: 'user@example.com', organizationId: 'default', enabled: true, roles: ['RECRUITER'],
+    };
+    spyOn(window, 'confirm').and.returnValue(true);
+    api.revokeSessions.and.returnValue(of({ revokedSessions: 2 }));
+
+    component.revokeSessions(account);
+
+    expect(api.revokeSessions).toHaveBeenCalledWith(2);
+    expect(component.success).toContain('2 active sessions');
   });
 });

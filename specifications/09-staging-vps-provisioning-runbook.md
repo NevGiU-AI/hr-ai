@@ -374,6 +374,105 @@ In the staging frontend:
 7. Confirm the overall score, all eight metrics, and explanation appear.
 8. Restart the Compose services and confirm persisted jobs, candidates, documents, and evaluations remain.
 
+### 14A. Validate login throttling and temporary lockout
+
+Use disposable recruiter accounts and keep an authenticated administrator session open throughout these tests. Do not
+test the IP limit from a shared office or corporate egress address: an IP lock affects every new login from that public
+address until it expires. Existing authenticated sessions are not terminated.
+
+#### Account-limit test
+
+1. In an incognito window, submit the wrong password four times for one disposable recruiter. Confirm each
+   `POST /api/auth/login` returns `401` and the UI continues to show `Invalid email or password`.
+2. Optionally submit the correct password before failure five. It must succeed and clear the account's pending failure
+   count; sign out before continuing.
+3. Submit five consecutive wrong passwords. Failure five must return `429`, retain the generic message, and include a
+   `Retry-After` header close to `900` seconds with the normal configuration.
+4. Submit the correct password while locked. It must still return `429`.
+5. Refresh **User accounts** in the administrator browser. Confirm the recruiter is marked **Temporarily locked**.
+6. Select **Unlock**, confirm the status returns to **Enabled**, and verify the recruiter can sign in correctly.
+
+#### Isolated IP-limit test
+
+Testing twenty failures is unnecessary and risks disrupting staging users. Temporarily isolate the test in its own
+Redis namespace with a limit of three and a one-minute lock. Back up `.env` inside the protected deployment directory;
+the backup contains credentials and must retain mode `600`:
+
+```bash
+cd /opt/nevgiu/deploy
+cp .env .env.before-ip-lock-test
+chmod 600 .env.before-ip-lock-test
+nano .env
+```
+
+Temporarily set:
+
+```env
+REDIS_SECURITY_NAMESPACE=hr-ai:security:login:staging-ip-test
+LOGIN_ACCOUNT_FAILURE_LIMIT=5
+LOGIN_IP_FAILURE_LIMIT=3
+LOGIN_FAILURE_WINDOW=5m
+LOGIN_LOCK_DURATION=1m
+```
+
+Recreate only the backend so it reloads the values, then wait for healthy status:
+
+```bash
+docker compose --env-file .env --env-file .images.env up -d --force-recreate backend
+docker compose --env-file .env --env-file .images.env ps backend redis
+```
+
+From one incognito browser and the same network, make one failed login for each distinct address:
+
+```text
+ip-test-1@example.invalid
+ip-test-2@example.invalid
+ip-test-3@example.invalid
+```
+
+The first two requests must return `401`; the third must return `429` with `Retry-After` close to `60`. Immediately try
+correct credentials for a disposable recruiter from the same browser/network. That request must also return `429`,
+proving the IP lock applies across accounts. Administrator **Unlock** clears only an account lock and must not bypass
+this IP lock. After slightly more than one minute, correct recruiter credentials must work without a backend restart.
+
+Restore the protected configuration and recreate only the backend:
+
+```bash
+cd /opt/nevgiu/deploy
+cp .env.before-ip-lock-test .env
+chmod 600 .env
+docker compose --env-file .env --env-file .images.env up -d --force-recreate backend
+docker compose --env-file .env --env-file .images.env ps backend redis
+```
+
+Verify the normal values without displaying secrets:
+
+```bash
+grep -E \
+  '^(REDIS_SECURITY_NAMESPACE|LOGIN_ACCOUNT_FAILURE_LIMIT|LOGIN_IP_FAILURE_LIMIT|LOGIN_FAILURE_WINDOW|LOGIN_LOCK_DURATION)=' \
+  .env
+```
+
+Expected:
+
+```text
+REDIS_SECURITY_NAMESPACE=hr-ai:security:login:staging
+LOGIN_ACCOUNT_FAILURE_LIMIT=5
+LOGIN_IP_FAILURE_LIMIT=20
+LOGIN_FAILURE_WINDOW=15m
+LOGIN_LOCK_DURATION=15m
+```
+
+After the backend is healthy and the restored login works, remove the credential-bearing backup:
+
+```bash
+rm .env.before-ip-lock-test
+```
+
+The isolated Redis attempt and lock keys expire automatically. Record the tested commit, response statuses,
+`Retry-After` behavior, administrator unlock result, automatic IP-lock expiry, and restored configuration in the release
+validation evidence without recording emails, IP addresses, passwords, session identifiers, or Redis key hashes.
+
 ### 15. Access operational logs
 
 GitHub pipeline logs:

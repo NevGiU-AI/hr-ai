@@ -79,6 +79,11 @@ APP_REDIS_HOST=localhost
 APP_REDIS_PORT=6379
 APP_REDIS_PASSWORD=local-redis-secret
 APP_REDIS_SESSION_NAMESPACE=hr-ai:session:local
+APP_REDIS_SECURITY_NAMESPACE=hr-ai:security:login:local
+APP_SECURITY_LOGIN_ACCOUNT_FAILURE_LIMIT=5
+APP_SECURITY_LOGIN_IP_FAILURE_LIMIT=20
+APP_SECURITY_LOGIN_FAILURE_WINDOW=15m
+APP_SECURITY_LOGIN_LOCK_DURATION=15m
 ```
 
 The OpenAI key is passed to the backend container and is required for AI job-offer generation. The bootstrap credentials create the first local `ADMIN` account; the password is stored in PostgreSQL only as a bcrypt hash. Do not reuse staging or production credentials locally. Do not commit `.env` or expose its values in logs, screenshots, or chat.

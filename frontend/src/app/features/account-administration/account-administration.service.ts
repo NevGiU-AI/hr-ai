@@ -28,4 +28,8 @@ export class AccountAdministrationService {
   revokeSessions(accountId: number): Observable<RevokeSessionsResponse> {
     return this.http.post<RevokeSessionsResponse>(`${this.apiUrl}/admin/users/${accountId}/sessions/revoke`, {});
   }
+
+  unlock(accountId: number): Observable<Account> {
+    return this.http.post<Account>(`${this.apiUrl}/admin/users/${accountId}/lockout/unlock`, {});
+  }
 }

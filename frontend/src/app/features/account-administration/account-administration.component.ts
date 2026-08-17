@@ -138,6 +138,11 @@ export class AccountAdministrationComponent implements OnInit {
     });
   }
 
+  unlock(account: Account): void {
+    this.runAccountAction(account.id, this.accountsApi.unlock(account.id),
+      `Temporary account lock cleared for ${account.email}.`);
+  }
+
   rolesChanged(account: Account): boolean {
     const draft = [...(this.roleDrafts.get(account.id) ?? [])].sort();
     return draft.join(',') !== [...account.roles].sort().join(',');

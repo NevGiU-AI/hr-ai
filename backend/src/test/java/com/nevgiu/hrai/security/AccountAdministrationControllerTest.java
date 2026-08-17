@@ -33,7 +33,7 @@ class AccountAdministrationControllerTest {
         AppUserPrincipal principal = principal("tenant-a", "ROLE_ADMIN");
         when(accounts.findAll("tenant-a")).thenReturn(List.of(
                 new AccountResponse(2L, "recruiter@example.com", "tenant-a", true,
-                        Set.of(AppRole.RECRUITER))));
+                        Set.of(AppRole.RECRUITER), false, 0)));
 
         mvc.perform(get("/api/admin/users").with(user(principal)))
                 .andExpect(status().isOk())
@@ -52,7 +52,7 @@ class AccountAdministrationControllerTest {
         AppUserPrincipal principal = principal("tenant-a", "ROLE_ADMIN");
         when(accounts.create(org.mockito.ArgumentMatchers.eq("tenant-a"), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new AccountResponse(2L, "recruiter@example.com", "tenant-a", true,
-                        Set.of(AppRole.RECRUITER)));
+                        Set.of(AppRole.RECRUITER), false, 0));
 
         mvc.perform(post("/api/admin/users")
                         .with(user(principal)).with(csrf())
@@ -101,7 +101,7 @@ class AccountAdministrationControllerTest {
                 org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(2L),
                 org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new AccountResponse(2L, "reviewer@example.com", "tenant-a", true,
-                        Set.of(AppRole.REVIEWER)));
+                        Set.of(AppRole.REVIEWER), false, 0));
 
         mvc.perform(put("/api/admin/users/2/roles").with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf())
                         .contentType("application/json").content("{\"roles\":[\"REVIEWER\"]}"))
@@ -115,7 +115,7 @@ class AccountAdministrationControllerTest {
                 org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.eq(2L),
                 org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new AccountResponse(2L, "user@example.com", "tenant-a", false,
-                        Set.of(AppRole.RECRUITER)));
+                        Set.of(AppRole.RECRUITER), false, 0));
 
         mvc.perform(put("/api/admin/users/2/status").with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf())
                         .contentType("application/json").content("{\"enabled\":false}"))
@@ -131,6 +131,18 @@ class AccountAdministrationControllerTest {
                         .with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.revokedSessions").value(2));
+    }
+
+    @Test
+    void administratorUnlocksAnotherAccount() throws Exception {
+        when(accounts.unlock("tenant-a", 1L, 2L)).thenReturn(
+                new AccountResponse(2L, "user@example.com", "tenant-a", true,
+                        Set.of(AppRole.RECRUITER), false, 0));
+
+        mvc.perform(post("/api/admin/users/2/lockout/unlock")
+                        .with(user(principal("tenant-a", "ROLE_ADMIN"))).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.locked").value(false));
     }
 
     private AppUserPrincipal principal(String organizationId, String role) {

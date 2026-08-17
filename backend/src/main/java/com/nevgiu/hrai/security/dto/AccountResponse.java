@@ -4,4 +4,5 @@ import com.nevgiu.hrai.security.AppRole;
 
 import java.util.Set;
 
-public record AccountResponse(Long id, String email, String organizationId, boolean enabled, Set<AppRole> roles) {}
+public record AccountResponse(Long id, String email, String organizationId, boolean enabled, Set<AppRole> roles,
+                              boolean locked, long lockoutRemainingSeconds) {}

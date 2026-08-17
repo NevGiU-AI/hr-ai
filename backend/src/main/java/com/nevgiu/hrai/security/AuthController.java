@@ -27,10 +27,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthenticationManager authenticationManager;
+    private final LoginThrottleService loginThrottle;
     private final HttpSessionSecurityContextRepository contexts = new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, LoginThrottleService loginThrottle) {
         this.authenticationManager = authenticationManager;
+        this.loginThrottle = loginThrottle;
     }
 
     @GetMapping("/csrf")
@@ -41,6 +43,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest,
                                    HttpServletResponse servletResponse) {
+        String clientIp = servletRequest.getRemoteAddr();
+        LoginThrottleService.ThrottleDecision current = loginThrottle.check(request.email(), clientIp);
+        if (current.blocked()) return rejectedLogin(HttpStatus.TOO_MANY_REQUESTS, current.retryAfterSeconds());
         try {
             Authentication authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
@@ -49,10 +54,13 @@ public class AuthController {
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
             contexts.saveContext(context, servletRequest, servletResponse);
+            loginThrottle.recordSuccess(request.email());
             return ResponseEntity.ok(toResponse((AppUserPrincipal) authentication.getPrincipal()));
         } catch (AuthenticationException exception) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(java.util.Map.of("status", 401, "message", "Invalid email or password"));
+            LoginThrottleService.ThrottleDecision recorded = loginThrottle.recordFailure(request.email(), clientIp);
+            return recorded.blocked()
+                    ? rejectedLogin(HttpStatus.TOO_MANY_REQUESTS, recorded.retryAfterSeconds())
+                    : rejectedLogin(HttpStatus.UNAUTHORIZED, 0);
         }
     }
 
@@ -71,5 +79,11 @@ public class AuthController {
     private AuthUserResponse toResponse(AppUserPrincipal principal) {
         return new AuthUserResponse(principal.id(), principal.username(), principal.organizationId(),
                 principal.authorities().stream().map(authority -> authority.getAuthority().replaceFirst("^ROLE_", "")).toList());
+    }
+
+    private ResponseEntity<java.util.Map<String, Object>> rejectedLogin(HttpStatus status, long retryAfterSeconds) {
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(status);
+        if (retryAfterSeconds > 0) response.header("Retry-After", Long.toString(retryAfterSeconds));
+        return response.body(java.util.Map.of("status", status.value(), "message", "Invalid email or password"));
     }
 }

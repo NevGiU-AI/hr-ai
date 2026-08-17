@@ -7,6 +7,8 @@ export interface Account {
   organizationId: string;
   enabled: boolean;
   roles: AccountRole[];
+  locked: boolean;
+  lockoutRemainingSeconds: number;
 }
 
 export interface CreateAccountRequest {

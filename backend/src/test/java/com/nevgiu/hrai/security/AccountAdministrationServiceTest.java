@@ -26,6 +26,7 @@ class AccountAdministrationServiceTest {
     @Mock AppUserRepository users;
     @Mock PasswordEncoder passwordEncoder;
     @Mock AccountSessionService sessions;
+    @Mock LoginThrottleService loginThrottle;
     @InjectMocks AccountAdministrationService service;
 
     @Test
@@ -138,5 +139,20 @@ class AccountAdministrationServiceTest {
                 .hasMessage("You cannot revoke your own session");
         verify(users, never()).findByIdAndOrganizationId(org.mockito.ArgumentMatchers.anyLong(),
                 org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void unlocksAnAccountInsideTheAdministratorsOrganization() {
+        AppUser account = org.mockito.Mockito.mock(AppUser.class);
+        when(account.getId()).thenReturn(2L);
+        when(account.getEmail()).thenReturn("user@example.com");
+        when(account.getOrganizationId()).thenReturn("tenant-a");
+        when(account.isEnabled()).thenReturn(true);
+        when(account.getRoles()).thenReturn(Set.of(AppRole.RECRUITER));
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(account));
+
+        service.unlock("tenant-a", 1L, 2L);
+
+        verify(loginThrottle).unlockAccount("user@example.com");
     }
 }

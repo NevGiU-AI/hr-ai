@@ -50,7 +50,8 @@ public class SecurityAuditService {
 
     public void administration(SecurityEventType type, Long actorId, String organizationId,
                                AppUser target, String details) {
-        save(new SecurityAuditEvent(organizationId, actorId, null, target.getId(), target.getEmail(), null, null,
+        String actorEmail = users.findById(actorId).map(AppUser::getEmail).orElse(null);
+        save(new SecurityAuditEvent(organizationId, actorId, actorEmail, target.getId(), target.getEmail(), null, null,
                 type, SecurityEventOutcome.SUCCESS, safe(details)));
     }
 

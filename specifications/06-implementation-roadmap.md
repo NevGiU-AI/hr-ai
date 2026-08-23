@@ -18,8 +18,8 @@
   denied administration attempts, and session revocation; expose an administrator-only history with retention cleanup.
 - [x] Deploy and validate security-event auditing in staging and production, including backend `403` auditing and
   administrator email snapshots for account-management actors.
-- [ ] Extend security auditing to password operations when those workflows are implemented.
-- [ ] Add authenticated password change and administrator-assisted reset; defer email self-service reset until mail delivery is approved.
+- [x] Add authenticated password change and administrator-assisted reset with session revocation and password audit events;
+  defer email self-service reset until a secure transactional-email capability is approved.
 - [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
   audit-log, password, and session-policy validation.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
@@ -36,7 +36,7 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** password management -> concurrent-session limits -> final
+**Immediate delivery sequence:** concurrent-session limits -> final
 security validation -> governed CV file storage/OCR -> typed CV chat -> speech input/playback.
 
 ## Phase 1 - Stabilize job-offer generation

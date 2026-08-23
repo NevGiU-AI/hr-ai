@@ -4,6 +4,7 @@ import com.nevgiu.hrai.security.dto.AccountResponse;
 import com.nevgiu.hrai.security.dto.CreateAccountRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountRolesRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountStatusRequest;
+import com.nevgiu.hrai.security.dto.ResetPasswordRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -64,5 +65,13 @@ public class AccountAdministrationController {
     public AccountResponse unlock(@PathVariable Long accountId,
                                   @AuthenticationPrincipal AppUserPrincipal principal) {
         return accounts.unlock(principal.organizationId(), principal.id(), accountId);
+    }
+
+    @PutMapping("/{accountId}/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@PathVariable Long accountId,
+                              @Valid @RequestBody ResetPasswordRequest request,
+                              @AuthenticationPrincipal AppUserPrincipal principal) {
+        accounts.resetPassword(principal.organizationId(), principal.id(), accountId, request);
     }
 }

@@ -51,4 +51,8 @@ public class AppUser {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }

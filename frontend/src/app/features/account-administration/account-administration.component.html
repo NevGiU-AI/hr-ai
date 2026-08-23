@@ -85,6 +85,14 @@
                           [disabled]="busyAccountId === account.id" (click)="revokeSessions(account)">Revoke sessions</button>
                   <button *ngIf="account.locked" type="button" class="btn btn-sm btn-outline-secondary"
                           [disabled]="busyAccountId === account.id" (click)="unlock(account)">Unlock</button>
+                  <input type="password" autocomplete="new-password" aria-label="New password"
+                         placeholder="New password"
+                         [value]="resetPasswords.get(account.id) || ''"
+                         [disabled]="busyAccountId === account.id"
+                         (input)="resetPasswords.set(account.id, $any($event.target).value)" />
+                  <button type="button" class="btn btn-sm btn-outline-secondary"
+                          [disabled]="busyAccountId === account.id"
+                          (click)="resetPassword(account)">Reset password</button>
                 </ng-container>
               </div>
             </td>

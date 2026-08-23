@@ -32,4 +32,8 @@ export class AccountAdministrationService {
   unlock(accountId: number): Observable<Account> {
     return this.http.post<Account>(`${this.apiUrl}/admin/users/${accountId}/lockout/unlock`, {});
   }
+
+  resetPassword(accountId: number, newPassword: string): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/admin/users/${accountId}/password`, { newPassword });
+  }
 }

@@ -39,6 +39,7 @@ export class AccountAdministrationComponent implements OnInit {
   success = '';
   busyAccountId: number | null = null;
   readonly roleDrafts = new Map<number, Set<AccountRole>>();
+  readonly resetPasswords = new Map<number, string>();
 
   get currentUserId(): number | null { return this.auth.user?.id ?? null; }
 
@@ -141,6 +142,26 @@ export class AccountAdministrationComponent implements OnInit {
   unlock(account: Account): void {
     this.runAccountAction(account.id, this.accountsApi.unlock(account.id),
       `Temporary account lock cleared for ${account.email}.`);
+  }
+
+  resetPassword(account: Account): void {
+    const password = this.resetPasswords.get(account.id) ?? '';
+    if (password.length < 12 || password.length > 128) {
+      this.error = 'Reset passwords must contain between 12 and 128 characters.';
+      return;
+    }
+    if (!window.confirm(`Reset the password and revoke all sessions for ${account.email}?`)) return;
+    this.busyAccountId = account.id;
+    this.clearMessages();
+    this.accountsApi.resetPassword(account.id, password).pipe(
+      finalize(() => this.busyAccountId = null),
+    ).subscribe({
+      next: () => {
+        this.resetPasswords.delete(account.id);
+        this.success = `Password reset and active sessions revoked for ${account.email}.`;
+      },
+      error: (error: HttpErrorResponse) => this.showActionError(error),
+    });
   }
 
   rolesChanged(account: Account): boolean {

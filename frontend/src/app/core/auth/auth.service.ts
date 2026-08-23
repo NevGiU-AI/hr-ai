@@ -62,6 +62,13 @@ export class AuthService {
     );
   }
 
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.put<void>(`${this.apiUrl}/auth/password`, { currentPassword, newPassword })),
+      tap(() => this.session.expire(true, false)),
+    );
+  }
+
   private ensureCsrf(): Observable<void> {
     if (this.csrf.token) return of(void 0);
     return this.http.get<CsrfResponse>(`${this.apiUrl}/auth/csrf`).pipe(

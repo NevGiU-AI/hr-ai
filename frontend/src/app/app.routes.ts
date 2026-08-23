@@ -14,6 +14,12 @@ export const routes: Routes = [
         component: LoginComponent,
     },
     {
+        path: "account/password",
+        canActivate: [authGuard],
+        loadComponent: () => import('./core/auth/change-password.component')
+            .then((m) => m.ChangePasswordComponent),
+    },
+    {
         path: "jobs",
         canActivate: [authGuard],
         loadChildren: () =>

@@ -3,6 +3,7 @@ package com.nevgiu.hrai.security;
 import com.nevgiu.hrai.security.dto.CreateAccountRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountRolesRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountStatusRequest;
+import com.nevgiu.hrai.security.dto.ResetPasswordRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -156,5 +157,21 @@ class AccountAdministrationServiceTest {
         service.unlock("tenant-a", 1L, 2L);
 
         verify(loginThrottle).unlockAccount("user@example.com");
+    }
+
+    @Test
+    void administratorResetsAnotherAccountsPasswordAndRevokesSessions() {
+        AppUser account = org.mockito.Mockito.mock(AppUser.class);
+        when(account.getEmail()).thenReturn("user@example.com");
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(account));
+        when(passwordEncoder.encode("replacement-password")).thenReturn("replacement-hash");
+
+        service.resetPassword("tenant-a", 1L, 2L, new ResetPasswordRequest("replacement-password"));
+
+        verify(account).setPasswordHash("replacement-hash");
+        verify(users).saveAndFlush(account);
+        verify(sessions).revoke("user@example.com");
+        verify(audit).administration(com.nevgiu.hrai.security.audit.SecurityEventType.PASSWORD_RESET,
+                1L, "tenant-a", account, null);
     }
 }

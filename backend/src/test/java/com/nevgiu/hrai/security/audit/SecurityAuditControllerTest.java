@@ -42,8 +42,12 @@ class SecurityAuditControllerTest {
 
     @Test
     void recruiterCannotReadSecurityEvents() throws Exception {
-        mvc.perform(get("/api/admin/security-events").with(user(principal("ROLE_RECRUITER"))))
+        AppUserPrincipal recruiter = principal("ROLE_RECRUITER");
+
+        mvc.perform(get("/api/admin/security-events").with(user(recruiter)))
                 .andExpect(status().isForbidden());
+
+        verify(audit).administrationDenied(recruiter, "/api/admin/security-events", 403);
     }
 
     private AppUserPrincipal principal(String role) {

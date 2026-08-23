@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
@@ -47,8 +48,8 @@ public class SecurityConfig {
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, exception) -> jsonError(response, 401, "Authentication required"))
                         .accessDeniedHandler((request, response, exception) -> {
-                            if (request.getUserPrincipal() instanceof org.springframework.security.core.Authentication authentication
-                                    && authentication.getPrincipal() instanceof AppUserPrincipal principal) {
+                            var authentication = SecurityContextHolder.getContext().getAuthentication();
+                            if (authentication != null && authentication.getPrincipal() instanceof AppUserPrincipal principal) {
                                 securityAuditService.administrationDenied(principal, request.getRequestURI(), 403);
                             }
                             jsonError(response, 403, "Access denied");

@@ -13,6 +13,7 @@ https://github.com/hack6nov2025/nevgiu-hr-ai -> NevGiU AI Org https://github.com
 - Angular frontend served by Nginx
 - Spring Boot backend running on Java 21
 - PostgreSQL 16 with pgvector
+- Redis 7.4 for Spring Session persistence, cross-replica session revocation, and login throttling/temporary lockout
 - Spring AI with OpenAI
 - Docker Compose for local development
 

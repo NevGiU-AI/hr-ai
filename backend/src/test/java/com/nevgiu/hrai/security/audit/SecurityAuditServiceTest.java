@@ -50,6 +50,21 @@ class SecurityAuditServiceTest {
         assertThat(event.getTargetIdentifierHash()).hasSize(64).doesNotContain("unknown@example.com");
     }
 
+    @Test
+    void includesTheAdministratorsEmailSnapshotInAdministrationEvents() {
+        AppUser administrator = new AppUser("admin@example.com", "hash", "tenant-a", Set.of(AppRole.ADMIN));
+        AppUser target = new AppUser("person@example.com", "hash", "tenant-a", Set.of(AppRole.RECRUITER));
+        when(users.findById(1L)).thenReturn(Optional.of(administrator));
+
+        service().administration(SecurityEventType.ROLES_CHANGED, 1L, "tenant-a", target,
+                "roles=READ_ONLY");
+
+        SecurityAuditEvent event = capturedEvent();
+        assertThat(event.getActorUserId()).isEqualTo(1L);
+        assertThat(event.getActorEmail()).isEqualTo("admin@example.com");
+        assertThat(event.getTargetEmail()).isEqualTo("person@example.com");
+    }
+
     private SecurityAuditService service() {
         return new SecurityAuditService(events, writer, users);
     }

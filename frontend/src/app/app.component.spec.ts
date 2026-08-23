@@ -38,10 +38,10 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const links = Array.from(fixture.nativeElement.querySelectorAll('nav a')) as HTMLAnchorElement[];
     expect(links.map((link) => link.textContent?.trim())).toEqual([
-      'Generate job', 'Approved jobs', 'CVs & Evaluation', 'Users', 'Security events',
+      'Generate job', 'Approved jobs', 'CVs & Evaluation', 'Change password', 'Users', 'Security events',
     ]);
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/jobs/job-offer', '/jobs/job-listing', '/candidates/import', '/admin/users', '/admin/security-events',
+      '/jobs/job-offer', '/jobs/job-listing', '/candidates/import', '/account/password', '/admin/users', '/admin/security-events',
     ]);
   });
 

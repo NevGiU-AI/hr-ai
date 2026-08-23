@@ -4,6 +4,7 @@ import com.nevgiu.hrai.security.dto.AccountResponse;
 import com.nevgiu.hrai.security.dto.CreateAccountRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountRolesRequest;
 import com.nevgiu.hrai.security.dto.UpdateAccountStatusRequest;
+import com.nevgiu.hrai.security.dto.ResetPasswordRequest;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import com.nevgiu.hrai.security.audit.SecurityEventType;
 import org.springframework.http.HttpStatus;
@@ -100,6 +101,16 @@ public class AccountAdministrationService {
         loginThrottle.unlockAccount(account.getEmail());
         audit.administration(SecurityEventType.ACCOUNT_UNLOCKED, actorId, organizationId, account, null);
         return toResponse(account);
+    }
+
+    @Transactional
+    public void resetPassword(String organizationId, Long actorId, Long accountId, ResetPasswordRequest request) {
+        rejectSelfManagement(actorId, accountId, "reset your own password here");
+        AppUser account = findAccount(organizationId, accountId);
+        account.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        users.saveAndFlush(account);
+        sessions.revoke(account.getEmail());
+        audit.administration(SecurityEventType.PASSWORD_RESET, actorId, organizationId, account, null);
     }
 
     private AppUser findAccount(String organizationId, Long accountId) {

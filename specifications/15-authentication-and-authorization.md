@@ -126,12 +126,21 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Add authenticated password change and administrator-assisted reset; email self-service reset remains deferred until mail delivery is approved.
-- Audit password change and reset outcomes as part of that implementation.
 - Add maximum concurrent-session limits using the indexed Spring Session repository.
 - Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
   staging smoke tests before closing the authentication foundation.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
+
+## Password management
+
+Authenticated users may change their password at `PUT /api/auth/password` by supplying the current password and a new
+12–128 character password. Administrators may reset another tenant account at
+`PUT /api/admin/users/{id}/password`; self-reset through the administration endpoint is rejected. Both operations use
+bcrypt, revoke every active Redis-backed session for the affected account, and write password audit events without
+recording password content. The user must sign in again after a successful change or reset.
+
+Email self-service reset remains deferred until verified transactional email, hashed single-use expiring tokens,
+enumeration-safe responses, delivery monitoring, throttling, and recovery procedures are available.
 
 ## Validated rollout
 

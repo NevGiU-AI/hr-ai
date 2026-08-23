@@ -3,6 +3,7 @@ package com.nevgiu.hrai.web;
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionException;
 import com.nevgiu.hrai.evaluation.EvaluationException;
 import com.nevgiu.hrai.security.AccountAdministrationException;
+import com.nevgiu.hrai.security.PasswordManagementException;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EvaluationException.class)
     public ResponseEntity<ApiError> handleEvaluation(EvaluationException exception, HttpServletRequest request) {
         return response(exception.getStatus(), exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(PasswordManagementException.class)
+    public ResponseEntity<ApiError> handlePasswordManagement(
+            PasswordManagementException exception, HttpServletRequest request) {
+        return response(exception.status(), exception.getMessage(), request, Map.of());
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

@@ -503,6 +503,10 @@ docker compose --env-file .env --env-file .images.env exec -T db \
 Record the release identifier and accepted results. Do not describe auditing as deployed until the UI, authorization,
 tenant boundary, and persistence checks pass.
 
+**Validated 23 August 2026:** staging passed authentication and administration event checks, tenant-scoped administrator
+visibility, direct backend `403` plus `ADMIN_ACTION_DENIED`, and actor-email persistence/display. The frontend
+`/admin/security-events` redirect is an Angular guard check and does not itself create a backend denial event.
+
 ### 15. Access operational logs
 
 GitHub pipeline logs:

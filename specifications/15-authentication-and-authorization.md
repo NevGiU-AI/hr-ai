@@ -95,6 +95,11 @@ default). Every backend replica may run the idempotent cleanup.
 organization. The Angular **Security events** page provides the same tenant-scoped, paginated history. Identifier hashes
 remain internal and are not returned by the API.
 
+The Angular administrator route redirects authenticated non-administrators to the job-offer page before an API request
+is made. Backend authorization is validated separately by calling `GET /api/admin/security-events` directly: it returns
+`403` and records `ADMIN_ACTION_DENIED`. Successful account-administration records persist both the actor's user ID and
+email snapshot; the UI uses `User #<id>` only as a fallback for older rows whose email was not captured.
+
 Staging validation must cover both independent limits. The account test uses one disposable recruiter: failures one
 through four return `401`, failure five returns `429` with `Retry-After`, correct credentials remain blocked during the
 lock, and administrator unlock restores access. The IP test uses a temporary Redis namespace, an isolated browser or
@@ -147,6 +152,11 @@ The organization identifier is resolved from the authenticated principal and mus
 - Redis-backed account/IP login throttling, temporary lockout, and administrator unlock were deployed to staging and
   production in release `v0.4.0` on 17 August 2026. Deployment is complete; the documented account-limit and isolated
   IP-limit procedures remain the repeatable release-validation evidence for policy behavior.
+- Tenant-scoped security-event auditing from PR `#32`, forbidden-admin-request auditing from PR `#33`, and actor-email
+  snapshots from PR `#34` were deployed and accepted in staging and production on 23 August 2026. Validation confirmed
+  authentication and administration events, direct backend `403` responses with `ADMIN_ACTION_DENIED`, administrator
+  visibility within the same organization, Angular route-guard redirection, and administrator email display for new
+  account-management events. `SECURITY_AUDIT_RETENTION=365d` is explicitly configured in both environments.
 
 ## Future external channels
 

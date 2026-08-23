@@ -16,6 +16,8 @@
   unlock; deploy release `v0.4.0` to staging and production.
 - [x] Persist tenant-scoped security events for login outcomes, lockout/unlock, logout, account lifecycle changes,
   denied administration attempts, and session revocation; expose an administrator-only history with retention cleanup.
+- [x] Deploy and validate security-event auditing in staging and production, including backend `403` auditing and
+  administrator email snapshots for account-management actors.
 - [ ] Extend security auditing to password operations when those workflows are implemented.
 - [ ] Add authenticated password change and administrator-assisted reset; defer email self-service reset until mail delivery is approved.
 - [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,

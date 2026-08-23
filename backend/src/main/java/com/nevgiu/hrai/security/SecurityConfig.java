@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.security;
 
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityAuditService securityAuditService) throws Exception {
         HttpSessionCsrfTokenRepository csrfTokens = new HttpSessionCsrfTokenRepository();
         csrfTokens.setHeaderName("X-XSRF-TOKEN");
         return http
@@ -45,7 +46,13 @@ public class SecurityConfig {
                         .anyRequest().permitAll())
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, exception) -> jsonError(response, 401, "Authentication required"))
-                        .accessDeniedHandler((request, response, exception) -> jsonError(response, 403, "Access denied")))
+                        .accessDeniedHandler((request, response, exception) -> {
+                            if (request.getUserPrincipal() instanceof org.springframework.security.core.Authentication authentication
+                                    && authentication.getPrincipal() instanceof AppUserPrincipal principal) {
+                                securityAuditService.administrationDenied(principal, request.getRequestURI(), 403);
+                            }
+                            jsonError(response, 403, "Access denied");
+                        }))
                 .build();
     }
 

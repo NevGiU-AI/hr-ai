@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +28,7 @@ class AccountAdministrationServiceTest {
     @Mock PasswordEncoder passwordEncoder;
     @Mock AccountSessionService sessions;
     @Mock LoginThrottleService loginThrottle;
+    @Mock SecurityAuditService audit;
     @InjectMocks AccountAdministrationService service;
 
     @Test
@@ -36,7 +38,7 @@ class AccountAdministrationServiceTest {
         when(users.saveAndFlush(org.mockito.ArgumentMatchers.any(AppUser.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.create("tenant-a", new CreateAccountRequest(" Recruiter@Example.com ", "a-secure-password",
+        service.create("tenant-a", 1L, new CreateAccountRequest(" Recruiter@Example.com ", "a-secure-password",
                 Set.of(AppRole.RECRUITER)));
 
         ArgumentCaptor<AppUser> saved = ArgumentCaptor.forClass(AppUser.class);
@@ -52,7 +54,7 @@ class AccountAdministrationServiceTest {
         when(users.findByEmailIgnoreCase("existing@example.com")).thenReturn(Optional.of(
                 new AppUser("existing@example.com", "hash", "tenant-b", Set.of(AppRole.ADMIN))));
 
-        assertThatThrownBy(() -> service.create("tenant-a", new CreateAccountRequest(
+        assertThatThrownBy(() -> service.create("tenant-a", 1L, new CreateAccountRequest(
                 "existing@example.com", "a-secure-password", Set.of(AppRole.RECRUITER))))
                 .isInstanceOf(AccountAdministrationException.class)
                 .hasMessage("An account could not be created with this email");
@@ -65,7 +67,7 @@ class AccountAdministrationServiceTest {
         when(users.saveAndFlush(org.mockito.ArgumentMatchers.any(AppUser.class)))
                 .thenThrow(new DataIntegrityViolationException("unique email"));
 
-        assertThatThrownBy(() -> service.create("tenant-a", new CreateAccountRequest(
+        assertThatThrownBy(() -> service.create("tenant-a", 1L, new CreateAccountRequest(
                 "race@example.com", "a-secure-password", Set.of(AppRole.RECRUITER))))
                 .isInstanceOf(AccountAdministrationException.class)
                 .hasMessage("An account could not be created with this email");

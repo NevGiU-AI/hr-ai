@@ -36,7 +36,7 @@ public class AccountAdministrationController {
     @ResponseStatus(HttpStatus.CREATED)
     public AccountResponse create(@Valid @RequestBody CreateAccountRequest request,
                                   @AuthenticationPrincipal AppUserPrincipal principal) {
-        return accounts.create(principal.organizationId(), request);
+        return accounts.create(principal.organizationId(), principal.id(), request);
     }
 
     @PutMapping("/{accountId}/roles")

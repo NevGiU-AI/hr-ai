@@ -512,6 +512,17 @@ Validated on 16 August 2026 for release `v0.2.0`, commit `33d8a04`:
 The pre-tenant dump remains a controlled recovery artifact. Retain it according to the approved backup and personal-data
 retention policy; do not leave an unencrypted long-lived copy on the application VPS.
 
+### 14.2 Validate production security auditing
+
+Before the corresponding release, take and validate the normal PostgreSQL backup because the current
+`ddl-auto=update` policy creates `security_audit_events`. Add `SECURITY_AUDIT_RETENTION=365d` to the private production
+`.env`, deploy the immutable images, and wait for backend health.
+
+Perform a non-destructive smoke test: fail one administrator login, sign in successfully, open **Security events**, and
+confirm both outcomes are present for organization `production`. Confirm a non-administrator receives `403` for
+`GET /api/admin/security-events`. Avoid role, status, session, and lockout mutations on business accounts during this
+smoke test. Record the release identifier and acceptance result before marking the feature production-deployed.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

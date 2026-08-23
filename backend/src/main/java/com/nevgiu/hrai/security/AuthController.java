@@ -3,6 +3,9 @@ package com.nevgiu.hrai.security;
 import com.nevgiu.hrai.security.dto.AuthUserResponse;
 import com.nevgiu.hrai.security.dto.CsrfResponse;
 import com.nevgiu.hrai.security.dto.LoginRequest;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
+import com.nevgiu.hrai.security.audit.SecurityEventOutcome;
+import com.nevgiu.hrai.security.audit.SecurityEventType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -28,11 +31,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final LoginThrottleService loginThrottle;
+    private final SecurityAuditService audit;
     private final HttpSessionSecurityContextRepository contexts = new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager, LoginThrottleService loginThrottle) {
+    public AuthController(AuthenticationManager authenticationManager, LoginThrottleService loginThrottle,
+                          SecurityAuditService audit) {
         this.authenticationManager = authenticationManager;
         this.loginThrottle = loginThrottle;
+        this.audit = audit;
     }
 
     @GetMapping("/csrf")
@@ -45,7 +51,11 @@ public class AuthController {
                                    HttpServletResponse servletResponse) {
         String clientIp = servletRequest.getRemoteAddr();
         LoginThrottleService.ThrottleDecision current = loginThrottle.check(request.email(), clientIp);
-        if (current.blocked()) return rejectedLogin(HttpStatus.TOO_MANY_REQUESTS, current.retryAfterSeconds());
+        if (current.blocked()) {
+            audit.loginAttempt(SecurityEventType.LOGIN_THROTTLED, SecurityEventOutcome.DENIED, request.email(),
+                    clientIp, "retryAfterSeconds=" + current.retryAfterSeconds());
+            return rejectedLogin(HttpStatus.TOO_MANY_REQUESTS, current.retryAfterSeconds());
+        }
         try {
             Authentication authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
@@ -55,12 +65,22 @@ public class AuthController {
             SecurityContextHolder.setContext(context);
             contexts.saveContext(context, servletRequest, servletResponse);
             loginThrottle.recordSuccess(request.email());
+            audit.loginSucceeded((AppUserPrincipal) authentication.getPrincipal(), clientIp);
             return ResponseEntity.ok(toResponse((AppUserPrincipal) authentication.getPrincipal()));
         } catch (AuthenticationException exception) {
             LoginThrottleService.ThrottleDecision recorded = loginThrottle.recordFailure(request.email(), clientIp);
-            return recorded.blocked()
-                    ? rejectedLogin(HttpStatus.TOO_MANY_REQUESTS, recorded.retryAfterSeconds())
-                    : rejectedLogin(HttpStatus.UNAUTHORIZED, 0);
+            if (recorded.blocked()) {
+                if (loginThrottle.accountLockRemainingSeconds(request.email()) > 0) {
+                    audit.loginAttempt(SecurityEventType.ACCOUNT_LOCKED, SecurityEventOutcome.DENIED, request.email(),
+                            clientIp, "lockDurationSeconds=" + recorded.retryAfterSeconds());
+                }
+                audit.loginAttempt(SecurityEventType.LOGIN_THROTTLED, SecurityEventOutcome.DENIED, request.email(),
+                        clientIp, "retryAfterSeconds=" + recorded.retryAfterSeconds());
+                return rejectedLogin(HttpStatus.TOO_MANY_REQUESTS, recorded.retryAfterSeconds());
+            }
+            audit.loginAttempt(SecurityEventType.LOGIN_FAILED, SecurityEventOutcome.FAILURE, request.email(),
+                    clientIp, null);
+            return rejectedLogin(HttpStatus.UNAUTHORIZED, 0);
         }
     }
 
@@ -72,6 +92,9 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response,
                                        Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof AppUserPrincipal principal) {
+            audit.logout(principal, request.getRemoteAddr());
+        }
         new SecurityContextLogoutHandler().logout(request, response, authentication);
         return ResponseEntity.noContent().build();
     }

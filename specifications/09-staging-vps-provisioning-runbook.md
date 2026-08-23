@@ -473,6 +473,36 @@ The isolated Redis attempt and lock keys expire automatically. Record the tested
 `Retry-After` behavior, administrator unlock result, automatic IP-lock expiry, and restored configuration in the release
 validation evidence without recording emails, IP addresses, passwords, session identifiers, or Redis key hashes.
 
+### 14B. Validate tenant-scoped security auditing
+
+The first deployment creates `security_audit_events` through the current temporary Hibernate `ddl-auto=update`
+policy. Take and validate the normal pre-deployment PostgreSQL backup before releasing this schema change. Set
+`SECURITY_AUDIT_RETENTION=365d` in `/opt/nevgiu/deploy/.env`, deploy, and confirm the backend is healthy.
+
+Use an administrator and a disposable recruiter in separate browsers:
+
+1. Fail one recruiter login, then sign in successfully.
+2. Sign the recruiter out.
+3. As the administrator, change the recruiter's roles, disable and re-enable it, revoke its sessions, and clear a
+   temporary account lock if one is available.
+4. Open **Security events** as the administrator. Confirm each action appears with the expected outcome, actor or
+   target, and timestamp.
+5. Sign in as a non-administrator and confirm `/admin/security-events` is inaccessible.
+6. Use an administrator from a different test organization, if available, and confirm neither organization can see
+   the other's events.
+
+Verify the persisted tenant boundary without printing credentials or identifier hashes:
+
+```bash
+cd /opt/nevgiu/deploy
+docker compose --env-file .env --env-file .images.env exec -T db \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "SELECT organization_id, event_type, outcome, COUNT(*) FROM security_audit_events GROUP BY 1,2,3 ORDER BY 1,2,3;"'
+```
+
+Record the release identifier and accepted results. Do not describe auditing as deployed until the UI, authorization,
+tenant boundary, and persistence checks pass.
+
 ### 15. Access operational logs
 
 GitHub pipeline logs:

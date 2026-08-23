@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.evaluation;
 
 import com.nevgiu.hrai.web.ApiExceptionHandler;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,6 +24,7 @@ class EvaluationControllerTest {
 
     @Autowired MockMvc mvc;
     @MockitoBean CvEvaluationService service;
+    @MockitoBean SecurityAuditService securityAuditService;
 
     @Test
     void rejectsMissingCandidateAndJobIdsBeforeCallingService() throws Exception {

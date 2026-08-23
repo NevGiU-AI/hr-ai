@@ -33,15 +33,15 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('HR AI Recruitment');
   });
 
-  it('shows account administration in the navigation for administrators', () => {
+  it('shows account administration and security events in the navigation for administrators', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const links = Array.from(fixture.nativeElement.querySelectorAll('nav a')) as HTMLAnchorElement[];
     expect(links.map((link) => link.textContent?.trim())).toEqual([
-      'Generate job', 'Approved jobs', 'CVs & Evaluation', 'Users',
+      'Generate job', 'Approved jobs', 'CVs & Evaluation', 'Users', 'Security events',
     ]);
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/jobs/job-offer', '/jobs/job-listing', '/candidates/import', '/admin/users',
+      '/jobs/job-offer', '/jobs/job-listing', '/candidates/import', '/admin/users', '/admin/security-events',
     ]);
   });
 
@@ -51,6 +51,7 @@ describe('AppComponent', () => {
     fixture.detectChanges();
     const links = Array.from(fixture.nativeElement.querySelectorAll('nav a')) as HTMLAnchorElement[];
     expect(links.map((link) => link.textContent?.trim())).not.toContain('Users');
+    expect(links.map((link) => link.textContent?.trim())).not.toContain('Security events');
   });
 
   it('renders the NevGiu logo as the accessible home link', () => {

@@ -1,0 +1,11 @@
+.audit-shell { display: grid; gap: 1.25rem; margin: 0 auto; max-width: 85rem; padding: 2rem 1rem; }
+.audit-shell header { display: grid; gap: 0.45rem; }
+.audit-shell header h1, .audit-shell header p { margin: 0; }
+.eyebrow { color: #315da8; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.table-wrapper { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid #e5eaf2; padding: 0.75rem; text-align: left; vertical-align: top; }
+th { color: #52698f; font-size: 0.8rem; text-transform: uppercase; }
+.outcome { background: #e7f6ec; border-radius: 999px; color: #18733b; display: inline-block; padding: 0.2rem 0.55rem; }
+.outcome.failure { background: #fff3cd; color: #7a4d00; }
+.pagination { align-items: center; display: flex; gap: 1rem; justify-content: flex-end; }

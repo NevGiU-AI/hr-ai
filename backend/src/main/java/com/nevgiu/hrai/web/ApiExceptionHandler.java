@@ -3,6 +3,8 @@ package com.nevgiu.hrai.web;
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionException;
 import com.nevgiu.hrai.evaluation.EvaluationException;
 import com.nevgiu.hrai.security.AccountAdministrationException;
+import com.nevgiu.hrai.security.AppUserPrincipal;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +19,19 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    private final SecurityAuditService audit;
+
+    public ApiExceptionHandler(SecurityAuditService audit) {
+        this.audit = audit;
+    }
 
     @ExceptionHandler(AccountAdministrationException.class)
     public ResponseEntity<ApiError> handleAccountAdministration(
             AccountAdministrationException exception, HttpServletRequest request) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        AppUserPrincipal principal = authentication != null && authentication.getPrincipal() instanceof AppUserPrincipal value
+                ? value : null;
+        audit.administrationDenied(principal, request.getRequestURI(), exception.getStatus().value());
         return response(exception.getStatus(), exception.getMessage(), request, Map.of());
     }
 

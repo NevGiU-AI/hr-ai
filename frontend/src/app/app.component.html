@@ -8,6 +8,7 @@
     <a routerLink="/jobs/job-listing" routerLinkActive="active">Approved jobs</a>
     <a routerLink="/candidates/import" routerLinkActive="active">CVs & Evaluation</a>
     <a *ngIf="user.roles.includes('ADMIN')" routerLink="/admin/users" routerLinkActive="active">Users</a>
+    <a *ngIf="user.roles.includes('ADMIN')" routerLink="/admin/security-events" routerLinkActive="active">Security events</a>
     <span class="signed-in-user">{{ user.email }}</span>
     <button type="button" (click)="logout()">Sign out</button>
   </nav>

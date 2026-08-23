@@ -14,8 +14,9 @@
   restarts and revocation works across replicas; validate the Redis deployment in staging and production.
 - [x] Add Redis-backed login throttling, IP/account failure limits, temporary lockout, generic errors, and administrator
   unlock; deploy release `v0.4.0` to staging and production.
-- [ ] Persist tenant-scoped security events for login outcomes, lockout/unlock, logout, account lifecycle changes,
-  password operations, and session revocation.
+- [x] Persist tenant-scoped security events for login outcomes, lockout/unlock, logout, account lifecycle changes,
+  denied administration attempts, and session revocation; expose an administrator-only history with retention cleanup.
+- [ ] Extend security auditing to password operations when those workflows are implemented.
 - [ ] Add authenticated password change and administrator-assisted reset; defer email self-service reset until mail delivery is approved.
 - [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
   audit-log, password, and session-policy validation.
@@ -33,7 +34,7 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** security-event auditing -> password management -> concurrent-session limits -> final
+**Immediate delivery sequence:** password management -> concurrent-session limits -> final
 security validation -> governed CV file storage/OCR -> typed CV chat -> speech input/playback.
 
 ## Phase 1 - Stabilize job-offer generation

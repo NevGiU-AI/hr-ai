@@ -4,6 +4,7 @@ import com.nevgiu.hrai.candidate.CandidateController;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionService;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
+import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,6 +30,7 @@ class ApiSecurityTest {
     @MockitoBean CandidateRepository candidates;
     @MockitoBean CvIngestionService ingestion;
     @MockitoBean AppUserDetailsService userDetailsService;
+    @MockitoBean SecurityAuditService securityAuditService;
 
     @Test
     void rejectsAnonymousBusinessApiRequests() throws Exception {

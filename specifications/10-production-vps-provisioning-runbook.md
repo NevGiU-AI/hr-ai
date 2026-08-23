@@ -523,6 +523,11 @@ confirm both outcomes are present for organization `production`. Confirm a non-a
 `GET /api/admin/security-events`. Avoid role, status, session, and lockout mutations on business accounts during this
 smoke test. Record the release identifier and acceptance result before marking the feature production-deployed.
 
+**Validated 23 August 2026:** production deployment completed successfully. The health check, security-event UI,
+authentication events, direct non-administrator backend `403`, `ADMIN_ACTION_DENIED`, tenant visibility, and actor-email
+snapshot correction were accepted. `SECURITY_AUDIT_RETENTION=365d` is explicitly configured in the private production
+environment.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

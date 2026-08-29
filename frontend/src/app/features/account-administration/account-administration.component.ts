@@ -40,6 +40,7 @@ export class AccountAdministrationComponent implements OnInit {
   busyAccountId: number | null = null;
   readonly roleDrafts = new Map<number, Set<AccountRole>>();
   readonly resetPasswords = new Map<number, string>();
+  readonly visibleResetPasswords = new Set<number>();
 
   get currentUserId(): number | null { return this.auth.user?.id ?? null; }
 
@@ -158,10 +159,17 @@ export class AccountAdministrationComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.resetPasswords.delete(account.id);
+        this.visibleResetPasswords.delete(account.id);
         this.success = `Password reset and active sessions revoked for ${account.email}.`;
       },
       error: (error: HttpErrorResponse) => this.showActionError(error),
     });
+  }
+
+  toggleResetPasswordVisibility(accountId: number): void {
+    this.visibleResetPasswords.has(accountId)
+      ? this.visibleResetPasswords.delete(accountId)
+      : this.visibleResetPasswords.add(accountId);
   }
 
   rolesChanged(account: Account): boolean {

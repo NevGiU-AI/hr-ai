@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class SecurityAuditRepositoryTest {
     @Autowired SecurityAuditRepository events;
+    @Autowired JdbcTemplate jdbc;
 
     @Test
     void returnsOnlyEventsFromTheRequestedOrganization() {
@@ -24,6 +26,19 @@ class SecurityAuditRepositoryTest {
         assertThat(page.getContent()).singleElement()
                 .extracting(SecurityAuditEvent::getEventType)
                 .isEqualTo(SecurityEventType.LOGIN_SUCCEEDED);
+    }
+
+    @Test
+    void storesPasswordEventsWithoutDatabaseEnumCheckConstraints() {
+        events.saveAndFlush(event("tenant-a", SecurityEventType.PASSWORD_CHANGE_FAILED));
+        events.saveAndFlush(event("tenant-a", SecurityEventType.PASSWORD_CHANGED));
+        events.saveAndFlush(event("tenant-a", SecurityEventType.PASSWORD_RESET));
+
+        Integer checkConstraints = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+                WHERE TABLE_NAME = 'SECURITY_AUDIT_EVENTS' AND CONSTRAINT_TYPE = 'CHECK'
+                """, Integer.class);
+        assertThat(checkConstraints).isZero();
     }
 
     private SecurityAuditEvent event(String organizationId, SecurityEventType type) {

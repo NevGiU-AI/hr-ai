@@ -528,6 +528,11 @@ authentication events, direct non-administrator backend `403`, `ADMIN_ACTION_DEN
 snapshot correction were accepted. `SECURITY_AUDIT_RETENTION=365d` is explicitly configured in the private production
 environment.
 
+Before promoting password management, take and validate the normal PostgreSQL backup, then run the tracked idempotent
+`migrations/20260830-drop-security-audit-enum-checks.sql` using the same command documented in the staging runbook.
+Confirm the constraint query returns zero rows before deployment. After backend health, repeat the non-destructive
+password audit smoke tests and confirm no SQL state `23514` appears.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

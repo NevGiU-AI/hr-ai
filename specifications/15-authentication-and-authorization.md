@@ -142,6 +142,18 @@ recording password content. The user must sign in again after a successful chang
 Email self-service reset remains deferred until verified transactional email, hashed single-use expiring tokens,
 enumeration-safe responses, delivery monitoring, throttling, and recovery procedures are available.
 
+### Audit enum constraint migration
+
+The first password-management staging validation exposed a limitation of temporary Hibernate `ddl-auto=update` schema
+management: PostgreSQL retained the original `security_audit_events_event_type_check` constraint after Java added
+`PASSWORD_CHANGE_FAILED`, `PASSWORD_CHANGED`, and `PASSWORD_RESET`. Audit writes failed with SQL state `23514`, while
+password operations correctly continued because audit persistence is fail-safe.
+
+Security event types and outcomes now use JPA converters backed by `VARCHAR`; Java enums remain the application
+validation boundary without generating closed database enum checks. Existing staging and production databases require
+the idempotent migration `deploy/migrations/20260830-drop-security-audit-enum-checks.sql`. Failed audit inserts were
+rolled back and cannot be reconstructed safely; operators must repeat the password tests after migration.
+
 ## Validated rollout
 
 - Staging organization backfill, tenant-aware uniqueness, authentication, and tenant-scoped workflows were validated

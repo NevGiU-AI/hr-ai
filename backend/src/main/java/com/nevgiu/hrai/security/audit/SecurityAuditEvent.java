@@ -17,8 +17,10 @@ public class SecurityAuditEvent {
     @Column(length = 320) private String targetEmail;
     @Column(length = 64) private String targetIdentifierHash;
     @Column(length = 64) private String clientIpHash;
-    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 40) private SecurityEventType eventType;
-    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20) private SecurityEventOutcome outcome;
+    @Convert(converter = SecurityEventTypeConverter.class)
+    @Column(nullable = false, length = 40) private SecurityEventType eventType;
+    @Convert(converter = SecurityEventOutcomeConverter.class)
+    @Column(nullable = false, length = 20) private SecurityEventOutcome outcome;
     @Column(length = 500) private String details;
     @Column(nullable = false) private Instant createdAt;
 

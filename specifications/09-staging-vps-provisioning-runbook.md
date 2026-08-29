@@ -507,6 +507,27 @@ tenant boundary, and persistence checks pass.
 visibility, direct backend `403` plus `ADMIN_ACTION_DENIED`, and actor-email persistence/display. The frontend
 `/admin/security-events` redirect is an Angular guard check and does not itself create a backend denial event.
 
+#### Apply the password-audit enum constraint correction
+
+Before validating password management, apply the tracked idempotent migration from `/opt/nevgiu/deploy`:
+
+```bash
+docker compose --env-file .env --env-file .images.env exec -T db \
+  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  < migrations/20260830-drop-security-audit-enum-checks.sql
+```
+
+Confirm no audit enum check remains, then repeat incorrect-current-password, successful change, and administrator reset:
+
+```bash
+docker compose --env-file .env --env-file .images.env exec -T db \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "SELECT conname FROM pg_constraint WHERE conrelid = '\''security_audit_events'\''::regclass AND contype = '\''c'\'';"'
+```
+
+The query must return zero rows. New `PASSWORD_CHANGE_FAILED`, `PASSWORD_CHANGED`, and `PASSWORD_RESET` rows must then
+appear without SQL state `23514` or `Security audit event persistence failed` in backend logs.
+
 ### 15. Access operational logs
 
 GitHub pipeline logs:

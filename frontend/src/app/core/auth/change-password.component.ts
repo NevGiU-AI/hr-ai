@@ -23,6 +23,15 @@ export class ChangePasswordComponent {
   });
   submitting = false;
   error = '';
+  readonly passwordVisible = {
+    currentPassword: false,
+    newPassword: false,
+    confirmation: false,
+  };
+
+  togglePasswordVisibility(field: keyof typeof this.passwordVisible): void {
+    this.passwordVisible[field] = !this.passwordVisible[field];
+  }
 
   submit(): void {
     const value = this.form.getRawValue();

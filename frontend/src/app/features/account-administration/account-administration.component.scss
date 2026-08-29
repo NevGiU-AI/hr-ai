@@ -24,3 +24,8 @@ th { color: #52698f; font-size: 0.8rem; text-transform: uppercase; }
 .role-editor { min-width: 20rem; }
 .role-editor label { align-items: center; display: flex; font-size: 0.85rem; font-weight: 500; gap: 0.25rem; }
 .current-account { color: #667085; font-size: 0.85rem; font-weight: 600; }
+.reset-password-field { display: inline-grid; min-width: 12rem; position: relative; }
+.reset-password-field input { padding-right: 2.75rem; }
+.reset-password-toggle { align-items: center; background: transparent; border: 0; color: #52698f; cursor: pointer; display: flex; height: 2.25rem; justify-content: center; padding: 0; position: absolute; right: 0.2rem; top: 50%; transform: translateY(-50%); width: 2.25rem; }
+.reset-password-toggle:focus-visible { border-radius: 0.35rem; box-shadow: 0 0 0 0.2rem rgba(49, 93, 168, 0.2); outline: none; }
+.reset-password-toggle svg { fill: none; height: 1.15rem; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 1.15rem; }

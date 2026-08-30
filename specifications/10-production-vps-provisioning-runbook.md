@@ -419,7 +419,7 @@ REDIS_SESSION_NAMESPACE=hr-ai:session:production
 REDIS_SECURITY_NAMESPACE=hr-ai:security:login:production
 OPENAI_API_KEY=<production-only OpenAI key>
 
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
+SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 INITIAL_IMPORT_ENABLED=false
 BOOTSTRAP_ADMIN_EMAIL=<production administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random production-only password of at least 12 characters>
@@ -514,9 +514,9 @@ retention policy; do not leave an unencrypted long-lived copy on the application
 
 ### 14.2 Validate production security auditing
 
-Before the corresponding release, take and validate the normal PostgreSQL backup because the current
-`ddl-auto=update` policy creates `security_audit_events`. Add `SECURITY_AUDIT_RETENTION=365d` to the private production
-`.env`, deploy the immutable images, and wait for backend health.
+Before the corresponding release, take and validate the normal PostgreSQL backup. Flyway owns schema evolution and
+Hibernate uses `ddl-auto=validate`. Add `SECURITY_AUDIT_RETENTION=365d` to the private production `.env`, deploy the
+immutable images, and wait for backend health.
 
 Perform a non-destructive smoke test: fail one administrator login, sign in successfully, open **Security events**, and
 confirm both outcomes are present for organization `production`. Confirm a non-administrator receives `403` for
@@ -528,10 +528,12 @@ authentication events, direct non-administrator backend `403`, `ADMIN_ACTION_DEN
 snapshot correction were accepted. `SECURITY_AUDIT_RETENTION=365d` is explicitly configured in the private production
 environment.
 
-Before promoting password management, take and validate the normal PostgreSQL backup, then run the tracked idempotent
-`migrations/20260830-drop-security-audit-enum-checks.sql` using the same command documented in the staging runbook.
-Confirm the constraint query returns zero rows before deployment. After backend health, repeat the non-destructive
-password audit smoke tests and confirm no SQL state `23514` appears.
+Password management and the audit constraint correction were accepted in production on 30 August 2026. On the first
+Flyway-enabled release, take and validate the normal PostgreSQL backup. Change the private production `.env` to
+`SPRING_JPA_HIBERNATE_DDL_AUTO=validate` and temporarily set `FLYWAY_BASELINE_ON_MIGRATE=true`. Deploy, confirm version
+`0` baseline plus successful version `1` in `flyway_schema_history`, and confirm Hibernate schema validation completes.
+Then repeat the non-destructive password audit smoke tests and confirm no SQL state `23514` appears. After acceptance,
+set `FLYWAY_BASELINE_ON_MIGRATE=false`, recreate the backend, and reconfirm health and migration history.
 
 ### 15. Configure bounded Docker log rotation
 

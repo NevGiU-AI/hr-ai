@@ -20,6 +20,11 @@
   administrator email snapshots for account-management actors.
 - [x] Add authenticated password change and administrator-assisted reset with session revocation and password audit events;
   defer email self-service reset until a secure transactional-email capability is approved.
+- [x] Validate password change, administrator-assisted reset, session revocation, audit persistence, and sign-in with the
+  replacement password in staging and production.
+- [x] Adopt Flyway with an existing-schema baseline, move the audit constraint correction into versioned migration
+  history, and make Hibernate validate rather than modify the schema.
+- [ ] Rehearse Flyway against a restored production backup, then baseline and validate staging and production.
 - [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
   audit-log, password, and session-policy validation.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.

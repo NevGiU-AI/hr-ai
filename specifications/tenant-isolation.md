@@ -21,11 +21,10 @@ User email addresses remain globally unique because email is currently the sole 
 email address in multiple organizations would require adding an organization selector, subdomain, or invitation context
 to authentication.
 
-## Existing database migration
+## Historical tenant migration
 
-The application currently uses Hibernate schema updates rather than a versioned migration tool. Before deploying this
-change to a database containing jobs, candidates, documents, or evaluations, take a backup and run a controlled
-maintenance migration. Replace `existing-organization` below with the organization assigned to the existing data:
+Tenant isolation was introduced before Flyway adoption. The following controlled maintenance migration was applied to
+the backed-up staging and production databases, replacing `existing-organization` with the assigned organization:
 
 ```sql
 BEGIN;
@@ -72,8 +71,8 @@ Verify the actual name of any pre-existing single-column `sha256` unique constra
 before creating the composite index. Perform the staging migration first, verify that existing records appear for the
 expected administrator organization, and only then repeat it in production.
 
-Application-level tenant scoping is mandatory in this milestone. PostgreSQL row-level security and versioned Flyway or
-Liquibase migrations are recommended defense-in-depth improvements before allowing untrusted organizations to onboard.
+Application-level tenant scoping is mandatory. PostgreSQL row-level security remains a recommended defense-in-depth
+improvement before allowing untrusted organizations to onboard. Flyway now owns all subsequent schema evolution.
 
 ## Validated environment rollout
 
@@ -85,5 +84,5 @@ Liquibase migrations are recommended defense-in-depth improvements before allowi
 - Release `v0.2.0`, commit `33d8a04`, deployed the tenant-aware application successfully and passed authentication,
   tenant-data, and public smoke validation.
 
-The current migration procedure is a controlled operational workaround while Hibernate schema update remains enabled.
-All future schema evolution should move to reviewed Flyway or Liquibase migrations before onboarding untrusted tenants.
+The one-time SQL above is retained as incident history, not as a procedure to rerun. Flyway is now the reviewed schema
+evolution mechanism and Hibernate validates the migrated schema without changing it.

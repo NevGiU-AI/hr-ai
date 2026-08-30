@@ -165,6 +165,17 @@ For the first manual staging deployment, build the local tags defined in `.env` 
 
 Automated deployments write immutable image references to `.images.env` and invoke `deploy.sh`. The script validates the candidate Compose model, pulls both candidate application images before changing the active manifest, waits for database, backend, and frontend health, requires Caddy to be running, and restores the previously running application images if startup or internal validation fails. It does not roll back database contents.
 
+## Flyway database migrations
+
+Flyway migrations are packaged inside the backend image under `db/migration` and run before Hibernate starts.
+Hibernate uses `ddl-auto=validate`; it must never create or update staging or production tables. Never edit an applied
+migration. Add a new, higher version and rehearse it against a restored production backup.
+
+Existing databases created by Hibernate require a one-time baseline. After taking and validating a backup, set
+`FLYWAY_BASELINE_ON_MIGRATE=true`, deploy the Flyway-enabled backend, and confirm `flyway_schema_history` contains a
+version `0` baseline followed by successful version `1`. Then set the flag back to `false` and recreate the backend.
+New empty databases do not require the flag. Do not delete or manually rewrite `flyway_schema_history`.
+
 The first automated deployment creates `.images.env` before inspecting the manually deployed containers. This preserves the manual images as rollback candidates while allowing Compose to resolve its required image variables.
 
 Current rollback boundary:
@@ -178,7 +189,9 @@ Current rollback boundary:
 - Candidate Compose validation and application-image pulls occur before the active image manifest changes, so their failure leaves the running deployment unchanged.
 - Rollback assumes the previous images remain available in the local Docker cache or registry.
 
-Configuration changes still require versioned backup and restoration, while database migration recovery remains a separate reviewed procedure. Exercise the image rollback path on staging before enabling production releases.
+Configuration changes still require versioned backup and restoration. Flyway migrations are forward-only and are not
+reversed by application-image rollback, so every migration must remain compatible with the previous application image
+or have a separate reviewed recovery procedure. Exercise the image rollback path on staging before production.
 
 ## Automatic staging flow
 

@@ -147,7 +147,7 @@ recording password content. The user must sign in again after a successful chang
 Email self-service reset remains deferred until verified transactional email, hashed single-use expiring tokens,
 enumeration-safe responses, delivery monitoring, throttling, and recovery procedures are available.
 
-### Audit enum constraint migration
+### Audit enum constraint incident and Flyway correction
 
 The first password-management staging validation exposed a limitation of temporary Hibernate `ddl-auto=update` schema
 management: PostgreSQL retained the original `security_audit_events_event_type_check` constraint after Java added
@@ -155,9 +155,10 @@ management: PostgreSQL retained the original `security_audit_events_event_type_c
 password operations correctly continued because audit persistence is fail-safe.
 
 Security event types and outcomes now use JPA converters backed by `VARCHAR`; Java enums remain the application
-validation boundary without generating closed database enum checks. Existing staging and production databases require
-the idempotent migration `deploy/migrations/20260830-drop-security-audit-enum-checks.sql`. Failed audit inserts were
-rolled back and cannot be reconstructed safely; operators must repeat the password tests after migration.
+validation boundary without generating closed database enum checks. The correction was applied manually and validated
+in staging and production before Flyway adoption. It is now part of `V1__baseline_schema.sql`, so every environment has
+the same recorded schema history and no standalone VPS SQL file is required. Failed audit inserts were rolled back and
+cannot be reconstructed safely; the password tests were repeated successfully after correction.
 
 ## Validated rollout
 
@@ -183,6 +184,10 @@ rolled back and cannot be reconstructed safely; operators must repeat the passwo
   authentication and administration events, direct backend `403` responses with `ADMIN_ACTION_DENIED`, administrator
   visibility within the same organization, Angular route-guard redirection, and administrator email display for new
   account-management events. `SECURITY_AUDIT_RETENTION=365d` is explicitly configured in both environments.
+- Password management was deployed and accepted in staging and production on 30 August 2026. Validation covered an
+  incorrect current password, successful authenticated password change, forced session revocation, sign-in with the
+  replacement password, administrator-assisted reset, and persistence of `PASSWORD_CHANGE_FAILED`, `PASSWORD_CHANGED`,
+  and `PASSWORD_RESET` events with the expected actor and target identities.
 
 ## Future external channels
 

@@ -12,11 +12,16 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+  flyway:
+    baseline-on-migrate: ${APP_FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 0
+    validate-migration-naming: true
 
   ai:
     openai:

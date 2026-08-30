@@ -95,6 +95,11 @@ default). Every backend replica may run the idempotent cleanup.
 organization. The Angular **Security events** page provides the same tenant-scoped, paginated history. Identifier hashes
 remain internal and are not returned by the API.
 
+Failed and throttled login attempts occur before authentication, so their actor identity is intentionally empty. When
+the submitted email matches an account, that account is recorded only as the target; assigning its email to the actor
+would incorrectly attribute an attack to the account owner. The UI labels these actorless pre-authentication events as
+**Unauthenticated client** and reserves **System / unresolved** for background or genuinely unresolved events.
+
 The Angular administrator route redirects authenticated non-administrators to the job-offer page before an API request
 is made. Backend authorization is validated separately by calling `GET /api/admin/security-events` directly: it returns
 `403` and records `ADMIN_ACTION_DENIED`. Successful account-administration records persist both the actor's user ID and

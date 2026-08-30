@@ -39,4 +39,18 @@ export class SecurityAuditComponent implements OnInit {
   identity(email: string | null, id: number | null): string {
     return email ?? (id == null ? 'System / unresolved' : `User #${id}`);
   }
+
+  actorIdentity(event: SecurityAuditEvent): string {
+    if (event.actorEmail != null || event.actorUserId != null) {
+      return this.identity(event.actorEmail, event.actorUserId);
+    }
+
+    return this.isPreAuthenticationEvent(event.eventType)
+      ? 'Unauthenticated client'
+      : 'System / unresolved';
+  }
+
+  private isPreAuthenticationEvent(eventType: string): boolean {
+    return ['LOGIN_FAILED', 'LOGIN_THROTTLED', 'ACCOUNT_LOCKED'].includes(eventType);
+  }
 }

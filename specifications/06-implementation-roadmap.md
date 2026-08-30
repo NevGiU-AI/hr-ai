@@ -27,6 +27,8 @@
 - [ ] Rehearse Flyway against a restored production backup, then baseline and validate staging and production.
 - [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
   audit-log, password, and session-policy validation.
+- [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
+  stable company identities before onboarding independent organizations.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.

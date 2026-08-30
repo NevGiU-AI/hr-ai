@@ -22,6 +22,11 @@ This choice keeps immediate logout, account disablement, and role changes under 
   browsers that throttle background tabs.
 - Production cookies are `HttpOnly`, `Secure`, and `SameSite=Lax`; the default idle timeout is 30 minutes.
 
+`organization_id` currently serves as both the user's company identifier and the tenant-isolation key. Existing
+staging and production records use legacy environment-derived values (`staging` and `production`) from the initial
+backfill; these are migration labels, not the intended definition of an organization. The distinction and future
+managed organization model are documented in [tenant isolation](tenant-isolation.md).
+
 ## Authentication API
 
 | Method | Path | Purpose |

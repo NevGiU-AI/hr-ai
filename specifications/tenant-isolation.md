@@ -3,13 +3,31 @@
 Every authenticated user belongs to one organization. The backend obtains the organization identifier from the
 authenticated `AppUserPrincipal`; API request bodies are never trusted to select a tenant.
 
+## Organization versus tenant
+
+An **organization** is the business entity that owns accounts and recruitment data, such as `NevGiU AI` or a customer
+company. A **tenant** is the security boundary that isolates that organization's data. The concepts are different, but
+the current application maps them one-to-one: the string `organization_id` identifies the organization and is also the
+value used to enforce tenant isolation.
+
+The initial data backfill used `staging` in the staging database and `production` in the production database. Those
+values were convenient environment-specific migration labels; they do not mean that an environment is a company and
+are not the intended multi-company model. Because the environments use separate databases, both may eventually use the
+same stable company identifier, such as `nevgiu-ai`, without mixing their data.
+
+Before onboarding independent companies, replace the legacy labels through a reviewed Flyway migration and introduce a
+managed `organizations` table with a stable ID, slug, display name, status, and lifecycle metadata. The migration must
+update users, jobs, candidates, CV documents, evaluations, and security events together. Until then, administrators
+create users only inside their own stored `organization_id`, and there is no organization-creation UI.
+
 Tenant-owned records are:
 
 - users;
 - jobs;
 - candidates;
-- CV documents; and
-- candidate evaluations.
+- CV documents;
+- candidate evaluations; and
+- security audit events.
 
 Candidate and job reads use organization-qualified repository methods. New candidates, approved jobs, imported CV
 documents, and evaluations receive the authenticated user's organization before persistence. Evaluation requests load

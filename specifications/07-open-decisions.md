@@ -57,6 +57,11 @@ These decisions are release blockers because CVs contain personal data.
 
 The source assumes user identifiers but does not define authentication. Decide the identity provider, roles, tenant model, session behavior, and authorization rules for jobs, CVs, evaluations, chat, and dashboards.
 
+The implemented tenant boundary currently maps one `organization_id` string to one organization. Before external
+onboarding, decide organization creation, ownership, invitations, suspension/deletion, stable identifiers, display
+names, and whether a user may belong to more than one organization. The existing `staging` and `production` identifiers
+are historical backfill labels and must not become the customer-facing organization model.
+
 ## 6. “Real-time” dashboard behavior
 
 Define an observable freshness target, such as “new evaluations appear within 10 seconds,” and select polling, server-sent events, or WebSockets accordingly.

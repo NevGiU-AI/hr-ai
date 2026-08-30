@@ -199,6 +199,10 @@ be reviewed. The application currently stores extracted text and document metada
 - Passwords, raw session IDs, CSRF tokens, raw client IPs, and CV contents are excluded from security audit records.
 - AI scores are decision support and require human review; they must not be the sole basis of an employment decision.
 
+An organization represents a company; a tenant is that company's isolation boundary. The current one-to-one model uses
+`organization_id` for both. Existing `staging` and `production` values are legacy backfill labels, not company names;
+they must be replaced by stable organization identities before independent companies are onboarded.
+
 See [authentication and authorization](specifications/15-authentication-and-authorization.md) and
 [tenant isolation](specifications/tenant-isolation.md) for the full model.
 

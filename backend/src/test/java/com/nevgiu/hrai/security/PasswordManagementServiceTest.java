@@ -54,6 +54,7 @@ class PasswordManagementServiceTest {
 
         verify(users, never()).saveAndFlush(account);
         verify(sessions, never()).revoke("person@example.com");
+        verify(audit).passwordChangeFailed(principal(), "reason=current-password-mismatch");
     }
 
     private PasswordManagementService service() {

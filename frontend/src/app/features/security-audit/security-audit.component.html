@@ -14,7 +14,7 @@
         <td>{{ event.createdAt | date:'medium' }}</td>
         <td>{{ event.eventType.replaceAll('_', ' ') }}</td>
         <td><span class="outcome" [class.failure]="event.outcome !== 'SUCCESS'">{{ event.outcome }}</span></td>
-        <td>{{ identity(event.actorEmail, event.actorUserId) }}</td>
+        <td>{{ actorIdentity(event) }}</td>
         <td>{{ identity(event.targetEmail, event.targetUserId) }}</td>
         <td>{{ event.details || '—' }}</td>
       </tr></tbody>

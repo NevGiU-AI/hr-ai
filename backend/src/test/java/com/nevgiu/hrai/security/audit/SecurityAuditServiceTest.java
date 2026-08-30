@@ -3,12 +3,15 @@ package com.nevgiu.hrai.security.audit;
 import com.nevgiu.hrai.security.AppRole;
 import com.nevgiu.hrai.security.AppUser;
 import com.nevgiu.hrai.security.AppUserRepository;
+import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -63,6 +66,21 @@ class SecurityAuditServiceTest {
         assertThat(event.getActorUserId()).isEqualTo(1L);
         assertThat(event.getActorEmail()).isEqualTo("admin@example.com");
         assertThat(event.getTargetEmail()).isEqualTo("person@example.com");
+    }
+
+    @Test
+    void identifiesAuthenticatedPasswordFailureActorAndTargetAsTheSameUser() {
+        var principal = new AppUserPrincipal(2L, "person@example.com", "hash", "tenant-a", true,
+                List.of(new SimpleGrantedAuthority("ROLE_RECRUITER")));
+
+        service().passwordChangeFailed(principal, "reason=current-password-mismatch");
+
+        SecurityAuditEvent event = capturedEvent();
+        assertThat(event.getActorUserId()).isEqualTo(2L);
+        assertThat(event.getActorEmail()).isEqualTo("person@example.com");
+        assertThat(event.getTargetUserId()).isEqualTo(2L);
+        assertThat(event.getTargetEmail()).isEqualTo("person@example.com");
+        assertThat(event.getOutcome()).isEqualTo(SecurityEventOutcome.FAILURE);
     }
 
     private SecurityAuditService service() {

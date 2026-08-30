@@ -1,7 +1,6 @@
 package com.nevgiu.hrai.security;
 
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
-import com.nevgiu.hrai.security.audit.SecurityEventOutcome;
 import com.nevgiu.hrai.security.audit.SecurityEventType;
 import com.nevgiu.hrai.security.dto.ChangePasswordRequest;
 import org.springframework.http.HttpStatus;
@@ -29,8 +28,7 @@ public class PasswordManagementService {
         AppUser account = users.findByIdAndOrganizationId(principal.id(), principal.organizationId())
                 .orElseThrow(() -> new PasswordManagementException(HttpStatus.UNAUTHORIZED, "Authentication required"));
         if (!passwords.matches(request.currentPassword(), account.getPasswordHash())) {
-            audit.loginAttempt(SecurityEventType.PASSWORD_CHANGE_FAILED, SecurityEventOutcome.FAILURE,
-                    principal.username(), null, "reason=current-password-mismatch");
+            audit.passwordChangeFailed(principal, "reason=current-password-mismatch");
             throw new PasswordManagementException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
         if (passwords.matches(request.newPassword(), account.getPasswordHash())) {

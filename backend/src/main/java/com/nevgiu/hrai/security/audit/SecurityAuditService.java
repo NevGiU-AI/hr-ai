@@ -48,6 +48,12 @@ public class SecurityAuditService {
                 SecurityEventOutcome.SUCCESS, null));
     }
 
+    public void passwordChangeFailed(AppUserPrincipal principal, String details) {
+        save(new SecurityAuditEvent(principal.organizationId(), principal.id(), principal.username(), principal.id(),
+                principal.username(), null, null, SecurityEventType.PASSWORD_CHANGE_FAILED,
+                SecurityEventOutcome.FAILURE, safe(details)));
+    }
+
     public void administration(SecurityEventType type, Long actorId, String organizationId,
                                AppUser target, String details) {
         String actorEmail = users.findById(actorId).map(AppUser::getEmail).orElse(null);

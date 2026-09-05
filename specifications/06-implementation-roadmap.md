@@ -26,7 +26,8 @@
   history, and make Hibernate validate rather than modify the schema.
 - [x] Baseline the existing staging database with Flyway, disable one-time baselining, and complete authentication,
   tenant-data, password-management, and security-audit smoke tests.
-- [ ] Rehearse Flyway against a restored production backup, then baseline and validate production.
+- [x] Rehearse Flyway against a restored production backup, preserve business-data counts, then baseline production and
+  validate the baseline-disabled restart for release `v0.7.0`.
 - [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
   audit-log, password, and session-policy validation.
 - [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with

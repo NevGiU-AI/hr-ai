@@ -541,6 +541,25 @@ The constraint query must return zero rows.
 After acceptance, change `FLYWAY_BASELINE_ON_MIGRATE=false` and recreate the backend with the normal Compose command.
 Confirm backend health and the same two history rows. The flag must not remain enabled after adoption.
 
+**Validated 5 September 2026:** the existing staging schema was backed up and validated, baselined at version `0`, and
+advanced successfully through `V1__baseline_schema.sql`. Hibernate validation passed with
+`SPRING_JPA_HIBERNATE_DDL_AUTO=validate`; the obsolete security-audit check constraints were absent; and authentication,
+tenant-scoped business data, password management, and security-audit smoke tests passed. The permanent staging setting
+is `FLYWAY_BASELINE_ON_MIGRATE=false`.
+
+During validation, an exported `BACKEND_IMAGE` shell variable overrode the immutable image recorded in `.images.env`.
+Compose consequently recreated the backend from the stale local `hr-ai-backend:staging-manual` image, where
+`/api/auth/csrf` returned `404`. Clearing the shell override and recreating the backend from the commit-SHA GHCR image
+restored authentication. Before every manual Compose operation, verify the resolved images:
+
+```bash
+unset BACKEND_IMAGE FRONTEND_IMAGE
+docker compose --env-file .env --env-file .images.env config --images
+```
+
+The output must contain the full immutable `ghcr.io/...:<commit-sha>` references. A healthy container alone is not
+proof that the intended application revision is running.
+
 ### 15. Access operational logs
 
 GitHub pipeline logs:

@@ -176,6 +176,17 @@ Existing databases created by Hibernate require a one-time baseline. After takin
 version `0` baseline followed by successful version `1`. Then set the flag back to `false` and recreate the backend.
 New empty databases do not require the flag. Do not delete or manually rewrite `flyway_schema_history`.
 
+Before running Compose manually, clear image variables inherited by the current shell and inspect the resolved image
+references:
+
+```bash
+unset BACKEND_IMAGE FRONTEND_IMAGE
+docker compose --env-file .env --env-file .images.env config --images
+```
+
+Exported shell variables take precedence over `.images.env`. Continue only when the output contains the intended full
+GHCR commit-SHA references; otherwise Compose can silently recreate a healthy but stale local application image.
+
 The first automated deployment creates `.images.env` before inspecting the manually deployed containers. This preserves the manual images as rollback candidates while allowing Compose to resolve its required image variables.
 
 Current rollback boundary:

@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest(properties = {
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.flyway.enabled=false"
 })
 class TenantIsolationRepositoryTest {
 

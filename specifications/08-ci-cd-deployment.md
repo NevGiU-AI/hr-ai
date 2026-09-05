@@ -332,7 +332,8 @@ Required changes:
 - Put services on separate public-proxy and private-data networks.
 - Disable built-in CV import in production with `app.cv-ingestion.initial-import-enabled=false`.
 - Disable SQL logging in production.
-- Replace Hibernate `ddl-auto: update` with Flyway or Liquibase migrations before production data is introduced.
+- Use Flyway versioned migrations for schema evolution and Hibernate `ddl-auto: validate`; rehearse every migration
+  against a restored production backup before promotion.
 - Configure trusted frontend origins instead of unrestricted development CORS.
 - Configure structured logs without CV text, prompts, API keys, or personal data.
 

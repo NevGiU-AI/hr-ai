@@ -166,7 +166,7 @@ OpenAI configuration is supplied through `OPENAI_API_KEY`. Generation errors or 
 2. Represent job status explicitly, for example `DRAFT`, `APPROVED`, `PUBLISHED`, and `ARCHIVED`.
 3. Store structured collections in normalized tables or JSON rather than newline-separated strings if they need to be queried or edited independently.
 4. Add update, archive, and version-history operations for approved jobs.
-5. Introduce database migrations instead of relying on `ddl-auto: update` for production.
+5. Keep job-offer schema changes in the adopted Flyway history; Hibernate validates the resulting production schema.
 
 ### Priority 4 — Security and observability
 

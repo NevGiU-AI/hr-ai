@@ -475,8 +475,8 @@ validation evidence without recording emails, IP addresses, passwords, session i
 
 ### 14B. Validate tenant-scoped security auditing
 
-The first deployment creates `security_audit_events` through the current temporary Hibernate `ddl-auto=update`
-policy. Take and validate the normal pre-deployment PostgreSQL backup before releasing this schema change. Set
+Flyway owns `security_audit_events` and every other application table; Hibernate runs with `ddl-auto=validate`.
+Take and validate the normal pre-deployment PostgreSQL backup before releasing any schema change. Set
 `SECURITY_AUDIT_RETENTION=365d` in `/opt/nevgiu/deploy/.env`, deploy, and confirm the backend is healthy.
 
 Use an administrator and a disposable recruiter in separate browsers:
@@ -507,17 +507,28 @@ tenant boundary, and persistence checks pass.
 visibility, direct backend `403` plus `ADMIN_ACTION_DENIED`, and actor-email persistence/display. The frontend
 `/admin/security-events` redirect is an Angular guard check and does not itself create a backend denial event.
 
-#### Apply the password-audit enum constraint correction
+#### Validate Flyway adoption and the audit constraint correction
 
-Before validating password management, apply the tracked idempotent migration from `/opt/nevgiu/deploy`:
+Before the first Flyway-enabled deployment, take and validate a PostgreSQL backup, then set these values in the private
+staging `.env`:
+
+```env
+SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+FLYWAY_BASELINE_ON_MIGRATE=true
+```
+
+The existing non-empty schema is then baselined at version `0` and `V1__baseline_schema.sql` is applied automatically
+before Hibernate validation. Deploy and confirm the migration succeeded:
 
 ```bash
 docker compose --env-file .env --env-file .images.env exec -T db \
-  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
-  < migrations/20260830-drop-security-audit-enum-checks.sql
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "SELECT installed_rank, version, description, type, success FROM flyway_schema_history ORDER BY installed_rank;"'
 ```
 
-Confirm no audit enum check remains, then repeat incorrect-current-password, successful change, and administrator reset:
+Expect a baseline row at version `0` followed by successful version `1`. Confirm the audit table has no check constraints
+and repeat incorrect-current-password, successful change, and administrator reset. The three password audit event types
+must appear without SQL state `23514` or `Security audit event persistence failed` in backend logs.
 
 ```bash
 docker compose --env-file .env --env-file .images.env exec -T db \
@@ -525,8 +536,10 @@ docker compose --env-file .env --env-file .images.env exec -T db \
   "SELECT conname FROM pg_constraint WHERE conrelid = '\''security_audit_events'\''::regclass AND contype = '\''c'\'';"'
 ```
 
-The query must return zero rows. New `PASSWORD_CHANGE_FAILED`, `PASSWORD_CHANGED`, and `PASSWORD_RESET` rows must then
-appear without SQL state `23514` or `Security audit event persistence failed` in backend logs.
+The constraint query must return zero rows.
+
+After acceptance, change `FLYWAY_BASELINE_ON_MIGRATE=false` and recreate the backend with the normal Compose command.
+Confirm backend health and the same two history rows. The flag must not remain enabled after adoption.
 
 ### 15. Access operational logs
 

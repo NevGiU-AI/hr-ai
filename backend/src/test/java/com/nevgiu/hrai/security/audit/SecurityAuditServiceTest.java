@@ -83,6 +83,21 @@ class SecurityAuditServiceTest {
         assertThat(event.getOutcome()).isEqualTo(SecurityEventOutcome.FAILURE);
     }
 
+    @Test
+    void recordsSessionLimitEnforcementWithoutSessionIdentifiers() {
+        var principal = new AppUserPrincipal(2L, "person@example.com", "hash", "tenant-a", true,
+                List.of(new SimpleGrantedAuthority("ROLE_RECRUITER")));
+
+        service().sessionLimitEnforced(principal, 1, 3);
+
+        SecurityAuditEvent event = capturedEvent();
+        assertThat(event.getEventType()).isEqualTo(SecurityEventType.SESSION_LIMIT_ENFORCED);
+        assertThat(event.getActorEmail()).isEqualTo("person@example.com");
+        assertThat(event.getTargetEmail()).isEqualTo("person@example.com");
+        assertThat(event.getDetails()).isEqualTo("expiredSessions=1;maximumSessions=3");
+        assertThat(event.getDetails()).doesNotContain("session-");
+    }
+
     private SecurityAuditService service() {
         return new SecurityAuditService(events, writer, users);
     }

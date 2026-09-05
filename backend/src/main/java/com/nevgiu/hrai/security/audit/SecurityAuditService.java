@@ -48,6 +48,13 @@ public class SecurityAuditService {
                 SecurityEventOutcome.SUCCESS, null));
     }
 
+    public void sessionLimitEnforced(AppUserPrincipal principal, int expiredSessions, int maximumSessions) {
+        save(new SecurityAuditEvent(principal.organizationId(), principal.id(), principal.username(), principal.id(),
+                principal.username(), null, null, SecurityEventType.SESSION_LIMIT_ENFORCED,
+                SecurityEventOutcome.SUCCESS,
+                safe("expiredSessions=" + expiredSessions + ";maximumSessions=" + maximumSessions)));
+    }
+
     public void passwordChangeFailed(AppUserPrincipal principal, String details) {
         save(new SecurityAuditEvent(principal.organizationId(), principal.id(), principal.username(), principal.id(),
                 principal.username(), null, null, SecurityEventType.PASSWORD_CHANGE_FAILED,

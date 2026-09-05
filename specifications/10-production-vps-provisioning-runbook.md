@@ -535,6 +535,19 @@ Flyway-enabled release, take and validate the normal PostgreSQL backup. Change t
 Then repeat the non-destructive password audit smoke tests and confirm no SQL state `23514` appears. After acceptance,
 set `FLYWAY_BASELINE_ON_MIGRATE=false`, recreate the backend, and reconfirm health and migration history.
 
+**Validated 6 September 2026 for release `v0.7.0`:** a fresh production PostgreSQL dump was validated, transferred over
+SSH to staging, and restored into an isolated rehearsal database. Production business-table counts matched after the
+restore. The Flyway-enabled backend baselined the restored legacy schema at version `0`, applied
+`V1__baseline_schema.sql`, and passed Hibernate schema validation. A second rehearsal startup with baselining disabled
+validated the two history entries, reported schema version `1` as up to date, and applied no migration.
+
+The same immutable release was then deployed to production. The live schema recorded the successful version `0`
+baseline and version `1` migration, and the backend passed Hibernate validation. After setting
+`FLYWAY_BASELINE_ON_MIGRATE=false` permanently and recreating the backend, Flyway again reported version `1` as up to
+date with no migration necessary. Retain the validated pre-adoption dump until the release acceptance and backup
+retention requirements are complete; remove temporary restored databases and extra production-data copies through the
+approved cleanup process.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

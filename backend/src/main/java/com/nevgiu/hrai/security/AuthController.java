@@ -31,13 +31,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final LoginThrottleService loginThrottle;
+    private final AccountSessionService sessions;
+    private final SessionPolicyProperties sessionPolicy;
     private final SecurityAuditService audit;
     private final HttpSessionSecurityContextRepository contexts = new HttpSessionSecurityContextRepository();
 
     public AuthController(AuthenticationManager authenticationManager, LoginThrottleService loginThrottle,
+                          AccountSessionService sessions, SessionPolicyProperties sessionPolicy,
                           SecurityAuditService audit) {
         this.authenticationManager = authenticationManager;
         this.loginThrottle = loginThrottle;
+        this.sessions = sessions;
+        this.sessionPolicy = sessionPolicy;
         this.audit = audit;
     }
 
@@ -59,14 +64,20 @@ public class AuthController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
+            AppUserPrincipal principal = (AppUserPrincipal) authentication.getPrincipal();
             servletRequest.changeSessionId();
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
             contexts.saveContext(context, servletRequest, servletResponse);
+            int expiredSessions = sessions.expireOldestBeyondLimit(
+                    principal.username(), sessionPolicy.maximumSessions());
             loginThrottle.recordSuccess(request.email());
-            audit.loginSucceeded((AppUserPrincipal) authentication.getPrincipal(), clientIp);
-            return ResponseEntity.ok(toResponse((AppUserPrincipal) authentication.getPrincipal()));
+            if (expiredSessions > 0) {
+                audit.sessionLimitEnforced(principal, expiredSessions, sessionPolicy.maximumSessions());
+            }
+            audit.loginSucceeded(principal, clientIp);
+            return ResponseEntity.ok(toResponse(principal));
         } catch (AuthenticationException exception) {
             LoginThrottleService.ThrottleDecision recorded = loginThrottle.recordFailure(request.email(), clientIp);
             if (recorded.blocked()) {

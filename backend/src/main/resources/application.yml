@@ -39,6 +39,7 @@ spring:
       timeout: 2s
   session:
     redis:
+      flush-mode: immediate
       repository-type: indexed
       namespace: ${APP_REDIS_SESSION_NAMESPACE:hr-ai:session}
 #      embedding:
@@ -70,6 +71,8 @@ app:
     bootstrap-admin-email: ${APP_SECURITY_BOOTSTRAP_ADMIN_EMAIL:}
     bootstrap-admin-password: ${APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD:}
     bootstrap-admin-organization: ${APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION:default}
+    session-policy:
+      maximum-sessions: ${APP_SECURITY_MAXIMUM_SESSIONS:3}
     login-throttle:
       namespace: ${APP_REDIS_SECURITY_NAMESPACE:hr-ai:security:login}
       account-failure-limit: ${APP_SECURITY_LOGIN_ACCOUNT_FAILURE_LIMIT:5}

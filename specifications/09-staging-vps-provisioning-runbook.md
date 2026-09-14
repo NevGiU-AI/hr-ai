@@ -266,6 +266,7 @@ BOOTSTRAP_ADMIN_EMAIL=<staging administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random staging-only password of at least 12 characters>
 BOOTSTRAP_ADMIN_ORGANIZATION=staging
 SESSION_TIMEOUT=30m
+SECURITY_MAXIMUM_SESSIONS=3
 LOGIN_ACCOUNT_FAILURE_LIMIT=5
 LOGIN_IP_FAILURE_LIMIT=20
 LOGIN_FAILURE_WINDOW=15m
@@ -283,6 +284,14 @@ docker compose --env-file .env --env-file .images.env ps backend redis
 Expected: Redis returns `PONG`, Redis reports healthy, and the backend reaches healthy after startup. Sign in once after
 the initial cutover, restart only the backend, and verify the session remains authenticated. Also confirm administrator
 session revocation signs the target user out. This rollout was accepted in staging on 17 August 2026.
+
+After deploying concurrent-session enforcement, validate it with one disposable recruiter and four isolated browser
+profiles. Sign in successfully in profiles 1, 2, and 3, then sign in in profile 4. The fourth login must succeed. Within
+approximately five seconds, profile 1 (the least recently used session) must receive `401` from `/api/auth/me` and
+redirect to login; profiles 2, 3, and 4 must remain authenticated. Confirm the administrator's **Security events** page
+contains `SESSION_LIMIT_ENFORCED` for the recruiter with `expiredSessions=1;maximumSessions=3`. Repeat after restarting
+the backend to prove Redis-backed enforcement survives restarts. Explicit administrator revocation and account
+disablement must continue to terminate every active session. Do not use business administrator accounts for this test.
 
 `ACME_EMAIL` is the monitored operational contact Caddy supplies to the ACME certificate authority for automatic HTTPS certificate issuance and renewal. It can receive expiration, renewal-failure, policy, or recovery notices. It is not used to sign in to the application, send application email, or authenticate to OpenAI. Use a role mailbox where possible; staging and production may share this contact because it is administrative metadata, not an environment credential.
 

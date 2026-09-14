@@ -66,6 +66,14 @@ sessions across backend restarts, and a shared Redis instance makes revocation e
 Redis is reachable only on the private data network and requires an environment-specific password. Introducing this
 store invalidates the servlet sessions created by earlier releases, so users must sign in once after deployment.
 
+Each account may have at most `APP_SECURITY_MAXIMUM_SESSIONS` active sessions; the default is three. After credentials
+are accepted, the new security context is stored immediately in Redis, and the backend deletes the oldest-created
+sessions required to restore the limit. The new login succeeds, while an expired browser receives
+`401` on its next heartbeat or protected request and returns to login. Enforcement uses Redis rather than replica-local
+memory, so the same limit applies across backend restarts and replicas. When an old session is removed, the audit log
+records `SESSION_LIMIT_ENFORCED`, the account, the configured maximum, and the number removed; it never records session
+identifiers.
+
 ## Login throttling and temporary lockout
 
 Failed logins are counted atomically in Redis by normalized-email hash and client-IP hash. Raw email addresses and IP
@@ -91,7 +99,7 @@ SHA-256 hashes, and unknown-account events are not exposed in any tenant history
 CSRF tokens, and raw client IP addresses are never recorded.
 
 The audit covers successful and failed login, throttled login, account lockout, logout, account creation, role changes,
-enable/disable, session revocation, administrator unlock, and denied administration operations. Audit writes use an
+enable/disable, explicit session revocation, concurrent-session limit enforcement, administrator unlock, and denied administration operations. Audit writes use an
 independent transaction and fail safely, so an unavailable audit store is logged without changing the authentication or
 administration response. A scheduled cleanup removes records older than `APP_SECURITY_AUDIT_RETENTION` (365 days by
 default). Every backend replica may run the idempotent cleanup.
@@ -136,7 +144,7 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Add maximum concurrent-session limits using the indexed Spring Session repository.
+- Validate maximum concurrent-session limits in staging and production.
 - Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
   staging smoke tests before closing the authentication foundation.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.

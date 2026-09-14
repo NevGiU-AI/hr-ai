@@ -45,6 +45,7 @@ services:
       APP_REDIS_PORT: 6379
       APP_REDIS_PASSWORD: local-redis-secret
       APP_REDIS_SESSION_NAMESPACE: hr-ai:session:local
+      APP_SECURITY_MAXIMUM_SESSIONS: 3
       APP_REDIS_SECURITY_NAMESPACE: hr-ai:security:login:local
       #JWT_SECRET: change-me-change-me-change-me-change-me
     ports:

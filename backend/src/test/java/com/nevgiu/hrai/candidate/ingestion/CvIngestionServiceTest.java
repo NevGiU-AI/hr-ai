@@ -8,13 +8,19 @@ import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
+import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
+import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
+import com.nevgiu.hrai.candidate.storage.StoredCv;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.http.HttpStatus;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
@@ -24,12 +30,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CvIngestionServiceTest {
 
     private CandidateRepository candidateRepository;
     private CvDocumentRepository documentRepository;
+    private OriginalCvStorage originalCvStorage;
     private CvIngestionService service;
     private final AtomicLong ids = new AtomicLong(1);
 
@@ -37,13 +45,16 @@ class CvIngestionServiceTest {
     void setUp() {
         candidateRepository = mock(CandidateRepository.class);
         documentRepository = mock(CvDocumentRepository.class);
+        originalCvStorage = mock(OriginalCvStorage.class);
         CvTextExtractor extractor = content -> "Ada Lovelace\nada@example.com\nSoftware engineer with extensive analytical experience.";
         CvIngestionProperties properties = new CvIngestionProperties(
                 1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
                 "classpath:intial/CVs.zip", true);
-        service = new CvIngestionService(candidateRepository, documentRepository, extractor, properties, new DefaultResourceLoader());
+        service = service(extractor, properties);
 
         when(documentRepository.findByOrganizationIdAndSha256(any(), any())).thenReturn(Optional.empty());
+        when(originalCvStorage.store(any(), any())).thenReturn(
+                new StoredCv("tenant-key/document.pdf", Instant.parse("2026-09-19T10:00:00Z")));
         when(candidateRepository.save(any(Candidate.class))).thenAnswer(invocation -> {
             Candidate candidate = invocation.getArgument(0);
             candidate.setId(ids.getAndIncrement());
@@ -60,6 +71,12 @@ class CvIngestionServiceTest {
         assertThat(result.status()).isEqualTo(CvIngestionStatus.IMPORTED);
         assertThat(result.candidateId()).isNotNull();
         assertThat(result.textLength()).isGreaterThan(50);
+        verify(originalCvStorage).store(org.mockito.ArgumentMatchers.eq("tenant-a"), any(byte[].class));
+        ArgumentCaptor<CvDocument> document = ArgumentCaptor.forClass(CvDocument.class);
+        verify(documentRepository).save(document.capture());
+        assertThat(document.getValue().getStorageKey()).isEqualTo("tenant-key/document.pdf");
+        assertThat(document.getValue().getStoredAt()).isEqualTo(Instant.parse("2026-09-19T10:00:00Z"));
+        assertThat(document.getValue().getRetentionUntil()).isEqualTo(Instant.parse("2027-09-19T10:00:00Z"));
     }
 
     @Test
@@ -135,8 +152,7 @@ class CvIngestionServiceTest {
         CvIngestionProperties properties = new CvIngestionProperties(
                 1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
                 "classpath:intial/CVs.zip", true);
-        CvIngestionService reviewService = new CvIngestionService(
-                candidateRepository, documentRepository, shortExtractor, properties, new DefaultResourceLoader());
+        CvIngestionService reviewService = service(shortExtractor, properties);
 
         CvImportResult result = reviewService.importPdf(
                 "scan.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a");
@@ -151,9 +167,7 @@ class CvIngestionServiceTest {
         CvIngestionProperties properties = new CvIngestionProperties(
                 8, 2_000_000, 10, 2_000_000, 100, 1,
                 "classpath:intial/CVs.zip", true);
-        CvIngestionService limitedService = new CvIngestionService(
-                candidateRepository, documentRepository, content -> "valid extracted text",
-                properties, new DefaultResourceLoader());
+        CvIngestionService limitedService = service(content -> "valid extracted text", properties);
         byte[] archive = zip(new Entry("candidate.pdf", minimalPdfBytes()));
 
         assertThatThrownBy(() -> limitedService.importArchive(
@@ -163,8 +177,29 @@ class CvIngestionServiceTest {
                         .isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE));
     }
 
+    @Test
+    void deletesStoredOriginalWhenUnexpectedProcessingFails() {
+        CvIngestionService failingService = service(content -> {
+            throw new IllegalStateException("processing failed");
+        }, new CvIngestionProperties(
+                1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
+                "classpath:intial/CVs.zip", true));
+
+        assertThatThrownBy(() -> failingService.importPdf(
+                "candidate.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a"))
+                .isInstanceOf(IllegalStateException.class);
+
+        verify(originalCvStorage).delete("tenant-key/document.pdf");
+    }
+
     private byte[] minimalPdfBytes() {
         return "%PDF-1.4\n%%EOF".getBytes();
+    }
+
+    private CvIngestionService service(CvTextExtractor extractor, CvIngestionProperties properties) {
+        return new CvIngestionService(candidateRepository, documentRepository, extractor, properties,
+                new CvStorageProperties("build/test-cv-storage", Duration.ofDays(365)),
+                originalCvStorage, new DefaultResourceLoader());
     }
 
     private byte[] zip(Entry... entries) throws Exception {

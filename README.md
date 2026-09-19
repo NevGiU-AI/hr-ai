@@ -9,6 +9,7 @@ decisions.
 - Generate, edit, approve, persist, and list AI-assisted job offers.
 - Import a PDF, a ZIP archive of PDFs, or the administrator-only demonstration CV dataset.
 - Detect duplicate CV files within an organization using SHA-256 content hashes.
+- Retain new original CVs in private tenant-scoped storage with explicit retention metadata.
 - Extract CV text and explicitly evaluate a candidate against an approved job.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
@@ -17,7 +18,8 @@ decisions.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Original CV binary storage, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work.
+Original-file expiry/deletion and backup governance, OCR, CV chat, speech input/playback, and the recruitment dashboard
+remain roadmap work.
 
 ## Architecture
 
@@ -31,6 +33,7 @@ Angular 19 / Nginx
 Spring Boot 3 / Java 21
   |---- PostgreSQL 16 + pgvector  (business data and Flyway history)
   |---- Redis 7.4                 (sessions, revocation, login throttling)
+  |---- Private CV volume         (new original PDF binaries)
   `---- OpenAI through Spring AI  (job generation and candidate evaluation)
 ```
 
@@ -53,7 +56,7 @@ The authentication foundation—including tenant isolation, Redis sessions, thro
 password management, concurrent-session limits, and the final security acceptance suite—is deployed and validated in
 staging and production. The next delivery sequence is:
 
-1. Governed original CV storage and correction/reprocessing.
+1. Complete original-CV governance and correction/reprocessing.
 2. OCR for scanned CVs.
 3. Imperative, tenant-scoped CV chat with citations and evaluation testing.
 4. Editable speech-to-text input, then optional text-to-speech playback.

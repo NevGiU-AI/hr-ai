@@ -207,6 +207,9 @@ cannot be reconstructed safely; the password tests were repeated successfully af
   three sessions remained active. `SESSION_LIMIT_ENFORCED` recorded `expiredSessions=1;maximumSessions=3` without a
   session identifier. Backend-restart persistence, explicit administrator revocation, and account-disable revocation
   were also accepted against the shared Redis store.
+- The final authentication and security validation suite was accepted in staging and production on 19 September 2026.
+  It confirmed authorization and CSRF controls, tenant isolation, lockout expiry, password operations, Redis-backed
+  session policy, concurrent-request safeguards, security-event persistence, and preservation of business data.
 
 ## Future external channels
 
@@ -224,5 +227,5 @@ Telegram or WhatsApp account linking will associate a provider-verified identity
 - Repeated failures across different accounts from one client reach the independent IP limit.
 - Unknown, disabled, incorrect-password, and temporarily locked login attempts never disclose account existence.
 - Password hashes, session identifiers, CSRF tokens, and credentials never appear in logs or API responses.
-- Full security-foundation approval remains blocked until the final authorization, tenant-isolation, lockout-expiry,
-  audit, password-operation, concurrent-request, and session-policy validation suite is complete.
+- The final authorization, tenant-isolation, lockout-expiry, audit, password-operation, concurrent-request, and
+  session-policy validation suite has passed in staging and production.

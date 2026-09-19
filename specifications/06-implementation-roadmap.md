@@ -30,7 +30,7 @@
   validate the baseline-disabled restart for release `v0.7.0`.
 - [x] Enforce a three-session account limit through indexed Spring Session Redis, expire the oldest-created session,
   audit enforcement, and validate release `v0.8.0` in staging and production.
-- [ ] Complete the [final authentication and security validation suite](./19-final-security-validation.md), covering
+- [x] Complete the [final authentication and security validation suite](./19-final-security-validation.md), covering
   authorization, tenant isolation, lockout, audit logs, passwords, concurrent requests, and session policy.
 - [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
   stable company identities before onboarding independent organizations.
@@ -48,8 +48,8 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** final security validation -> governed CV file storage/OCR -> typed CV chat -> speech
-input/playback.
+**Immediate delivery sequence:** governed CV file storage and correction/reprocessing -> OCR -> typed CV chat ->
+speech input/playback.
 
 ## Phase 1 - Stabilize job-offer generation
 

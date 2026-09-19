@@ -60,6 +60,15 @@ public class CvDocument {
 
     private Instant importedAt = Instant.now();
 
+    @Column(name = "storage_key", unique = true, length = 160)
+    private String storageKey;
+
+    @Column(name = "stored_at")
+    private Instant storedAt;
+
+    @Column(name = "retention_until")
+    private Instant retentionUntil;
+
     public Long getId() { return id; }
     public String getOrganizationId() { return organizationId; }
     public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
@@ -85,4 +94,10 @@ public class CvDocument {
     public void setIngestionError(String ingestionError) { this.ingestionError = ingestionError; }
     public Instant getImportedAt() { return importedAt; }
     public void setImportedAt(Instant importedAt) { this.importedAt = importedAt; }
+    public String getStorageKey() { return storageKey; }
+    public void setStorageKey(String storageKey) { this.storageKey = storageKey; }
+    public Instant getStoredAt() { return storedAt; }
+    public void setStoredAt(Instant storedAt) { this.storedAt = storedAt; }
+    public Instant getRetentionUntil() { return retentionUntil; }
+    public void setRetentionUntil(Instant retentionUntil) { this.retentionUntil = retentionUntil; }
 }

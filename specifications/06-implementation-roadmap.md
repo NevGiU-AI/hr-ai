@@ -30,8 +30,8 @@
   validate the baseline-disabled restart for release `v0.7.0`.
 - [x] Enforce a three-session account limit through indexed Spring Session Redis, expire the oldest-created session,
   audit enforcement, and validate release `v0.8.0` in staging and production.
-- [ ] Complete final authorization, tenant-isolation, lockout, audit-log, password, concurrent-request, and
-  session-policy validation.
+- [ ] Complete the [final authentication and security validation suite](./19-final-security-validation.md), covering
+  authorization, tenant isolation, lockout, audit logs, passwords, concurrent requests, and session policy.
 - [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
   stable company identities before onboarding independent organizations.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.

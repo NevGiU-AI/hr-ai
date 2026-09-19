@@ -22,6 +22,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 16. [Tenant-scoped LOB read incident](./16-tenant-lob-transaction-incident.md)
 17. [Cross-tab session state incident](./17-cross-tab-session-state-incident.md)
 18. [Organization and tenant isolation](./tenant-isolation.md)
+19. [Final authentication and security validation](./19-final-security-validation.md)
 
 ## Recommended delivery order
 

@@ -52,6 +52,25 @@ class AccountSessionServiceTest {
         assertThat(service.expireOldestBeyondLimit("user@example.com", 3)).isZero();
     }
 
+    @Test
+    void expiresEveryOldestSessionWhenSeveralSessionsExceedTheLimit() {
+        Session first = sessionAt("2026-09-01T10:00:00Z");
+        Session second = sessionAt("2026-09-01T11:00:00Z");
+        Session third = sessionAt("2026-09-01T12:00:00Z");
+        Session fourth = sessionAt("2026-09-01T13:00:00Z");
+        Session fifth = sessionAt("2026-09-01T14:00:00Z");
+        when(repository.findByPrincipalName("user@example.com")).thenReturn(Map.of(
+                "session-1", first,
+                "session-2", second,
+                "session-3", third,
+                "session-4", fourth,
+                "session-5", fifth));
+
+        assertThat(service.expireOldestBeyondLimit("user@example.com", 3)).isEqualTo(2);
+        verify(repository).deleteById("session-1");
+        verify(repository).deleteById("session-2");
+    }
+
     private Session sessionAt(String instant) {
         Session session = mock(Session.class);
         when(session.getCreationTime()).thenReturn(Instant.parse(instant));

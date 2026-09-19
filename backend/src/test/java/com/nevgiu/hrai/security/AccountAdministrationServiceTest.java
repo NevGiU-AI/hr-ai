@@ -174,4 +174,16 @@ class AccountAdministrationServiceTest {
         verify(audit).administration(com.nevgiu.hrai.security.audit.SecurityEventType.PASSWORD_RESET,
                 1L, "tenant-a", account, null);
     }
+
+    @Test
+    void rejectsCrossTenantPasswordResetWithoutChangingOrRevoking() {
+        when(users.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.resetPassword("tenant-a", 1L, 2L,
+                new ResetPasswordRequest("replacement-password")))
+                .isInstanceOf(AccountAdministrationException.class)
+                .hasMessage("Account not found");
+        verify(passwordEncoder, never()).encode(org.mockito.ArgumentMatchers.anyString());
+        verify(sessions, never()).revoke(org.mockito.ArgumentMatchers.anyString());
+    }
 }

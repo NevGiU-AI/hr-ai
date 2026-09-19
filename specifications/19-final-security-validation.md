@@ -101,3 +101,11 @@ After staging acceptance and promotion of the same immutable images:
 The authentication foundation is complete only when automated tests, the full staging matrix, and the production subset
 pass for recorded immutable revisions. Any failed control keeps the milestone open. Document the incident and correction,
 repeat the affected test, and retain evidence according to the security and personal-data policy.
+
+## Validation record
+
+**Accepted 19 September 2026:** the complete staging matrix and the safe production subset passed against the
+production-promoted `v0.8.0` application images. Validation covered role and CSRF enforcement, tenant boundaries,
+login throttling and expiry, password and account lifecycle operations, Redis-backed session limits and revocation,
+concurrent-request safeguards, audit persistence, protected-route behavior, and continued visibility of existing
+business data. Production-only destructive scenarios remained covered by automated and staging evidence as required.

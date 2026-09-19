@@ -28,8 +28,10 @@
   tenant-data, password-management, and security-audit smoke tests.
 - [x] Rehearse Flyway against a restored production backup, preserve business-data counts, then baseline production and
   validate the baseline-disabled restart for release `v0.7.0`.
-- [ ] Define and enforce maximum concurrent sessions, then complete authorization, tenant-isolation, lockout,
-  audit-log, password, and session-policy validation.
+- [x] Enforce a three-session account limit through indexed Spring Session Redis, expire the oldest-created session,
+  audit enforcement, and validate release `v0.8.0` in staging and production.
+- [ ] Complete final authorization, tenant-isolation, lockout, audit-log, password, concurrent-request, and
+  session-policy validation.
 - [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
   stable company identities before onboarding independent organizations.
 - [ ] Define candidate consent, retention, deletion, and data-residency policies.
@@ -46,8 +48,8 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** concurrent-session limits -> final
-security validation -> governed CV file storage/OCR -> typed CV chat -> speech input/playback.
+**Immediate delivery sequence:** final security validation -> governed CV file storage/OCR -> typed CV chat -> speech
+input/playback.
 
 ## Phase 1 - Stabilize job-offer generation
 

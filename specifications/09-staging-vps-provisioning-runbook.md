@@ -293,6 +293,12 @@ contains `SESSION_LIMIT_ENFORCED` for the recruiter with `expiredSessions=1;maxi
 the backend to prove Redis-backed enforcement survives restarts. Explicit administrator revocation and account
 disablement must continue to terminate every active session. Do not use business administrator accounts for this test.
 
+**Validated 19 September 2026 for release `v0.8.0`:** staging used four isolated browser profiles and a disposable
+account with `SECURITY_MAXIMUM_SESSIONS=3`. The fourth login succeeded, the oldest-created session was redirected to
+login, and the remaining three stayed authenticated. `SESSION_LIMIT_ENFORCED` recorded the expected account and
+`expiredSessions=1;maximumSessions=3` without exposing a session identifier. Enforcement survived a backend restart;
+administrator session revocation and account disabling continued to terminate all target sessions.
+
 `ACME_EMAIL` is the monitored operational contact Caddy supplies to the ACME certificate authority for automatic HTTPS certificate issuance and renewal. It can receive expiration, renewal-failure, policy, or recovery notices. It is not used to sign in to the application, send application email, or authenticate to OpenAI. Use a role mailbox where possible; staging and production may share this contact because it is administrative metadata, not an environment credential.
 
 Confirm these environment-specific values remain:

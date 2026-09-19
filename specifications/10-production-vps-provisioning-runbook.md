@@ -549,6 +549,13 @@ date with no migration necessary. Retain the validated pre-adoption dump until t
 retention requirements are complete; remove temporary restored databases and extra production-data copies through the
 approved cleanup process.
 
+**Validated 19 September 2026 for release `v0.8.0`:** production was configured with
+`SECURITY_MAXIMUM_SESSIONS=3`. Four isolated browser profiles confirmed that a fourth successful login expired the
+oldest-created session while preserving the other three. The expired browser returned to login through normal session
+revalidation, and `SESSION_LIMIT_ENFORCED` contained `expiredSessions=1;maximumSessions=3` without a session identifier.
+Redis-backed enforcement remained effective after a backend restart, and the existing administrator-revocation and
+account-disable flows continued to revoke all target sessions.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

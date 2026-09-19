@@ -144,7 +144,6 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Validate maximum concurrent-session limits in staging and production.
 - Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
   staging smoke tests before closing the authentication foundation.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
@@ -201,6 +200,12 @@ cannot be reconstructed safely; the password tests were repeated successfully af
   incorrect current password, successful authenticated password change, forced session revocation, sign-in with the
   replacement password, administrator-assisted reset, and persistence of `PASSWORD_CHANGE_FAILED`, `PASSWORD_CHANGED`,
   and `PASSWORD_RESET` events with the expected actor and target identities.
+- Concurrent-session enforcement was deployed and accepted in staging and production in release `v0.8.0` on
+  19 September 2026. Validation used four isolated browser profiles with one disposable account, confirmed that the
+  fourth login preserved the three-session maximum by expiring the oldest-created session, and verified that the other
+  three sessions remained active. `SESSION_LIMIT_ENFORCED` recorded `expiredSessions=1;maximumSessions=3` without a
+  session identifier. Backend-restart persistence, explicit administrator revocation, and account-disable revocation
+  were also accepted against the shared Redis store.
 
 ## Future external channels
 
@@ -218,5 +223,5 @@ Telegram or WhatsApp account linking will associate a provider-verified identity
 - Repeated failures across different accounts from one client reach the independent IP limit.
 - Unknown, disabled, incorrect-password, and temporarily locked login attempts never disclose account existence.
 - Password hashes, session identifiers, CSRF tokens, and credentials never appear in logs or API responses.
-- Full security-foundation approval remains blocked until password management, concurrent-session
-  policy, and their authorization and tenant-isolation tests are complete.
+- Full security-foundation approval remains blocked until the final authorization, tenant-isolation, lockout-expiry,
+  audit, password-operation, concurrent-request, and session-policy validation suite is complete.

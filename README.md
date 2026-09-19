@@ -49,15 +49,15 @@ remain on the private Compose network.
 
 ## Current roadmap
 
-The authentication foundation, tenant isolation, Redis sessions, throttling/lockout, security auditing, and password
-management are deployed and validated in staging and production. The next delivery sequence is:
+The authentication foundation, tenant isolation, Redis sessions, throttling/lockout, security auditing, password
+management, and concurrent-session limits are deployed and validated in staging and production. The next delivery
+sequence is:
 
-1. Maximum concurrent-session limits.
-2. Final authentication and security validation.
-3. Governed original CV storage and correction/reprocessing.
-4. OCR for scanned CVs.
-5. Imperative, tenant-scoped CV chat with citations and evaluation testing.
-6. Editable speech-to-text input, then optional text-to-speech playback.
+1. Final authentication and security validation.
+2. Governed original CV storage and correction/reprocessing.
+3. OCR for scanned CVs.
+4. Imperative, tenant-scoped CV chat with citations and evaluation testing.
+5. Editable speech-to-text input, then optional text-to-speech playback.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

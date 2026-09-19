@@ -145,7 +145,8 @@ The organization identifier is resolved from the authenticated principal and mus
 ## Remaining work
 
 - Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
-  staging smoke tests before closing the authentication foundation.
+  session-policy tests in the [final security validation suite](./19-final-security-validation.md) before closing the
+  authentication foundation.
 - Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
 
 ## Password management

@@ -71,6 +71,15 @@ class LoginThrottleServiceTest {
         assertThat(service.isAccountLocked("person@example.com")).isTrue();
     }
 
+    @Test
+    void treatsAnExpiredRedisLockAsUnlocked() {
+        LoginThrottleService service = service();
+        when(redis.getExpire(any())).thenReturn(-2L);
+
+        assertThat(service.accountLockRemainingSeconds("person@example.com")).isZero();
+        assertThat(service.isAccountLocked("person@example.com")).isFalse();
+    }
+
     private LoginThrottleService service() {
         return new LoginThrottleService(redis, new LoginThrottleProperties(
                 "test:login", 5, 20, Duration.ofMinutes(15), Duration.ofMinutes(15)));

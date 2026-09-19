@@ -42,6 +42,17 @@ class SecurityAuditRepositoryTest {
         assertThat(checkConstraints).isZero();
     }
 
+    @Test
+    void storesSessionLimitEnforcementAsATenantScopedEvent() {
+        events.saveAndFlush(event("tenant-a", SecurityEventType.SESSION_LIMIT_ENFORCED));
+
+        var page = events.findAllByOrganizationIdOrderByCreatedAtDesc("tenant-a", PageRequest.of(0, 20));
+
+        assertThat(page.getContent()).singleElement()
+                .extracting(SecurityAuditEvent::getEventType)
+                .isEqualTo(SecurityEventType.SESSION_LIMIT_ENFORCED);
+    }
+
     private SecurityAuditEvent event(String organizationId, SecurityEventType type) {
         return new SecurityAuditEvent(organizationId, 1L, "admin@example.com", 2L, "user@example.com",
                 null, null, type, SecurityEventOutcome.SUCCESS, null);

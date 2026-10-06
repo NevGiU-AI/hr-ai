@@ -62,6 +62,8 @@ its remaining governance controls are not complete. The next delivery sequence i
 2. OCR for scanned CVs.
 3. Imperative, tenant-scoped CV chat with citations and evaluation testing.
 4. Editable speech-to-text input, then optional text-to-speech playback.
+5. Build the final recruitment dashboard from the stabilized workflow and persisted data.
+6. Move original files to private object storage before horizontal or multi-host backend scaling.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

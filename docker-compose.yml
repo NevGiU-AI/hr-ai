@@ -47,6 +47,8 @@ services:
       APP_REDIS_SESSION_NAMESPACE: hr-ai:session:local
       APP_SECURITY_MAXIMUM_SESSIONS: 3
       APP_REDIS_SECURITY_NAMESPACE: hr-ai:security:login:local
+      APP_CV_STORAGE_ROOT: /var/lib/hr-ai/cv-originals
+      APP_CV_STORAGE_RETENTION: ${APP_CV_STORAGE_RETENTION:-365d}
       #JWT_SECRET: change-me-change-me-change-me-change-me
     ports:
       - "8080:8080"
@@ -55,6 +57,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./data/cv-originals:/var/lib/hr-ai/cv-originals
     restart: on-failure:3
 
   frontend:

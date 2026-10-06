@@ -34,12 +34,12 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 5. Add vector indexing and secure, evidence-backed typed CV chat.
 6. Extend accepted typed CV chat with editable speech-to-text input and optional text-to-speech playback.
 7. Build dashboard APIs and UI from persisted recruitment data.
-8. Move original files to private object storage before horizontal or multi-host backend scaling.
-9. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
-10. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
-11. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
-12. Benchmark bounded backend concurrency and Java virtual threads in staging.
-13. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
+8. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
+9. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
+10. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
+11. Benchmark bounded backend concurrency and Java virtual threads in staging.
+12. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
+13. Move original files to private object storage before horizontal or multi-host backend scaling.
 
 ## Current repository snapshot
 

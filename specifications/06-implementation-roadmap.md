@@ -50,7 +50,7 @@
 
 **Immediate delivery sequence:** complete original-CV policy, quarantine, authorized operations, lifecycle, and paired
 backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback -> final dashboard
--> private object storage -> horizontal or multi-host backend scaling.
+-> cross-cutting release validation -> private object storage -> horizontal or multi-host backend scaling.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -124,19 +124,6 @@ backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> sp
 
 **Exit condition:** Recruiters can monitor roles and candidate evaluations and reach source records from every aggregate view.
 
-## Phase 4a - Prepare storage for horizontal scaling
-
-This phase follows the dashboard and is required before backend processing is distributed across multiple hosts. The
-current private Docker volume remains supported while the application runs on one backend host.
-
-- [ ] Replace the local original-CV provider with private object storage.
-- [ ] Preserve opaque tenant-scoped keys, encryption, quarantine, retention, deletion, legal-hold, and audit controls.
-- [ ] Migrate existing originals with integrity verification and without exposing filenames or candidate content.
-- [ ] Validate paired database/object restoration and access from every intended backend or worker replica.
-
-**Exit condition:** original files remain private, durable, and consistently available when requests or background work
-can run on different hosts.
-
 ## Phase 5 - Publish backend Swagger/OpenAPI documentation
 
 This phase starts after the dashboard is complete so the documented API includes the stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an incomplete surface.
@@ -199,6 +186,19 @@ This phase starts after the dashboard is complete so the documented API includes
 - [ ] Document deployment, rollback, support, and model-change procedures.
 
 **Exit condition:** Operational, security, AI-quality, and product owners approve release.
+
+## Phase 9 - Prepare storage for horizontal scaling
+
+This phase follows release readiness and is required before backend processing is distributed across multiple hosts.
+The current private Docker volume remains supported while the application runs on one backend host.
+
+- [ ] Replace the local original-CV provider with private object storage.
+- [ ] Preserve opaque tenant-scoped keys, encryption, quarantine, retention, deletion, legal-hold, and audit controls.
+- [ ] Migrate existing originals with integrity verification and without exposing filenames or candidate content.
+- [ ] Validate paired database/object restoration and access from every intended backend or worker replica.
+
+**Exit condition:** original files remain private, durable, and consistently available when requests or background work
+can run on different hosts.
 
 ## Definition of done for every feature
 

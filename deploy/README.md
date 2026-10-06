@@ -228,6 +228,29 @@ curl --fail https://staging-api.hr.nevgiuai.com/actuator/health
 curl --fail --head https://staging-hr.nevgiuai.com/
 ```
 
+## Original-CV volume operations
+
+New non-duplicate PDF imports are stored in the private `cv-originals` volume. Confirm the configured retention period
+in the private environment file and inspect the volume without printing application secrets:
+
+```bash
+grep '^CV_STORAGE_RETENTION=' .env
+docker volume inspect nevgiu-hr-ai_cv-originals
+```
+
+The PostgreSQL dump contains `storage_key`, `stored_at`, and `retention_until`, but not the PDF bytes. Consequently:
+
+- never treat a successful database backup as a complete original-CV backup;
+- back up `cv-originals` separately with encryption, restricted credentials, integrity verification, and the approved
+  candidate-data retention policy;
+- treat the database dump and corresponding volume snapshot as one recovery set;
+- test paired restoration in isolation before relying on stored originals for OCR or correction;
+- do not use `docker compose down --volumes`, `docker volume rm`, or another volume-destructive operation during normal
+  deployment or rollback.
+
+The initial named-volume provider supports the current single-host deployment. Replace it with approved private object
+storage before running backend replicas on multiple hosts.
+
 ## Access deployment and application logs
 
 For CI/CD logs, open the current repository on GitHub, select **Actions**, choose `CI` or `Deploy staging`, open the relevant run, and expand the job step. Start with the first failed step; later steps may be skipped as a consequence. GitHub masks configured secrets, but application output can still contain personal data.

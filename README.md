@@ -100,8 +100,8 @@ APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD=<local-only password of at least 12 charac
 APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION=local
 ```
 
-Keep the remaining Redis, session, throttling, and audit defaults from `.env.example`. Never commit `.env`, reuse a
-staging/production credential, or expose secrets in logs, screenshots, or chat.
+Keep the remaining Redis, session, throttling, audit, and CV-storage retention defaults from `.env.example`. Never
+commit `.env`, reuse a staging/production credential, or expose secrets in logs, screenshots, or chat.
 
 CV ingestion and text extraction do not use OpenAI. The key is required only for AI generation or evaluation.
 
@@ -114,6 +114,10 @@ docker compose ps
 
 The `db`, `redis`, `backend`, and `frontend` services should run. PostgreSQL and Redis should report `healthy`; the
 backend may briefly report `health: starting`.
+
+Local Docker persists new original PDFs under `./data/cv-originals`. This ignored directory contains personal data: do
+not commit, casually copy, or share it. Removing/recreating the backend container preserves it; deleting `./data`
+removes local database and original-CV data.
 
 ```bash
 curl http://localhost:8080/actuator/health
@@ -155,8 +159,9 @@ packaged inside the backend image. Flyway runs before JPA; Hibernate uses `ddl-a
 or production schemas.
 
 The local Compose configuration enables one-time baselining so an existing developer database created before Flyway can
-be adopted. New empty databases run the same `V1__baseline_schema.sql`. Staging and production require a validated backup
-and the controlled, temporary baseline flag documented in their runbooks.
+be adopted. New empty databases run the ordered migration history, currently `V1__baseline_schema.sql` followed by
+`V2__add_original_cv_storage_metadata.sql`. Staging and production require a validated backup and the controlled,
+temporary baseline flag documented in their runbooks.
 
 Migration rules:
 
@@ -218,7 +223,8 @@ mvn test
 ```
 
 Flyway integration tests use Testcontainers and run when Docker is available. They verify a clean PostgreSQL schema,
-adoption of an existing schema, stale audit-constraint removal, and Hibernate mapping validation.
+adoption of an existing schema, stale audit-constraint removal, original-CV storage metadata, and Hibernate mapping
+validation.
 
 Frontend tests require Node.js 20:
 
@@ -248,6 +254,9 @@ There is no separate root production Compose file. GitHub Actions publishes immu
 the deployment control bundle, and invokes `deploy/deploy.sh`. Application image rollback does not roll back PostgreSQL
 schema or data.
 
+Staging and production store new original PDFs in a private `cv-originals` volume. PostgreSQL backups contain only the
+corresponding metadata, so database and encrypted original-file backups must be operated and restored as a matched set.
+
 ## Documentation
 
 - [Specifications index](specifications/README.md)
@@ -257,6 +266,7 @@ schema or data.
 - [Production runbook](specifications/10-production-vps-provisioning-runbook.md)
 - [Authentication and authorization](specifications/15-authentication-and-authorization.md)
 - [Tenant isolation](specifications/tenant-isolation.md)
+- [Governed original CV storage](specifications/20-original-cv-storage.md)
 - [Deployment operations](deploy/README.md)
 
 ## Useful Docker commands
@@ -275,13 +285,14 @@ docker compose restart
 docker compose down
 ```
 
-To remove the local database and Redis volumes deliberately:
+To remove named local volumes deliberately:
 
 ```bash
 docker compose down -v
 ```
 
-> This permanently deletes local accounts, sessions, jobs, candidates, CV metadata/text, and evaluations.
+> This removes the named Redis volume. PostgreSQL and original PDFs use bind-mounted paths under `./data` and remain
+> until those directories are separately removed. Treat `./data` as private local candidate data.
 
 ## Troubleshooting
 

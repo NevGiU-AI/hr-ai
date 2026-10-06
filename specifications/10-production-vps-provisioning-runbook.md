@@ -600,6 +600,12 @@ production acceptance. From the first production upload onward, PostgreSQL backu
 encrypted, access-restricted `cv-originals` backup and paired restore procedure before relying on the originals for OCR,
 correction, or recovery.
 
+**Production acceptance recorded 6 October 2026 for main revision `babee7e`:** deployment and application smoke tests
+passed; the private volume and original-file metadata were available; uploading identical PDF bytes under a different
+filename was still detected as `DUPLICATE`; and normal extraction and evaluation worked. This acceptance covers the
+initial storage slice only. The paired encrypted backup/restore procedure and the other governance controls in
+`specifications/20-original-cv-storage.md` remain open.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

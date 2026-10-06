@@ -52,7 +52,7 @@ Confirm `original_stored` is true, the deadline matches the configured retention
 new row or file, and normal extraction/evaluation still works. Do not print filenames, extracted text, or storage keys
 into shared deployment evidence.
 
-## Staging validation record
+## Environment validation record
 
 **Accepted 6 October 2026 for main revision `86ec842`:** a pre-deployment PostgreSQL backup was created, Flyway applied
 `V2__add_original_cv_storage_metadata.sql`, the backend passed Hibernate validation, and the private
@@ -60,8 +60,13 @@ into shared deployment evidence.
 deadline. Uploading the identical bytes under a different filename returned `DUPLICATE` without creating another
 candidate, document row, or stored original. Text extraction and candidate evaluation continued to work.
 
-This record covers staging only. Production remains unvalidated until the same immutable images are promoted and the
-safe production checks below pass.
+**Accepted in production 6 October 2026 for main revision `babee7e`:** the release was deployed successfully and the
+production smoke tests passed. The private original-file volume was available, a disposable upload produced stored
+original metadata, duplicate detection remained content-based when the filename changed, and normal extraction and
+evaluation continued to work.
+
+These records validate the implemented storage slice. They do not approve the outstanding notice/consent, automatic
+expiry/deletion, legal-hold, malware-quarantine, off-server backup/restore, or future object-storage controls below.
 
 ## Backup and recovery
 

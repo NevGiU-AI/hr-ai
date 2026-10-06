@@ -556,6 +556,50 @@ revalidation, and `SESSION_LIMIT_ENFORCED` contained `expiredSessions=1;maximumS
 Redis-backed enforcement remained effective after a backend restart, and the existing administrator-revocation and
 account-disable flows continued to revoke all target sessions.
 
+### 14.3 Deploy and validate original-CV storage
+
+Promote only the immutable images accepted in staging. Before creating the release, add the reviewed value to the
+private production `.env`:
+
+```dotenv
+CV_STORAGE_RETENTION=365d
+```
+
+Create, checksum, inspect, and restore-test a fresh production PostgreSQL backup. The dump protects storage metadata but
+does not contain PDF binaries. After the protected production deployment completes, confirm healthy services, Flyway
+schema version `2`, successful Hibernate validation, and the private volume:
+
+```bash
+cd /opt/nevgiu/deploy
+docker compose --env-file .env --env-file .images.env ps
+docker volume inspect nevgiu-hr-ai_cv-originals
+docker compose --env-file .env --env-file .images.env logs --tail=100 backend
+```
+
+Use a disposable, non-sensitive PDF. Confirm its latest `cv_documents` row reports a stored original and retention
+deadline without displaying the storage key:
+
+```bash
+docker compose \
+  --env-file .env \
+  --env-file .images.env \
+  exec -T db sh -c \
+  'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "
+    SELECT id, storage_key IS NOT NULL AS original_stored, stored_at, retention_until
+    FROM cv_documents
+    ORDER BY id DESC
+    LIMIT 1;"'
+```
+
+Record candidate, document, and stored-original counts, rename the same local PDF, upload it again, and confirm the UI
+reports `DUPLICATE` while all counts remain unchanged. Confirm normal extraction and evaluation. Do not test using a
+real applicant CV, and do not publish filenames, extracted text, storage keys, or raw application logs.
+
+Record the release tag, immutable revision, migration result, volume result, and smoke-test outcome here only after
+production acceptance. From the first production upload onward, PostgreSQL backup alone is incomplete: establish an
+encrypted, access-restricted `cv-originals` backup and paired restore procedure before relying on the originals for OCR,
+correction, or recovery.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

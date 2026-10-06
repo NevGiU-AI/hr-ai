@@ -750,6 +750,17 @@ Validation completed:
 
 No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed environment file was added to Git or documentation.
 
+### Validated original-CV storage rollout
+
+**Accepted 6 October 2026 for main revision `86ec842`:** staging was configured with
+`CV_STORAGE_RETENTION=365d` after a pre-deployment PostgreSQL backup was created. Flyway applied schema version `2`,
+Hibernate validation passed, and Docker created the private `nevgiu-hr-ai_cv-originals` volume.
+
+A disposable PDF import stored an opaque original-file reference with `stored_at` and `retention_until`. Re-uploading
+the same bytes under a different filename returned `DUPLICATE` without changing candidate, document, or stored-original
+counts. Text extraction and explicit candidate evaluation remained operational. PostgreSQL backup validation does not
+cover the PDF volume; the original-file backup procedure remains separate.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

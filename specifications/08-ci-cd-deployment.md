@@ -485,7 +485,10 @@ processed beyond the approved validation dataset, resolve the remaining controls
 
 - Candidate lawful processing basis, notice/consent, retention, deletion, correction, and audit policies.
 - Malware scanning for uploads.
-- Whether and where original CV files will be retained.
+- Original CV retention location is resolved for the current single-host deployment: new PDFs use the private
+  `cv-originals` volume with opaque tenant-scoped keys and retention metadata. Automated expiry/deletion, malware
+  quarantine, encrypted off-server backup, and migration to private object storage before multi-host scaling remain
+  production-governance requirements.
 - OpenAI data-processing terms and disclosure that CV text is sent to the provider only during explicit evaluation.
 - Prompt-injection defenses for untrusted CV content.
 - Log and monitoring redaction.

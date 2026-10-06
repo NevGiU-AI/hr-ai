@@ -52,6 +52,17 @@ Confirm `original_stored` is true, the deadline matches the configured retention
 new row or file, and normal extraction/evaluation still works. Do not print filenames, extracted text, or storage keys
 into shared deployment evidence.
 
+## Staging validation record
+
+**Accepted 6 October 2026 for main revision `86ec842`:** a pre-deployment PostgreSQL backup was created, Flyway applied
+`V2__add_original_cv_storage_metadata.sql`, the backend passed Hibernate validation, and the private
+`cv-originals` volume was created. A disposable PDF produced non-null storage metadata and the configured retention
+deadline. Uploading the identical bytes under a different filename returned `DUPLICATE` without creating another
+candidate, document row, or stored original. Text extraction and candidate evaluation continued to work.
+
+This record covers staging only. Production remains unvalidated until the same immutable images are promoted and the
+safe production checks below pass.
+
 ## Backup and recovery
 
 PostgreSQL backups contain metadata, not original PDFs. Back up the `cv-originals` volume separately with encryption,

@@ -18,8 +18,9 @@ decisions.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Original-file expiry/deletion and backup governance, OCR, CV chat, speech input/playback, and the recruitment dashboard
-remain roadmap work.
+Original-file policy approval, malware quarantine, authorized correction/reprocessing, expiry/deletion, off-server
+backup/restore, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
+storage is required before horizontal or multi-host backend scaling.
 
 ## Architecture
 
@@ -54,7 +55,8 @@ remain on the private Compose network.
 
 The authentication foundation—including tenant isolation, Redis sessions, throttling/lockout, security auditing,
 password management, concurrent-session limits, and the final security acceptance suite—is deployed and validated in
-staging and production. The next delivery sequence is:
+staging and production. The initial original-CV storage slice is also deployed and validated in both environments, but
+its remaining governance controls are not complete. The next delivery sequence is:
 
 1. Complete original-CV governance and correction/reprocessing.
 2. OCR for scanned CVs.

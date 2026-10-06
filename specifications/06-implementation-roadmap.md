@@ -48,8 +48,9 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** governed CV file storage and correction/reprocessing -> OCR -> typed CV chat ->
-speech input/playback.
+**Immediate delivery sequence:** complete original-CV policy, quarantine, authorized operations, lifecycle, and paired
+backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback. Replace the local
+provider with private object storage before horizontal or multi-host backend scaling.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -73,7 +74,11 @@ speech input/playback.
 - [x] Implement validated per-request weight configuration in the backend API.
 - [x] Build candidate/job selection and current evaluation-result UI.
 - [x] Store new original CV binaries behind a tenant-scoped storage abstraction with retention metadata.
+- [x] Validate the initial original-CV storage slice in staging and production.
+- [ ] Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
 - [ ] Add malware quarantine, scheduled retention/deletion, legal hold, and encrypted original-file backup/restore.
+- [ ] Add tenant-authorized original-file read/delete operations and auditable correction/reprocessing.
+- [ ] Replace the local provider with private object storage before horizontal or multi-host backend scaling.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
 - [ ] Add metadata correction and document reprocessing without duplicating candidates.

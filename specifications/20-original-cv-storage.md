@@ -102,6 +102,7 @@ produces unreferenced personal data. Recovery procedures must therefore treat bo
 
 ## Remaining governance work
 
+- Approve the proposed decisions in the [candidate data governance decision record](./21-candidate-data-governance.md).
 - Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
 - Add malware scanning and quarantine before a stored PDF is available to later processing.
 - Add tenant-authorized read/delete operations and auditable correction/reprocessing.

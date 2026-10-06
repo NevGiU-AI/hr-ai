@@ -274,6 +274,7 @@ corresponding metadata, so database and encrypted original-file backups must be 
 - [Authentication and authorization](specifications/15-authentication-and-authorization.md)
 - [Tenant isolation](specifications/tenant-isolation.md)
 - [Governed original CV storage](specifications/20-original-cv-storage.md)
+- [Candidate data governance decisions](specifications/21-candidate-data-governance.md)
 - [Deployment operations](deploy/README.md)
 
 ## Useful Docker commands

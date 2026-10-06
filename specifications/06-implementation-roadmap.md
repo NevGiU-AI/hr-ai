@@ -72,7 +72,8 @@ speech input/playback.
 - [x] Implement all eight validated metrics and an AI explanation.
 - [x] Implement validated per-request weight configuration in the backend API.
 - [x] Build candidate/job selection and current evaluation-result UI.
-- [ ] Store original CV binaries behind a governed storage abstraction.
+- [x] Store new original CV binaries behind a tenant-scoped storage abstraction with retention metadata.
+- [ ] Add malware quarantine, scheduled retention/deletion, legal hold, and encrypted original-file backup/restore.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
 - [ ] Add metadata correction and document reprocessing without duplicating candidates.

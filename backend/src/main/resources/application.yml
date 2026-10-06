@@ -93,3 +93,6 @@ app:
     minimum-text-length: 50
     initial-resource: classpath:intial/CVs.zip
     initial-import-enabled: true
+  cv-storage:
+    root: ${APP_CV_STORAGE_ROOT:./data/cv-originals}
+    retention: ${APP_CV_STORAGE_RETENTION:365d}

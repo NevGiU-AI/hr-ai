@@ -172,7 +172,8 @@ The backend now provides one shared ingestion pipeline for user uploads and the 
 - Extension, declared content type, PDF signature, request size, and per-file size are validated.
 - ZIPs are streamed in memory and protected by path, entry-count, expanded-size, per-entry-size, and compression-ratio checks.
 - SHA-256 hashes and a database uniqueness constraint make repeat imports idempotent.
-- `CvDocument` records retain source, status, filename, content type, size, hash, extracted text, error, candidate link, and import time.
+- `CvDocument` records retain source, status, filename, content type, size, hash, extracted text, error, candidate link,
+  import time, and original-file retention metadata.
 - Results distinguish `IMPORTED`, `DUPLICATE`, `NEEDS_REVIEW`, `SKIPPED`, and `FAILED`.
 - Low-text and probable image-only PDFs are stored as `NEEDS_REVIEW` without creating a misleading candidate.
 - Candidate names are conservatively derived from filenames and the first valid email is extracted from CV text.
@@ -182,12 +183,12 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 
 ### Remaining backend work
 
-- Store original files behind a storage abstraction and define retention/deletion rules.
+- Complete scheduled retention/deletion, legal-hold, malware-quarantine, and original-file backup controls.
 - Add OCR and reprocessing for scanned PDFs.
 - Add richer candidate/document detail and ingestion-history APIs.
 - Detect templates and non-CV PDFs more accurately.
 - Make large imports asynchronous and expose job progress.
-- Require authentication, restrict the built-in import to administrators, and scan uploads for malware.
+- Scan uploads for malware before later processing or retrieval.
 
 ## Implemented ingestion API
 
@@ -313,8 +314,13 @@ Candidate identity and uploaded-document lifecycle are separate concerns. `CvDoc
 - Ingestion error
 - Extracted text
 - Import timestamp
+- Opaque original-file storage key
+- Original-file storage timestamp and retention deadline
 
-The extracted text is currently retained, but original binary files are not. Production should introduce a storage abstraction; local filesystem storage is sufficient for development and object storage is preferable for deployment.
+New imports retain the original binary through the storage abstraction described in
+[governed original CV storage](./20-original-cv-storage.md). Legacy records have no original binary. The initial private
+filesystem provider is suitable for the current single-host deployment; private object storage is required before
+multi-host scaling.
 
 Candidate names are conservatively derived from filenames and the first valid email address is extracted from CV text. This metadata is best-effort and must be reviewed; it is not identity verification.
 
@@ -329,12 +335,13 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 5. Reject absolute paths and `..` path traversal.
 6. Enforce entry-count, per-entry-size, total-expanded-size, and compression-ratio limits.
 7. Calculate a SHA-256 hash and detect previously imported content.
-8. Extract PDF text with a dedicated `CvTextExtractor` abstraction.
-9. Flag empty or image-only documents for OCR/manual review rather than creating misleading content.
-10. Extract conservative candidate name and email metadata; unknown fields remain null.
-11. Persist the document record, candidate, extracted text, status, and warnings.
-12. Continue an archive import when an individual entry fails.
-13. Return a complete per-file outcome without exposing internal stack traces.
+8. Persist the original PDF under an opaque tenant-scoped key and record its retention deadline.
+9. Extract PDF text with a dedicated `CvTextExtractor` abstraction.
+10. Flag empty or image-only documents for OCR/manual review rather than creating misleading content.
+11. Extract conservative candidate name and email metadata; unknown fields remain null.
+12. Persist the document record, candidate, extracted text, status, and warnings.
+13. Continue an archive import when an individual entry fails.
+14. Return a complete per-file outcome without exposing internal stack traces.
 
 ## Delivery plan
 
@@ -370,7 +377,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [ ] Add candidate detail and ingestion-status APIs.
 - [x] Build Angular PDF/ZIP upload, bulk-result, and explicit evaluation views.
 - [ ] Add correction and reprocessing workflows.
-- [ ] Define secure original-document storage, retention, and deletion.
+- [x] Store new original documents privately through a provider abstraction and record retention deadlines.
+- [ ] Implement approved expiry/deletion, legal-hold, malware-scanning, and backup controls.
 
 **Exit condition:** recruiters can upload, review, correct, and manage CV ingestion outcomes without direct database access.
 

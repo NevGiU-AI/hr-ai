@@ -23,11 +23,12 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 17. [Cross-tab session state incident](./17-cross-tab-session-state-incident.md)
 18. [Organization and tenant isolation](./tenant-isolation.md)
 19. [Final authentication and security validation](./19-final-security-validation.md)
+20. [Governed original CV storage](./20-original-cv-storage.md)
 
 ## Recommended delivery order
 
 1. Confirm the unresolved product and scoring decisions.
-2. Add governed original CV storage and correction/reprocessing, followed by OCR.
+2. Complete original-CV governance and correction/reprocessing, followed by OCR.
 3. Harden the implemented job-offer workflow and complete its production controls.
 4. Extend CV ingestion/evaluation with evidence and reproducibility.
 5. Add vector indexing and secure, evidence-backed typed CV chat.
@@ -44,7 +45,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Job-offer generation | Implemented, needs hardening | Generate, edit, approve, persist, and list are available. Direct approval, schema-constrained output, lifecycle management, and production security remain. |
-| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, per-file results, and Angular UI. OCR, original-file storage, correction, and governance remain. |
+| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, per-file results, and Angular UI. OCR, correction, automated deletion, malware scanning, and backup governance remain. |
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
 | CV database chat | Planned | pgvector is available, but indexing, retrieval, memory, citations, editable speech input, and optional speech playback remain. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |

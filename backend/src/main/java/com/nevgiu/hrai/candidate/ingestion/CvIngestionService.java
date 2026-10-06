@@ -8,12 +8,18 @@ import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
+import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
+import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
+import com.nevgiu.hrai.candidate.storage.OriginalCvStorageException;
+import com.nevgiu.hrai.candidate.storage.StoredCv;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
@@ -43,6 +49,8 @@ public class CvIngestionService {
     private final CvDocumentRepository documentRepository;
     private final CvTextExtractor textExtractor;
     private final CvIngestionProperties properties;
+    private final CvStorageProperties storageProperties;
+    private final OriginalCvStorage originalCvStorage;
     private final ResourceLoader resourceLoader;
 
     public CvIngestionService(
@@ -50,12 +58,16 @@ public class CvIngestionService {
             CvDocumentRepository documentRepository,
             CvTextExtractor textExtractor,
             CvIngestionProperties properties,
+            CvStorageProperties storageProperties,
+            OriginalCvStorage originalCvStorage,
             ResourceLoader resourceLoader
     ) {
         this.candidateRepository = candidateRepository;
         this.documentRepository = documentRepository;
         this.textExtractor = textExtractor;
         this.properties = properties;
+        this.storageProperties = storageProperties;
+        this.originalCvStorage = originalCvStorage;
         this.resourceLoader = resourceLoader;
     }
 
@@ -178,6 +190,17 @@ public class CvIngestionService {
         document.setSha256(hash);
         document.setSource(source);
 
+        StoredCv storedCv;
+        try {
+            storedCv = originalCvStorage.store(organizationId, content);
+        } catch (OriginalCvStorageException e) {
+            throw new CvIngestionException(HttpStatus.SERVICE_UNAVAILABLE, "Original CV storage is unavailable");
+        }
+        document.setStorageKey(storedCv.storageKey());
+        document.setStoredAt(storedCv.storedAt());
+        document.setRetentionUntil(storedCv.storedAt().plus(storageProperties.retention()));
+        deleteStoredFileOnRollback(storedCv.storageKey());
+
         try {
             String text = textExtractor.extract(content);
             document.setExtractedText(text);
@@ -210,6 +233,13 @@ public class CvIngestionService {
             CvDocument saved = documentRepository.save(document);
             return new CvImportResult(null, saved.getId(), safeFilename, saved.getStatus(), PDF_CONTENT_TYPE, 0,
                     List.of("PDF text extraction failed"));
+        } catch (RuntimeException e) {
+            try {
+                originalCvStorage.delete(storedCv.storageKey());
+            } catch (OriginalCvStorageException cleanupFailure) {
+                e.addSuppressed(cleanupFailure);
+            }
+            throw e;
         }
     }
 
@@ -233,6 +263,20 @@ public class CvIngestionService {
             throw new CvIngestionException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Uploaded content type is not PDF");
         }
         return safeFilename;
+    }
+
+    private void deleteStoredFileOnRollback(String storageKey) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    originalCvStorage.delete(storageKey);
+                }
+            }
+        });
     }
 
     private void validateArchiveName(String filename) {

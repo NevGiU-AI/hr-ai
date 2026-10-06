@@ -2,7 +2,9 @@ package com.nevgiu.hrai.candidate.storage;
 
 public interface OriginalCvStorage {
 
-    StoredCv store(String organizationId, byte[] content);
+    QuarantinedCv quarantine(String organizationId, byte[] content);
+
+    StoredCv promote(String quarantineKey);
 
     void delete(String storageKey);
 }

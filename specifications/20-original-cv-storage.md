@@ -17,6 +17,23 @@ source instead of only extracted text. Original CVs contain personal data and ar
 - Existing documents remain valid with null storage metadata because their original bytes were not previously retained.
 - No public download endpoint exists. Application authorization must guard any future read, correction, or deletion API.
 
+## Malware quarantine gate
+
+Every Compose deployment runs a private ClamAV daemon on the internal data network. An accepted upload follows this
+sequence:
+
+1. Validate the file type and size and reject tenant-local duplicates.
+2. Write the bytes under the isolated `_quarantine` storage namespace.
+3. Stream the bytes to ClamAV without exposing the storage path or candidate metadata.
+4. Atomically promote a clean file to its opaque tenant-scoped storage key.
+5. Only then extract text, create a candidate, or make the original eligible for later processing.
+
+An infected file is deleted from quarantine and rejected with a generic security-validation response. If ClamAV is
+unavailable, times out, or returns an unknown response, ingestion fails closed with `503`; the quarantined copy is
+deleted and no candidate or document row is created. Scanner details and signatures are not returned to the caller.
+Direct non-Compose development can disable scanning, but the versioned local, staging, and production Compose files
+enable it explicitly.
+
 `CV_STORAGE_RETENTION` defaults to `365d`. This release records the deadline but does not automatically delete expired
 records; scheduled deletion, legal-hold handling, and administrator workflows remain required before retention is fully
 automated.
@@ -29,6 +46,8 @@ each private environment file:
 
 ```dotenv
 CV_STORAGE_RETENTION=365d
+CV_MALWARE_CONNECT_TIMEOUT=2s
+CV_MALWARE_READ_TIMEOUT=30s
 ```
 
 After deployment, verify:
@@ -36,6 +55,8 @@ After deployment, verify:
 ```bash
 docker compose --env-file .env --env-file .images.env ps
 docker volume inspect nevgiu-hr-ai_cv-originals
+docker compose --env-file .env --env-file .images.env ps clamav
+docker compose --env-file .env --env-file .images.env exec -T clamav clamdscan --ping 3
 docker compose --env-file .env --env-file .images.env logs --tail=100 backend
 ```
 
@@ -51,6 +72,10 @@ LIMIT 1;
 Confirm `original_stored` is true, the deadline matches the configured retention period, a duplicate upload creates no
 new row or file, and normal extraction/evaluation still works. Do not print filenames, extracted text, or storage keys
 into shared deployment evidence.
+
+For malware-gate acceptance, use only the standard harmless EICAR antivirus test pattern in a disposable synthetic PDF
+inside an isolated test organization. Confirm the upload is rejected, candidate/document counts do not change, no file
+remains below `_quarantine`, and an ordinary disposable PDF still imports. Never use real malware for this test.
 
 ## Environment validation record
 

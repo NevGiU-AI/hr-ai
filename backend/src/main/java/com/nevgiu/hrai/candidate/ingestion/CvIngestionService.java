@@ -8,9 +8,13 @@ import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
+import com.nevgiu.hrai.candidate.malware.CvMalwareScanException;
+import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
+import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
 import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorageException;
+import com.nevgiu.hrai.candidate.storage.QuarantinedCv;
 import com.nevgiu.hrai.candidate.storage.StoredCv;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -51,6 +55,7 @@ public class CvIngestionService {
     private final CvIngestionProperties properties;
     private final CvStorageProperties storageProperties;
     private final OriginalCvStorage originalCvStorage;
+    private final CvMalwareScanner malwareScanner;
     private final ResourceLoader resourceLoader;
 
     public CvIngestionService(
@@ -60,6 +65,7 @@ public class CvIngestionService {
             CvIngestionProperties properties,
             CvStorageProperties storageProperties,
             OriginalCvStorage originalCvStorage,
+            CvMalwareScanner malwareScanner,
             ResourceLoader resourceLoader
     ) {
         this.candidateRepository = candidateRepository;
@@ -68,6 +74,7 @@ public class CvIngestionService {
         this.properties = properties;
         this.storageProperties = storageProperties;
         this.originalCvStorage = originalCvStorage;
+        this.malwareScanner = malwareScanner;
         this.resourceLoader = resourceLoader;
     }
 
@@ -190,10 +197,30 @@ public class CvIngestionService {
         document.setSha256(hash);
         document.setSource(source);
 
+        QuarantinedCv quarantinedCv;
+        try {
+            quarantinedCv = originalCvStorage.quarantine(organizationId, content);
+        } catch (OriginalCvStorageException e) {
+            throw new CvIngestionException(HttpStatus.SERVICE_UNAVAILABLE, "Original CV storage is unavailable");
+        }
+
+        CvMalwareScanResult scanResult;
+        try {
+            scanResult = malwareScanner.scan(content);
+        } catch (CvMalwareScanException e) {
+            deleteQuarantined(quarantinedCv.storageKey());
+            throw new CvIngestionException(HttpStatus.SERVICE_UNAVAILABLE, "CV security scanning is unavailable");
+        }
+        if (scanResult == CvMalwareScanResult.INFECTED) {
+            deleteQuarantined(quarantinedCv.storageKey());
+            throw new CvIngestionException(HttpStatus.UNPROCESSABLE_ENTITY, "CV failed security validation");
+        }
+
         StoredCv storedCv;
         try {
-            storedCv = originalCvStorage.store(organizationId, content);
+            storedCv = originalCvStorage.promote(quarantinedCv.storageKey());
         } catch (OriginalCvStorageException e) {
+            deleteQuarantined(quarantinedCv.storageKey());
             throw new CvIngestionException(HttpStatus.SERVICE_UNAVAILABLE, "Original CV storage is unavailable");
         }
         document.setStorageKey(storedCv.storageKey());
@@ -263,6 +290,14 @@ public class CvIngestionService {
             throw new CvIngestionException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Uploaded content type is not PDF");
         }
         return safeFilename;
+    }
+
+    private void deleteQuarantined(String storageKey) {
+        try {
+            originalCvStorage.delete(storageKey);
+        } catch (OriginalCvStorageException ignored) {
+            // Preserve the scanner or promotion failure returned to the caller.
+        }
     }
 
     private void deleteStoredFileOnRollback(String storageKey) {

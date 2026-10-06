@@ -10,6 +10,7 @@ decisions.
 - Import a PDF, a ZIP archive of PDFs, or the administrator-only demonstration CV dataset.
 - Detect duplicate CV files within an organization using SHA-256 content hashes.
 - Retain new original CVs in private tenant-scoped storage with explicit retention metadata.
+- Quarantine uploaded CVs and require a clean ClamAV result before storage promotion or text extraction.
 - Extract CV text and explicitly evaluate a candidate against an approved job.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
@@ -49,6 +50,7 @@ remain on the private Compose network.
 - PostgreSQL 16 with pgvector
 - Flyway versioned schema migrations
 - Redis 7.4
+- ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
 
 ## Current roadmap

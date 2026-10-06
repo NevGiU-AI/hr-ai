@@ -2,6 +2,11 @@ version: '3.9'
 
 services:
 
+  clamav:
+    image: clamav/clamav:1.4
+    volumes:
+      - clamav-data:/var/lib/clamav
+
   redis:
     image: redis:7.4-alpine
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "local-redis-secret"]
@@ -49,6 +54,9 @@ services:
       APP_REDIS_SECURITY_NAMESPACE: hr-ai:security:login:local
       APP_CV_STORAGE_ROOT: /var/lib/hr-ai/cv-originals
       APP_CV_STORAGE_RETENTION: ${APP_CV_STORAGE_RETENTION:-365d}
+      APP_CV_MALWARE_SCAN_ENABLED: "true"
+      APP_CV_MALWARE_SCAN_HOST: clamav
+      APP_CV_MALWARE_SCAN_PORT: 3310
       #JWT_SECRET: change-me-change-me-change-me-change-me
     ports:
       - "8080:8080"
@@ -56,6 +64,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     volumes:
       - ./data/cv-originals:/var/lib/hr-ai/cv-originals
@@ -70,3 +80,4 @@ services:
 
 volumes:
   redis-data:
+  clamav-data:

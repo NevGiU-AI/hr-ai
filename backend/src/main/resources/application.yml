@@ -96,3 +96,9 @@ app:
   cv-storage:
     root: ${APP_CV_STORAGE_ROOT:./data/cv-originals}
     retention: ${APP_CV_STORAGE_RETENTION:365d}
+  cv-malware:
+    enabled: ${APP_CV_MALWARE_SCAN_ENABLED:false}
+    host: ${APP_CV_MALWARE_SCAN_HOST:localhost}
+    port: ${APP_CV_MALWARE_SCAN_PORT:3310}
+    connect-timeout: ${APP_CV_MALWARE_CONNECT_TIMEOUT:2s}
+    read-timeout: ${APP_CV_MALWARE_READ_TIMEOUT:30s}

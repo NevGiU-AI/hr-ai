@@ -8,8 +8,12 @@ import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
+import com.nevgiu.hrai.candidate.malware.CvMalwareScanException;
+import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
+import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
 import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
+import com.nevgiu.hrai.candidate.storage.QuarantinedCv;
 import com.nevgiu.hrai.candidate.storage.StoredCv;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +42,7 @@ class CvIngestionServiceTest {
     private CandidateRepository candidateRepository;
     private CvDocumentRepository documentRepository;
     private OriginalCvStorage originalCvStorage;
+    private CvMalwareScanner malwareScanner;
     private CvIngestionService service;
     private final AtomicLong ids = new AtomicLong(1);
 
@@ -46,6 +51,7 @@ class CvIngestionServiceTest {
         candidateRepository = mock(CandidateRepository.class);
         documentRepository = mock(CvDocumentRepository.class);
         originalCvStorage = mock(OriginalCvStorage.class);
+        malwareScanner = mock(CvMalwareScanner.class);
         CvTextExtractor extractor = content -> "Ada Lovelace\nada@example.com\nSoftware engineer with extensive analytical experience.";
         CvIngestionProperties properties = new CvIngestionProperties(
                 1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
@@ -53,8 +59,10 @@ class CvIngestionServiceTest {
         service = service(extractor, properties);
 
         when(documentRepository.findByOrganizationIdAndSha256(any(), any())).thenReturn(Optional.empty());
-        when(originalCvStorage.store(any(), any())).thenReturn(
+        when(originalCvStorage.quarantine(any(), any())).thenReturn(new QuarantinedCv("_quarantine/tenant-key/document.pdf"));
+        when(originalCvStorage.promote(any())).thenReturn(
                 new StoredCv("tenant-key/document.pdf", Instant.parse("2026-09-19T10:00:00Z")));
+        when(malwareScanner.scan(any())).thenReturn(CvMalwareScanResult.CLEAN);
         when(candidateRepository.save(any(Candidate.class))).thenAnswer(invocation -> {
             Candidate candidate = invocation.getArgument(0);
             candidate.setId(ids.getAndIncrement());
@@ -71,7 +79,9 @@ class CvIngestionServiceTest {
         assertThat(result.status()).isEqualTo(CvIngestionStatus.IMPORTED);
         assertThat(result.candidateId()).isNotNull();
         assertThat(result.textLength()).isGreaterThan(50);
-        verify(originalCvStorage).store(org.mockito.ArgumentMatchers.eq("tenant-a"), any(byte[].class));
+        verify(originalCvStorage).quarantine(org.mockito.ArgumentMatchers.eq("tenant-a"), any(byte[].class));
+        verify(malwareScanner).scan(any(byte[].class));
+        verify(originalCvStorage).promote("_quarantine/tenant-key/document.pdf");
         ArgumentCaptor<CvDocument> document = ArgumentCaptor.forClass(CvDocument.class);
         verify(documentRepository).save(document.capture());
         assertThat(document.getValue().getStorageKey()).isEqualTo("tenant-key/document.pdf");
@@ -178,6 +188,32 @@ class CvIngestionServiceTest {
     }
 
     @Test
+    void rejectsInfectedPdfAndDeletesQuarantinedCopy() {
+        when(malwareScanner.scan(any())).thenReturn(CvMalwareScanResult.INFECTED);
+
+        assertThatThrownBy(() -> service.importPdf(
+                "candidate.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a"))
+                .isInstanceOf(CvIngestionException.class)
+                .satisfies(error -> assertThat(((CvIngestionException) error).getStatus())
+                        .isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY));
+
+        verify(originalCvStorage).delete("_quarantine/tenant-key/document.pdf");
+    }
+
+    @Test
+    void failsClosedAndDeletesQuarantinedCopyWhenScannerIsUnavailable() {
+        when(malwareScanner.scan(any())).thenThrow(new CvMalwareScanException("unavailable"));
+
+        assertThatThrownBy(() -> service.importPdf(
+                "candidate.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a"))
+                .isInstanceOf(CvIngestionException.class)
+                .satisfies(error -> assertThat(((CvIngestionException) error).getStatus())
+                        .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE));
+
+        verify(originalCvStorage).delete("_quarantine/tenant-key/document.pdf");
+    }
+
+    @Test
     void deletesStoredOriginalWhenUnexpectedProcessingFails() {
         CvIngestionService failingService = service(content -> {
             throw new IllegalStateException("processing failed");
@@ -199,7 +235,7 @@ class CvIngestionServiceTest {
     private CvIngestionService service(CvTextExtractor extractor, CvIngestionProperties properties) {
         return new CvIngestionService(candidateRepository, documentRepository, extractor, properties,
                 new CvStorageProperties("build/test-cv-storage", Duration.ofDays(365)),
-                originalCvStorage, new DefaultResourceLoader());
+                originalCvStorage, malwareScanner, new DefaultResourceLoader());
     }
 
     private byte[] zip(Entry... entries) throws Exception {

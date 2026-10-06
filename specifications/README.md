@@ -39,6 +39,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 10. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
 11. Benchmark bounded backend concurrency and Java virtual threads in staging.
 12. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
+13. Move original files to private object storage before horizontal or multi-host backend scaling.
 
 ## Current repository snapshot
 

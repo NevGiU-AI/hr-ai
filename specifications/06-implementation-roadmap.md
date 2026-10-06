@@ -49,8 +49,8 @@
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
 **Immediate delivery sequence:** complete original-CV policy, quarantine, authorized operations, lifecycle, and paired
-backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback. Replace the local
-provider with private object storage before horizontal or multi-host backend scaling.
+backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback -> final dashboard
+-> cross-cutting release validation -> private object storage -> horizontal or multi-host backend scaling.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -78,7 +78,6 @@ provider with private object storage before horizontal or multi-host backend sca
 - [ ] Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
 - [ ] Add malware quarantine, scheduled retention/deletion, legal hold, and encrypted original-file backup/restore.
 - [ ] Add tenant-authorized original-file read/delete operations and auditable correction/reprocessing.
-- [ ] Replace the local provider with private object storage before horizontal or multi-host backend scaling.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
 - [ ] Add metadata correction and document reprocessing without duplicating candidates.
@@ -187,6 +186,19 @@ This phase starts after the dashboard is complete so the documented API includes
 - [ ] Document deployment, rollback, support, and model-change procedures.
 
 **Exit condition:** Operational, security, AI-quality, and product owners approve release.
+
+## Phase 9 - Prepare storage for horizontal scaling
+
+This phase follows release readiness and is required before backend processing is distributed across multiple hosts.
+The current private Docker volume remains supported while the application runs on one backend host.
+
+- [ ] Replace the local original-CV provider with private object storage.
+- [ ] Preserve opaque tenant-scoped keys, encryption, quarantine, retention, deletion, legal-hold, and audit controls.
+- [ ] Migrate existing originals with integrity verification and without exposing filenames or candidate content.
+- [ ] Validate paired database/object restoration and access from every intended backend or worker replica.
+
+**Exit condition:** original files remain private, durable, and consistently available when requests or background work
+can run on different hosts.
 
 ## Definition of done for every feature
 

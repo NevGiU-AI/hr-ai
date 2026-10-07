@@ -1,6 +1,8 @@
 name: nevgiu-hr-ai
 
 services:
+  # clamd runs continuously and accepts its native INSTREAM protocol only on the private data network.
+  # No host port is published; the backend reaches it through Compose DNS as clamav:3310.
   clamav:
     image: clamav/clamav:1.4
     volumes:

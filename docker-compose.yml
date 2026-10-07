@@ -2,6 +2,7 @@ version: '3.9'
 
 services:
 
+  # Local clamd service. It is deliberately not exposed through a host port.
   clamav:
     image: clamav/clamav:1.4
     volumes:

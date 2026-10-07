@@ -34,6 +34,21 @@ deleted and no candidate or document row is created. Scanner details and signatu
 Direct non-Compose development can disable scanning, but the versioned local, staging, and production Compose files
 enable it explicitly.
 
+### Why a daemon and a socket are used
+
+A daemon is a long-running background service. The ClamAV daemon, `clamd`, loads its malware signatures once, remains
+running, and scans successive uploads on request; starting a new antivirus process for every CV would be slower and more
+resource-intensive.
+
+`clamd` is not an HTTP/REST server. It listens on TCP port `3310` and implements ClamAV's native protocol. The backend
+therefore opens a socket, sends the `INSTREAM` command, streams length-prefixed PDF chunks, sends a zero-length chunk to
+finish, and reads a result such as `stream: OK` or `stream: ... FOUND`.
+
+Compose resolves the hostname `clamav` on the internal `data` network. The service has no published host port, so it is
+not directly reachable from the public internet. `CvMalwareScanner` keeps this transport detail behind a provider-neutral
+interface; a future REST-based or managed scanner can replace `ClamAvCvMalwareScanner` without changing
+`CvIngestionService`.
+
 `CV_STORAGE_RETENTION` defaults to `365d`. This release records the deadline but does not automatically delete expired
 records; scheduled deletion, legal-hold handling, and administrator workflows remain required before retention is fully
 automated.

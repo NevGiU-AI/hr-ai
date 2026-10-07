@@ -19,9 +19,9 @@ decisions.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Original-file policy approval, malware quarantine, authorized correction/reprocessing, expiry/deletion, off-server
-backup/restore, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
-storage is required before horizontal or multi-host backend scaling.
+Legacy-original rescanning, authorized correction/reprocessing, expiry/deletion, off-server backup/restore, OCR, CV
+chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object storage is required
+before horizontal or multi-host backend scaling.
 
 ## Architecture
 
@@ -35,12 +35,13 @@ Angular 19 / Nginx
 Spring Boot 3 / Java 21
   |---- PostgreSQL 16 + pgvector  (business data and Flyway history)
   |---- Redis 7.4                 (sessions, revocation, login throttling)
-  |---- Private CV volume         (new original PDF binaries)
+  |---- ClamAV 1.4                (fail-closed CV upload scanning)
+  |---- Private CV volume         (quarantined and clean original PDFs)
   `---- OpenAI through Spring AI  (job generation and candidate evaluation)
 ```
 
-Staging and production place Caddy in front of the frontend and API containers for TLS and routing. PostgreSQL and Redis
-remain on the private Compose network.
+Staging and production place Caddy in front of the frontend and API containers for TLS and routing. PostgreSQL, Redis,
+and ClamAV remain on the private Compose network.
 
 ## Technology stack
 

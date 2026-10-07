@@ -176,6 +176,12 @@ public class CvIngestionService {
         return summarize(results);
     }
 
+    /**
+     * Imports one PDF in an independent database transaction when invoked through the Spring proxy. This boundary is
+     * intended to let one ZIP entry fail without rolling back successful entries. Calls from another method in this
+     * class are self-invocations and bypass proxy-based transaction advice, so archive orchestration must cross a
+     * separate Spring bean before relying on per-entry {@code REQUIRES_NEW} isolation.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public CvImportResult importPdf(String filename, String contentType, byte[] content, CvDocumentSource source,
                                     String organizationId) {
@@ -301,13 +307,17 @@ public class CvIngestionService {
     }
 
     private void deleteStoredFileOnRollback(String storageKey) {
+        // PostgreSQL can roll back document metadata, but it cannot roll back a file already promoted on disk.
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            // There is no Spring transaction completion event to attach to outside an active synchronization context.
             return;
         }
+        // Register a compensating filesystem action that runs only if the surrounding database transaction rolls back.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
                 if (status == STATUS_ROLLED_BACK) {
+                    // delete() is idempotent for the filesystem provider, so explicit failure cleanup may safely overlap.
                     originalCvStorage.delete(storageKey);
                 }
             }

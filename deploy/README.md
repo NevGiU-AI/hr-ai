@@ -246,6 +246,34 @@ deleted on a scanner error or malware result, and is promoted to normal private 
 or production. The first ClamAV startup can take longer while signatures are initialized, so wait for the service to
 be healthy before diagnosing the backend as unavailable.
 
+### Validate malware rejection in staging
+
+Never use real malware. Use the harmless
+[`eicar-adobe-acrobat-attachment.pdf`](https://github.com/fire1ce/eicar-standard-antivirus-test-files/blob/master/eicar-adobe-acrobat-attachment.pdf)
+fixture from the public `fire1ce/eicar-standard-antivirus-test-files` repository. Review the source before use, download
+the individual PDF rather than cloning unrelated fixtures, use it only in an isolated staging organization, and delete
+the local copy after validation. Endpoint protection may quarantine the fixture because that is its intended purpose.
+
+Upload the fixture through the normal single-PDF UI and confirm:
+
+- the API rejects it with `422` and the UI displays `CV failed security validation`;
+- candidate and `cv_documents` counts do not increase;
+- no file remains in `_quarantine` or normal original-CV storage; and
+- an ordinary disposable PDF still imports afterward.
+
+Validate fail-closed behavior separately with a new, non-duplicate disposable PDF:
+
+```bash
+docker compose --env-file .env --env-file .images.env stop clamav
+# Upload the new PDF and confirm a 503 scanner-unavailable response with no persisted candidate/document.
+docker compose --env-file .env --env-file .images.env start clamav
+docker compose --env-file .env --env-file .images.env ps clamav
+docker compose --env-file .env --env-file .images.env logs --tail=100 backend clamav
+```
+
+Wait for `clamav` to become healthy, then confirm another new ordinary PDF imports. Do not deliberately stop ClamAV in
+production merely to repeat this failure test; staging supplies the fail-closed evidence.
+
 The PostgreSQL dump contains `storage_key`, `stored_at`, and `retention_until`, but not the PDF bytes. Consequently:
 
 - never treat a successful database backup as a complete original-CV backup;

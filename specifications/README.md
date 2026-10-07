@@ -25,6 +25,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 19. [Final authentication and security validation](./19-final-security-validation.md)
 20. [Governed original CV storage](./20-original-cv-storage.md)
 21. [Candidate data governance decision record](./21-candidate-data-governance.md)
+22. [Contribution standards](./22-contribution-standards.md)
 
 ## Recommended delivery order
 

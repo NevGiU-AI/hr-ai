@@ -16,21 +16,26 @@ class FileSystemOriginalCvStorageTest {
     Path storageRoot;
 
     @Test
-    void storesOriginalBytesUnderAnOpaqueTenantScopedKey() throws Exception {
+    void quarantinesThenPromotesOriginalBytesUnderAnOpaqueTenantScopedKey() throws Exception {
         FileSystemOriginalCvStorage storage = storage();
         byte[] content = "%PDF-1.4\nprivate".getBytes();
 
-        StoredCv stored = storage.store("tenant-a", content);
+        QuarantinedCv quarantined = storage.quarantine("tenant-a", content);
+        assertThat(quarantined.storageKey()).startsWith("_quarantine/");
+        assertThat(Files.readAllBytes(storageRoot.resolve(quarantined.storageKey()))).isEqualTo(content);
+
+        StoredCv stored = storage.promote(quarantined.storageKey());
 
         assertThat(stored.storageKey()).doesNotContain("tenant-a");
         assertThat(stored.storageKey()).matches("[a-f0-9]{64}/[a-f0-9-]{36}\\.pdf");
         assertThat(Files.readAllBytes(storageRoot.resolve(stored.storageKey()))).isEqualTo(content);
+        assertThat(storageRoot.resolve(quarantined.storageKey())).doesNotExist();
     }
 
     @Test
     void deletesAStoredOriginal() {
         FileSystemOriginalCvStorage storage = storage();
-        StoredCv stored = storage.store("tenant-a", "%PDF-1.4".getBytes());
+        StoredCv stored = storage.promote(storage.quarantine("tenant-a", "%PDF-1.4".getBytes()).storageKey());
 
         storage.delete(stored.storageKey());
 

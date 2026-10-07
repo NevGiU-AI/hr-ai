@@ -236,7 +236,15 @@ in the private environment file and inspect the volume without printing applicat
 ```bash
 grep '^CV_STORAGE_RETENTION=' .env
 docker volume inspect nevgiu-hr-ai_cv-originals
+docker compose --env-file .env --env-file .images.env ps clamav
+docker compose --env-file .env --env-file .images.env exec -T clamav clamdscan --ping 3
 ```
+
+The backend fails closed when ClamAV is unavailable: an upload remains isolated only long enough to be scanned, is
+deleted on a scanner error or malware result, and is promoted to normal private storage only after a clean verdict.
+`CV_MALWARE_CONNECT_TIMEOUT` and `CV_MALWARE_READ_TIMEOUT` may be tuned in `.env`; do not disable scanning in staging
+or production. The first ClamAV startup can take longer while signatures are initialized, so wait for the service to
+be healthy before diagnosing the backend as unavailable.
 
 The PostgreSQL dump contains `storage_key`, `stored_at`, and `retention_until`, but not the PDF bytes. Consequently:
 

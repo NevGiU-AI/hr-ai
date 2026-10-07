@@ -17,6 +17,7 @@ import java.util.UUID;
 @Component
 public class FileSystemOriginalCvStorage implements OriginalCvStorage {
 
+    private static final String QUARANTINE_DIRECTORY = "_quarantine";
     private final Path root;
 
     public FileSystemOriginalCvStorage(CvStorageProperties properties) {
@@ -24,8 +25,9 @@ public class FileSystemOriginalCvStorage implements OriginalCvStorage {
     }
 
     @Override
-    public StoredCv store(String organizationId, byte[] content) {
-        String storageKey = sha256(organizationId) + "/" + UUID.randomUUID() + ".pdf";
+    public QuarantinedCv quarantine(String organizationId, byte[] content) {
+        String storageKey = QUARANTINE_DIRECTORY + "/" + sha256(organizationId)
+                + "/" + UUID.randomUUID() + ".pdf";
         Path target = resolve(storageKey);
         Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
         try {
@@ -36,10 +38,32 @@ public class FileSystemOriginalCvStorage implements OriginalCvStorage {
             } catch (IOException atomicMoveFailure) {
                 Files.move(temporary, target);
             }
-            return new StoredCv(storageKey, Instant.now());
+            return new QuarantinedCv(storageKey);
         } catch (IOException e) {
             deleteQuietly(temporary);
-            throw new OriginalCvStorageException("Unable to store the original CV", e);
+            throw new OriginalCvStorageException("Unable to quarantine the original CV", e);
+        }
+    }
+
+    @Override
+    public StoredCv promote(String quarantineKey) {
+        String prefix = QUARANTINE_DIRECTORY + "/";
+        if (quarantineKey == null || !quarantineKey.startsWith(prefix)) {
+            throw new IllegalArgumentException("Storage key is not quarantined");
+        }
+        Path source = resolve(quarantineKey);
+        String storageKey = quarantineKey.substring(prefix.length());
+        Path target = resolve(storageKey);
+        try {
+            Files.createDirectories(target.getParent());
+            try {
+                Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException atomicMoveFailure) {
+                Files.move(source, target);
+            }
+            return new StoredCv(storageKey, Instant.now());
+        } catch (IOException e) {
+            throw new OriginalCvStorageException("Unable to promote the quarantined CV", e);
         }
     }
 

@@ -43,6 +43,7 @@ class CvIngestionServiceTest {
     private CvDocumentRepository documentRepository;
     private OriginalCvStorage originalCvStorage;
     private CvMalwareScanner malwareScanner;
+    private CvDocumentImportService documentImportService;
     private CvIngestionService service;
     private final AtomicLong ids = new AtomicLong(1);
 
@@ -233,9 +234,10 @@ class CvIngestionServiceTest {
     }
 
     private CvIngestionService service(CvTextExtractor extractor, CvIngestionProperties properties) {
-        return new CvIngestionService(candidateRepository, documentRepository, extractor, properties,
+        documentImportService = new CvDocumentImportService(candidateRepository, documentRepository, extractor, properties,
                 new CvStorageProperties("build/test-cv-storage", Duration.ofDays(365)),
-                originalCvStorage, malwareScanner, new DefaultResourceLoader());
+                originalCvStorage, malwareScanner);
+        return new CvIngestionService(properties, documentImportService, new DefaultResourceLoader());
     }
 
     private byte[] zip(Entry... entries) throws Exception {

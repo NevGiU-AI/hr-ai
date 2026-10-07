@@ -88,9 +88,13 @@ Confirm `original_stored` is true, the deadline matches the configured retention
 new row or file, and normal extraction/evaluation still works. Do not print filenames, extracted text, or storage keys
 into shared deployment evidence.
 
-For malware-gate acceptance, use only the standard harmless EICAR antivirus test pattern in a disposable synthetic PDF
-inside an isolated test organization. Confirm the upload is rejected, candidate/document counts do not change, no file
-remains below `_quarantine`, and an ordinary disposable PDF still imports. Never use real malware for this test.
+For malware-gate acceptance, never use real malware. Use the harmless
+[`eicar-adobe-acrobat-attachment.pdf`](https://github.com/fire1ce/eicar-standard-antivirus-test-files/blob/master/eicar-adobe-acrobat-attachment.pdf)
+fixture from the public `fire1ce/eicar-standard-antivirus-test-files` repository in an isolated staging organization.
+Review the source before use, download only the required fixture, and delete it after validation. Confirm the upload is
+rejected with `422`, candidate/document counts do not change, no file remains below `_quarantine` or normal storage, and
+an ordinary disposable PDF still imports. A plain EICAR file is not a PDF, while merely prefixing it with `%PDF-` is not
+a reliable embedded-PDF detection test; use the attachment fixture that ClamAV detects through its PDF scanner.
 
 ## Environment validation record
 
@@ -105,8 +109,14 @@ production smoke tests passed. The private original-file volume was available, a
 original metadata, duplicate detection remained content-based when the filename changed, and normal extraction and
 evaluation continued to work.
 
+**Accepted in staging 8 October 2026 for main revision `cdb09ea`:** PostgreSQL and `cv-originals` backups were created
+and checksummed before deployment. ClamAV became healthy with the reviewed timeout configuration. A clean PDF imported,
+the EICAR PDF attachment fixture was rejected with the generic security-validation response, and no infected document
+was accepted. Stopping ClamAV caused a new non-duplicate PDF upload to fail closed; after restart and health recovery,
+normal import resumed. Recent backend and ClamAV logs were inspected without publishing candidate content or secrets.
+
 These records validate the implemented storage slice. They do not approve the outstanding notice/consent, automatic
-expiry/deletion, legal-hold, malware-quarantine, off-server backup/restore, or future object-storage controls below.
+expiry/deletion, legal-hold, off-server backup/restore, or future object-storage controls below.
 
 ## Backup and recovery
 
@@ -117,10 +127,8 @@ produces unreferenced personal data. Recovery procedures must therefore treat bo
 
 ## Remaining governance work
 
-- Approve the proposed decisions in the [candidate data governance decision record](./21-candidate-data-governance.md).
-- Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
-- Add malware scanning and quarantine before a stored PDF is available to later processing.
 - Add tenant-authorized read/delete operations and auditable correction/reprocessing.
 - Implement scheduled expiry that deletes the binary and updates or deletes its database record safely.
+- Implement legal-hold enforcement around deletion and expiry.
 - Add encrypted off-server backup and an isolated restore test for database plus original files.
 - Replace the local provider with private object storage before horizontal or multi-host backend scaling.

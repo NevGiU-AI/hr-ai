@@ -75,8 +75,9 @@ backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> sp
 - [x] Build candidate/job selection and current evaluation-result UI.
 - [x] Store new original CV binaries behind a tenant-scoped storage abstraction with retention metadata.
 - [x] Validate the initial original-CV storage slice in staging and production.
-- [ ] Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
-- [ ] Add malware quarantine, scheduled retention/deletion, legal hold, and encrypted original-file backup/restore.
+- [x] Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
+- [x] Add fail-closed malware quarantine and validate clean, infected, unavailable, and recovery paths in staging.
+- [ ] Add scheduled retention/deletion, legal-hold enforcement, and encrypted original-file backup/restore.
 - [ ] Add tenant-authorized original-file read/delete operations and auditable correction/reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.

@@ -120,6 +120,21 @@ class CvArchiveTransactionIntegrationTest {
                 }
 
                 @Override
+                public byte[] read(String storageKey) {
+                    throw new UnsupportedOperationException("Not used by this transaction-boundary test");
+                }
+
+                @Override
+                public com.nevgiu.hrai.candidate.storage.StagedCvDeletion stageDeletion(String storageKey) {
+                    throw new UnsupportedOperationException("Not used by this transaction-boundary test");
+                }
+
+                @Override
+                public void restoreDeletion(com.nevgiu.hrai.candidate.storage.StagedCvDeletion deletion) {
+                    throw new UnsupportedOperationException("Not used by this transaction-boundary test");
+                }
+
+                @Override
                 public void delete(String storageKey) {
                     // No filesystem is needed for this transaction-boundary test.
                 }

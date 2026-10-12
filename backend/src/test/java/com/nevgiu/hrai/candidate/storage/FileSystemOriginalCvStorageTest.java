@@ -43,6 +43,31 @@ class FileSystemOriginalCvStorageTest {
     }
 
     @Test
+    void readsAStoredOriginal() {
+        FileSystemOriginalCvStorage storage = storage();
+        byte[] content = "%PDF-1.4\nprivate".getBytes();
+        StoredCv stored = storage.promote(storage.quarantine("tenant-a", content).storageKey());
+
+        assertThat(storage.read(stored.storageKey())).isEqualTo(content);
+    }
+
+    @Test
+    void stagesDeletionAndCanRestoreTheOriginal() {
+        FileSystemOriginalCvStorage storage = storage();
+        byte[] content = "%PDF-1.4\nprivate".getBytes();
+        StoredCv stored = storage.promote(storage.quarantine("tenant-a", content).storageKey());
+
+        StagedCvDeletion deletion = storage.stageDeletion(stored.storageKey());
+        assertThat(storageRoot.resolve(stored.storageKey())).doesNotExist();
+        assertThat(storageRoot.resolve(deletion.deletionKey())).exists();
+
+        storage.restoreDeletion(deletion);
+
+        assertThat(storage.read(stored.storageKey())).isEqualTo(content);
+        assertThat(storageRoot.resolve(deletion.deletionKey())).doesNotExist();
+    }
+
+    @Test
     void rejectsKeysThatEscapeTheStorageRoot() {
         assertThatThrownBy(() -> storage().delete("../outside.pdf"))
                 .isInstanceOf(IllegalArgumentException.class);

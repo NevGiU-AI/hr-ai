@@ -18,6 +18,7 @@ import java.util.UUID;
 public class FileSystemOriginalCvStorage implements OriginalCvStorage {
 
     private static final String QUARANTINE_DIRECTORY = "_quarantine";
+    private static final String DELETION_DIRECTORY = "_deletion";
     private final Path root;
 
     public FileSystemOriginalCvStorage(CvStorageProperties properties) {
@@ -68,6 +69,40 @@ public class FileSystemOriginalCvStorage implements OriginalCvStorage {
     }
 
     @Override
+    public byte[] read(String storageKey) {
+        try {
+            return Files.readAllBytes(resolveStoredKey(storageKey));
+        } catch (IOException e) {
+            throw new OriginalCvStorageException("Unable to read the original CV", e);
+        }
+    }
+
+    @Override
+    public StagedCvDeletion stageDeletion(String storageKey) {
+        Path source = resolveStoredKey(storageKey);
+        String deletionKey = DELETION_DIRECTORY + "/" + UUID.randomUUID() + ".pdf";
+        Path target = resolve(deletionKey);
+        try {
+            Files.createDirectories(target.getParent());
+            move(source, target);
+            return new StagedCvDeletion(storageKey, deletionKey);
+        } catch (IOException e) {
+            throw new OriginalCvStorageException("Unable to stage the original CV for deletion", e);
+        }
+    }
+
+    @Override
+    public void restoreDeletion(StagedCvDeletion deletion) {
+        try {
+            Path target = resolveStoredKey(deletion.originalKey());
+            Files.createDirectories(target.getParent());
+            move(resolveDeletionKey(deletion.deletionKey()), target);
+        } catch (IOException e) {
+            throw new OriginalCvStorageException("Unable to restore the staged original CV", e);
+        }
+    }
+
+    @Override
     public void delete(String storageKey) {
         try {
             Files.deleteIfExists(resolve(storageKey));
@@ -76,8 +111,34 @@ public class FileSystemOriginalCvStorage implements OriginalCvStorage {
         }
     }
 
+    private Path resolveStoredKey(String storageKey) {
+        // Callers that read or stage deletion must never escape into the untrusted or pending-deletion namespaces.
+        if (storageKey == null || storageKey.isBlank()
+                || storageKey.startsWith(QUARANTINE_DIRECTORY + "/")
+                || storageKey.startsWith(DELETION_DIRECTORY + "/")) {
+            throw new IllegalArgumentException("Storage key is not a stored original");
+        }
+        return resolve(storageKey);
+    }
+
+    private Path resolveDeletionKey(String storageKey) {
+        if (storageKey == null || !storageKey.startsWith(DELETION_DIRECTORY + "/")) {
+            throw new IllegalArgumentException("Storage key is not staged for deletion");
+        }
+        return resolve(storageKey);
+    }
+
+    private void move(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException atomicMoveFailure) {
+            Files.move(source, target);
+        }
+    }
+
     private Path resolve(String storageKey) {
         Path resolved = root.resolve(storageKey).normalize();
+        // Storage keys are persisted data, but still treated as untrusted input at the filesystem boundary.
         if (!resolved.startsWith(root)) {
             throw new IllegalArgumentException("Storage key escapes the configured CV storage root");
         }

@@ -51,6 +51,14 @@ class CvDocumentRepositoryTest {
         assertThat(documents.findByOrganizationIdAndSha256("tenant-b", otherTenant.getSha256())).isPresent();
     }
 
+    @Test
+    void loadsDocumentByIdOnlyInsideItsOrganization() {
+        CvDocument document = documents.saveAndFlush(document("d".repeat(64)));
+
+        assertThat(documents.findByIdAndOrganizationId(document.getId(), "tenant-a")).contains(document);
+        assertThat(documents.findByIdAndOrganizationId(document.getId(), "tenant-b")).isEmpty();
+    }
+
     private CvDocument document(String hash) {
         CvDocument document = new CvDocument();
         document.setOrganizationId("tenant-a");

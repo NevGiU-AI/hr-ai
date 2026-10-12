@@ -5,7 +5,7 @@
 Preserve each newly imported PDF so OCR, correction, reprocessing, and evidence-backed chat can work from the original
 source instead of only extracted text. Original CVs contain personal data and are never exposed as static web content.
 
-## Implemented first slice
+## Implemented storage foundation
 
 - `OriginalCvStorage` separates ingestion from the storage provider.
 - The initial provider writes to a private filesystem root mounted as the Docker volume `cv-originals`.
@@ -15,7 +15,29 @@ source instead of only extracted text. Original CVs contain personal data and ar
 - Duplicate content is detected before storage, so a repeated upload does not create another binary.
 - `cv_documents` records the opaque storage key, storage timestamp, and retention deadline.
 - Existing documents remain valid with null storage metadata because their original bytes were not previously retained.
-- No public download endpoint exists. Application authorization must guard any future read, correction, or deletion API.
+- Original files are not static web content. Authenticated access goes through tenant-scoped application APIs.
+
+## Authorized original-file operations
+
+The application exposes two session-authenticated endpoints:
+
+- `GET /api/cv-documents/{documentId}/original`: `ADMIN` and `RECRUITER` may download an original belonging to their
+  organization. The response is an attachment with `Cache-Control: no-store`.
+- `DELETE /api/cv-documents/{documentId}/original`: only `ADMIN` may delete the stored original within their
+  organization. This clears the document's storage metadata but intentionally does not erase the candidate, extracted
+  text, evaluations, or document record; full candidate erasure remains a separate governed workflow.
+
+The organization always comes from the authenticated server session. Repository lookup combines the document ID and
+organization ID, and a missing, unstored, or cross-organization ID returns the same `404` response. The API never
+accepts an organization ID from the browser.
+
+Deletion uses a recoverable two-step operation because PostgreSQL and the filesystem cannot share one atomic
+transaction. The file first moves to a private `_deletion` namespace. A database commit purges it; a database rollback
+restores it to its original opaque key. A purge failure leaves an unreferenced staged file for safe operational
+reconciliation instead of making committed database metadata point to missing bytes.
+
+Successful downloads, successful deletions, denied lookups, and storage failures create security-audit events using
+the safe document ID. Audit details and general logs exclude filenames, storage keys, hashes, and CV content.
 
 ## Malware quarantine gate
 
@@ -134,7 +156,8 @@ produces unreferenced personal data. Recovery procedures must therefore treat bo
 
 ## Remaining governance work
 
-- Add tenant-authorized read/delete operations and auditable correction/reprocessing.
+- Add the candidate-details/ingestion-history UI that invokes the authorized original-file APIs.
+- Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
 - Implement scheduled expiry that deletes the binary and updates or deletes its database record safely.
 - Implement legal-hold enforcement around deletion and expiry.
 - Add encrypted off-server backup and an isolated restore test for database plus original files.

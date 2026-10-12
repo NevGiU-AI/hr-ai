@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.web;
 
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionException;
+import com.nevgiu.hrai.candidate.CvOriginalAccessException;
 import com.nevgiu.hrai.evaluation.EvaluationException;
 import com.nevgiu.hrai.security.AccountAdministrationException;
 import com.nevgiu.hrai.security.PasswordManagementException;
@@ -44,6 +45,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EvaluationException.class)
     public ResponseEntity<ApiError> handleEvaluation(EvaluationException exception, HttpServletRequest request) {
         return response(exception.getStatus(), exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(CvOriginalAccessException.class)
+    public ResponseEntity<ApiError> handleOriginalAccess(CvOriginalAccessException exception,
+                                                          HttpServletRequest request) {
+        return response(exception.status(), exception.getMessage(), request, Map.of());
     }
 
     @ExceptionHandler(PasswordManagementException.class)

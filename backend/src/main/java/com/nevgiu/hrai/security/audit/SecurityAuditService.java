@@ -75,6 +75,15 @@ public class SecurityAuditService {
                 safe("status=" + status + ";path=" + path)));
     }
 
+    public void cvOriginalAction(SecurityEventType type, SecurityEventOutcome outcome,
+                                 AppUserPrincipal actor, Long documentId, String details) {
+        if (actor == null) return;
+        // Record only a database identifier and bounded reason; filenames, hashes, keys, and CV content are excluded.
+        String safeDetails = "documentId=" + documentId + (details == null ? "" : ";" + details);
+        save(new SecurityAuditEvent(actor.organizationId(), actor.id(), actor.username(), null, null, null, null,
+                type, outcome, safe(safeDetails)));
+    }
+
     public SecurityAuditPageResponse findAll(String organizationId, int page, int size) {
         var result = events.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId,
                 PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size))));

@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/candidates/import/initial").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/cv-documents/*/original").hasAnyRole("ADMIN", "RECRUITER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/cv-documents/*/original").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/candidates/**", "/api/jobs/**").hasAnyRole("ADMIN", "RECRUITER")
                         .requestMatchers(HttpMethod.POST, "/api/evaluations/**").hasAnyRole("ADMIN", "RECRUITER", "REVIEWER")
                         .requestMatchers("/api/**").authenticated()

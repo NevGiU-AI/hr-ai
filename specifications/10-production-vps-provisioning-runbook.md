@@ -563,17 +563,21 @@ private production `.env`:
 
 ```dotenv
 CV_STORAGE_RETENTION=365d
+CV_MALWARE_CONNECT_TIMEOUT=2s
+CV_MALWARE_READ_TIMEOUT=30s
 ```
 
-Create, checksum, inspect, and restore-test a fresh production PostgreSQL backup. The dump protects storage metadata but
+Create and checksum matched production PostgreSQL and `cv-originals` backups. The dump protects storage metadata but
 does not contain PDF binaries. After the protected production deployment completes, confirm healthy services, Flyway
-schema version `2`, successful Hibernate validation, and the private volume:
+schema version `2`, successful Hibernate validation, the private volume, and ClamAV:
 
 ```bash
 cd /opt/nevgiu/deploy
 docker compose --env-file .env --env-file .images.env ps
 docker volume inspect nevgiu-hr-ai_cv-originals
-docker compose --env-file .env --env-file .images.env logs --tail=100 backend
+docker compose --env-file .env --env-file .images.env ps clamav
+docker compose --env-file .env --env-file .images.env exec -T clamav clamdscan --ping 3
+docker compose --env-file .env --env-file .images.env logs --tail=100 backend clamav
 ```
 
 Use a disposable, non-sensitive PDF. Confirm its latest `cv_documents` row reports a stored original and retention
@@ -595,6 +599,11 @@ Record candidate, document, and stored-original counts, rename the same local PD
 reports `DUPLICATE` while all counts remain unchanged. Confirm normal extraction and evaluation. Do not test using a
 real applicant CV, and do not publish filenames, extracted text, storage keys, or raw application logs.
 
+Use the harmless EICAR PDF attachment fixture and procedure in
+[`deploy/README.md`](../deploy/README.md#validate-malware-rejection-in-staging) to confirm production rejects infected
+content with the generic security-validation response and persists no candidate or document. Do not stop ClamAV in
+production merely to repeat the unavailable-scanner test; validate that disruptive fail-closed path in staging.
+
 Record the release tag, immutable revision, migration result, volume result, and smoke-test outcome here only after
 production acceptance. From the first production upload onward, PostgreSQL backup alone is incomplete: establish an
 encrypted, access-restricted `cv-originals` backup and paired restore procedure before relying on the originals for OCR,
@@ -605,6 +614,12 @@ passed; the private volume and original-file metadata were available; uploading 
 filename was still detected as `DUPLICATE`; and normal extraction and evaluation worked. This acceptance covers the
 initial storage slice only. The paired encrypted backup/restore procedure and the other governance controls in
 `specifications/20-original-cv-storage.md` remain open.
+
+**Malware-quarantine acceptance recorded 12 October 2026:** matched PostgreSQL and `cv-originals` backups were created
+and checksummed before deployment. ClamAV and the application became healthy, clean ingestion worked, the harmless
+EICAR PDF attachment fixture was rejected, and the existing authentication and tenant-scoped business workflows passed
+smoke testing. The scanner-unavailable path was not repeated in production because staging already proved fail-closed
+behavior and recovery.
 
 ### 15. Configure bounded Docker log rotation
 

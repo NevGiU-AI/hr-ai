@@ -480,14 +480,16 @@ Do not automatically restore a database backup for ordinary application failure.
 ## Data protection and production blockers
 
 Authentication, role-based authorization, restricted CORS, administrator-only built-in import, and organization tenant
-isolation are implemented and were validated in production on 16 August 2026. Before real candidate information is
-processed beyond the approved validation dataset, resolve the remaining controls:
+isolation are implemented and were validated in production on 16 August 2026. The candidate-data governance baseline
+was approved on 6 October 2026, and fail-closed malware quarantine passed staging and production acceptance in October
+2026. Before real candidate information is processed beyond the approved validation dataset, resolve the remaining
+controls:
 
-- Candidate lawful processing basis, notice/consent, retention, deletion, correction, and audit policies.
-- Malware scanning for uploads.
+- Each customer organization's lawful basis and candidate notice, plus enforcement of approved retention, deletion,
+  correction, legal-hold, and audit rules.
 - Original CV retention location is resolved for the current single-host deployment: new PDFs use the private
-  `cv-originals` volume with opaque tenant-scoped keys and retention metadata. Automated expiry/deletion, malware
-  quarantine, encrypted off-server backup, and migration to private object storage before multi-host scaling remain
+  `cv-originals` volume with opaque tenant-scoped keys, retention metadata, and malware quarantine. Automated
+  expiry/deletion, encrypted off-server backup, and migration to private object storage before multi-host scaling remain
   production-governance requirements.
 - OpenAI data-processing terms and disclosure that CV text is sent to the provider only during explicit evaluation.
 - Prompt-injection defenses for untrusted CV content.

@@ -115,8 +115,15 @@ the EICAR PDF attachment fixture was rejected with the generic security-validati
 was accepted. Stopping ClamAV caused a new non-duplicate PDF upload to fail closed; after restart and health recovery,
 normal import resumed. Recent backend and ClamAV logs were inspected without publishing candidate content or secrets.
 
-These records validate the implemented storage slice. They do not approve the outstanding notice/consent, automatic
-expiry/deletion, legal-hold, off-server backup/restore, or future object-storage controls below.
+**Accepted in production 12 October 2026 for the malware-quarantine release:** matched PostgreSQL and `cv-originals`
+backups were created and their checksums verified before deployment. ClamAV and the application became healthy, normal
+PDF ingestion continued to work, and the harmless EICAR PDF attachment fixture was rejected with the generic
+security-validation response. Existing authentication, tenant-scoped jobs, candidates, and evaluations passed smoke
+testing. The scanner-unavailable test was not repeated by deliberately stopping the production scanner because that
+fail-closed and recovery path had already passed in staging.
+
+These records validate the implemented storage and malware-quarantine slice. They do not complete automatic
+expiry/deletion, legal-hold enforcement, off-server backup/restore, or future object-storage controls below.
 
 ## Backup and recovery
 

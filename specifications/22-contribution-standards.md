@@ -34,8 +34,8 @@ Rules:
 - Create a fresh branch from the latest remote `main` unless explicitly continuing an existing PR.
 - Keep one cohesive concern per branch and remove merged branches when they are no longer needed.
 
-The current malware-quarantine PR retains its existing branch name to avoid replacing an active reviewed PR. All new
-branches created after this decision must follow the project convention above.
+Historical branches created before this decision may retain their original names. All new branches must follow the
+project convention above.
 
 ## Commit messages
 

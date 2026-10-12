@@ -761,6 +761,15 @@ the same bytes under a different filename returned `DUPLICATE` without changing 
 counts. Text extraction and explicit candidate evaluation remained operational. PostgreSQL backup validation does not
 cover the PDF volume; the original-file backup procedure remains separate.
 
+### Validated malware-quarantine rollout
+
+**Accepted 8 October 2026 for main revision `cdb09ea`:** staging configured the reviewed ClamAV connection and read
+timeouts, created checksummed PostgreSQL and `cv-originals` backups, and deployed the private ClamAV service. A normal
+PDF imported successfully, while the harmless EICAR PDF attachment fixture documented in
+[`deploy/README.md`](../deploy/README.md#validate-malware-rejection-in-staging) was rejected with `422` and the generic
+security-validation message. No infected document was accepted. Stopping ClamAV caused a new non-duplicate PDF to fail
+closed with the scanner-unavailable response; after restart and health recovery, normal import resumed.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

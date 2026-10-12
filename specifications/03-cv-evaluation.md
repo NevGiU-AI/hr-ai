@@ -183,12 +183,12 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 
 ### Remaining backend work
 
-- Complete scheduled retention/deletion, legal-hold, malware-quarantine, and original-file backup controls.
+- Complete scheduled retention/deletion, legal-hold enforcement, and original-file backup controls.
 - Add OCR and reprocessing for scanned PDFs.
 - Add richer candidate/document detail and ingestion-history APIs.
 - Detect templates and non-CV PDFs more accurately.
 - Make large imports asynchronous and expose job progress.
-- Scan uploads for malware before later processing or retrieval.
+- Rescan legacy originals that predate malware quarantine before later processing or retrieval.
 
 ## Implemented ingestion API
 
@@ -378,7 +378,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Build Angular PDF/ZIP upload, bulk-result, and explicit evaluation views.
 - [ ] Add correction and reprocessing workflows.
 - [x] Store new original documents privately through a provider abstraction and record retention deadlines.
-- [ ] Implement approved expiry/deletion, legal-hold, malware-scanning, and backup controls.
+- [x] Quarantine new uploads and require a clean ClamAV verdict before storage promotion or parsing.
+- [ ] Implement approved expiry/deletion, legal-hold enforcement, and backup controls.
 
 **Exit condition:** recruiters can upload, review, correct, and manage CV ingestion outcomes without direct database access.
 
@@ -398,10 +399,11 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 
 ### Phase 5 - Security and operations
 
-- [ ] Require authentication and role-based authorization.
-- [ ] Restrict CORS and administrative initial-data loading.
-- [ ] Add malware scanning before parsing user uploads.
-- [ ] Apply candidate consent, retention, deletion, and audit policies.
+- [x] Require authentication and role-based authorization.
+- [x] Restrict CORS and administrative initial-data loading.
+- [x] Add fail-closed malware scanning before parsing user uploads.
+- [x] Approve the candidate notice, retention, deletion, legal-hold, residency, access, and audit baseline.
+- [ ] Enforce scheduled expiry/deletion, legal hold, and broader business-action auditing.
 - [ ] Prevent CV content from overriding evaluation system instructions.
 - [ ] Add structured ingestion and evaluation metrics without logging CV content.
 - [ ] Monitor parsing failures, duplicates, OCR needs, latency, model usage, cost, and evaluation drift.

@@ -34,7 +34,7 @@
   authorization, tenant isolation, lockout, audit logs, passwords, concurrent requests, and session policy.
 - [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
   stable company identities before onboarding independent organizations.
-- [ ] Define candidate consent, retention, deletion, and data-residency policies.
+- [x] Define candidate notice, retention, deletion, legal-hold, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.
 - [x] Implement CI, immutable container publication, automatic staging deployment, and staging validation aliases.
@@ -48,9 +48,9 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** complete original-CV policy, quarantine, authorized operations, lifecycle, and paired
-backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback -> final dashboard
--> cross-cutting release validation -> private object storage -> horizontal or multi-host backend scaling.
+**Immediate delivery sequence:** complete original-CV authorized operations, lifecycle, and paired backup/restore
+controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback -> final dashboard -> cross-cutting
+release validation -> private object storage -> horizontal or multi-host backend scaling.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -76,7 +76,8 @@ backup/restore controls -> correction/reprocessing -> OCR -> typed CV chat -> sp
 - [x] Store new original CV binaries behind a tenant-scoped storage abstraction with retention metadata.
 - [x] Validate the initial original-CV storage slice in staging and production.
 - [x] Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
-- [x] Add fail-closed malware quarantine and validate clean, infected, unavailable, and recovery paths in staging.
+- [x] Add fail-closed malware quarantine; validate clean, infected, unavailable, and recovery paths in staging, then
+  deploy and smoke-test clean and infected paths in production.
 - [ ] Add scheduled retention/deletion, legal-hold enforcement, and encrypted original-file backup/restore.
 - [ ] Add tenant-authorized original-file read/delete operations and auditable correction/reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.

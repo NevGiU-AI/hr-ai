@@ -144,10 +144,10 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Complete authorization, tenant-isolation, throttling-expiry, audit-log, password-operation, concurrent-request, and
-  session-policy tests in the [final security validation suite](./19-final-security-validation.md) before closing the
-  authentication foundation.
-- Add malware scanning, retention/deletion enforcement, and broader business-action audit logging.
+- Define organization lifecycle management before onboarding independent customer organizations.
+- Enforce candidate retention/deletion and legal-hold operations with broader business-action audit logging.
+- Continue applying the completed [final security validation suite](./19-final-security-validation.md) to security-relevant
+  releases.
 
 ## Password management
 

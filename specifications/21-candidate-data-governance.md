@@ -86,8 +86,8 @@ details.
 - [x] Operations owner approves EU/EEA residency and the paired backup/restore rules.
 - [x] Engineering accepts the approved decisions as requirements for tests and implementation tasks.
 
-## Current pull request
+## Current implementation status
 
-The malware-quarantine implementation matches the approved section 2 behavior for new uploads. Access, correction,
-deletion, legal hold, scheduled expiry, legacy rescanning, and paired backup/restore remain separate implementation
-slices and are not marked complete by this policy approval.
+The malware-quarantine implementation matches the approved section 2 behavior for new uploads and passed staging and
+production acceptance in October 2026. Access, correction, deletion, legal hold, scheduled expiry, legacy rescanning,
+and automated encrypted paired backup/restore remain separate implementation slices.

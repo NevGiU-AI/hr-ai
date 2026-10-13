@@ -154,6 +154,35 @@ restricted access, integrity checks, and the same retention/deletion policy. A d
 volume snapshot produces metadata that points to unavailable originals; a volume restore without the matching database
 produces unreferenced personal data. Recovery procedures must therefore treat both artifacts as one restore set.
 
+For a temporary manual volume backup, the helper container must set restrictive permissions and return ownership to the
+calling deployment account before it exits. Running plain `tar` as container root leaves a root-owned, commonly
+world-readable file on the bind-mounted host directory. Use the following pattern instead:
+
+```bash
+archive_name="$(basename "$cv_backup")"
+
+docker run --rm \
+  --volume "nevgiu-hr-ai_cv-originals:/source:ro" \
+  --volume "$backup_dir:/backup" \
+  --env "ARCHIVE_NAME=$archive_name" \
+  --env "OUTPUT_UID=$(id -u)" \
+  --env "OUTPUT_GID=$(id -g)" \
+  alpine:3.20 \
+  sh -c 'set -eu
+         umask 077
+         tar -C /source -czf "/backup/$ARCHIVE_NAME" .
+         chown "$OUTPUT_UID:$OUTPUT_GID" "/backup/$ARCHIVE_NAME"
+         chmod 600 "/backup/$ARCHIVE_NAME"'
+```
+
+Always verify the result before checksumming or transferring it:
+
+```bash
+test -s "$cv_backup"
+test "$(stat -c '%U:%G %a' "$cv_backup")" = "$(id -un):$(id -gn) 600"
+tar -tzf "$cv_backup" > /dev/null
+```
+
 ## Remaining governance work
 
 - Add the candidate-details/ingestion-history UI that invokes the authorized original-file APIs.

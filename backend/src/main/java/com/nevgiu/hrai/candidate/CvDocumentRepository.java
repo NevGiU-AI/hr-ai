@@ -10,4 +10,7 @@ public interface CvDocumentRepository extends JpaRepository<CvDocument, Long> {
     @EntityGraph(attributePaths = "candidate")
     @Transactional(readOnly = true)
     Optional<CvDocument> findByOrganizationIdAndSha256(String organizationId, String sha256);
+
+    @Transactional(readOnly = true)
+    Optional<CvDocument> findByIdAndOrganizationId(Long id, String organizationId);
 }

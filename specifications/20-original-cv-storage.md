@@ -5,7 +5,7 @@
 Preserve each newly imported PDF so OCR, correction, reprocessing, and evidence-backed chat can work from the original
 source instead of only extracted text. Original CVs contain personal data and are never exposed as static web content.
 
-## Implemented first slice
+## Implemented storage foundation
 
 - `OriginalCvStorage` separates ingestion from the storage provider.
 - The initial provider writes to a private filesystem root mounted as the Docker volume `cv-originals`.
@@ -15,7 +15,29 @@ source instead of only extracted text. Original CVs contain personal data and ar
 - Duplicate content is detected before storage, so a repeated upload does not create another binary.
 - `cv_documents` records the opaque storage key, storage timestamp, and retention deadline.
 - Existing documents remain valid with null storage metadata because their original bytes were not previously retained.
-- No public download endpoint exists. Application authorization must guard any future read, correction, or deletion API.
+- Original files are not static web content. Authenticated access goes through tenant-scoped application APIs.
+
+## Authorized original-file operations
+
+The application exposes two session-authenticated endpoints:
+
+- `GET /api/cv-documents/{documentId}/original`: `ADMIN` and `RECRUITER` may download an original belonging to their
+  organization. The response is an attachment with `Cache-Control: no-store`.
+- `DELETE /api/cv-documents/{documentId}/original`: only `ADMIN` may delete the stored original within their
+  organization. This clears the document's storage metadata but intentionally does not erase the candidate, extracted
+  text, evaluations, or document record; full candidate erasure remains a separate governed workflow.
+
+The organization always comes from the authenticated server session. Repository lookup combines the document ID and
+organization ID, and a missing, unstored, or cross-organization ID returns the same `404` response. The API never
+accepts an organization ID from the browser.
+
+Deletion uses a recoverable two-step operation because PostgreSQL and the filesystem cannot share one atomic
+transaction. The file first moves to a private `_deletion` namespace. A database commit purges it; a database rollback
+restores it to its original opaque key. A purge failure leaves an unreferenced staged file for safe operational
+reconciliation instead of making committed database metadata point to missing bytes.
+
+Successful downloads, successful deletions, denied lookups, and storage failures create security-audit events using
+the safe document ID. Audit details and general logs exclude filenames, storage keys, hashes, and CV content.
 
 ## Malware quarantine gate
 
@@ -132,9 +154,39 @@ restricted access, integrity checks, and the same retention/deletion policy. A d
 volume snapshot produces metadata that points to unavailable originals; a volume restore without the matching database
 produces unreferenced personal data. Recovery procedures must therefore treat both artifacts as one restore set.
 
+For a temporary manual volume backup, the helper container must set restrictive permissions and return ownership to the
+calling deployment account before it exits. Running plain `tar` as container root leaves a root-owned, commonly
+world-readable file on the bind-mounted host directory. Use the following pattern instead:
+
+```bash
+archive_name="$(basename "$cv_backup")"
+
+docker run --rm \
+  --volume "nevgiu-hr-ai_cv-originals:/source:ro" \
+  --volume "$backup_dir:/backup" \
+  --env "ARCHIVE_NAME=$archive_name" \
+  --env "OUTPUT_UID=$(id -u)" \
+  --env "OUTPUT_GID=$(id -g)" \
+  alpine:3.20 \
+  sh -c 'set -eu
+         umask 077
+         tar -C /source -czf "/backup/$ARCHIVE_NAME" .
+         chown "$OUTPUT_UID:$OUTPUT_GID" "/backup/$ARCHIVE_NAME"
+         chmod 600 "/backup/$ARCHIVE_NAME"'
+```
+
+Always verify the result before checksumming or transferring it:
+
+```bash
+test -s "$cv_backup"
+test "$(stat -c '%U:%G %a' "$cv_backup")" = "$(id -un):$(id -gn) 600"
+tar -tzf "$cv_backup" > /dev/null
+```
+
 ## Remaining governance work
 
-- Add tenant-authorized read/delete operations and auditable correction/reprocessing.
+- Add the candidate-details/ingestion-history UI that invokes the authorized original-file APIs.
+- Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
 - Implement scheduled expiry that deletes the binary and updates or deletes its database record safely.
 - Implement legal-hold enforcement around deletion and expiry.
 - Add encrypted off-server backup and an isolated restore test for database plus original files.

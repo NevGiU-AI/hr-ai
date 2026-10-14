@@ -94,11 +94,13 @@ production acceptance in October 2026. The backend now provides tenant-scoped or
 That deletion removes only the stored binary and storage metadata; it is not the full candidate-erasure workflow from
 section 6. These authorized operations passed direct API acceptance in staging and production on 14 October 2026,
 including role enforcement, not-found behavior, original-only deletion, security-event inspection, and matched
-pre-deployment backup validation. The candidate-details UI, correction/reprocessing, full erasure, legal hold,
-scheduled expiry, legacy rescanning, and automated encrypted paired backup/restore remain separate implementation
-slices.
+pre-deployment backup validation. The candidate-details UI, correction/reprocessing, full erasure, legacy rescanning,
+and automated encrypted paired backup/restore remain separate implementation slices. Production acceptance of the
+implemented legal-hold and scheduled-expiry behavior is still outstanding.
 
 The current retention implementation deliberately expires only the submitted original and its storage metadata. It
 does not yet claim to satisfy the broader candidate-erasure policy in section 6, which also requires confirmed removal
 of extracted text, document/candidate records, evaluations, and future derived AI data. Legal holds block both manual
 original deletion and scheduled original expiry; release after an elapsed deadline triggers immediate re-evaluation.
+This behavior passed controlled staging acceptance on 14 October 2026, including the held/unheld expiry boundary,
+immediate expiry after release, preservation of candidate/evaluation data, auditing, and failure-free log inspection.

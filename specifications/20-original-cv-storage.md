@@ -118,6 +118,176 @@ rejected with `422`, candidate/document counts do not change, no file remains be
 an ordinary disposable PDF still imports. A plain EICAR file is not a PDF, while merely prefixing it with `%PDF-` is not
 a reliable embedded-PDF detection test; use the attachment fixture that ClamAV detects through its PDF scanner.
 
+### Authorized-operation `curl` acceptance
+
+Use only a disposable CV and run these commands from the staging deployment host. `jq` is required. Never place a
+password directly in a command or retain a downloaded CV as shared validation evidence.
+
+Select the latest stored disposable document without printing candidate data or the storage key:
+
+```bash
+cd /opt/nevgiu/deploy
+api_url="https://staging-api.hr.nevgiuai.com/api"
+
+document_id="$(
+  docker compose --env-file .env --env-file .images.env \
+    exec -T db sh -c \
+    'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+      "SELECT id FROM cv_documents
+       WHERE storage_key IS NOT NULL
+       ORDER BY id DESC
+       LIMIT 1"' |
+  tr -d '[:space:]'
+)"
+
+case "$document_id" in
+  ''|*[!0-9]*) echo "A numeric disposable document ID is required" >&2; exit 1 ;;
+esac
+```
+
+Create a separate cookie jar for the role under test and capture credentials interactively. The values are entered only
+after each prompt; `account_email` and `account_password` are variable names and must not be replaced in the `read`
+commands:
+
+```bash
+cookie_jar="$(mktemp)"
+read -r -p "Account email: " account_email
+read -r -s -p "Account password: " account_password
+echo
+
+csrf_token="$(
+  curl --fail-with-body --silent --show-error \
+    --cookie-jar "$cookie_jar" \
+    --cookie "$cookie_jar" \
+    "$api_url/auth/csrf" |
+  jq -r '.token'
+)"
+
+login_body="$(
+  printf '%s\n%s\n' "$account_email" "$account_password" |
+  jq -Rn '[inputs] | {email: .[0], password: .[1]}'
+)"
+
+curl --fail-with-body --silent --show-error \
+  --cookie-jar "$cookie_jar" \
+  --cookie "$cookie_jar" \
+  --header 'Content-Type: application/json' \
+  --header "X-XSRF-TOKEN: $csrf_token" \
+  --data-binary @- \
+  "$api_url/auth/login" \
+  <<< "$login_body" |
+jq
+
+unset account_password login_body
+```
+
+For an `ADMIN` or `RECRUITER`, download the original and verify the status, cache policy, and file type without printing
+its content:
+
+```bash
+download_headers="$(mktemp)"
+download_file="$(mktemp --suffix=.pdf)"
+
+curl --silent --show-error \
+  --cookie "$cookie_jar" \
+  --dump-header "$download_headers" \
+  --output "$download_file" \
+  --write-out 'HTTP %{http_code}\n' \
+  "$api_url/cv-documents/$document_id/original"
+
+grep -Ei '^(content-type|content-disposition|cache-control):' "$download_headers"
+file "$download_file"
+```
+
+The expected status is `200`; the response is a PDF attachment with `Cache-Control: no-store`. Repeat the session setup
+with an independent `READ_ONLY` account and confirm the same request returns `403`. A missing identifier must return
+`404`:
+
+```bash
+curl --silent --show-error \
+  --cookie "$cookie_jar" \
+  --output /dev/null \
+  --write-out 'HTTP %{http_code}\n' \
+  "$api_url/cv-documents/999999999/original"
+```
+
+If a controlled second staging organization exists, use one of its disposable document IDs while authenticated to the
+first organization and confirm the same `404`. Do not create or alter real cross-organization candidate data solely for
+this test.
+
+Before each deletion attempt, refresh the CSRF token in that account's session:
+
+```bash
+csrf_token="$(
+  curl --fail-with-body --silent --show-error \
+    --cookie-jar "$cookie_jar" \
+    --cookie "$cookie_jar" \
+    "$api_url/auth/csrf" |
+  jq -r '.token'
+)"
+
+curl --silent --show-error \
+  --request DELETE \
+  --cookie "$cookie_jar" \
+  --header "X-XSRF-TOKEN: $csrf_token" \
+  --output /dev/null \
+  --write-out 'HTTP %{http_code}\n' \
+  "$api_url/cv-documents/$document_id/original"
+```
+
+The expected status is `403` for `RECRUITER` and `READ_ONLY`, and `204` for `ADMIN`. A practical order is recruiter,
+read-only, then administrator, using a new cookie jar and the login block for each account. Run the successful
+administrator deletion last. With the administrator cookie, confirm a subsequent download returns `404`:
+
+```bash
+curl --silent --show-error \
+  --cookie "$cookie_jar" \
+  --output /dev/null \
+  --write-out 'HTTP %{http_code}\n' \
+  "$api_url/cv-documents/$document_id/original"
+```
+
+After the successful deletion, verify only non-sensitive database state. The numeric check above prevents the shell from
+placing arbitrary text into this diagnostic SQL:
+
+```bash
+docker compose --env-file .env --env-file .images.env \
+  exec -T db sh -c \
+  "psql -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -c \"
+     SELECT id,
+            candidate_id,
+            storage_key IS NOT NULL AS original_stored,
+            stored_at,
+            retention_until
+     FROM cv_documents
+     WHERE id = $document_id
+   \""
+```
+
+The document and `candidate_id` remain, `original_stored` is false, and the storage timestamps are null. Check the
+administrator-only audit API without printing unrelated history:
+
+```bash
+curl --fail-with-body --silent --show-error \
+  --cookie "$cookie_jar" \
+  "$api_url/admin/security-events?page=0&size=100" |
+jq --arg document_id "$document_id" \
+  '.content[]
+   | select((.details // "") | contains("documentId=" + $document_id))
+   | {eventType, outcome, details, createdAt}'
+```
+
+Confirm access, deletion, and denied outcomes contain only the safe document ID. Finally, inspect operational errors and
+remove all local test artifacts:
+
+```bash
+docker compose --env-file .env --env-file .images.env \
+  logs --tail=150 backend
+
+rm -f "$cookie_jar" "$download_headers" "$download_file"
+unset account_email csrf_token document_id
+```
+
 ## Environment validation record
 
 **Accepted 6 October 2026 for main revision `86ec842`:** a pre-deployment PostgreSQL backup was created, Flyway applied
@@ -144,8 +314,24 @@ security-validation response. Existing authentication, tenant-scoped jobs, candi
 testing. The scanner-unavailable test was not repeated by deliberately stopping the production scanner because that
 fail-closed and recovery path had already passed in staging.
 
-These records validate the implemented storage and malware-quarantine slice. They do not complete automatic
-expiry/deletion, legal-hold enforcement, off-server backup/restore, or future object-storage controls below.
+**Accepted in staging 14 October 2026 for main revision `b3d2adf`:** the authorized original-file API was exercised
+directly with `curl` because its candidate-details UI is not implemented yet. Each role used its own authenticated
+session cookie obtained through `/api/auth/csrf` and `/api/auth/login`; mutating requests supplied the returned
+`X-XSRF-TOKEN`. `ADMIN` and `RECRUITER` received `200` when downloading an organization-owned disposable original,
+while `READ_ONLY` received `403`. `RECRUITER` received `403` when attempting deletion and `ADMIN` received `204`.
+Missing and cross-organization document identifiers returned the same generic `404` without exposing storage state.
+The successful download was an attachment with `Cache-Control: no-store` and a valid PDF body.
+
+After administrator deletion, a repeated download returned `404`. Database inspection confirmed that the document and
+candidate relationship remained, while `storage_key`, `stored_at`, and `retention_until` were cleared; candidate and
+evaluation data were therefore not erased by the original-only operation. The administrator security-event history
+contained access, deletion, and denied events with the safe document ID and without filenames, storage keys, hashes, or
+CV content. Recent backend logs contained no staged-file purge or rollback-restoration failure. Test credentials and
+downloaded disposable files were not retained as validation evidence.
+
+These records validate the implemented storage, malware-quarantine, and authorized original-file operation slices.
+They do not complete automatic expiry/deletion, legal-hold enforcement, off-server backup/restore, correction and
+reprocessing, or future object-storage controls below.
 
 ## Backup and recovery
 

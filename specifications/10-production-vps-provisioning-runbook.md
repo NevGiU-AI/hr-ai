@@ -556,7 +556,161 @@ revalidation, and `SESSION_LIMIT_ENFORCED` contained `expiredSessions=1;maximumS
 Redis-backed enforcement remained effective after a backend restart, and the existing administrator-revocation and
 account-disable flows continued to revoke all target sessions.
 
-### 14.3 Deploy and validate original-CV storage
+### 14.3 Create a manual matched pre-deployment backup
+
+Before a production deployment that can affect original-CV metadata or access, create PostgreSQL and `cv-originals`
+backups while the backend is stopped. Announce the short maintenance window first. Run as `deploy`; do not use `sudo`
+and do not place backups under the repository or deployment directory. Run every numbered step in the same SSH shell
+because later commands reuse the variables and recovery trap created in the first steps.
+
+#### 1. Prepare restricted backup paths
+
+```bash
+cd /opt/nevgiu/deploy
+set -euo pipefail
+umask 077
+
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+backup_dir="$HOME/production-backups"
+db_backup="$backup_dir/production-postgres-$timestamp.dump"
+cv_backup="$backup_dir/production-cv-originals-$timestamp.tar.gz"
+checksum_file="$backup_dir/production-matched-$timestamp.sha256"
+compose=(docker compose --env-file .env --env-file .images.env)
+
+mkdir -p "$backup_dir"
+```
+
+`umask 077` makes host-created files private by default. The Compose array ensures every command uses both the private
+runtime configuration and the deployed immutable image references.
+
+#### 2. Check capacity, services, and the source volume
+
+```bash
+df -h "$backup_dir"
+"${compose[@]}" ps
+docker volume inspect nevgiu-hr-ai_cv-originals > /dev/null
+echo "Backup prerequisites: OK"
+```
+
+Stop if disk capacity is insufficient, a required service is unhealthy, or the volume inspection fails.
+
+#### 3. Register automatic backend recovery
+
+```bash
+restart_backend() {
+  "${compose[@]}" start backend
+}
+trap restart_backend EXIT
+```
+
+If a later command fails under `set -e`, the exit trap attempts to restart the backend automatically.
+
+#### 4. Stop application writes
+
+```bash
+"${compose[@]}" stop backend
+"${compose[@]}" ps backend db
+```
+
+Confirm the backend is stopped and PostgreSQL remains running. Keep the backend stopped until both backup artifacts
+exist.
+
+#### 5. Create the PostgreSQL backup
+
+```bash
+"${compose[@]}" exec -T db sh -c \
+  'exec pg_dump \
+     --username "$POSTGRES_USER" \
+     --dbname "$POSTGRES_DB" \
+     --format=custom \
+     --compress=9 \
+     --no-owner \
+     --no-privileges' \
+  > "$db_backup"
+```
+
+The host shell creates this custom-format dump as `deploy` under the restrictive umask.
+
+#### 6. Create the ownership-safe original-file archive
+
+```bash
+archive_name="$(basename "$cv_backup")"
+docker run --rm \
+  --volume "nevgiu-hr-ai_cv-originals:/source:ro" \
+  --volume "$backup_dir:/backup" \
+  --env "ARCHIVE_NAME=$archive_name" \
+  --env "OUTPUT_UID=$(id -u)" \
+  --env "OUTPUT_GID=$(id -g)" \
+  alpine:3.20 \
+  sh -c 'set -eu
+         umask 077
+         tar -C /source -czf "/backup/$ARCHIVE_NAME" .
+         chown "$OUTPUT_UID:$OUTPUT_GID" "/backup/$ARCHIVE_NAME"
+         chmod 600 "/backup/$ARCHIVE_NAME"'
+```
+
+The helper runs as container root so it can read the volume, but it assigns the completed host file to the calling
+`deploy` UID/GID and mode `600` before exiting. Do not replace this with a plain root-owned `tar` command.
+
+#### 7. Restart the backend and wait for health
+
+```bash
+restart_backend
+trap - EXIT
+
+backend_container="$("${compose[@]}" ps -q backend)"
+backend_health=""
+for attempt in $(seq 1 24); do
+  backend_health="$(docker inspect --format '{{.State.Health.Status}}' "$backend_container" 2>/dev/null || true)"
+  [ "$backend_health" = "healthy" ] && break
+  sleep 5
+done
+test "$backend_health" = "healthy"
+echo "Backend health after backup: OK"
+```
+
+The loop waits for up to approximately two minutes. Clearing the trap occurs only after the explicit start succeeds.
+
+#### 8. Validate both archives and their permissions
+
+```bash
+test -s "$db_backup"
+test -s "$cv_backup"
+test "$(stat -c '%U:%G %a' "$db_backup")" = "$(id -un):$(id -gn) 600"
+test "$(stat -c '%U:%G %a' "$cv_backup")" = "$(id -un):$(id -gn) 600"
+
+"${compose[@]}" exec -T db pg_restore --list < "$db_backup" > /dev/null
+tar -tzf "$cv_backup" > /dev/null
+echo "Backup formats and permissions: OK"
+```
+
+`pg_restore --list` and `tar -tzf` validate archive structure without restoring data or printing CV paths.
+
+#### 9. Create and verify the matched checksum manifest
+
+```bash
+sha256sum "$db_backup" "$cv_backup" > "$checksum_file"
+chmod 600 "$checksum_file"
+test "$(stat -c '%U:%G %a' "$checksum_file")" = "$(id -un):$(id -gn) 600"
+sha256sum -c "$checksum_file"
+```
+
+Both entries must report `OK`. The dump, volume archive, and manifest form one recovery set.
+
+#### 10. Perform the final operational review
+
+```bash
+"${compose[@]}" ps backend
+"${compose[@]}" logs --tail=100 backend
+ls -lh "$db_backup" "$cv_backup" "$checksum_file"
+```
+
+Do not create or deploy the release until both checksum entries report `OK`, PostgreSQL and tar format validation return
+successfully, every artifact is `deploy:deploy 600`, and the backend has returned to healthy status. The three files
+form one recovery set. They contain personal data and are temporary local deployment safeguards, not the final encrypted
+off-server backup solution.
+
+### 14.4 Deploy and validate original-CV storage
 
 Promote only the immutable images accepted in staging. Before creating the release, add the reviewed value to the
 private production `.env`:

@@ -80,7 +80,9 @@ release validation -> private object storage -> horizontal or multi-host backend
   deploy and smoke-test clean and infected paths in production.
 - [x] Deploy and validate scheduled original-file expiry and administrator-managed legal-hold enforcement in staging
   and production through release `v0.13.0`.
-- [ ] Add full candidate erasure plus automated encrypted paired original-file/database backup and restore.
+- [x] Add administrator-confirmed, tenant-scoped full candidate erasure across originals, documents, extracted text,
+  candidate records, and evaluations, with legal-hold enforcement and auditing.
+- [ ] Add automated encrypted paired original-file/database backup and restore.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.
 - [ ] Add candidate-details access to original-file operations and auditable correction/reprocessing.

@@ -5,11 +5,13 @@ import { of, Subject, throwError } from 'rxjs';
 import { Candidate, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../../models/cv-ingestion.models';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 import { CvWorkspaceComponent } from './cv-workspace.component';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 describe('CvWorkspaceComponent', () => {
   let fixture: ComponentFixture<CvWorkspaceComponent>;
   let component: CvWorkspaceComponent;
   let service: jasmine.SpyObj<CvIngestionService>;
+  const auth = { user: { id: 1, email: 'admin@example.com', organizationId: 'tenant-a', roles: ['ADMIN'] } };
 
   const candidate: Candidate = {
     id: 7, name: 'Ada Lovelace', email: 'ada@example.com', currentTitle: null, cvText: 'Engineer',
@@ -18,14 +20,17 @@ describe('CvWorkspaceComponent', () => {
 
   beforeEach(async () => {
     service = jasmine.createSpyObj<CvIngestionService>('CvIngestionService', [
-      'uploadPdf', 'uploadArchive', 'importInitial', 'getCandidates', 'getJobs', 'evaluate',
+      'uploadPdf', 'uploadArchive', 'importInitial', 'getCandidates', 'getJobs', 'evaluate', 'eraseCandidate',
     ]);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
 
     await TestBed.configureTestingModule({
       imports: [CvWorkspaceComponent],
-      providers: [{ provide: CvIngestionService, useValue: service }],
+      providers: [
+        { provide: CvIngestionService, useValue: service },
+        { provide: AuthService, useValue: auth },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CvWorkspaceComponent);
@@ -134,6 +139,27 @@ describe('CvWorkspaceComponent', () => {
     fixture.detectChanges();
     expect(component.evaluation).toBeNull();
     expect(component.error).toBe('Evaluation provider returned invalid JSON');
+  });
+
+  it('confirms and erases a candidate as an administrator', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    service.eraseCandidate.and.returnValue(of(void 0));
+    component.evaluation = evaluationResponse();
+
+    component.eraseCandidate();
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(service.eraseCandidate).toHaveBeenCalledOnceWith(7);
+    expect(component.evaluation).toBeNull();
+    expect(service.getCandidates).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not erase when confirmation is cancelled', () => {
+    spyOn(window, 'confirm').and.returnValue(false);
+
+    component.eraseCandidate();
+
+    expect(service.eraseCandidate).not.toHaveBeenCalled();
   });
 
   function importResult(status: CvImportResult['status']): CvImportResult {

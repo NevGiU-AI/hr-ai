@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../../../core/auth/auth.service';
 import {
   ApiError,
   Candidate,
@@ -22,6 +23,7 @@ import { CvIngestionService } from '../../services/cv-ingestion.service';
 })
 export class CvWorkspaceComponent implements OnInit {
   private readonly service = inject(CvIngestionService);
+  private readonly auth = inject(AuthService);
 
   pdfFile: File | null = null;
   archiveFile: File | null = null;
@@ -31,11 +33,15 @@ export class CvWorkspaceComponent implements OnInit {
   selectedCandidateId: number | null = null;
   selectedJobId: number | null = null;
   evaluation: EvaluationResponse | null = null;
-  busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | null = null;
+  busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | null = null;
   error = '';
 
   readonly maxPdfBytes = 20 * 1024 * 1024;
   readonly maxArchiveBytes = 100 * 1024 * 1024;
+
+  get isAdministrator(): boolean {
+    return this.auth.user?.roles.includes('ADMIN') ?? false;
+  }
 
   ngOnInit(): void {
     this.refreshSelections();
@@ -99,6 +105,26 @@ export class CvWorkspaceComponent implements OnInit {
       });
   }
 
+  eraseCandidate(): void {
+    if (!this.isAdministrator || !this.selectedCandidateId || this.busyAction) return;
+    const candidate = this.candidates.find((item) => item.id === this.selectedCandidateId);
+    const label = candidate?.name || `candidate #${this.selectedCandidateId}`;
+    if (!window.confirm(
+      `Permanently erase ${label}, including CV documents, stored originals, and evaluations? This cannot be undone.`,
+    )) return;
+
+    const erasedId = this.selectedCandidateId;
+    this.start('erasure');
+    this.service.eraseCandidate(erasedId).pipe(finalize(() => this.busyAction = null)).subscribe({
+      next: () => {
+        this.selectedCandidateId = null;
+        this.evaluation = null;
+        this.refreshSelections();
+      },
+      error: (error) => this.handleError(error),
+    });
+  }
+
   trackResult(_: number, item: CvImportResult): string {
     return `${item.originalFilename}-${item.documentId ?? item.status}`;
   }
@@ -109,9 +135,10 @@ export class CvWorkspaceComponent implements OnInit {
         this.candidates = candidates;
         if (preferredCandidateId && candidates.some((item) => item.id === preferredCandidateId)) {
           this.selectedCandidateId = preferredCandidateId;
-        } else if (!this.selectedCandidateId && candidates.length) {
+        } else if (!this.selectedCandidateId || !candidates.some((item) => item.id === this.selectedCandidateId)) {
           this.selectedCandidateId = candidates[0].id;
         }
+        if (!candidates.length) this.selectedCandidateId = null;
       },
       error: (error) => this.handleError(error),
     });

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +46,7 @@ class CandidateControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean CandidateRepository candidateRepository;
     @MockitoBean CvIngestionService ingestionService;
+    @MockitoBean CandidateErasureService candidateErasureService;
     @MockitoBean SecurityAuditService securityAuditService;
 
     @BeforeEach
@@ -96,5 +99,22 @@ class CandidateControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalFiles").value(2))
                 .andExpect(jsonPath("$.duplicates").value(1));
+    }
+
+    @Test
+    void erasesCandidateOnlyWithExplicitConfirmation() throws Exception {
+        mvc.perform(delete("/api/candidates/7").with(user(PRINCIPAL))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"confirmed\":true}"))
+                .andExpect(status().isNoContent());
+
+        org.mockito.Mockito.verify(candidateErasureService).erase(7L, PRINCIPAL);
+    }
+
+    @Test
+    void rejectsCandidateErasureWithoutConfirmation() throws Exception {
+        mvc.perform(delete("/api/candidates/7").with(user(PRINCIPAL))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"confirmed\":false}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.confirmed").exists());
     }
 }

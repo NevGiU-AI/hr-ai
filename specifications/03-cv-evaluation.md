@@ -183,7 +183,8 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 
 ### Remaining backend work
 
-- Complete full candidate erasure and automated encrypted original-file/database backup controls.
+- Validate the implemented full candidate-erasure workflow in staging and production.
+- Complete automated encrypted original-file/database backup controls.
 - Add OCR and reprocessing for scanned PDFs.
 - Add richer candidate/document detail and ingestion-history APIs.
 - Detect templates and non-CV PDFs more accurately.
@@ -380,7 +381,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Store new original documents privately through a provider abstraction and record retention deadlines.
 - [x] Quarantine new uploads and require a clean ClamAV verdict before storage promotion or parsing.
 - [x] Implement and validate scheduled original-file expiry and legal-hold enforcement.
-- [ ] Implement full candidate erasure and automated encrypted paired backup/restore controls.
+- [x] Implement administrator-confirmed full candidate erasure with legal-hold, tenant, audit, and rollback controls.
+- [ ] Implement automated encrypted paired backup/restore controls.
 
 **Exit condition:** recruiters can upload, review, correct, and manage CV ingestion outcomes without direct database access.
 
@@ -405,7 +407,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Add fail-closed malware scanning before parsing user uploads.
 - [x] Approve the candidate notice, retention, deletion, legal-hold, residency, access, and audit baseline.
 - [x] Enforce scheduled original-file expiry and legal holds with tenant-scoped auditing.
-- [ ] Enforce full candidate erasure and broader business-action auditing.
+- [x] Enforce confirmed full candidate erasure with tenant-scoped auditing.
+- [ ] Complete broader business-action auditing.
 - [ ] Prevent CV content from overriding evaluation system instructions.
 - [ ] Add structured ingestion and evaluation metrics without logging CV content.
 - [ ] Monitor parsing failures, duplicates, OCR needs, latency, model usage, cost, and evaluation drift.

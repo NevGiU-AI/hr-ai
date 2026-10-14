@@ -2,6 +2,7 @@ package com.nevgiu.hrai.security;
 
 import com.nevgiu.hrai.candidate.CandidateController;
 import com.nevgiu.hrai.candidate.CandidateRepository;
+import com.nevgiu.hrai.candidate.CandidateErasureService;
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionService;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
@@ -29,6 +30,7 @@ class ApiSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean CandidateRepository candidates;
     @MockitoBean CvIngestionService ingestion;
+    @MockitoBean CandidateErasureService candidateErasureService;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService securityAuditService;
 
@@ -65,5 +67,13 @@ class ApiSecurityTest {
     @WithMockUser(roles = "ADMIN")
     void rejectsStateChangeWithoutCsrfToken() throws Exception {
         mvc.perform(post("/api/candidates/import/initial")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "RECRUITER")
+    void rejectsCandidateErasureForRecruiters() throws Exception {
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/candidates/7")
+                        .with(csrf()).contentType("application/json").content("{\"confirmed\":true}"))
+                .andExpect(status().isForbidden());
     }
 }

@@ -33,6 +33,10 @@ export class CvIngestionService {
     return this.http.post<EvaluationResponse>(`${this.apiUrl}/evaluations`, { candidateId, jobId, weights: null });
   }
 
+  eraseCandidate(candidateId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/candidates/${candidateId}`, { body: { confirmed: true } });
+  }
+
   private formData(file: File): FormData {
     const data = new FormData();
     data.append('file', file, file.name);

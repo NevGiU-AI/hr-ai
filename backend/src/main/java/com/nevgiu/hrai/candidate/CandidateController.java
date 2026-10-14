@@ -4,6 +4,7 @@ import com.nevgiu.hrai.candidate.ingestion.CvIngestionService;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
 import com.nevgiu.hrai.security.AppUserPrincipal;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,13 @@ public class CandidateController {
 
     private final CandidateRepository candidateRepository;
     private final CvIngestionService cvIngestionService;
+    private final CandidateErasureService candidateErasureService;
 
-    public CandidateController(CandidateRepository candidateRepository, CvIngestionService cvIngestionService) {
+    public CandidateController(CandidateRepository candidateRepository, CvIngestionService cvIngestionService,
+                               CandidateErasureService candidateErasureService) {
         this.candidateRepository = candidateRepository;
         this.cvIngestionService = cvIngestionService;
+        this.candidateErasureService = candidateErasureService;
     }
 
     @GetMapping
@@ -51,5 +55,13 @@ public class CandidateController {
     @PostMapping("/import/initial")
     public CvArchiveImportResult importInitialArchive(@AuthenticationPrincipal AppUserPrincipal principal) {
         return cvIngestionService.importInitialArchive(principal.organizationId());
+    }
+
+    @DeleteMapping("/{candidateId}")
+    public ResponseEntity<Void> erase(@PathVariable Long candidateId,
+                                      @Valid @RequestBody EraseCandidateRequest request,
+                                      @AuthenticationPrincipal AppUserPrincipal principal) {
+        candidateErasureService.erase(candidateId, principal);
+        return ResponseEntity.noContent().build();
     }
 }

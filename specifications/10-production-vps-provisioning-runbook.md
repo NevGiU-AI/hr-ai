@@ -717,13 +717,17 @@ private production `.env`:
 
 ```dotenv
 CV_STORAGE_RETENTION=365d
+CV_RETENTION_CLEANUP_ENABLED=true
+CV_RETENTION_CLEANUP_BATCH_SIZE=100
+CV_RETENTION_CLEANUP_CRON=0 43 3 * * *
 CV_MALWARE_CONNECT_TIMEOUT=2s
 CV_MALWARE_READ_TIMEOUT=30s
 ```
 
 Create and checksum matched production PostgreSQL and `cv-originals` backups. The dump protects storage metadata but
-does not contain PDF binaries. After the protected production deployment completes, confirm healthy services, Flyway
-schema version `2`, successful Hibernate validation, the private volume, and ClamAV:
+does not contain PDF binaries. After the protected production deployment completes, confirm healthy services, the
+Flyway schema version expected by the release (`3` from `v0.13.0` onward), successful Hibernate validation, the private
+volume, and ClamAV:
 
 ```bash
 cd /opt/nevgiu/deploy
@@ -774,6 +778,15 @@ and checksummed before deployment. ClamAV and the application became healthy, cl
 EICAR PDF attachment fixture was rejected, and the existing authentication and tenant-scoped business workflows passed
 smoke testing. The scanner-unavailable path was not repeated in production because staging already proved fail-closed
 behavior and recovery.
+
+**Retention and legal-hold acceptance recorded 14 October 2026 for release `v0.13.0`:** matched PostgreSQL and
+`cv-originals` backups were validated before deployment. Flyway applied schema version `3`, Hibernate validation passed,
+and the backend became healthy. A disposable future-dated original confirmed administrator hold application/release,
+`409` protection against deletion while held, tenant-scoped audit events, and preservation of the original after release.
+Authentication and tenant-scoped candidate, job, evaluation, ingestion, download, and deletion smoke tests passed. The
+bounded cleanup remained enabled on the normal daily `03:43` schedule. Production did not repeat destructive overdue
+expiry against real candidate data because held/unheld expiry and immediate expiry after release had already passed in
+controlled staging validation.
 
 ### 15. Configure bounded Docker log rotation
 

@@ -60,8 +60,9 @@ and ClamAV remain on the private Compose network.
 The authentication foundation—including tenant isolation, Redis sessions, throttling/lockout, security auditing,
 password management, concurrent-session limits, and the final security acceptance suite—is deployed and validated in
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
-tenant-authorized original-file download and deletion have passed staging and production acceptance. Its remaining
-governance controls are not complete. The next delivery sequence is:
+tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
+staging and production acceptance through release `v0.13.0`. Full candidate erasure, correction/reprocessing, and
+automated encrypted backup governance remain incomplete. The next delivery sequence is:
 
 1. Complete original-CV governance and correction/reprocessing.
 2. OCR for scanned CVs.

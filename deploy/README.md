@@ -235,6 +235,7 @@ in the private environment file and inspect the volume without printing applicat
 
 ```bash
 grep '^CV_STORAGE_RETENTION=' .env
+grep '^CV_RETENTION_CLEANUP_' .env
 docker volume inspect nevgiu-hr-ai_cv-originals
 docker compose --env-file .env --env-file .images.env ps clamav
 docker compose --env-file .env --env-file .images.env exec -T clamav clamdscan --ping 3
@@ -245,6 +246,10 @@ deleted on a scanner error or malware result, and is promoted to normal private 
 `CV_MALWARE_CONNECT_TIMEOUT` and `CV_MALWARE_READ_TIMEOUT` may be tuned in `.env`; do not disable scanning in staging
 or production. The first ClamAV startup can take longer while signatures are initialized, so wait for the service to
 be healthy before diagnosing the backend as unavailable.
+
+Retention cleanup is controlled by `CV_RETENTION_CLEANUP_ENABLED`, `CV_RETENTION_CLEANUP_BATCH_SIZE`, and
+`CV_RETENTION_CLEANUP_CRON`. The scheduler removes only expired original binaries and their storage metadata. It skips
+legal holds and emits tenant-scoped audit events; full candidate erasure is a separate administrator workflow.
 
 ### Validate malware rejection in staging
 

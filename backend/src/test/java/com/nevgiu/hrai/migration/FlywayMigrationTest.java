@@ -23,7 +23,7 @@ class FlywayMigrationTest {
     @Test
     void createsANewSchemaAndSafelyAdoptsAnExistingSchema() throws Exception {
         Flyway cleanDatabase = flyway(false);
-        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(2);
+        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(3);
         assertThat(count("SELECT COUNT(*) FROM app_users")).isEqualTo(0);
         assertThat(count("SELECT COUNT(*) FROM information_schema.columns "
                 + "WHERE table_name = 'cv_documents' AND column_name = 'storage_key'"))
@@ -36,8 +36,8 @@ class FlywayMigrationTest {
                 + "CHECK (outcome IN ('SUCCESS'))");
 
         Flyway existingDatabase = flyway(true);
-        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(2);
-        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(3);
+        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(3);
+        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(4);
         assertThat(count("SELECT COUNT(*) FROM pg_constraint "
                 + "WHERE conrelid = 'security_audit_events'::regclass AND contype = 'c'"))
                 .isEqualTo(0);

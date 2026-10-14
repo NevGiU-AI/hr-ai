@@ -71,9 +71,23 @@ not directly reachable from the public internet. `CvMalwareScanner` keeps this t
 interface; a future REST-based or managed scanner can replace `ClamAvCvMalwareScanner` without changing
 `CvIngestionService`.
 
-`CV_STORAGE_RETENTION` defaults to `365d`. This release records the deadline but does not automatically delete expired
-records; scheduled deletion, legal-hold handling, and administrator workflows remain required before retention is fully
-automated.
+`CV_STORAGE_RETENTION` defaults to `365d`. Flyway migration `V3__add_cv_legal_hold.sql` adds legal-hold metadata and an
+expiry-candidate index. A bounded scheduled task evaluates stored originals whose deadline has passed, skips active
+holds, and uses the same recoverable file-staging pattern as administrator deletion. This slice deletes the original
+binary and clears its storage metadata; full candidate erasure remains a separate explicitly confirmed workflow.
+
+Only an organization administrator may apply or release a hold:
+
+```http
+PUT /api/cv-documents/{documentId}/legal-hold
+Content-Type: application/json
+
+{"held":true}
+```
+
+The server derives the organization from the authenticated session and returns the same `404` for missing and
+cross-organization identifiers. Manual original deletion returns `409` while a hold is active. Releasing a hold after
+its original retention deadline immediately invokes expiry rather than waiting for the next scheduled run.
 
 ## Deployment procedure
 
@@ -83,9 +97,17 @@ each private environment file:
 
 ```dotenv
 CV_STORAGE_RETENTION=365d
+CV_RETENTION_CLEANUP_ENABLED=true
+CV_RETENTION_CLEANUP_BATCH_SIZE=100
+CV_RETENTION_CLEANUP_CRON=0 43 3 * * *
 CV_MALWARE_CONNECT_TIMEOUT=2s
 CV_MALWARE_READ_TIMEOUT=30s
 ```
+
+The default cron runs daily at `03:43` in the backend JVM timezone. Keep the cleanup enabled in staging and production;
+disable it only during a controlled restore or investigation. A batch is deliberately bounded so one run cannot load
+every expired record into memory. Each record uses a separate transaction, so one storage failure is audited and does
+not prevent the rest of the batch from being evaluated.
 
 After deployment, verify:
 

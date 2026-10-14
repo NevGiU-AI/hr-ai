@@ -96,6 +96,10 @@ app:
   cv-storage:
     root: ${APP_CV_STORAGE_ROOT:./data/cv-originals}
     retention: ${APP_CV_STORAGE_RETENTION:365d}
+  cv-retention:
+    enabled: ${APP_CV_RETENTION_CLEANUP_ENABLED:true}
+    batch-size: ${APP_CV_RETENTION_CLEANUP_BATCH_SIZE:100}
+    cleanup-cron: ${APP_CV_RETENTION_CLEANUP_CRON:0 43 3 * * *}
   cv-malware:
     enabled: ${APP_CV_MALWARE_SCAN_ENABLED:false}
     host: ${APP_CV_MALWARE_SCAN_HOST:localhost}

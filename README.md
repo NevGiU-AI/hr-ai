@@ -10,6 +10,7 @@ decisions.
 - Import a PDF, a ZIP archive of PDFs, or the administrator-only demonstration CV dataset.
 - Detect duplicate CV files within an organization using SHA-256 content hashes.
 - Retain new original CVs in private tenant-scoped storage with explicit retention metadata.
+- Enforce administrator-managed legal holds and bounded scheduled expiry of stored originals.
 - Quarantine uploaded CVs and require a clean ClamAV result before storage promotion or text extraction.
 - Extract CV text and explicitly evaluate a candidate against an approved job.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
@@ -19,9 +20,9 @@ decisions.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Legacy-original rescanning, authorized correction/reprocessing, expiry/deletion, off-server backup/restore, OCR, CV
-chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object storage is required
-before horizontal or multi-host backend scaling.
+Legacy-original rescanning, authorized correction/reprocessing, full candidate erasure, automated off-server
+backup/restore, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
+storage is required before horizontal or multi-host backend scaling.
 
 ## Architecture
 
@@ -168,9 +169,9 @@ packaged inside the backend image. Flyway runs before JPA; Hibernate uses `ddl-a
 or production schemas.
 
 The local Compose configuration enables one-time baselining so an existing developer database created before Flyway can
-be adopted. New empty databases run the ordered migration history, currently `V1__baseline_schema.sql` followed by
-`V2__add_original_cv_storage_metadata.sql`. Staging and production require a validated backup and the controlled,
-temporary baseline flag documented in their runbooks.
+be adopted. New empty databases run the ordered migration history, currently `V1__baseline_schema.sql`,
+`V2__add_original_cv_storage_metadata.sql`, then `V3__add_cv_legal_hold.sql`. Staging and production require a validated
+backup and the controlled, temporary baseline flag documented in their runbooks.
 
 Migration rules:
 

@@ -47,7 +47,12 @@ public class CvOriginalService {
 
     @Transactional
     public void delete(Long documentId, AppUserPrincipal actor) {
-        CvDocument document = findStored(documentId, actor);
+        CvDocument document = findStoredForUpdate(documentId, actor);
+        if (document.isLegalHold()) {
+            audit.cvOriginalAction(SecurityEventType.CV_ORIGINAL_ACCESS_DENIED, SecurityEventOutcome.DENIED,
+                    actor, documentId, "reason=legal-hold");
+            throw new CvOriginalAccessException(HttpStatus.CONFLICT, "Original CV is under legal hold");
+        }
         StagedCvDeletion staged;
         try {
             // Move first instead of deleting immediately so a later database failure can restore the bytes.
@@ -99,6 +104,16 @@ public class CvOriginalService {
         CvDocument document = documents.findByIdAndOrganizationId(documentId, actor.organizationId()).orElse(null);
         if (document == null || document.getStorageKey() == null || document.getStorageKey().isBlank()) {
             // A uniform 404 prevents callers from discovering another tenant's document IDs or storage state.
+            audit.cvOriginalAction(SecurityEventType.CV_ORIGINAL_ACCESS_DENIED, SecurityEventOutcome.DENIED,
+                    actor, documentId, "status=404");
+            throw new CvOriginalAccessException(HttpStatus.NOT_FOUND, "Original CV not found");
+        }
+        return document;
+    }
+
+    private CvDocument findStoredForUpdate(Long documentId, AppUserPrincipal actor) {
+        CvDocument document = documents.findLockedByIdAndOrganizationId(documentId, actor.organizationId()).orElse(null);
+        if (document == null || document.getStorageKey() == null || document.getStorageKey().isBlank()) {
             audit.cvOriginalAction(SecurityEventType.CV_ORIGINAL_ACCESS_DENIED, SecurityEventOutcome.DENIED,
                     actor, documentId, "status=404");
             throw new CvOriginalAccessException(HttpStatus.NOT_FOUND, "Original CV not found");

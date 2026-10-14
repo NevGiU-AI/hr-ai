@@ -69,6 +69,15 @@ public class CvDocument {
     @Column(name = "retention_until")
     private Instant retentionUntil;
 
+    @Column(name = "legal_hold", nullable = false)
+    private boolean legalHold;
+
+    @Column(name = "legal_hold_at")
+    private Instant legalHoldAt;
+
+    @Column(name = "legal_hold_by_user_id")
+    private Long legalHoldByUserId;
+
     public Long getId() { return id; }
     public String getOrganizationId() { return organizationId; }
     public void setOrganizationId(String organizationId) { this.organizationId = organizationId; }
@@ -100,4 +109,10 @@ public class CvDocument {
     public void setStoredAt(Instant storedAt) { this.storedAt = storedAt; }
     public Instant getRetentionUntil() { return retentionUntil; }
     public void setRetentionUntil(Instant retentionUntil) { this.retentionUntil = retentionUntil; }
+    public boolean isLegalHold() { return legalHold; }
+    public void setLegalHold(boolean legalHold) { this.legalHold = legalHold; }
+    public Instant getLegalHoldAt() { return legalHoldAt; }
+    public void setLegalHoldAt(Instant legalHoldAt) { this.legalHoldAt = legalHoldAt; }
+    public Long getLegalHoldByUserId() { return legalHoldByUserId; }
+    public void setLegalHoldByUserId(Long legalHoldByUserId) { this.legalHoldByUserId = legalHoldByUserId; }
 }

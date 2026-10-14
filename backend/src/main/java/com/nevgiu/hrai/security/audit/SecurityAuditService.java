@@ -84,6 +84,13 @@ public class SecurityAuditService {
                 type, outcome, safe(safeDetails)));
     }
 
+    public void cvOriginalSystemAction(SecurityEventType type, SecurityEventOutcome outcome,
+                                       String organizationId, Long documentId, String details) {
+        String safeDetails = "documentId=" + documentId + (details == null ? "" : ";" + details);
+        save(new SecurityAuditEvent(organizationId, null, null, null, null, null, null,
+                type, outcome, safe(safeDetails)));
+    }
+
     public SecurityAuditPageResponse findAll(String organizationId, int page, int size) {
         var result = events.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId,
                 PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size))));

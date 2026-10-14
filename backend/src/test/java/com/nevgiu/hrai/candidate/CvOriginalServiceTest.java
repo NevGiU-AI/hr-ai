@@ -80,7 +80,7 @@ class CvOriginalServiceTest {
     void purgesStagedBytesOnlyAfterDatabaseCommit() {
         CvDocument document = document("opaque/file.pdf");
         StagedCvDeletion staged = new StagedCvDeletion("opaque/file.pdf", "_deletion/staged.pdf");
-        when(documents.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(document));
+        when(documents.findLockedByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(document));
         when(storage.stageDeletion("opaque/file.pdf")).thenReturn(staged);
         TransactionSynchronizationManager.initSynchronization();
 
@@ -98,7 +98,7 @@ class CvOriginalServiceTest {
     void restoresStagedBytesAfterDatabaseRollback() {
         CvDocument document = document("opaque/file.pdf");
         StagedCvDeletion staged = new StagedCvDeletion("opaque/file.pdf", "_deletion/staged.pdf");
-        when(documents.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(document));
+        when(documents.findLockedByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(document));
         when(storage.stageDeletion("opaque/file.pdf")).thenReturn(staged);
         TransactionSynchronizationManager.initSynchronization();
 
@@ -107,6 +107,19 @@ class CvOriginalServiceTest {
         TransactionSynchronization synchronization = TransactionSynchronizationManager.getSynchronizations().getFirst();
         synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
         verify(storage).restoreDeletion(staged);
+    }
+
+    @Test
+    void refusesManualDeletionWhileLegalHoldIsActive() {
+        CvDocument document = document("opaque/file.pdf");
+        document.setLegalHold(true);
+        when(documents.findLockedByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(document));
+
+        assertThatThrownBy(() -> service.delete(7L, actor))
+                .isInstanceOfSatisfying(CvOriginalAccessException.class,
+                        exception -> assertThat(exception.status()).isEqualTo(HttpStatus.CONFLICT));
+        verify(audit).cvOriginalAction(SecurityEventType.CV_ORIGINAL_ACCESS_DENIED, SecurityEventOutcome.DENIED,
+                actor, 7L, "reason=legal-hold");
     }
 
     private CvDocument document(String storageKey) {

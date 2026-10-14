@@ -19,6 +19,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CvOriginalController.class)
@@ -26,6 +27,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CvOriginalSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean CvOriginalService originals;
+    @MockitoBean CvLegalHoldService legalHolds;
+    @MockitoBean CvRetentionService retention;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService audit;
 
@@ -57,6 +60,27 @@ class CvOriginalSecurityTest {
         mvc.perform(delete("/api/cv-documents/7/original")
                         .with(user(principal("ROLE_ADMIN"))).with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void allowsOnlyAdministratorToManageLegalHold() throws Exception {
+        mvc.perform(put("/api/cv-documents/7/legal-hold")
+                        .contentType("application/json").content("{\"held\":true}")
+                        .with(user(principal("ROLE_ADMIN"))).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(put("/api/cv-documents/7/legal-hold")
+                        .contentType("application/json").content("{\"held\":true}")
+                        .with(user(principal("ROLE_RECRUITER"))).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void rejectsLegalHoldRequestWithoutExplicitState() throws Exception {
+        mvc.perform(put("/api/cv-documents/7/legal-hold")
+                        .contentType("application/json").content("{}")
+                        .with(user(principal("ROLE_ADMIN"))).with(csrf()))
+                .andExpect(status().isBadRequest());
     }
 
     private AppUserPrincipal principal(String role) {

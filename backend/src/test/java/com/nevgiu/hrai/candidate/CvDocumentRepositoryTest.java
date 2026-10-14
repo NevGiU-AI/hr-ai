@@ -4,6 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,6 +60,28 @@ class CvDocumentRepositoryTest {
 
         assertThat(documents.findByIdAndOrganizationId(document.getId(), "tenant-a")).contains(document);
         assertThat(documents.findByIdAndOrganizationId(document.getId(), "tenant-b")).isEmpty();
+    }
+
+    @Test
+    void selectsOnlyExpiredStoredOriginalsWithoutLegalHold() {
+        CvDocument expired = document("e".repeat(64));
+        expired.setStorageKey("tenant/expired.pdf");
+        expired.setRetentionUntil(Instant.now().minusSeconds(60));
+        expired = documents.saveAndFlush(expired);
+
+        CvDocument held = document("f".repeat(64));
+        held.setStorageKey("tenant/held.pdf");
+        held.setRetentionUntil(Instant.now().minusSeconds(60));
+        held.setLegalHold(true);
+        documents.saveAndFlush(held);
+
+        CvDocument future = document("1".repeat(64));
+        future.setStorageKey("tenant/future.pdf");
+        future.setRetentionUntil(Instant.now().plusSeconds(60));
+        documents.saveAndFlush(future);
+
+        assertThat(documents.findExpiredOriginalIds(Instant.now(), PageRequest.of(0, 10)))
+                .containsExactly(expired.getId());
     }
 
     private CvDocument document(String hash) {

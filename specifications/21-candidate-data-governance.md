@@ -97,3 +97,8 @@ including role enforcement, not-found behavior, original-only deletion, security
 pre-deployment backup validation. The candidate-details UI, correction/reprocessing, full erasure, legal hold,
 scheduled expiry, legacy rescanning, and automated encrypted paired backup/restore remain separate implementation
 slices.
+
+The current retention implementation deliberately expires only the submitted original and its storage metadata. It
+does not yet claim to satisfy the broader candidate-erasure policy in section 6, which also requires confirmed removal
+of extracted text, document/candidate records, evaluations, and future derived AI data. Legal holds block both manual
+original deletion and scheduled original expiry; release after an elapsed deadline triggers immediate re-evaluation.

@@ -78,7 +78,8 @@ release validation -> private object storage -> horizontal or multi-host backend
 - [x] Approve candidate notice/consent, retention, deletion, legal-hold, and data-residency policies.
 - [x] Add fail-closed malware quarantine; validate clean, infected, unavailable, and recovery paths in staging, then
   deploy and smoke-test clean and infected paths in production.
-- [ ] Deploy and validate scheduled original-file expiry and administrator-managed legal-hold enforcement.
+- [ ] Deploy and validate scheduled original-file expiry and administrator-managed legal-hold enforcement. Staging
+  acceptance passed on 14 October 2026; production promotion and acceptance remain.
 - [ ] Add full candidate erasure plus automated encrypted paired original-file/database backup and restore.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.

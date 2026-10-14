@@ -360,9 +360,20 @@ returned the generic not-found response. Deleting the original preserved the can
 making the binary unavailable. Security-event and backend-log checks completed without exposing or retaining CV
 content, filenames, storage keys, credentials, or downloaded test files as validation evidence.
 
-These records validate the implemented storage, malware-quarantine, and authorized original-file operation slices.
-They do not complete automatic expiry/deletion, legal-hold enforcement, off-server backup/restore, correction and
-reprocessing, or future object-storage controls below.
+**Accepted in staging 14 October 2026 for main revision `0641e96`:** Flyway applied
+`V3__add_cv_legal_hold.sql` successfully and the backend passed schema validation. Using two distinct disposable
+originals, an administrator applied and released a legal hold through the tenant-scoped API. With the cleanup schedule
+temporarily accelerated under controlled conditions, the held overdue original remained stored while the unheld
+overdue original was expired. Releasing the overdue hold triggered immediate expiry without waiting for another
+scheduled run. Database verification confirmed that expiry cleared only `storage_key`, `stored_at`, and
+`retention_until`; the candidate and evaluation data remained. The administrator audit history contained successful
+hold-application, hold-release, and expiry events with safe document IDs, and backend logs contained no purge,
+rollback-restoration, storage, database, or scheduler failure. The cleanup cron was restored to its normal daily
+`03:43` schedule after testing.
+
+These records validate the implemented storage, malware-quarantine, authorized original-file operations, and staging
+retention/legal-hold behavior. Production retention/legal-hold acceptance, full candidate erasure, automated encrypted
+off-server backup/restore, correction and reprocessing, and future object-storage controls remain incomplete.
 
 ## Backup and recovery
 

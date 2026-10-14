@@ -91,6 +91,15 @@ public class SecurityAuditService {
                 type, outcome, safe(safeDetails)));
     }
 
+    public void candidateErasure(SecurityEventType type, SecurityEventOutcome outcome,
+                                 AppUserPrincipal actor, Long candidateId, String details) {
+        if (actor == null) return;
+        // Candidate IDs are safe operational references; personal fields and document identifiers stay out of audit data.
+        String safeDetails = "candidateId=" + candidateId + (details == null ? "" : ";" + details);
+        save(new SecurityAuditEvent(actor.organizationId(), actor.id(), actor.username(), null, null, null, null,
+                type, outcome, safe(safeDetails)));
+    }
+
     public SecurityAuditPageResponse findAll(String organizationId, int page, int size) {
         var result = events.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId,
                 PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size))));

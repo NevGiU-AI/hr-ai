@@ -94,15 +94,24 @@ production acceptance in October 2026. The backend now provides tenant-scoped or
 That deletion removes only the stored binary and storage metadata; it is not the full candidate-erasure workflow from
 section 6. These authorized operations passed direct API acceptance in staging and production on 14 October 2026,
 including role enforcement, not-found behavior, original-only deletion, security-event inspection, and matched
-pre-deployment backup validation. The candidate-details UI, correction/reprocessing, full erasure, legacy rescanning,
-and automated encrypted paired backup/restore remain separate implementation slices.
+pre-deployment backup validation. The candidate-details UI, correction/reprocessing, legacy rescanning, and automated
+encrypted paired backup/restore remain separate implementation slices. Full erasure is implemented in the current
+delivery slice and awaits environment acceptance.
 
-The current retention implementation deliberately expires only the submitted original and its storage metadata. It
-does not yet claim to satisfy the broader candidate-erasure policy in section 6, which also requires confirmed removal
-of extracted text, document/candidate records, evaluations, and future derived AI data. Legal holds block both manual
+The current retention implementation deliberately expires only the submitted original and its storage metadata.
+Full erasure is now a separate administrator-confirmed, tenant-scoped operation that removes the stored original,
+extracted text, document/candidate records, and evaluations. No derived embeddings, indexes, or chat data exist yet;
+those future stores must join the same erasure boundary before they are introduced. Legal holds block both manual
 original deletion and scheduled original expiry; release after an elapsed deadline triggers immediate re-evaluation.
 This behavior passed controlled staging acceptance on 14 October 2026, including the held/unheld expiry boundary,
 immediate expiry after release, preservation of candidate/evaluation data, auditing, and failure-free log inspection.
 Release `v0.13.0` then passed the safe production subset: migration and health checks, future-dated hold application and
 release, hold-protected deletion, auditing, and regression smoke tests. Destructive overdue expiry was not repeated on
 real production candidate data because the equivalent controlled path had already passed in staging.
+
+The full-erasure implementation is complete in the `feature/candidate-erasure` delivery slice and awaits staging and
+production acceptance. The existing CV workspace exposes the action only to administrators, requires an explicit
+irreversible-action confirmation, refreshes candidate state after success, and displays typed legal-hold, not-found,
+and storage failures. PostgreSQL deletion is ordered evaluations -> documents -> candidate. Stored originals are moved
+to a recoverable deletion namespace before that transaction and are purged only after commit or restored after
+rollback. Tenant-scoped pessimistic locks serialize erasure with legal-hold, retention, and original-file operations.

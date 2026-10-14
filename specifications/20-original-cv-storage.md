@@ -25,7 +25,7 @@ The application exposes two session-authenticated endpoints:
   organization. The response is an attachment with `Cache-Control: no-store`.
 - `DELETE /api/cv-documents/{documentId}/original`: only `ADMIN` may delete the stored original within their
   organization. This clears the document's storage metadata but intentionally does not erase the candidate, extracted
-  text, evaluations, or document record; full candidate erasure remains a separate governed workflow.
+  text, evaluations, or document record; the separately confirmed candidate-erasure workflow removes the aggregate.
 
 The organization always comes from the authenticated server session. Repository lookup combines the document ID and
 organization ID, and a missing, unstored, or cross-organization ID returns the same `404` response. The API never
@@ -74,7 +74,7 @@ interface; a future REST-based or managed scanner can replace `ClamAvCvMalwareSc
 `CV_STORAGE_RETENTION` defaults to `365d`. Flyway migration `V3__add_cv_legal_hold.sql` adds legal-hold metadata and an
 expiry-candidate index. A bounded scheduled task evaluates stored originals whose deadline has passed, skips active
 holds, and uses the same recoverable file-staging pattern as administrator deletion. This slice deletes the original
-binary and clears its storage metadata; full candidate erasure remains a separate explicitly confirmed workflow.
+binary and clears its storage metadata; full candidate erasure is a separate explicitly confirmed workflow.
 
 Only an organization administrator may apply or release a hold:
 
@@ -383,8 +383,42 @@ the destructive overdue-document scenario was accepted from controlled staging e
 real production candidate data.
 
 These records validate the implemented storage, malware-quarantine, authorized original-file operations, and
-retention/legal-hold behavior in staging and production. Full candidate erasure, automated encrypted off-server
-backup/restore, correction and reprocessing, and future object-storage controls remain incomplete.
+retention/legal-hold behavior in staging and production. Full candidate erasure is implemented and awaits environment
+acceptance; automated encrypted off-server backup/restore, correction and reprocessing, and future object-storage
+controls remain incomplete.
+
+## Full candidate erasure
+
+`DELETE /api/candidates/{candidateId}` is restricted to `ADMIN` and requires the JSON body
+`{"confirmed":true}`. The organization is derived from the authenticated session; missing and cross-organization IDs
+therefore return the same `404`. Any legal hold on a related document blocks the entire operation with `409`.
+
+The service locks the tenant-owned candidate and its documents, moves every stored original to the recoverable
+deletion namespace, then removes evaluations, documents (including extracted text), and the candidate in one database
+transaction. Files are purged only after commit and restored after rollback. Audit records contain the safe candidate
+ID and outcome, never candidate fields, filenames, hashes, storage keys, or CV content.
+
+After deployment, use a disposable candidate with an evaluation and stored original to validate:
+
+1. A recruiter receives `403` from the erasure endpoint and sees no erasure control in the CV workspace.
+2. An administrator cancelling the browser confirmation sends no request.
+3. `{"confirmed":false}` returns `400`, while a cross-tenant or missing candidate ID returns the generic `404`.
+4. Applying a legal hold makes confirmed erasure return `409` and preserves every record and original.
+5. Releasing the hold and confirming erasure returns `204`; the candidate disappears from the selector immediately.
+6. Database queries find no candidate, document, or evaluation row for the disposable candidate, and the original is
+   absent from the `cv-originals` volume.
+7. Security Events contains `CANDIDATE_ERASURE_DENIED` for denied/held attempts and `CANDIDATE_ERASED` for success,
+   with the administrator email and safe candidate ID only.
+8. Backend logs contain no staged-file purge or rollback-restoration failure.
+
+Direct API validation uses the administrator's authenticated cookie and CSRF header:
+
+```bash
+curl -i -b "$admin_cookie" -X DELETE "$api_url/api/candidates/$candidate_id" \
+  -H 'Content-Type: application/json' \
+  -H "X-XSRF-TOKEN: $admin_csrf" \
+  --data '{"confirmed":true}'
+```
 
 ## Backup and recovery
 
@@ -426,7 +460,7 @@ tar -tzf "$cv_backup" > /dev/null
 
 - Add the candidate-details/ingestion-history UI that invokes the authorized original-file APIs.
 - Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
-- Implement confirmed full candidate erasure across the original, extracted text, document/candidate records,
-  evaluations, and future derived AI data.
+- Extend the implemented erasure boundary to any future embeddings, indexes, chat evidence, or other derived AI data
+  before those stores are introduced.
 - Add encrypted off-server backup and an isolated restore test for database plus original files.
 - Replace the local provider with private object storage before horizontal or multi-host backend scaling.

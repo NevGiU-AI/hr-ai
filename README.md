@@ -11,6 +11,7 @@ decisions.
 - Detect duplicate CV files within an organization using SHA-256 content hashes.
 - Retain new original CVs in private tenant-scoped storage with explicit retention metadata.
 - Enforce administrator-managed legal holds and bounded scheduled expiry of stored originals.
+- Allow administrators to explicitly confirm full candidate erasure across originals, CV records, and evaluations.
 - Quarantine uploaded CVs and require a clean ClamAV result before storage promotion or text extraction.
 - Extract CV text and explicitly evaluate a candidate against an approved job.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
@@ -20,7 +21,7 @@ decisions.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Legacy-original rescanning, authorized correction/reprocessing, full candidate erasure, automated off-server
+Legacy-original rescanning, authorized correction/reprocessing, automated off-server
 backup/restore, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
 storage is required before horizontal or multi-host backend scaling.
 
@@ -61,8 +62,9 @@ The authentication foundation—including tenant isolation, Redis sessions, thro
 password management, concurrent-session limits, and the final security acceptance suite—is deployed and validated in
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
-staging and production acceptance through release `v0.13.0`. Full candidate erasure, correction/reprocessing, and
-automated encrypted backup governance remain incomplete. The next delivery sequence is:
+staging and production acceptance through release `v0.13.0`. Full candidate erasure is implemented with an
+administrator-only confirmed UI/API flow and awaits environment acceptance. Correction/reprocessing and automated
+encrypted backup governance remain incomplete. The next delivery sequence is:
 
 1. Complete original-CV governance and correction/reprocessing.
 2. OCR for scanned CVs.

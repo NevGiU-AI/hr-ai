@@ -37,6 +37,14 @@ public interface CvDocumentRepository extends JpaRepository<CvDocument, Long> {
     @Query("select document from CvDocument document where document.id = :id")
     Optional<CvDocument> findLockedById(Long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select document from CvDocument document
+            where document.candidate.id = :candidateId and document.organizationId = :organizationId
+            order by document.id
+            """)
+    List<CvDocument> findAllLockedByCandidateIdAndOrganizationId(Long candidateId, String organizationId);
+
     @Query("""
             select document.id from CvDocument document
             where document.storageKey is not null

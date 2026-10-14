@@ -8,4 +8,6 @@ import java.util.List;
 public interface CandidateEvaluationRepository extends JpaRepository<CandidateEvaluation, Long> {
     @Transactional(readOnly = true)
     List<CandidateEvaluation> findAllByOrganizationId(String organizationId);
+
+    long deleteAllByCandidateIdAndOrganizationId(Long candidateId, String organizationId);
 }

@@ -36,6 +36,15 @@ describe('CvIngestionService', () => {
     request.flush({ evaluation: {}, explanation: 'Good fit' });
   });
 
+  it('submits explicit confirmation when erasing a candidate', () => {
+    service.eraseCandidate(7).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/candidates/7`);
+    expect(request.request.method).toBe('DELETE');
+    expect(request.request.body).toEqual({ confirmed: true });
+    request.flush(null);
+  });
+
   it('uploads a ZIP as multipart form data', () => {
     const file = new File(['archive'], 'candidates.zip', { type: 'application/zip' });
     service.uploadArchive(file).subscribe();

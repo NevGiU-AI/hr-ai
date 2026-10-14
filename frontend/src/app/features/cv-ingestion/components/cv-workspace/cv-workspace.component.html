@@ -101,7 +101,16 @@
       <button class="btn btn-success" type="button" [disabled]="!selectedCandidateId || !selectedJobId || !!busyAction" (click)="evaluate()">
         {{ busyAction === 'evaluation' ? 'Evaluating…' : 'Evaluate candidate' }}
       </button>
+      <button *ngIf="isAdministrator" class="btn btn-outline-danger" type="button"
+              [disabled]="!selectedCandidateId || !!busyAction" (click)="eraseCandidate()">
+        {{ busyAction === 'erasure' ? 'Erasing…' : 'Erase candidate' }}
+      </button>
     </div>
+
+    <p class="erasure-warning" *ngIf="isAdministrator">
+      Erasure permanently removes the selected candidate, CV documents, stored originals, and evaluations.
+      Legal holds must be released first.
+    </p>
 
     <div class="evaluation-result" *ngIf="evaluation as response">
       <div class="overall"><strong>{{ response.evaluation.overallFitScore }}</strong><span>Overall fit / 100</span></div>

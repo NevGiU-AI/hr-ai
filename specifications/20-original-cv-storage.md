@@ -371,9 +371,20 @@ hold-application, hold-release, and expiry events with safe document IDs, and ba
 rollback-restoration, storage, database, or scheduler failure. The cleanup cron was restored to its normal daily
 `03:43` schedule after testing.
 
-These records validate the implemented storage, malware-quarantine, authorized original-file operations, and staging
-retention/legal-hold behavior. Production retention/legal-hold acceptance, full candidate erasure, automated encrypted
-off-server backup/restore, correction and reprocessing, and future object-storage controls remain incomplete.
+**Accepted in production 14 October 2026 for release `v0.13.0`:** matched PostgreSQL and `cv-originals` backups were
+created and validated before deployment. Flyway applied `V3__add_cv_legal_hold.sql`, Hibernate schema validation passed,
+and the backend became healthy. Production smoke testing with a disposable future-dated original confirmed that an
+administrator could apply and release a legal hold, manual deletion returned `409` while the hold was active, and the
+original remained stored after release because its retention deadline had not elapsed. The corresponding
+hold-application, denied-deletion, and hold-release events appeared in the organization audit history without exposing
+CV content or storage identifiers. Existing authentication, candidate, job, evaluation, upload, download, and deletion
+workflows remained operational. The normal bounded cleanup configuration was enabled with the daily `03:43` schedule;
+the destructive overdue-document scenario was accepted from controlled staging evidence rather than reproduced with
+real production candidate data.
+
+These records validate the implemented storage, malware-quarantine, authorized original-file operations, and
+retention/legal-hold behavior in staging and production. Full candidate erasure, automated encrypted off-server
+backup/restore, correction and reprocessing, and future object-storage controls remain incomplete.
 
 ## Backup and recovery
 

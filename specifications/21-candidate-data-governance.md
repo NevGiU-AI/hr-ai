@@ -95,8 +95,7 @@ That deletion removes only the stored binary and storage metadata; it is not the
 section 6. These authorized operations passed direct API acceptance in staging and production on 14 October 2026,
 including role enforcement, not-found behavior, original-only deletion, security-event inspection, and matched
 pre-deployment backup validation. The candidate-details UI, correction/reprocessing, full erasure, legacy rescanning,
-and automated encrypted paired backup/restore remain separate implementation slices. Production acceptance of the
-implemented legal-hold and scheduled-expiry behavior is still outstanding.
+and automated encrypted paired backup/restore remain separate implementation slices.
 
 The current retention implementation deliberately expires only the submitted original and its storage metadata. It
 does not yet claim to satisfy the broader candidate-erasure policy in section 6, which also requires confirmed removal
@@ -104,3 +103,6 @@ of extracted text, document/candidate records, evaluations, and future derived A
 original deletion and scheduled original expiry; release after an elapsed deadline triggers immediate re-evaluation.
 This behavior passed controlled staging acceptance on 14 October 2026, including the held/unheld expiry boundary,
 immediate expiry after release, preservation of candidate/evaluation data, auditing, and failure-free log inspection.
+Release `v0.13.0` then passed the safe production subset: migration and health checks, future-dated hold application and
+release, hold-protected deletion, auditing, and regression smoke tests. Destructive overdue expiry was not repeated on
+real production candidate data because the equivalent controlled path had already passed in staging.

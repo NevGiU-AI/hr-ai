@@ -329,6 +329,15 @@ contained access, deletion, and denied events with the safe document ID and with
 CV content. Recent backend logs contained no staged-file purge or rollback-restoration failure. Test credentials and
 downloaded disposable files were not retained as validation evidence.
 
+**Accepted in production 14 October 2026 for the authorized original-file release:** matched PostgreSQL and
+`cv-originals` backups were created with deployment-account ownership, both archive formats were validated, and their
+SHA-256 checksums passed before deployment. The production deployment completed successfully and the authorized
+original-file operations passed their smoke tests. `ADMIN` and `RECRUITER` could download an organization-owned
+original, `READ_ONLY` was denied, only `ADMIN` could delete the stored original, and unavailable document identifiers
+returned the generic not-found response. Deleting the original preserved the candidate and evaluation records while
+making the binary unavailable. Security-event and backend-log checks completed without exposing or retaining CV
+content, filenames, storage keys, credentials, or downloaded test files as validation evidence.
+
 These records validate the implemented storage, malware-quarantine, and authorized original-file operation slices.
 They do not complete automatic expiry/deletion, legal-hold enforcement, off-server backup/restore, correction and
 reprocessing, or future object-storage controls below.

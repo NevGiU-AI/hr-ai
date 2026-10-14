@@ -80,7 +80,7 @@ release validation -> private object storage -> horizontal or multi-host backend
   deploy and smoke-test clean and infected paths in production.
 - [ ] Add scheduled retention/deletion, legal-hold enforcement, and encrypted original-file backup/restore.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
-  filesystem deletion, and security auditing.
+  filesystem deletion, and security auditing; validate the operations in staging and production.
 - [ ] Add candidate-details access to original-file operations and auditable correction/reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.

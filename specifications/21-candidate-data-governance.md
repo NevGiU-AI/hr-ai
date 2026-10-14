@@ -92,5 +92,8 @@ The malware-quarantine implementation matches the approved section 2 behavior fo
 production acceptance in October 2026. The backend now provides tenant-scoped original-file download for `ADMIN` and
 `RECRUITER`, administrator-only original-file deletion, generic cross-tenant `404` responses, and security auditing.
 That deletion removes only the stored binary and storage metadata; it is not the full candidate-erasure workflow from
-section 6. The candidate-details UI, correction/reprocessing, full erasure, legal hold, scheduled expiry, legacy
-rescanning, and automated encrypted paired backup/restore remain separate implementation slices.
+section 6. These authorized operations passed direct API acceptance in staging and production on 14 October 2026,
+including role enforcement, not-found behavior, original-only deletion, security-event inspection, and matched
+pre-deployment backup validation. The candidate-details UI, correction/reprocessing, full erasure, legal hold,
+scheduled expiry, legacy rescanning, and automated encrypted paired backup/restore remain separate implementation
+slices.

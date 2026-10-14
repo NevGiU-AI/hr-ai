@@ -20,10 +20,19 @@ public interface CvDocumentRepository extends JpaRepository<CvDocument, Long> {
     @Transactional(readOnly = true)
     Optional<CvDocument> findByIdAndOrganizationId(Long id, String organizationId);
 
+    /*
+     * PESSIMISTIC_WRITE makes PostgreSQL select the matching row FOR UPDATE. A competing deletion, expiry, or hold
+     * change waits until the surrounding transaction commits or rolls back, including when it runs on another replica.
+     * The organization predicate preserves the tenant boundary while acquiring that administrative mutation lock.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select document from CvDocument document where document.id = :id and document.organizationId = :organizationId")
     Optional<CvDocument> findLockedByIdAndOrganizationId(Long id, String organizationId);
 
+    /*
+     * The scheduler has no user-supplied organization context, but it still needs the same database-owned write lock.
+     * Holding the lock until transaction completion ensures that only one replica can expire a document at a time.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select document from CvDocument document where document.id = :id")
     Optional<CvDocument> findLockedById(Long id);
@@ -37,5 +46,6 @@ public interface CvDocumentRepository extends JpaRepository<CvDocument, Long> {
             order by document.retentionUntil, document.id
             """)
     @Transactional(readOnly = true)
+    // This is a candidate scan, not the final decision. CvRetentionService rechecks under a write lock.
     List<Long> findExpiredOriginalIds(Instant now, Pageable pageable);
 }

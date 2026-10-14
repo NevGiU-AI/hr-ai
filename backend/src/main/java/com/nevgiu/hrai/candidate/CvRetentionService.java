@@ -30,9 +30,18 @@ public class CvRetentionService {
         this.audit = audit;
     }
 
+    /*
+     * REQUIRES_NEW gives every document an independent commit/rollback boundary. A failed file therefore rolls back
+     * only its own metadata change and the scheduler can continue with the remaining batch. It also guarantees that
+     * the pessimistic lock obtained below belongs to this short transaction and is released after this item finishes.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean expire(Long documentId) {
+        // Every candidate is processed in its own transaction. The database lock coordinates concurrent schedulers,
+        // administrator deletion, and legal-hold changes across all backend replicas.
         CvDocument document = documents.findLockedById(documentId).orElse(null);
+        // Re-evaluate every eligibility condition under the lock because the scheduler's initial ID query is only a
+        // candidate scan and may be stale by the time this transaction starts.
         if (document == null || document.getStorageKey() == null || document.isLegalHold()
                 || document.getRetentionUntil() == null || document.getRetentionUntil().isAfter(Instant.now())) {
             return false;
@@ -48,6 +57,8 @@ public class CvRetentionService {
         }
 
         String organizationId = document.getOrganizationId();
+        // This slice expires the submitted binary only. Candidate data, extracted text, and evaluations belong to the
+        // separately confirmed full-erasure workflow and must not be silently removed by this scheduler.
         document.setStorageKey(null);
         document.setStoredAt(null);
         document.setRetentionUntil(null);
@@ -56,6 +67,8 @@ public class CvRetentionService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
+                // The filesystem cannot join the PostgreSQL transaction. Keep the staged bytes recoverable until the
+                // metadata commit is known, then either purge them or compensate by restoring the original key.
                 if (status == STATUS_COMMITTED) {
                     purgeExpired(staged, organizationId, documentId);
                 } else {

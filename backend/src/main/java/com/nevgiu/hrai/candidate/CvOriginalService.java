@@ -45,6 +45,11 @@ public class CvOriginalService {
         }
     }
 
+    /*
+     * Keep the pessimistic document lock through file staging and the metadata flush. PostgreSQL can roll back the
+     * metadata, but the filesystem cannot join that transaction, so the completion callback below purges on commit or
+     * restores on rollback.
+     */
     @Transactional
     public void delete(Long documentId, AppUserPrincipal actor) {
         CvDocument document = findStoredForUpdate(documentId, actor);

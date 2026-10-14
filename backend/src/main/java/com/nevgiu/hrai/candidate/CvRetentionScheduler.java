@@ -26,6 +26,8 @@ public class CvRetentionScheduler {
 
     @Scheduled(cron = "${app.cv-retention.cleanup-cron:0 43 3 * * *}")
     public void expireOriginals() {
+        // Fetch a bounded set of IDs rather than entities. Eligibility and locking are deliberately repeated inside
+        // each independent retention transaction so this scan remains safe when several replicas run concurrently.
         var ids = documents.findExpiredOriginalIds(Instant.now(), PageRequest.of(0, properties.batchSize()));
         for (Long id : ids) {
             try {

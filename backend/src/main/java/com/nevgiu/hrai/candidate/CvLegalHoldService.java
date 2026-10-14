@@ -20,8 +20,15 @@ public class CvLegalHoldService {
         this.audit = audit;
     }
 
+    /*
+     * The transaction keeps the pessimistic row lock until the hold metadata is committed or rolled back. Returning
+     * the expiry decision lets the controller start expiry afterward, in a new transaction that can see the committed
+     * hold release; invoking expiry before this transaction ends would still observe the old locked database state.
+     */
     @Transactional
     public boolean update(Long documentId, boolean held, AppUserPrincipal actor) {
+        // Serialize hold changes with manual deletion and scheduled expiry. The organization predicate also prevents
+        // an administrator from learning whether another tenant owns the supplied identifier.
         CvDocument document = documents.findLockedByIdAndOrganizationId(documentId, actor.organizationId())
                 .orElseThrow(() -> notFound(documentId, actor));
         if (document.getStorageKey() == null || document.getStorageKey().isBlank()) {
@@ -29,6 +36,7 @@ public class CvLegalHoldService {
         }
 
         if (document.isLegalHold() == held) {
+            // Keep this operation idempotent, but still tell the controller to expire an already-released overdue file.
             return !held && isExpired(document);
         }
 
@@ -38,6 +46,7 @@ public class CvLegalHoldService {
         documents.saveAndFlush(document);
         audit.cvOriginalAction(held ? SecurityEventType.CV_LEGAL_HOLD_APPLIED : SecurityEventType.CV_LEGAL_HOLD_RELEASED,
                 SecurityEventOutcome.SUCCESS, actor, documentId, null);
+        // Expiry runs only after this transaction returns and commits, so it can observe the released hold.
         return !held && isExpired(document);
     }
 

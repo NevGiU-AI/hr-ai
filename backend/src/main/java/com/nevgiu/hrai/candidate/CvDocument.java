@@ -72,6 +72,7 @@ public class CvDocument {
     @Column(name = "legal_hold", nullable = false)
     private boolean legalHold;
 
+    // Hold metadata records who applied the current hold without changing the original retention deadline.
     @Column(name = "legal_hold_at")
     private Instant legalHoldAt;
 

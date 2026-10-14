@@ -59,6 +59,7 @@ public class CvOriginalController {
                                                 @AuthenticationPrincipal AppUserPrincipal actor) {
         boolean expiredAfterRelease = legalHolds.update(documentId, request.held(), actor);
         if (expiredAfterRelease) {
+            // CvLegalHoldService has committed before this call, allowing the new expiry transaction to see the release.
             retention.expire(documentId);
         }
         return ResponseEntity.noContent().build();

@@ -183,7 +183,7 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 
 ### Remaining backend work
 
-- Complete scheduled retention/deletion, legal-hold enforcement, and original-file backup controls.
+- Complete full candidate erasure and automated encrypted original-file/database backup controls.
 - Add OCR and reprocessing for scanned PDFs.
 - Add richer candidate/document detail and ingestion-history APIs.
 - Detect templates and non-CV PDFs more accurately.
@@ -379,7 +379,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [ ] Add correction and reprocessing workflows.
 - [x] Store new original documents privately through a provider abstraction and record retention deadlines.
 - [x] Quarantine new uploads and require a clean ClamAV verdict before storage promotion or parsing.
-- [ ] Implement approved expiry/deletion, legal-hold enforcement, and backup controls.
+- [x] Implement and validate scheduled original-file expiry and legal-hold enforcement.
+- [ ] Implement full candidate erasure and automated encrypted paired backup/restore controls.
 
 **Exit condition:** recruiters can upload, review, correct, and manage CV ingestion outcomes without direct database access.
 
@@ -403,7 +404,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Restrict CORS and administrative initial-data loading.
 - [x] Add fail-closed malware scanning before parsing user uploads.
 - [x] Approve the candidate notice, retention, deletion, legal-hold, residency, access, and audit baseline.
-- [ ] Enforce scheduled expiry/deletion, legal hold, and broader business-action auditing.
+- [x] Enforce scheduled original-file expiry and legal holds with tenant-scoped auditing.
+- [ ] Enforce full candidate erasure and broader business-action auditing.
 - [ ] Prevent CV content from overriding evaluation system instructions.
 - [ ] Add structured ingestion and evaluation metrics without logging CV content.
 - [ ] Monitor parsing failures, duplicates, OCR needs, latency, model usage, cost, and evaluation drift.

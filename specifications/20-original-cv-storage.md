@@ -426,7 +426,7 @@ tar -tzf "$cv_backup" > /dev/null
 
 - Add the candidate-details/ingestion-history UI that invokes the authorized original-file APIs.
 - Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
-- Implement scheduled expiry that deletes the binary and updates or deletes its database record safely.
-- Implement legal-hold enforcement around deletion and expiry.
+- Implement confirmed full candidate erasure across the original, extracted text, document/candidate records,
+  evaluations, and future derived AI data.
 - Add encrypted off-server backup and an isolated restore test for database plus original files.
 - Replace the local provider with private object storage before horizontal or multi-host backend scaling.

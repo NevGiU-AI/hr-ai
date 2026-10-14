@@ -145,7 +145,8 @@ The organization identifier is resolved from the authenticated principal and mus
 ## Remaining work
 
 - Define organization lifecycle management before onboarding independent customer organizations.
-- Enforce candidate retention/deletion and legal-hold operations with broader business-action audit logging.
+- Complete full candidate erasure and broader business-action audit logging; original-file expiry and legal holds are
+  already enforced and validated in staging and production.
 - Continue applying the completed [final security validation suite](./19-final-security-validation.md) to security-relevant
   releases.
 

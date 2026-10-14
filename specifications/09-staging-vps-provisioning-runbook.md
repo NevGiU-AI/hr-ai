@@ -924,6 +924,24 @@ PDF imported successfully, while the harmless EICAR PDF attachment fixture docum
 security-validation message. No infected document was accepted. Stopping ClamAV caused a new non-duplicate PDF to fail
 closed with the scanner-unavailable response; after restart and health recovery, normal import resumed.
 
+### Validated retention and legal-hold rollout
+
+**Accepted 14 October 2026 for main revision `0641e96`:** matched PostgreSQL and `cv-originals` backups were validated
+before deployment. Flyway applied schema version `3` (`V3__add_cv_legal_hold.sql`), Hibernate validation passed, and the
+backend became healthy. Staging used the reviewed bounded cleanup configuration:
+
+```dotenv
+CV_RETENTION_CLEANUP_ENABLED=true
+CV_RETENTION_CLEANUP_BATCH_SIZE=100
+CV_RETENTION_CLEANUP_CRON=0 43 3 * * *
+```
+
+Two distinct disposable originals proved the controlled expiry boundary: an overdue held original remained stored,
+while an overdue unheld original was expired. Releasing the overdue hold triggered immediate expiry. Candidate and
+evaluation data remained because this workflow removes only the original binary and its storage metadata. Audit events
+and backend logs were verified, and the temporary accelerated test schedule was restored to the normal daily `03:43`
+cron.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

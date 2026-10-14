@@ -485,12 +485,12 @@ was approved on 6 October 2026, and fail-closed malware quarantine passed stagin
 2026. Before real candidate information is processed beyond the approved validation dataset, resolve the remaining
 controls:
 
-- Each customer organization's lawful basis and candidate notice, plus enforcement of approved retention, deletion,
-  correction, legal-hold, and audit rules.
+- Each customer organization's lawful basis and candidate notice, plus enforcement of approved full-erasure,
+  correction, and remaining business-action audit rules.
 - Original CV retention location is resolved for the current single-host deployment: new PDFs use the private
-  `cv-originals` volume with opaque tenant-scoped keys, retention metadata, and malware quarantine. Automated
-  expiry/deletion, encrypted off-server backup, and migration to private object storage before multi-host scaling remain
-  production-governance requirements.
+  `cv-originals` volume with opaque tenant-scoped keys, retention metadata, malware quarantine, scheduled original
+  expiry, and legal holds. Full candidate erasure, encrypted off-server backup, and migration to private object storage
+  before multi-host scaling remain production-governance requirements.
 - OpenAI data-processing terms and disclosure that CV text is sent to the provider only during explicit evaluation.
 - Prompt-injection defenses for untrusted CV content.
 - Log and monitoring redaction.

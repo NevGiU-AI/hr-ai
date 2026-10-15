@@ -489,8 +489,9 @@ controls:
   full-erasure workflow and enforcement of correction and remaining business-action audit rules.
 - Original CV retention location is resolved for the current single-host deployment: new PDFs use the private
   `cv-originals` volume with opaque tenant-scoped keys, retention metadata, malware quarantine, scheduled original
-  expiry, and legal holds. Candidate erasure is implemented and awaits environment acceptance; encrypted off-server
-  backup and migration to private object storage before multi-host scaling remain production-governance requirements.
+  expiry, and legal holds. Candidate erasure passed staging acceptance and awaits production validation; encrypted
+  off-server backup and migration to private object storage before multi-host scaling remain production-governance
+  requirements.
 - OpenAI data-processing terms and disclosure that CV text is sent to the provider only during explicit evaluation.
 - Prompt-injection defenses for untrusted CV content.
 - Log and monitoring redaction.

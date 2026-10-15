@@ -15,8 +15,8 @@
         <td>{{ event.eventType.replaceAll('_', ' ') }}</td>
         <td><span class="outcome" [class.failure]="event.outcome !== 'SUCCESS'">{{ event.outcome }}</span></td>
         <td>{{ actorIdentity(event) }}</td>
-        <td>{{ identity(event.targetEmail, event.targetUserId) }}</td>
-        <td>{{ event.details || '—' }}</td>
+        <td>{{ targetIdentity(event) }}</td>
+        <td>{{ eventDetails(event) }}</td>
       </tr></tbody>
     </table>
   </div>

@@ -40,6 +40,44 @@ describe('SecurityAuditComponent', () => {
       eventType: 'ROLES_CHANGED',
     }))).toBe('admin@example.com');
   });
+
+  it('shows the safe candidate ID as the target of candidate erasure', () => {
+    expect(component.targetIdentity(event({
+      targetUserId: null,
+      targetEmail: null,
+      eventType: 'CANDIDATE_ERASED',
+      details: 'candidateId=47;originals=0',
+    }))).toBe('Candidate #47');
+  });
+
+  it('preserves user targets for account events', () => {
+    expect(component.targetIdentity(event({
+      eventType: 'ROLES_CHANGED',
+    }))).toBe('recruiter@example.com');
+  });
+
+  it('uses the system fallback when candidate details are malformed', () => {
+    expect(component.targetIdentity(event({
+      targetUserId: null,
+      targetEmail: null,
+      eventType: 'CANDIDATE_ERASURE_FAILED',
+      details: 'reason=storage-unavailable',
+    }))).toBe('System / unresolved');
+  });
+
+  it('explains when an erased candidate had no stored original', () => {
+    expect(component.eventDetails(event({
+      eventType: 'CANDIDATE_ERASED',
+      details: 'candidateId=47;originals=0',
+    }))).toBe('No stored original file was associated');
+  });
+
+  it('reports how many stored originals were deleted', () => {
+    expect(component.eventDetails(event({
+      eventType: 'CANDIDATE_ERASED',
+      details: 'candidateId=47;storedOriginalsDeleted=2',
+    }))).toBe('2 stored original files deleted');
+  });
 });
 
 function event(overrides: Partial<SecurityAuditEvent>): SecurityAuditEvent {

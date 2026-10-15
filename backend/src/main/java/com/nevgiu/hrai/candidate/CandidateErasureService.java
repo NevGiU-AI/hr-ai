@@ -99,7 +99,7 @@ public class CandidateErasureService {
                 storage.delete(staged.deletionKey());
             }
             audit.candidateErasure(SecurityEventType.CANDIDATE_ERASED, SecurityEventOutcome.SUCCESS,
-                    actor, candidateId, "originals=" + stagedOriginals.size());
+                    actor, candidateId, "storedOriginalsDeleted=" + stagedOriginals.size());
         } catch (RuntimeException exception) {
             log.error("Unable to purge staged originals after candidate erasure for candidateId={}", candidateId);
             audit.candidateErasure(SecurityEventType.CANDIDATE_ERASURE_FAILED, SecurityEventOutcome.FAILURE,

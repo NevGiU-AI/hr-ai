@@ -145,9 +145,8 @@ The organization identifier is resolved from the authenticated principal and mus
 ## Remaining work
 
 - Define organization lifecycle management before onboarding independent customer organizations.
-- Complete production validation of the full candidate-erasure workflow, which passed staging acceptance on
-  15 October 2026, and complete broader business-action audit logging; original-file expiry and legal holds are
-  already enforced and validated.
+- Full candidate erasure passed staging and production acceptance on 15 October 2026 in release `v0.14.0`; complete
+  broader business-action audit logging. Original-file expiry and legal holds are already enforced and validated.
 - Continue applying the completed [final security validation suite](./19-final-security-validation.md) to security-relevant
   releases.
 

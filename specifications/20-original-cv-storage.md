@@ -383,9 +383,9 @@ the destructive overdue-document scenario was accepted from controlled staging e
 real production candidate data.
 
 These records validate the implemented storage, malware-quarantine, authorized original-file operations, and
-retention/legal-hold behavior in staging and production. Full candidate erasure is implemented and awaits environment
-acceptance; automated encrypted off-server backup/restore, correction and reprocessing, and future object-storage
-controls remain incomplete.
+retention/legal-hold behavior in staging and production. Full candidate erasure passed staging acceptance and awaits
+production validation; automated encrypted off-server backup/restore, correction and reprocessing, and future
+object-storage controls remain incomplete.
 
 ## Full candidate erasure
 
@@ -419,6 +419,17 @@ curl -i -b "$admin_cookie" -X DELETE "$api_url/api/candidates/$candidate_id" \
   -H "X-XSRF-TOKEN: $admin_csrf" \
   --data '{"confirmed":true}'
 ```
+
+**Accepted in staging 15 October 2026 for main revision `3b491db`:** the complete checklist above passed with
+disposable candidates. Recruiter authorization returned `403`, cancelled browser confirmation issued no request,
+missing and cross-tenant identifiers returned the generic `404`, and an active legal hold returned `409` while
+preserving the complete candidate aggregate. After hold release, administrator-confirmed erasure returned `204` and
+removed the candidate, extracted text, CV document, evaluation, and any associated stored original without affecting
+unrelated tenant data. The candidate selector refreshed after success. Security Events recorded denied and successful
+outcomes under the administrator actor, displayed the target as `Candidate #<id>`, and rendered a zero-file result as
+`No stored original file was associated` rather than an unresolved target or internal counter. Audit details and logs
+contained no candidate content, filename, hash, or storage key, and backend inspection found no staged-file purge or
+rollback-restoration error. Production acceptance remains pending.
 
 ## Backup and recovery
 

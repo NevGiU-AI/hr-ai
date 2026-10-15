@@ -50,7 +50,49 @@ export class SecurityAuditComponent implements OnInit {
       : 'System / unresolved';
   }
 
+  /**
+   * Formats the logical target without pretending that every security event targets an application account.
+   * Account-management events use the dedicated target user columns, whereas candidate erasure keeps only a safe
+   * candidate database ID after the personal candidate record has been permanently removed.
+   */
+  targetIdentity(event: SecurityAuditEvent): string {
+    if (event.targetEmail != null || event.targetUserId != null) {
+      return this.identity(event.targetEmail, event.targetUserId);
+    }
+
+    if (this.isCandidateErasureEvent(event.eventType)) {
+      // Candidate audit events deliberately avoid the user-account target columns. Their safe candidate database ID
+      // is retained in the bounded details field after the candidate record itself has been erased.
+      const candidateId = event.details?.match(/(?:^|;)candidateId=(\d+)(?:;|$)/)?.[1];
+      if (candidateId) return `Candidate #${candidateId}`;
+    }
+
+    // Preserve the established fallback for true system events and older/malformed candidate audit records.
+    return 'System / unresolved';
+  }
+
+  /** Converts the compact erasure audit counter into operator-friendly text without changing stored history. */
+  eventDetails(event: SecurityAuditEvent): string {
+    if (event.eventType === 'CANDIDATE_ERASED') {
+      // Accept both the original key and the clearer key used by newer backend events so historical rows improve too.
+      const originalCount = event.details
+        ?.match(/(?:^|;)(?:originals|storedOriginalsDeleted)=(\d+)(?:;|$)/)?.[1];
+      if (originalCount != null) {
+        const count = Number(originalCount);
+        if (count === 0) return 'No stored original file was associated';
+        return `${count} stored original file${count === 1 ? '' : 's'} deleted`;
+      }
+    }
+
+    return event.details || '—';
+  }
+
   private isPreAuthenticationEvent(eventType: string): boolean {
     return ['LOGIN_FAILED', 'LOGIN_THROTTLED', 'ACCOUNT_LOCKED'].includes(eventType);
+  }
+
+  private isCandidateErasureEvent(eventType: string): boolean {
+    // All outcomes share the same safe target representation, including denied and operational-failure attempts.
+    return ['CANDIDATE_ERASED', 'CANDIDATE_ERASURE_DENIED', 'CANDIDATE_ERASURE_FAILED'].includes(eventType);
   }
 }

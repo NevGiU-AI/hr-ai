@@ -69,7 +69,7 @@ class CandidateErasureServiceTest {
 
         verify(storage).delete(staged.deletionKey());
         verify(audit).candidateErasure(SecurityEventType.CANDIDATE_ERASED, SecurityEventOutcome.SUCCESS,
-                actor, 7L, "originals=1");
+                actor, 7L, "storedOriginalsDeleted=1");
     }
 
     @Test

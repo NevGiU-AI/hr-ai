@@ -382,10 +382,9 @@ workflows remained operational. The normal bounded cleanup configuration was ena
 the destructive overdue-document scenario was accepted from controlled staging evidence rather than reproduced with
 real production candidate data.
 
-These records validate the implemented storage, malware-quarantine, authorized original-file operations, and
-retention/legal-hold behavior in staging and production. Full candidate erasure passed staging acceptance and awaits
-production validation; automated encrypted off-server backup/restore, correction and reprocessing, and future
-object-storage controls remain incomplete.
+These records validate the implemented storage, malware-quarantine, authorized original-file operations,
+retention/legal-hold behavior, and full candidate erasure in staging and production. Automated encrypted off-server
+backup/restore, correction and reprocessing, and future object-storage controls remain incomplete.
 
 ## Full candidate erasure
 
@@ -429,7 +428,15 @@ unrelated tenant data. The candidate selector refreshed after success. Security 
 outcomes under the administrator actor, displayed the target as `Candidate #<id>`, and rendered a zero-file result as
 `No stored original file was associated` rather than an unresolved target or internal counter. Audit details and logs
 contained no candidate content, filename, hash, or storage key, and backend inspection found no staged-file purge or
-rollback-restoration error. Production acceptance remains pending.
+rollback-restoration error.
+
+**Accepted in production 15 October 2026 for release `v0.14.0` at main revision `fd2c915`:** deployment and the
+production candidate-erasure smoke suite completed successfully. Using disposable candidate data, administrator-only
+confirmation, role enforcement, tenant-safe not-found behavior, and legal-hold protection matched staging behavior.
+Confirmed erasure removed the candidate aggregate and any associated stored original without affecting unrelated
+tenant records. Security Events showed the administrator actor, `Candidate #<id>` target, readable stored-original
+outcome, and no candidate content or storage identifier. Backend logs contained no staged-file purge,
+rollback-restoration, database, or storage failure. Candidate erasure is therefore accepted in both environments.
 
 ## Backup and recovery
 

@@ -183,7 +183,7 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 
 ### Remaining backend work
 
-- Complete production validation of the full candidate-erasure workflow; staging acceptance passed on 15 October 2026.
+- Full candidate erasure passed staging and production acceptance on 15 October 2026 in release `v0.14.0`.
 - Complete automated encrypted original-file/database backup controls.
 - Add OCR and reprocessing for scanned PDFs.
 - Add richer candidate/document detail and ingestion-history APIs.

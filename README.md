@@ -62,8 +62,8 @@ The authentication foundation—including tenant isolation, Redis sessions, thro
 password management, concurrent-session limits, and the final security acceptance suite—is deployed and validated in
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
-staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure has
-passed staging acceptance and awaits production validation. Correction/reprocessing and automated encrypted backup
+staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
+staging and production acceptance in release `v0.14.0`. Correction/reprocessing and automated encrypted backup
 governance remain incomplete. The next delivery sequence is:
 
 1. Complete original-CV governance and correction/reprocessing.

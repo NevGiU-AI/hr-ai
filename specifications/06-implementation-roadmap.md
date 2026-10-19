@@ -42,15 +42,19 @@
 - [x] Configure production Premium VPS backup and prepare private cross-region Object Storage.
 - [ ] Complete production observability, off-server log collection, redaction, and alerting standards.
 - [ ] Approve telemetry classification, content exclusions, low-cardinality labels, access, retention, incident export, and alert-routing policy.
-- [ ] Validate the implemented encrypted paired PostgreSQL/original-file backup with an isolated restoration test.
+- [ ] After the dashboard, stable OpenAPI contracts, and concurrency benchmark, install and validate the implemented
+  encrypted paired PostgreSQL/original-file backup in staging and production, including an isolated restoration test.
 - [x] Validate production release promotion with GitHub environment protection, approval, and image rollback configured.
 - [ ] Confirm all development, staging, production, and backup credentials are isolated, rotated when needed, and absent from Git.
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** complete original-CV authorized operations, lifecycle, and paired backup/restore
-controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback -> final dashboard -> cross-cutting
-release validation -> private object storage -> horizontal or multi-host backend scaling.
+**Current delivery sequence:** candidate details and ingestion history -> correction/reprocessing -> OCR -> typed CV chat
+-> speech input/playback -> final dashboard -> publish stable OpenAPI contracts -> benchmark bounded concurrency and
+virtual threads -> validate paired backup/restore in staging -> validate it in production -> cross-cutting release
+validation -> private object storage -> consider horizontal or multi-host backend scaling. External messaging follows
+stable web chat, speech controls, and documented APIs; optional image/video generation remains last and requires
+separate value, privacy, and compliance approval.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -82,10 +86,12 @@ release validation -> private object storage -> horizontal or multi-host backend
   and production through release `v0.13.0`.
 - [x] Add administrator-confirmed, tenant-scoped full candidate erasure across originals, documents, extracted text,
   candidate records, and evaluations, with legal-hold enforcement and auditing.
-- [ ] Complete production acceptance of automated encrypted paired original-file/database backup and restore.
+- [ ] After the dashboard, stable OpenAPI contracts, and concurrency benchmark, install the automated encrypted paired
+  original-file/database backup service in staging and production and complete isolated-restore acceptance.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.
-- [ ] Add candidate-details access to original-file operations and auditable correction/reprocessing.
+- [ ] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
+- [ ] Add auditable metadata correction and safe document reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
 - [ ] Add metadata correction and document reprocessing without duplicating candidates.
@@ -147,7 +153,73 @@ This phase starts after the dashboard is complete so the documented API includes
 
 **Exit condition:** Backend consumers can discover and test the stable API through reviewed, versioned, security-conscious Swagger/OpenAPI documentation.
 
-## Phase 6 - Add external messaging
+## Phase 6 - Benchmark concurrency and virtual threads
+
+- [ ] Establish platform-thread load-test baselines for AI, JDBC, ingestion, chat, and dashboard workloads.
+- [ ] Evaluate Spring Boot virtual threads in staging for blocking orchestration, with `spring.main.keep-alive` and a
+  reversible environment setting.
+- [ ] Bound PostgreSQL, OpenAI, OCR, and speech concurrency independently with timeouts, rate limits, bulkheads, or
+  semaphores.
+- [ ] Keep PDF parsing, ZIP decompression, local OCR, and media encoding on bounded CPU-oriented workers.
+- [ ] Monitor pinned virtual threads, carrier starvation, database-pool waits, tail latency, provider throttling,
+  cancellation, and graceful shutdown.
+- [ ] Keep virtual threads disabled unless repeatable staging evidence demonstrates a worthwhile improvement without
+  violating downstream budgets.
+
+**Exit condition:** the selected thread model is supported by repeatable staging measurements and explicit resource
+limits, and can be reverted through configuration.
+
+## Phase 7 - Install and validate paired backup/restore
+
+- [ ] Provision a staging-only destination, upload-only credentials, public `age` recipient, Object Lock, and lifecycle
+  policy without reusing production credentials or recovery identities.
+- [ ] Install the paired service in staging, run a manual recovery set, and confirm backend health recovery.
+- [ ] Complete an isolated staging restore and validate business counts, tenant boundaries, original-file references,
+  representative downloads, and deletion replay.
+- [ ] Install the same service in production only after staging acceptance, using production-only configuration.
+- [ ] Repeat the manual upload, Object Lock, isolated restore, and application-health checks in production.
+- [ ] Enable each timer only after that environment passes its complete acceptance sequence.
+
+**Exit condition:** staging and production can each produce and restore a complete encrypted PostgreSQL/original-file
+recovery set, with environment-isolated credentials and recorded evidence.
+
+## Phase 8 - Cross-cutting release readiness
+
+- [ ] Run full unit, integration, end-to-end, performance, accessibility, usability, privacy, and security test suites.
+- [ ] Run deterministic AI invariants on every pull request and a stable provider-backed evaluation smoke set where cost and availability permit.
+- [ ] Run the complete versioned AI evaluation suite nightly, before model or prompt promotion, and before production release.
+- [ ] Calibrate Spring AI and custom evaluator judgments against human labels; track false passes, false failures, and drift.
+- [ ] Version generation and evaluator models, prompts, retrieval settings, tools, weights, datasets, and thresholds together.
+- [ ] Verify backup, restore, retention, deletion, and incident procedures.
+- [ ] Add model, token, latency, error, retrieval-quality, transcription-quality, media, and cost monitoring.
+- [ ] Add privacy-safe Spring AI observations for chat, advisors, models, embeddings, tools, and vector stores with all content-bearing telemetry disabled.
+- [ ] Add custom OCR, speech, messaging, backup, evaluation-run, confirmation, and background-job observations.
+- [ ] Export metrics, traces, and logs through encrypted, authenticated, environment-separated off-server collection without exposing Actuator publicly.
+- [ ] Validate trace propagation across virtual threads, streaming, scheduled work, background jobs, and provider callbacks.
+- [ ] Build and test actionable dashboards, alerts, telemetry-pipeline monitoring, operator access, redaction, and incident-export procedures.
+- [ ] Conduct recruiter acceptance testing with representative workflows.
+- [ ] Document deployment, rollback, support, and model-change procedures.
+
+**Exit condition:** Operational, security, privacy, AI-quality, performance, accessibility, usability, and product owners
+approve release.
+
+## Phase 9 - Move originals to private object storage and consider horizontal scaling
+
+This phase follows release readiness. Private object storage is required before backend processing can be distributed
+across multiple hosts. The current private Docker volume remains supported while the application runs on one backend
+host.
+
+- [ ] Replace the local original-CV provider with private object storage.
+- [ ] Preserve opaque tenant-scoped keys, encryption, quarantine, retention, deletion, legal-hold, and audit controls.
+- [ ] Migrate existing originals with integrity verification and without exposing filenames or candidate content.
+- [ ] Validate paired database/object restoration and access from every intended backend or worker replica.
+- [ ] Re-run capacity, failure, session, scheduling, and storage-consistency tests before deciding whether horizontal or
+  multi-host scaling is justified.
+
+**Exit condition:** original files are private, durable, and consistently available across intended hosts, and any
+horizontal-scaling decision is supported by measured demand and failure testing.
+
+## Phase 10 - Add external messaging
 
 - [ ] Implement the selected provider behind a channel-neutral messaging interface.
 - [ ] Link messaging identities to authenticated application users securely.
@@ -158,7 +230,7 @@ This phase starts after the dashboard is complete so the documented API includes
 
 **Exit condition:** External chat has security and answer quality equivalent to the web channel.
 
-## Phase 7 - Add optional generated media
+## Phase 11 - Add optional generated media
 
 - [ ] Validate a measurable employer-branding or communication need before implementing generated media.
 - [ ] Add image generation only for human-reviewed job-post, employer-branding, or interface assets.
@@ -170,43 +242,6 @@ This phase starts after the dashboard is complete so the documented API includes
 - [ ] Prohibit synthetic interviewers and candidate scoring from face, gesture, attention, emotion, appearance, or behavior.
 
 **Exit condition:** Optional generated media has a validated communication benefit, is clearly disclosed, and remains completely outside candidate evaluation and ranking.
-
-## Phase 8 - Release readiness
-
-- [ ] Run full unit, integration, end-to-end, performance, and security test suites.
-- [ ] Run deterministic AI invariants on every pull request and a stable provider-backed evaluation smoke set where cost and availability permit.
-- [ ] Run the complete versioned AI evaluation suite nightly, before model or prompt promotion, and before production release.
-- [ ] Calibrate Spring AI and custom evaluator judgments against human labels; track false passes, false failures, and drift.
-- [ ] Version generation and evaluator models, prompts, retrieval settings, tools, weights, datasets, and thresholds together.
-- [ ] Establish platform-thread load-test baselines for AI, JDBC, ingestion, chat, dashboard, and messaging workloads.
-- [ ] Evaluate Spring Boot virtual threads in staging for blocking orchestration, with `spring.main.keep-alive` and a reversible environment setting.
-- [ ] Bound PostgreSQL, OpenAI, OCR, speech, messaging, image, and video concurrency independently with timeouts, rate limits, bulkheads or semaphores.
-- [ ] Keep PDF parsing, ZIP decompression, local OCR, and media encoding on bounded CPU-oriented workers.
-- [ ] Monitor pinned virtual threads, carrier starvation, database-pool waits, tail latency, provider throttling, cancellation, and shutdown behavior.
-- [ ] Verify backup, restore, retention, deletion, and incident procedures.
-- [ ] Add model, token, latency, error, retrieval-quality, transcription-quality, media, and cost monitoring.
-- [ ] Add privacy-safe Spring AI observations for chat, advisors, models, embeddings, tools, and vector stores with all content-bearing telemetry disabled.
-- [ ] Add custom OCR, speech, messaging, backup, evaluation-run, confirmation, and background-job observations.
-- [ ] Export metrics, traces, and logs through encrypted, authenticated, environment-separated off-server collection without exposing Actuator publicly.
-- [ ] Validate trace propagation across virtual threads, streaming, scheduled work, background jobs, and provider callbacks.
-- [ ] Build and test actionable dashboards, alerts, telemetry-pipeline monitoring, operator access, redaction, and incident-export procedures.
-- [ ] Conduct recruiter acceptance testing with representative workflows.
-- [ ] Document deployment, rollback, support, and model-change procedures.
-
-**Exit condition:** Operational, security, AI-quality, and product owners approve release.
-
-## Phase 9 - Prepare storage for horizontal scaling
-
-This phase follows release readiness and is required before backend processing is distributed across multiple hosts.
-The current private Docker volume remains supported while the application runs on one backend host.
-
-- [ ] Replace the local original-CV provider with private object storage.
-- [ ] Preserve opaque tenant-scoped keys, encryption, quarantine, retention, deletion, legal-hold, and audit controls.
-- [ ] Migrate existing originals with integrity verification and without exposing filenames or candidate content.
-- [ ] Validate paired database/object restoration and access from every intended backend or worker replica.
-
-**Exit condition:** original files remain private, durable, and consistently available when requests or background work
-can run on different hosts.
 
 ## Definition of done for every feature
 

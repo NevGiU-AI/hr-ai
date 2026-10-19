@@ -510,7 +510,8 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Make built-in CV import environment-controlled and document that production disables it.
 - [x] Add deployment and rollback scripts.
 - [x] Add encrypted paired database/original-file backup and isolated-restore scripts.
-- [ ] Complete and record an isolated restoration test before enabling the production timer.
+- [ ] After the dashboard, stable OpenAPI contracts, and concurrency benchmark, install the paired service in staging,
+  complete and record an isolated restoration test, then repeat acceptance in production before enabling either timer.
 
 **Exit condition:** the application can be deployed manually to a clean VPS over HTTPS without development credentials or public data services.
 

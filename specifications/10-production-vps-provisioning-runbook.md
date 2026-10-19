@@ -1143,7 +1143,7 @@ root:root 600 /root/.aws/config
 
 The root profile successfully completed `head-bucket` against `https://s3.gra.io.cloud.ovh.net`. Its `get-object-lock-configuration` request returned the expected `AccessDenied`, proving the unattended VPS identity can reach the bucket but cannot administer retention.
 
-### 20. Install the tracked paired backup service
+### 20. Install the tracked paired backup service after the dashboard, OpenAPI, and concurrency benchmark
 
 The repository contains:
 
@@ -1153,6 +1153,10 @@ deploy/restore-paired.sh
 deploy/systemd/nevgiu-paired-backup.service
 deploy/systemd/nevgiu-paired-backup.timer
 ```
+
+Installation is deliberately deferred until the dashboard, stable OpenAPI contracts, and concurrency benchmark are
+complete and the service has first passed the equivalent staging installation and isolated-restore rehearsal. Continue
+using the manual matched pre-deployment backup procedure in section 14.3 until this section is activated.
 
 The restore script remains on the controlled recovery workstation or isolated recovery host. Do not install it or the
 private recovery identity on the production VPS.
@@ -1235,7 +1239,8 @@ sudo systemctl disable --now nevgiu-postgres-backup.timer
 ```
 
 Do not delete retained database-only backups; keep them until their existing lifecycle and legal obligations expire.
-The next production step is installing and verifying these tracked service files without enabling the paired timer.
+After the dashboard, OpenAPI contracts, concurrency benchmark, and staging acceptance, the next production backup step
+is installing and verifying these tracked service files without enabling the paired timer.
 
 ### 21. Credential and recovery-key rotation boundaries
 
@@ -1344,10 +1349,13 @@ Repeat the staging procedure with these changes:
 - [x] Install and validate only the public `age` recipient on the production VPS.
 - [x] Install `age` and AWS CLI and verify their production versions.
 - [x] Install the upload-only writer credentials as a root-only AWS profile and recheck allowed and denied operations.
-- [x] Install and validate the root-owned streaming backup script and systemd units without enabling the timer.
-- [x] Configure and read back thirty-day lifecycle retention for encrypted PostgreSQL backups.
-- [ ] Run a manual encrypted backup, verify Object Lock, and restore it in isolation before enabling the timer.
-- [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
+- [x] Install and validate the legacy root-owned PostgreSQL-only streaming backup script and systemd units without
+  enabling its timer.
+- [x] Configure and read back thirty-day lifecycle retention for legacy encrypted PostgreSQL backups.
+- [ ] After the dashboard, OpenAPI, concurrency benchmark, and staging acceptance, replace the legacy service with the
+  paired PostgreSQL/original-file service and configure lifecycle coverage for `recovery-sets/production/`.
+- [ ] Run a manual encrypted paired backup, verify Object Lock on both artifacts, and restore it in isolation before
+  enabling the production timer.
 - [x] Configure the GitHub `production` environment with separate variables and secrets.
 - [x] Require production deployment approval where supported.
 - [x] Configure public HTTPS smoke-test failure to restore the previous application images and verify the restored public endpoints.

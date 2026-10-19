@@ -9,9 +9,19 @@ Use the environment-specific runbook for initial OVHcloud provisioning, SSH hard
 
 Never copy an environment file, SSH key, API key, database password, backup credential, or GitHub environment secret from one procedure to the other.
 
-Production recovery sets use `backup-paired.sh` with the accompanying units in `systemd/`. Install the script root-owned as `/usr/local/sbin/nevgiu-paired-backup`; do not execute a root service from a deployment-writable path. The service briefly stops the backend, streams a custom-format `pg_dump` and the matching `cv-originals` archive directly into `age`, restarts and health-checks the backend, uploads both encrypted artifacts, and uploads `manifest.txt` last as the recovery-set completion marker. It requires the production `.env`, generated `.images.env`, preloaded `alpine:3.20` image, root-only AWS writer profile, and `/etc/nevgiu/backup-recipient.txt`; the private recovery identity must never exist on the VPS.
+Paired recovery tooling is implemented in `backup-paired.sh`, `restore-paired.sh`, and the accompanying units in
+`systemd/`, but installation in staging and production is deliberately deferred until after the dashboard, stable
+OpenAPI contracts, and concurrency benchmark. Until then, use the runbooks' manual matched pre-deployment backups. When activated, install the backup script root-owned as
+`/usr/local/sbin/nevgiu-paired-backup`; never execute a root service from a deployment-writable path. The service briefly
+stops the backend, streams a custom-format `pg_dump` and matching `cv-originals` archive directly into `age`, restarts
+and health-checks the backend, uploads both encrypted artifacts, and uploads `manifest.txt` last as the recovery-set
+completion marker. The private recovery identity must never exist on either application VPS.
 
-The timer is intentionally installed but left disabled during provisioning. Enable it only after the production stack exists, a manual paired upload succeeds, Object Lock is verified on both encrypted artifacts, and `restore-paired.sh` completes an isolated restore. Its daily schedule is 02:30 UTC with up to thirty minutes of randomized delay and persistent catch-up after downtime.
+The paired timer definition is tracked but must not be installed or enabled before its scheduled milestone. After the
+dashboard, OpenAPI, and concurrency work, install it in staging first and enable it only after a manual paired upload,
+Object Lock verification, and an isolated restore succeed. Production follows the same acceptance sequence only after
+staging. Its daily schedule is 02:30 UTC with up to thirty minutes of randomized delay and persistent catch-up after
+downtime.
 
 Object Storage lifecycle must retain current objects under `recovery-sets/` for the approved period, remove incomplete multipart uploads after one day, and clean eligible non-current versions and expired delete markers. Seven-day Governance Object Lock always takes precedence over lifecycle deletion. Apply or change lifecycle policy only with the offline bucket-owner profile, never with credentials installed on the VPS.
 

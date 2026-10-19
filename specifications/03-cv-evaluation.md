@@ -184,7 +184,8 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 ### Remaining backend work
 
 - Full candidate erasure passed staging and production acceptance on 15 October 2026 in release `v0.14.0`.
-- Complete automated encrypted original-file/database backup controls.
+- After the dashboard, OpenAPI, and concurrency milestones, install and validate the implemented encrypted paired
+  original-file/database backup service in staging and production.
 - Add OCR and reprocessing for scanned PDFs.
 - Add richer candidate/document detail and ingestion-history APIs.
 - Detect templates and non-CV PDFs more accurately.
@@ -382,7 +383,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Quarantine new uploads and require a clean ClamAV verdict before storage promotion or parsing.
 - [x] Implement and validate scheduled original-file expiry and legal-hold enforcement.
 - [x] Implement administrator-confirmed full candidate erasure with legal-hold, tenant, audit, and rollback controls.
-- [ ] Implement automated encrypted paired backup/restore controls.
+- [x] Implement encrypted paired backup/restore tooling; installation and isolated-restore acceptance follow the
+  dashboard, stable OpenAPI contracts, and concurrency benchmark.
 
 **Exit condition:** recruiters can upload, review, correct, and manage CV ingestion outcomes without direct database access.
 

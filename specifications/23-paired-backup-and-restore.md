@@ -1,6 +1,6 @@
 # Encrypted paired backup and restore
 
-Status: **Implemented; production acceptance pending**
+Status: **Implemented in the repository; installation deferred until after the dashboard, OpenAPI, and concurrency benchmark**
 
 ## Purpose
 
@@ -44,19 +44,29 @@ references, representative downloads, and deletion replay; removal is a separate
 
 ## Installation and acceptance sequence
 
-1. Install the backup script and systemd units as root-owned files using the production runbook; keep the restore script off the production VPS.
-2. Run `docker pull alpine:3.20` before the first maintenance window and confirm `docker image inspect alpine:3.20` succeeds.
-3. Run the service manually and confirm the backend returns healthy.
-4. Confirm the remote set contains two non-empty `.age` artifacts and `manifest.txt`.
-5. Verify Governance Object Lock and lifecycle coverage for the complete prefix.
-6. Download one set on an isolated recovery host with read-authorized administrator credentials.
-7. Run the restore script into uniquely named rehearsal targets.
-8. Compare business counts and original-file references, then test representative files.
-9. Record the restore evidence and explicitly remove rehearsal data.
-10. Enable the timer only after every preceding check passes.
+This sequence is intentionally scheduled after candidate details/history, correction/reprocessing, OCR, CV chat, speech,
+the final dashboard, publication of stable OpenAPI contracts, and the bounded-concurrency/virtual-thread benchmark.
+Until then, continue using the documented manual matched pre-deployment backups. Do not enable the legacy database-only
+timer as a substitute for the paired service.
+
+1. Provision environment-isolated destinations, upload-only credentials, public `age` recipients, and lifecycle rules
+   for staging and production; never reuse credentials or recovery identities across environments.
+2. Install the backup script and systemd units as root-owned files in staging first; keep the restore script and private
+   recovery identity off the application VPS.
+3. Run `docker pull alpine:3.20` before the first maintenance window and confirm `docker image inspect alpine:3.20` succeeds.
+4. Run the staging service manually and confirm the backend returns healthy.
+5. Confirm the remote staging set contains two non-empty `.age` artifacts and `manifest.txt`.
+6. Download one staging set on an isolated recovery host, restore into uniquely named targets, and validate business
+   counts, tenant boundaries, original-file references, representative downloads, and deletion replay.
+7. After staging acceptance, install the same service in production with production-only configuration and repeat the
+   manual upload, Object Lock, isolated restore, and application-health checks.
+8. Record both acceptance results and explicitly remove rehearsal data.
+9. Enable each environment's timer only after that environment passes every preceding check.
 
 ## Remaining acceptance evidence
 
+- [ ] Staging destination and environment-isolated credentials configured.
+- [ ] Manual staging paired upload and isolated restore completed.
 - [ ] Manual production paired upload completed.
 - [ ] Object Lock confirmed on both encrypted artifacts.
 - [ ] Isolated database and volume restore completed.

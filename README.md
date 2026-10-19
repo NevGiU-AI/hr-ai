@@ -22,7 +22,7 @@ decisions.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
 Legacy-original rescanning, authorized correction/reprocessing, automated off-server
-backup/restore, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
+backup/restore acceptance, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
 storage is required before horizontal or multi-host backend scaling.
 
 ## Architecture
@@ -63,7 +63,7 @@ password management, concurrent-session limits, and the final security acceptanc
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
-staging and production acceptance in release `v0.14.0`. Correction/reprocessing and automated encrypted backup
+staging and production acceptance in release `v0.14.0`. Correction/reprocessing and encrypted paired backup acceptance
 governance remain incomplete. The next delivery sequence is:
 
 1. Complete original-CV governance and correction/reprocessing.
@@ -281,6 +281,7 @@ corresponding metadata, so database and encrypted original-file backups must be 
 - [Tenant isolation](specifications/tenant-isolation.md)
 - [Governed original CV storage](specifications/20-original-cv-storage.md)
 - [Candidate data governance decisions](specifications/21-candidate-data-governance.md)
+- [Encrypted paired backup and restore](specifications/23-paired-backup-and-restore.md)
 - [Deployment operations](deploy/README.md)
 
 ## Useful Docker commands

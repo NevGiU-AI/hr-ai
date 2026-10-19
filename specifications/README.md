@@ -26,6 +26,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 20. [Governed original CV storage](./20-original-cv-storage.md)
 21. [Candidate data governance decision record](./21-candidate-data-governance.md)
 22. [Contribution standards](./22-contribution-standards.md)
+23. [Encrypted paired backup and restore](./23-paired-backup-and-restore.md)
 
 ## Recommended delivery order
 
@@ -48,7 +49,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Job-offer generation | Implemented, needs hardening | Generate, edit, approve, persist, and list are available. Direct approval, schema-constrained output, lifecycle management, and production security remain. |
-| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, fail-closed malware quarantine, per-file transactions/results, and Angular UI. Tenant-authorized original operations, scheduled expiry, legal holds, and confirmed full erasure passed staging and production acceptance. OCR, correction, and automated backup governance remain. |
+| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, fail-closed malware quarantine, per-file transactions/results, and Angular UI. Tenant-authorized original operations, scheduled expiry, legal holds, and confirmed full erasure passed staging and production acceptance. OCR, correction, and paired-backup restoration acceptance remain. |
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
 | CV database chat | Planned | pgvector is available, but indexing, retrieval, memory, citations, editable speech input, and optional speech playback remain. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |
@@ -59,9 +60,9 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Spring AI tools | Planned with CV chat | Request-scoped read tools will support authorized retrieval, evidence, comparison, and dashboard queries. State-changing tools require deterministic previews, explicit confirmation, idempotency, and audits. |
 | AI evaluation testing | Planned cross-cutting capability | Deterministic assertions, versioned golden datasets, Spring AI evaluators, task metrics, adversarial tests, and calibrated human review will gate model, prompt, retrieval, tool, OCR, and speech changes. |
 | Spring AI observability | Planned production control | Privacy-safe Micrometer metrics, traces, dashboards, and alerts will cover models, tokens, cost, RAG, tools, OCR, speech, messaging, backups, and infrastructure without exporting candidate content. |
-| Production security | Authentication foundation accepted | Email/password login, tenant isolation, bcrypt password management, Redis-backed sessions/revocation, a three-session account limit, account/IP throttling and lockout, and tenant-scoped auditing passed the final staging and production validation suite. Malware quarantine, scheduled original expiry, legal holds, and full candidate erasure passed staging and production acceptance; automated backup governance remains. |
-| CI/CD and VPS deployment | Staging and production operational | CI, immutable GHCR publication, automatic staging deployment, protected production promotion, and production smoke validation are working. PostgreSQL backup restoration testing, observability, security controls, and further rollback hardening remain. |
-| VPS provisioning | Staging and production deployed | Staging and production are independently hardened and deployed. Production has dedicated SSH access, firewall rules, Docker, DNS, TLS, logging, Premium VPS backup, and private Object Storage preparation. Database backup automation and isolated restoration testing remain; separate runbooks prevent environment-specific credentials and procedures from being mixed. |
+| Production security | Authentication foundation accepted | Email/password login, tenant isolation, bcrypt password management, Redis-backed sessions/revocation, a three-session account limit, account/IP throttling and lockout, and tenant-scoped auditing passed the final staging and production validation suite. Malware quarantine, scheduled original expiry, legal holds, and full candidate erasure passed staging and production acceptance; paired backup governance awaits restoration acceptance. |
+| CI/CD and VPS deployment | Staging and production operational | CI, immutable GHCR publication, automatic staging deployment, protected production promotion, and production smoke validation are working. Encrypted paired backup/restore is implemented but requires production restoration acceptance; observability and further rollback hardening remain. |
+| VPS provisioning | Staging and production deployed | Staging and production are independently hardened and deployed. Production has dedicated SSH access, firewall rules, Docker, DNS, TLS, logging, Premium VPS backup, and private Object Storage preparation. Paired database/original-file backup scripts now require isolated restoration acceptance before timer activation; separate runbooks prevent environment-specific credentials and procedures from being mixed. |
 
 The application uses an Angular 19 frontend, a Spring Boot 3 / Java 21 backend, PostgreSQL with the pgvector image,
 Flyway versioned schema migrations, Redis-backed Spring Session, and Spring AI with OpenAI.

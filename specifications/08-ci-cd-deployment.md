@@ -509,7 +509,8 @@ The deployment pipeline can be built before these items are complete, but the en
 - [x] Add environment-driven production Spring settings.
 - [x] Make built-in CV import environment-controlled and document that production disables it.
 - [x] Add deployment and rollback scripts.
-- [ ] Add database backup and restore scripts and test restoration.
+- [x] Add encrypted paired database/original-file backup and isolated-restore scripts.
+- [ ] Complete and record an isolated restoration test before enabling the production timer.
 
 **Exit condition:** the application can be deployed manually to a clean VPS over HTTPS without development credentials or public data services.
 

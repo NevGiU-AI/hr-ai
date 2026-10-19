@@ -1143,25 +1143,39 @@ root:root 600 /root/.aws/config
 
 The root profile successfully completed `head-bucket` against `https://s3.gra.io.cloud.ovh.net`. Its `get-object-lock-configuration` request returned the expected `AccessDenied`, proving the unattended VPS identity can reach the bucket but cannot administer retention.
 
-### 20. Install the tracked streaming backup service
+### 20. Install the tracked paired backup service
 
 The repository contains:
 
 ```text
-deploy/backup-postgres.sh
-deploy/systemd/nevgiu-postgres-backup.service
-deploy/systemd/nevgiu-postgres-backup.timer
+deploy/backup-paired.sh
+deploy/restore-paired.sh
+deploy/systemd/nevgiu-paired-backup.service
+deploy/systemd/nevgiu-paired-backup.timer
 ```
 
-The script verifies the Compose database is healthy, streams a custom-format compressed `pg_dump` directly into `age`, writes only the temporary encrypted artifact and its SHA-256 checksum, uploads both with the writer profile, and removes its temporary files on every exit path. No plaintext database dump is written to disk.
+The restore script remains on the controlled recovery workstation or isolated recovery host. Do not install it or the
+private recovery identity on the production VPS.
 
-From local PowerShell at the current repository root, copy the three tracked files to `/tmp` with the production administrative SSH key:
+The backup script verifies PostgreSQL and the backend are healthy, briefly stops the backend, then streams both a
+custom-format `pg_dump` and the matching `cv-originals` archive directly into `age`. It restarts and health-checks the
+backend even when backup creation fails. The two encrypted artifacts are uploaded first and their manifest is uploaded
+last as the completion marker. No plaintext database dump or original-file archive is written to disk.
+
+Before the maintenance window, cache the pinned helper image on production:
+
+```bash
+docker pull alpine:3.20
+docker image inspect alpine:3.20 > /dev/null
+```
+
+From local PowerShell at the current repository root, copy the three production service files to `/tmp` with the production administrative SSH key:
 
 ```powershell
 scp -i "$env:USERPROFILE\.ssh\nevgiu_hr_production_admin" `
-  "deploy/backup-postgres.sh" `
-  "deploy/systemd/nevgiu-postgres-backup.service" `
-  "deploy/systemd/nevgiu-postgres-backup.timer" `
+  "deploy/backup-paired.sh" `
+  "deploy/systemd/nevgiu-paired-backup.service" `
+  "deploy/systemd/nevgiu-paired-backup.timer" `
   ubuntu@141.94.94.198:/tmp/
 ```
 
@@ -1169,34 +1183,34 @@ Install the script outside the deployment-writable directory so the root service
 
 ```bash
 sudo install -m 750 -o root -g root \
-  /tmp/backup-postgres.sh \
-  /usr/local/sbin/nevgiu-postgres-backup
+  /tmp/backup-paired.sh \
+  /usr/local/sbin/nevgiu-paired-backup
 
 sudo install -m 644 -o root -g root \
-  /tmp/nevgiu-postgres-backup.service \
-  /etc/systemd/system/nevgiu-postgres-backup.service
+  /tmp/nevgiu-paired-backup.service \
+  /etc/systemd/system/nevgiu-paired-backup.service
 
 sudo install -m 644 -o root -g root \
-  /tmp/nevgiu-postgres-backup.timer \
-  /etc/systemd/system/nevgiu-postgres-backup.timer
+  /tmp/nevgiu-paired-backup.timer \
+  /etc/systemd/system/nevgiu-paired-backup.timer
 
 rm \
-  /tmp/backup-postgres.sh \
-  /tmp/nevgiu-postgres-backup.service \
-  /tmp/nevgiu-postgres-backup.timer
+  /tmp/backup-paired.sh \
+  /tmp/nevgiu-paired-backup.service \
+  /tmp/nevgiu-paired-backup.timer
 
 sudo systemctl daemon-reload
 sudo systemd-analyze verify \
-  /etc/systemd/system/nevgiu-postgres-backup.service \
-  /etc/systemd/system/nevgiu-postgres-backup.timer
+  /etc/systemd/system/nevgiu-paired-backup.service \
+  /etc/systemd/system/nevgiu-paired-backup.timer
 ```
 
 Expected permissions:
 
 ```text
-root:root 750 /usr/local/sbin/nevgiu-postgres-backup
-root:root 644 /etc/systemd/system/nevgiu-postgres-backup.service
-root:root 644 /etc/systemd/system/nevgiu-postgres-backup.timer
+root:root 750 /usr/local/sbin/nevgiu-paired-backup
+root:root 644 /etc/systemd/system/nevgiu-paired-backup.service
+root:root 644 /etc/systemd/system/nevgiu-paired-backup.timer
 ```
 
 The timer targets 02:30 UTC daily, adds up to thirty minutes of randomized delay, and uses `Persistent=true` so a missed run occurs after the VPS returns. Do not enable or start it until the production Compose stack exists, `.images.env` has been generated, a manual encrypted upload succeeds, and an isolated restoration test proves recoverability.
@@ -1207,13 +1221,21 @@ The script and units were installed with the expected root ownership and modes. 
 sudo systemctl show \
   -p LoadState \
   -p UnitFileState \
-  nevgiu-postgres-backup.service \
-  nevgiu-postgres-backup.timer
+  nevgiu-paired-backup.service \
+  nevgiu-paired-backup.timer
 ```
 
 Expected before activation: both units are `loaded` and `disabled`. The disabled state is intentional.
 
-The next production step is installing and verifying these tracked service files without enabling the timer.
+If the earlier database-only units were installed, disable them before enabling the paired timer so two maintenance jobs
+cannot overlap:
+
+```bash
+sudo systemctl disable --now nevgiu-postgres-backup.timer
+```
+
+Do not delete retained database-only backups; keep them until their existing lifecycle and legal obligations expire.
+The next production step is installing and verifying these tracked service files without enabling the paired timer.
 
 ### 21. Credential and recovery-key rotation boundaries
 
@@ -1222,7 +1244,7 @@ Writer credential rotation must preserve service continuity without ever install
 1. Generate replacement S3 credentials for the upload-only writer through the Object Storage `Users` interface and store them in the password manager.
 2. Configure a temporary local AWS CLI profile and repeat both the allowed `head-bucket` test and denied Object Lock administration test.
 3. Replace `/root/.aws/credentials` through an interactive root-owned configuration step without printing either key.
-4. Run a manual encrypted backup and confirm upload success.
+4. Run a manual encrypted paired backup and confirm upload success.
 5. Revoke the previous writer credentials only after the new credentials pass validation.
 6. Record the rotation date and operator without recording secret values.
 
@@ -1233,16 +1255,21 @@ Recovery-identity rotation is different: changing the public recipient does not 
 1. Confirm the old encrypted identity and passphrase remain recoverable for every retained old backup.
 2. Generate and protect a new encrypted identity using the same no-plaintext procedure.
 3. Install only its public recipient on the VPS.
-4. Run and restore-test a new backup.
+4. Run and restore-test a new paired recovery set.
 5. Keep the old recovery identity until every backup encrypted to it has expired and been deleted according to policy.
 
-The precise lifecycle policy, manual backup verification, Object Lock inspection on uploaded objects, isolated restore procedure, monitoring, and timer activation remain pending. Add their validated commands and results to this runbook as those steps are performed; do not mark backup readiness complete merely because the script and timer files exist.
+The precise lifecycle policy for `recovery-sets/`, manual backup verification, Object Lock inspection on both uploaded
+artifacts, isolated restore procedure, monitoring, and timer activation remain pending. Follow
+`23-paired-backup-and-restore.md`; do not mark backup readiness complete merely because the scripts and units exist.
 
 ### 22. Configure rolling Object Storage lifecycle retention
 
-The initial production policy keeps approximately thirty encrypted daily database recovery points. Seven-day Governance Object Lock prevents early deletion, while lifecycle expiration limits long-term storage of CV-related database data and controls cost.
+The production policy must keep complete paired recovery sets for the approved period. Seven-day Governance Object Lock
+prevents early deletion, while lifecycle expiration limits long-term storage of CV-related data and controls cost.
 
-Apply lifecycle changes only from local PowerShell with the offline bucket-owner profile. Never install owner credentials on the VPS. The validated policy applies only to the `postgresql/` prefix:
+Apply lifecycle changes only from local PowerShell with the offline bucket-owner profile. Never install owner credentials
+on the VPS. Before enabling the new timer, replace the legacy `postgresql/` lifecycle scope with
+`recovery-sets/production/` while preserving retained legacy objects until their existing policy expires:
 
 ```json
 {
@@ -1251,7 +1278,7 @@ Apply lifecycle changes only from local PowerShell with the offline bucket-owner
       "ID": "ExpireProductionDatabaseBackups",
       "Status": "Enabled",
       "Filter": {
-        "Prefix": "postgresql/"
+        "Prefix": "recovery-sets/production/"
       },
       "Expiration": {
         "Days": 30
@@ -1267,7 +1294,7 @@ Apply lifecycle changes only from local PowerShell with the offline bucket-owner
       "ID": "RemoveExpiredDeleteMarkers",
       "Status": "Enabled",
       "Filter": {
-        "Prefix": "postgresql/"
+        "Prefix": "recovery-sets/production/"
       },
       "Expiration": {
         "ExpiredObjectDeleteMarker": true

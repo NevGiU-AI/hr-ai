@@ -1,5 +1,5 @@
 [Unit]
-Description=NevGiU HR AI encrypted PostgreSQL backup
+Description=NevGiU HR AI encrypted paired database and original-CV backup
 Requires=docker.service
 After=docker.service network-online.target
 Wants=network-online.target
@@ -9,7 +9,7 @@ Type=oneshot
 User=root
 Group=root
 UMask=0077
-ExecStart=/usr/local/sbin/nevgiu-postgres-backup
+ExecStart=/usr/local/sbin/nevgiu-paired-backup
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7

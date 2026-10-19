@@ -81,3 +81,6 @@ jobs:
           # deployment model and does not start Redis or use a real secret.
           REDIS_PASSWORD: ci-compose-validation-only
         run: docker compose --env-file deploy/.env.example -f deploy/compose.yml config --quiet
+
+      - name: Validate deployment shell scripts
+        run: bash -n deploy/*.sh

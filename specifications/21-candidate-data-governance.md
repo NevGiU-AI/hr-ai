@@ -94,9 +94,11 @@ production acceptance in October 2026. The backend now provides tenant-scoped or
 That deletion removes only the stored binary and storage metadata; it is not the full candidate-erasure workflow from
 section 6. These authorized operations passed direct API acceptance in staging and production on 14 October 2026,
 including role enforcement, not-found behavior, original-only deletion, security-event inspection, and matched
-pre-deployment backup validation. The candidate-details UI, correction/reprocessing, legacy rescanning, and automated
-encrypted paired backup/restore remain separate implementation slices. Full erasure passed staging and production
-acceptance on 15 October 2026 in release `v0.14.0`.
+pre-deployment backup validation. The candidate-details UI, correction/reprocessing, and legacy rescanning remain
+separate implementation slices. Encrypted paired backup/restore tooling is implemented in the repository; its
+staging-first installation and isolated-restore acceptance are scheduled after the dashboard, stable OpenAPI contracts,
+and concurrency benchmark. Full erasure passed staging and production acceptance on 15 October 2026 in release
+`v0.14.0`.
 
 The current retention implementation deliberately expires only the submitted original and its storage metadata.
 Full erasure is now a separate administrator-confirmed, tenant-scoped operation that removes the stored original,

@@ -1349,10 +1349,13 @@ Repeat the staging procedure with these changes:
 - [x] Install and validate only the public `age` recipient on the production VPS.
 - [x] Install `age` and AWS CLI and verify their production versions.
 - [x] Install the upload-only writer credentials as a root-only AWS profile and recheck allowed and denied operations.
-- [x] Install and validate the root-owned streaming backup script and systemd units without enabling the timer.
-- [x] Configure and read back thirty-day lifecycle retention for encrypted PostgreSQL backups.
-- [ ] Run a manual encrypted backup, verify Object Lock, and restore it in isolation before enabling the timer.
-- [ ] Configure encrypted off-server PostgreSQL backups and test restoration.
+- [x] Install and validate the legacy root-owned PostgreSQL-only streaming backup script and systemd units without
+  enabling its timer.
+- [x] Configure and read back thirty-day lifecycle retention for legacy encrypted PostgreSQL backups.
+- [ ] After the dashboard, OpenAPI, concurrency benchmark, and staging acceptance, replace the legacy service with the
+  paired PostgreSQL/original-file service and configure lifecycle coverage for `recovery-sets/production/`.
+- [ ] Run a manual encrypted paired backup, verify Object Lock on both artifacts, and restore it in isolation before
+  enabling the production timer.
 - [x] Configure the GitHub `production` environment with separate variables and secrets.
 - [x] Require production deployment approval where supported.
 - [x] Configure public HTTPS smoke-test failure to restore the previous application images and verify the restored public endpoints.

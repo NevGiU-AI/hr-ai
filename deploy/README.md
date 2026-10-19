@@ -17,7 +17,11 @@ stops the backend, streams a custom-format `pg_dump` and matching `cv-originals`
 and health-checks the backend, uploads both encrypted artifacts, and uploads `manifest.txt` last as the recovery-set
 completion marker. The private recovery identity must never exist on either application VPS.
 
-The timer is intentionally installed but left disabled during provisioning. Enable it only after the production stack exists, a manual paired upload succeeds, Object Lock is verified on both encrypted artifacts, and `restore-paired.sh` completes an isolated restore. Its daily schedule is 02:30 UTC with up to thirty minutes of randomized delay and persistent catch-up after downtime.
+The paired timer definition is tracked but must not be installed or enabled before its scheduled milestone. After the
+dashboard, OpenAPI, and concurrency work, install it in staging first and enable it only after a manual paired upload,
+Object Lock verification, and an isolated restore succeed. Production follows the same acceptance sequence only after
+staging. Its daily schedule is 02:30 UTC with up to thirty minutes of randomized delay and persistent catch-up after
+downtime.
 
 Object Storage lifecycle must retain current objects under `recovery-sets/` for the approved period, remove incomplete multipart uploads after one day, and clean eligible non-current versions and expired delete markers. Seven-day Governance Object Lock always takes precedence over lifecycle deletion. Apply or change lifecycle policy only with the offline bucket-owner profile, never with credentials installed on the VPS.
 

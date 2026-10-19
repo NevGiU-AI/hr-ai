@@ -383,8 +383,10 @@ the destructive overdue-document scenario was accepted from controlled staging e
 real production candidate data.
 
 These records validate the implemented storage, malware-quarantine, authorized original-file operations,
-retention/legal-hold behavior, and full candidate erasure in staging and production. Automated encrypted off-server
-backup/restore, correction and reprocessing, and future object-storage controls remain incomplete.
+retention/legal-hold behavior, and full candidate erasure in staging and production. Encrypted paired backup/restore
+tooling exists in the repository, but staging/production installation and isolated-restore acceptance are deferred until
+after the dashboard, OpenAPI, and concurrency milestones. Correction/reprocessing and future object-storage controls
+remain incomplete.
 
 ## Full candidate erasure
 
@@ -480,5 +482,6 @@ tar -tzf "$cv_backup" > /dev/null
 - Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
 - Extend the implemented erasure boundary to any future embeddings, indexes, chat evidence, or other derived AI data
   before those stores are introduced.
-- Add encrypted off-server backup and an isolated restore test for database plus original files.
+- After the dashboard, OpenAPI, and concurrency milestones, install the implemented encrypted paired backup service in
+  staging and then production and complete isolated restoration acceptance.
 - Replace the local provider with private object storage before horizontal or multi-host backend scaling.

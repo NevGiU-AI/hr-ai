@@ -904,6 +904,12 @@ Do not proceed until both checksum entries report `OK`, PostgreSQL and tar forma
 artifact is `deploy:deploy 600`, and the backend is healthy. The three files form one recovery set. They contain
 personal data and are temporary local deployment safeguards, not the final encrypted off-server backup solution.
 
+The automated paired service is implemented in the repository but is intentionally not installed yet. After the
+dashboard, stable OpenAPI contracts, and concurrency benchmark, staging will receive its own isolated destination,
+upload-only credentials, and public `age` recipient and will complete the first service installation and isolated
+restore rehearsal. Production will follow only after staging acceptance. Continue this manual procedure until then;
+never reuse production backup credentials or recovery identities in staging.
+
 ### Validated original-CV storage rollout
 
 **Accepted 6 October 2026 for main revision `86ec842`:** staging was configured with

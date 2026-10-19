@@ -1143,7 +1143,7 @@ root:root 600 /root/.aws/config
 
 The root profile successfully completed `head-bucket` against `https://s3.gra.io.cloud.ovh.net`. Its `get-object-lock-configuration` request returned the expected `AccessDenied`, proving the unattended VPS identity can reach the bucket but cannot administer retention.
 
-### 20. Install the tracked paired backup service
+### 20. Install the tracked paired backup service after the dashboard, OpenAPI, and concurrency benchmark
 
 The repository contains:
 
@@ -1153,6 +1153,10 @@ deploy/restore-paired.sh
 deploy/systemd/nevgiu-paired-backup.service
 deploy/systemd/nevgiu-paired-backup.timer
 ```
+
+Installation is deliberately deferred until the dashboard, stable OpenAPI contracts, and concurrency benchmark are
+complete and the service has first passed the equivalent staging installation and isolated-restore rehearsal. Continue
+using the manual matched pre-deployment backup procedure in section 14.3 until this section is activated.
 
 The restore script remains on the controlled recovery workstation or isolated recovery host. Do not install it or the
 private recovery identity on the production VPS.
@@ -1235,7 +1239,8 @@ sudo systemctl disable --now nevgiu-postgres-backup.timer
 ```
 
 Do not delete retained database-only backups; keep them until their existing lifecycle and legal obligations expire.
-The next production step is installing and verifying these tracked service files without enabling the paired timer.
+After the dashboard, OpenAPI contracts, concurrency benchmark, and staging acceptance, the next production backup step
+is installing and verifying these tracked service files without enabling the paired timer.
 
 ### 21. Credential and recovery-key rotation boundaries
 

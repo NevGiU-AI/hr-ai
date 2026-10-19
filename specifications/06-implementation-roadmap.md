@@ -42,15 +42,19 @@
 - [x] Configure production Premium VPS backup and prepare private cross-region Object Storage.
 - [ ] Complete production observability, off-server log collection, redaction, and alerting standards.
 - [ ] Approve telemetry classification, content exclusions, low-cardinality labels, access, retention, incident export, and alert-routing policy.
-- [ ] Validate the implemented encrypted paired PostgreSQL/original-file backup with an isolated restoration test.
+- [ ] After the dashboard, stable OpenAPI contracts, and concurrency benchmark, install and validate the implemented
+  encrypted paired PostgreSQL/original-file backup in staging and production, including an isolated restoration test.
 - [x] Validate production release promotion with GitHub environment protection, approval, and image rollback configured.
 - [ ] Confirm all development, staging, production, and backup credentials are isolated, rotated when needed, and absent from Git.
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Immediate delivery sequence:** complete original-CV authorized operations, lifecycle, and paired backup/restore
-controls -> correction/reprocessing -> OCR -> typed CV chat -> speech input/playback -> final dashboard -> cross-cutting
-release validation -> private object storage -> horizontal or multi-host backend scaling.
+**Current delivery sequence:** candidate details and ingestion history -> correction/reprocessing -> OCR -> typed CV chat
+-> speech input/playback -> final dashboard -> publish stable OpenAPI contracts -> benchmark bounded concurrency and
+virtual threads -> validate paired backup/restore in staging -> validate it in production -> cross-cutting release
+validation -> private object storage -> consider horizontal or multi-host backend scaling. External messaging follows
+stable web chat, speech controls, and documented APIs; optional image/video generation remains last and requires
+separate value, privacy, and compliance approval.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -82,10 +86,12 @@ release validation -> private object storage -> horizontal or multi-host backend
   and production through release `v0.13.0`.
 - [x] Add administrator-confirmed, tenant-scoped full candidate erasure across originals, documents, extracted text,
   candidate records, and evaluations, with legal-hold enforcement and auditing.
-- [ ] Complete production acceptance of automated encrypted paired original-file/database backup and restore.
+- [ ] After the dashboard, stable OpenAPI contracts, and concurrency benchmark, install the automated encrypted paired
+  original-file/database backup service in staging and production and complete isolated-restore acceptance.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.
-- [ ] Add candidate-details access to original-file operations and auditable correction/reprocessing.
+- [ ] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
+- [ ] Add auditable metadata correction and safe document reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
 - [ ] Add metadata correction and document reprocessing without duplicating candidates.

@@ -21,9 +21,10 @@ decisions.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Legacy-original rescanning, authorized correction/reprocessing, automated off-server
-backup/restore acceptance, OCR, CV chat, speech input/playback, and the recruitment dashboard remain roadmap work. Private object
-storage is required before horizontal or multi-host backend scaling.
+Candidate details/history, correction/reprocessing, OCR, CV chat, speech input/playback, and the recruitment dashboard
+remain roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
+restore acceptance are deliberately scheduled after the dashboard, stable OpenAPI contracts, and the concurrency
+benchmark. Private object storage is required before horizontal or multi-host backend scaling.
 
 ## Architecture
 
@@ -63,16 +64,24 @@ password management, concurrent-session limits, and the final security acceptanc
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
-staging and production acceptance in release `v0.14.0`. Correction/reprocessing and encrypted paired backup acceptance
-governance remain incomplete. The next delivery sequence is:
+staging and production acceptance in release `v0.14.0`. Candidate details/history, correction/reprocessing, and encrypted
+paired backup acceptance remain incomplete. The next delivery sequence is:
 
-1. Complete original-CV governance and correction/reprocessing.
-2. OCR for scanned CVs.
-3. Imperative, tenant-scoped CV chat with citations and evaluation testing.
-4. Editable speech-to-text input, then optional text-to-speech playback.
-5. Build the final recruitment dashboard from the stabilized workflow and persisted data.
-6. Validate security, privacy, AI quality, performance, accessibility, and usability for the completed product flow.
-7. Move original files to private object storage before horizontal or multi-host backend scaling.
+1. Build candidate details and ingestion history using the authorized original-file APIs already implemented.
+2. Add auditable metadata correction and safe reprocessing without duplicate candidates.
+3. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
+4. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
+5. Add editable speech-to-text input, then optional text-to-speech playback.
+6. Build the final recruitment dashboard and drill-down workflows.
+7. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
+8. Benchmark bounded concurrency and Java virtual threads in staging.
+9. Install and validate encrypted paired backup/restore in staging.
+10. Install and validate paired backup/restore in production after staging acceptance.
+11. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+12. Move original files to private object storage.
+13. Consider horizontal or multi-host scaling.
+14. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+15. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

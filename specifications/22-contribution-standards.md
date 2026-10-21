@@ -31,11 +31,48 @@ Rules:
 - `main` remains unprefixed and protected.
 - Do not use agent-identity prefixes such as `codex/`, `ai/`, or vendor names for this project. Name a branch for the
   purpose of the work, regardless of who or what assisted with it.
-- Create a fresh branch from the latest remote `main` unless explicitly continuing an existing PR.
+- Fetch `origin` and create every fresh branch directly from the latest `origin/main` unless explicitly continuing an
+  existing PR.
+- Before adding or pushing new work to an existing branch, fetch `origin` and rebase that branch onto the latest
+  `origin/main`.
+- Do not merge `main` into a feature, fix, documentation, or other contribution branch. Keep contribution history linear.
 - Keep one cohesive concern per branch and remove merged branches when they are no longer needed.
 
 Historical branches created before this decision may retain their original names. All new branches must follow the
 project convention above.
+
+## Required branch synchronization
+
+Before creating a branch, update the remote references and branch from the remote mainline rather than a potentially
+stale local `main`:
+
+```bash
+git status --short
+git fetch origin
+git switch -c <type>/<short-description> origin/main
+```
+
+Before updating an existing branch or pushing additional commits to its pull request:
+
+```bash
+git status --short
+git fetch origin
+git rebase origin/main
+```
+
+Start only with a clean working tree, or deliberately preserve unfinished work before rebasing. Resolve every conflict
+by reviewing both sides and the current specification, then run `git rebase --continue`. Use `git rebase --abort` when a
+safe resolution is unclear; do not guess, discard unrelated changes, or create a merge commit to bypass the conflict.
+
+Rebasing rewrites commit identifiers. If the branch already exists remotely, update it with:
+
+```bash
+git push --force-with-lease
+```
+
+Never use plain `--force`. `--force-with-lease` refuses to overwrite remote work that was added after the last fetch.
+Coordinate before rebasing a branch another contributor is actively using. A branch that has already been merged should
+normally be deleted; create a fresh purpose-named branch from `origin/main` for subsequent work instead of reviving it.
 
 ## Commit messages
 
@@ -109,7 +146,8 @@ fixture has a non-obvious constraint.
 
 Before requesting review:
 
-1. Rebase or merge the latest remote `main` as agreed for the PR and resolve conflicts deliberately.
+1. Fetch `origin`, rebase the branch onto the latest `origin/main`, resolve conflicts deliberately, and use
+   `--force-with-lease` if the remote branch history must be updated. Do not merge `main` into the branch.
 2. Review the diff for accidental files, secrets, generated output, and unrelated changes.
 3. Run the tests and static checks appropriate to the risk of the change.
 4. Update affected specifications, operational runbooks, examples, and environment templates.

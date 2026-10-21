@@ -81,15 +81,17 @@ next delivery sequence is:
 4. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
 5. Add editable speech-to-text input, then optional text-to-speech playback.
 6. Build the final recruitment dashboard and drill-down workflows.
-7. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
-8. Benchmark bounded concurrency and Java virtual threads in staging.
-9. Install and validate encrypted paired backup/restore in staging.
-10. Install and validate paired backup/restore in production after staging acceptance.
-11. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
-12. Move original files to private object storage.
-13. Consider horizontal or multi-host scaling.
-14. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
-15. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+7. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
+   transactions, integrations, and business rules.
+8. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
+9. Benchmark bounded concurrency and Java virtual threads in staging.
+10. Install and validate encrypted paired backup/restore in staging.
+11. Install and validate paired backup/restore in production after staging acceptance.
+12. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+13. Move original files to private object storage.
+14. Consider horizontal or multi-host scaling.
+15. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+16. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

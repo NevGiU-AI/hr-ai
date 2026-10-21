@@ -37,15 +37,16 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 5. Add vector indexing and secure, evidence-backed typed CV chat.
 6. Extend accepted typed CV chat with editable speech-to-text input and optional text-to-speech playback.
 7. Build dashboard APIs and UI from persisted recruitment data.
-8. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
-9. Benchmark bounded backend concurrency and Java virtual threads in staging.
-10. Install and validate encrypted paired backup/restore in staging, including an isolated restoration test.
-11. Install and validate paired backup/restore in production after staging acceptance.
-12. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
-13. Move original files to private object storage before horizontal or multi-host backend scaling.
-14. Consider horizontal or multi-host backend scaling.
-15. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
-16. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
+8. Complete a focused codebase-wide comments and Javadoc review under the contribution standards.
+9. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts and source documentation are stable.
+10. Benchmark bounded backend concurrency and Java virtual threads in staging.
+11. Install and validate encrypted paired backup/restore in staging, including an isolated restoration test.
+12. Install and validate paired backup/restore in production after staging acceptance.
+13. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
+14. Move original files to private object storage before horizontal or multi-host backend scaling.
+15. Consider horizontal or multi-host backend scaling.
+16. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
+17. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
 
 ## Current repository snapshot
 
@@ -56,7 +57,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
 | CV database chat | Planned | pgvector is available, but indexing, retrieval, memory, citations, editable speech input, and optional speech playback remain. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |
-| Backend Swagger/OpenAPI | Planned after dashboard | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable. |
+| Backend Swagger/OpenAPI | Planned after dashboard and source review | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable and the codebase-wide comments/Javadoc review is complete. |
 | External messaging | Planned | Telegram/WhatsApp choice and integration remain open. |
 | Generated media | Optional, gated | Human-reviewed employer-branding images may be evaluated after core workflows; video follows only if value is proven. Candidate imagery, synthetic interviewers, and multimodal candidate scoring are prohibited. |
 | Backend concurrency | Planned validation | Java 21 and blocking Spring MVC/JPA/AI workflows are suitable for a virtual-thread experiment, but production enablement requires staging benchmarks, downstream limits, and pinned-thread monitoring. |

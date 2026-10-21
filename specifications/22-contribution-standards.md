@@ -115,6 +115,8 @@ Before requesting review:
 4. Update affected specifications, operational runbooks, examples, and environment templates.
 5. State behavior changes, migrations, configuration, validation evidence, and remaining risks in the PR.
 
-After the recruitment dashboard is delivered, perform a focused source-documentation review. Add missing comments to the
-existing code only where they explain business rules or non-obvious technical boundaries under the rules above; do not
-perform a mechanical comment-every-method exercise.
+After the recruitment dashboard is delivered and before OpenAPI contracts are published, perform a focused,
+codebase-wide source-documentation review. Add missing comments and Javadoc only where they explain public contracts,
+business rules, or non-obvious technical boundaries under the rules above; do not perform a mechanical
+comment-every-method exercise. The review must be completed and verified as its own roadmap milestone before Springdoc,
+Swagger UI, or versioned OpenAPI publication begins.

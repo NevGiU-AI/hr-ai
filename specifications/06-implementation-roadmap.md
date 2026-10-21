@@ -110,7 +110,7 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Build candidate details and document-ingestion history UI/API.
 - [x] Validate candidate details, ingestion history, sensitive-field exclusion, role-aware original-file controls, and
   tenant-safe not-found behavior in staging.
-- [ ] Validate the candidate details and ingestion-history slice in production.
+- [x] Validate the candidate details and ingestion-history slice in production, including legal-hold erasure guidance.
 - [ ] Add evaluation-history retrieval and presentation.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
 - [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.

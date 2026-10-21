@@ -72,26 +72,25 @@ staging and production. The initial original-CV storage slice is also deployed a
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
 staging and production acceptance in release `v0.14.0`. Candidate details and document-ingestion history passed staging
-acceptance on 21 October 2026 and await production acceptance; correction/reprocessing and encrypted paired backup
-acceptance remain incomplete. The next delivery sequence is:
+and production acceptance on 21 October 2026; correction/reprocessing and encrypted paired backup acceptance remain
+incomplete. The next delivery sequence is:
 
-1. Validate candidate details and ingestion history in production.
-2. Add auditable metadata correction and safe reprocessing without duplicate candidates.
-3. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
-4. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
-5. Add editable speech-to-text input, then optional text-to-speech playback.
-6. Build the final recruitment dashboard and drill-down workflows.
-7. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
+1. Add auditable metadata correction and safe reprocessing without duplicate candidates.
+2. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
+3. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
+4. Add editable speech-to-text input, then optional text-to-speech playback.
+5. Build the final recruitment dashboard and drill-down workflows.
+6. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
    transactions, integrations, and business rules.
-8. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
-9. Benchmark bounded concurrency and Java virtual threads in staging.
-10. Install and validate encrypted paired backup/restore in staging.
-11. Install and validate paired backup/restore in production after staging acceptance.
-12. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
-13. Move original files to private object storage.
-14. Consider horizontal or multi-host scaling.
-15. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
-16. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+7. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
+8. Benchmark bounded concurrency and Java virtual threads in staging.
+9. Install and validate encrypted paired backup/restore in staging.
+10. Install and validate paired backup/restore in production after staging acceptance.
+11. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+12. Move original files to private object storage.
+13. Consider horizontal or multi-host scaling.
+14. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+15. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

@@ -22,6 +22,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CandidateController.class)
@@ -32,6 +33,7 @@ class ApiSecurityTest {
     @MockitoBean CvIngestionService ingestion;
     @MockitoBean com.nevgiu.hrai.candidate.CandidateDetailsService candidateDetailsService;
     @MockitoBean CandidateErasureService candidateErasureService;
+    @MockitoBean com.nevgiu.hrai.candidate.CandidateCorrectionService candidateCorrectionService;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService securityAuditService;
 
@@ -75,6 +77,15 @@ class ApiSecurityTest {
     void rejectsCandidateErasureForRecruiters() throws Exception {
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/candidates/7")
                         .with(csrf()).contentType("application/json").content("{\"confirmed\":true}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "READ_ONLY")
+    void rejectsMetadataCorrectionForReadOnlyUsers() throws Exception {
+        mvc.perform(put("/api/candidates/7/metadata").with(csrf())
+                        .contentType("application/json")
+                        .content("{\"name\":\"Ada\"}"))
                 .andExpect(status().isForbidden());
     }
 }

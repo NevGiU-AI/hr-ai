@@ -11,10 +11,13 @@ import java.util.List;
 public class CandidateDetailsService {
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
+    private final CandidateMetadataRevisionRepository revisions;
 
-    public CandidateDetailsService(CandidateRepository candidates, CvDocumentRepository documents) {
+    public CandidateDetailsService(CandidateRepository candidates, CvDocumentRepository documents,
+                                   CandidateMetadataRevisionRepository revisions) {
         this.candidates = candidates;
         this.documents = documents;
+        this.revisions = revisions;
     }
 
     @Transactional(readOnly = true)
@@ -25,15 +28,25 @@ public class CandidateDetailsService {
 
         // Capabilities keep the UI aligned with role policy, but are never a substitute for endpoint authorization.
         boolean administrator = hasRole(actor, "ROLE_ADMIN");
-        boolean downloadAllowed = administrator || hasRole(actor, "ROLE_RECRUITER");
+        boolean recruiter = hasRole(actor, "ROLE_RECRUITER");
+        boolean downloadAllowed = administrator || recruiter;
         List<CandidateDetailsResponse.Document> history = documents
                 .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
                 .stream()
                 .map(document -> documentResponse(document, downloadAllowed, administrator))
                 .toList();
+        List<CandidateDetailsResponse.Revision> revisionHistory = revisions
+                .findAllByCandidateIdAndOrganizationIdOrderByCreatedAtDescIdDesc(candidateId, actor.organizationId())
+                .stream().map(this::revisionResponse).toList();
         return new CandidateDetailsResponse(candidate.getId(), candidate.getName(), candidate.getEmail(),
                 candidate.getLocation(), candidate.getCurrentTitle(), candidate.getYearsExperience(),
-                candidate.getCreatedAt(), history);
+                candidate.getCreatedAt(), history, revisionHistory, administrator || recruiter);
+    }
+
+    private CandidateDetailsResponse.Revision revisionResponse(CandidateMetadataRevision revision) {
+        return new CandidateDetailsResponse.Revision(revision.getId(), revision.getActorEmail(), revision.getName(),
+                revision.getEmail(), revision.getLocation(), revision.getCurrentTitle(),
+                revision.getYearsExperience(), revision.getCreatedAt());
     }
 
     private CandidateDetailsResponse.Document documentResponse(CvDocument document, boolean downloadAllowed,
@@ -42,7 +55,8 @@ public class CandidateDetailsService {
         boolean originalAvailable = document.getStorageKey() != null;
         return new CandidateDetailsResponse.Document(document.getId(), document.getOriginalFilename(),
                 document.getContentType(), document.getFileSize(), document.getSource(), document.getStatus(),
-                document.getTextLength(), document.getImportedAt(), originalAvailable, document.getStoredAt(),
+                document.getTextLength(), document.getImportedAt(), document.getReprocessedAt(), originalAvailable,
+                document.getStoredAt(),
                 document.getRetentionUntil(), document.isLegalHold(), document.getLegalHoldAt(),
                 originalAvailable && downloadAllowed, administrator);
     }

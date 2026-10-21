@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
-import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../models/cv-ingestion.models';
+import { Candidate, CandidateDetails, CandidateMetadataUpdate, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../models/cv-ingestion.models';
 
 @Injectable({ providedIn: 'root' })
 export class CvIngestionService {
@@ -27,6 +27,14 @@ export class CvIngestionService {
 
   getCandidateDetails(candidateId: number): Observable<CandidateDetails> {
     return this.http.get<CandidateDetails>(`${this.apiUrl}/candidates/${candidateId}/details`);
+  }
+
+  updateCandidateMetadata(candidateId: number, update: CandidateMetadataUpdate): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/candidates/${candidateId}/metadata`, update);
+  }
+
+  reprocessDocument(documentId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/cv-documents/${documentId}/reprocess`, {});
   }
 
   downloadOriginal(documentId: number): Observable<Blob> {

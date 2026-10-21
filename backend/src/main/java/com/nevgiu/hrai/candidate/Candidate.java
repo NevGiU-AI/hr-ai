@@ -15,6 +15,7 @@ public class Candidate {
     private String organizationId;
 
     private String name;
+    @Column(length = 320)
     private String email;
     private String location;
     private String currentTitle;

@@ -37,6 +37,7 @@ export interface CandidateDocumentDetails {
   status: CvIngestionStatus;
   textLength: number;
   importedAt: string;
+  reprocessedAt: string | null;
   originalAvailable: boolean;
   storedAt: string | null;
   retentionUntil: string | null;
@@ -44,6 +45,25 @@ export interface CandidateDocumentDetails {
   legalHoldAt: string | null;
   downloadAllowed: boolean;
   administrationAllowed: boolean;
+}
+
+export interface CandidateMetadataRevision {
+  id: number;
+  actorEmail: string;
+  name: string;
+  email: string | null;
+  location: string | null;
+  currentTitle: string | null;
+  yearsExperience: number | null;
+  createdAt: string;
+}
+
+export interface CandidateMetadataUpdate {
+  name: string;
+  email: string | null;
+  location: string | null;
+  currentTitle: string | null;
+  yearsExperience: number | null;
 }
 
 export interface CandidateDetails {
@@ -55,6 +75,8 @@ export interface CandidateDetails {
   yearsExperience: number | null;
   createdAt: string;
   documents: CandidateDocumentDetails[];
+  revisions: CandidateMetadataRevision[];
+  correctionAllowed: boolean;
 }
 
 export interface Job {

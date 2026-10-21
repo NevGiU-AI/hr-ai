@@ -17,6 +17,8 @@ decisions.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
 - Review tenant-scoped candidate details and document-ingestion history, then download or administer stored originals
   according to the signed-in user's role.
+- Correct candidate metadata with immutable revision history and safely reprocess a rescanned stored original without
+  changing the submitted PDF or creating duplicate candidates; prior evaluations are retained as stale.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -28,8 +30,8 @@ may create users only inside their own organization; there is not yet an organiz
 customer onboarding requires the planned platform-level organization lifecycle described in the
 [tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
 
-Candidate metadata correction/reprocessing, OCR, CV chat, speech input/playback, and the recruitment dashboard remain
-roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
+Candidate metadata correction/reprocessing is implemented and awaiting environment acceptance. OCR, CV chat, speech
+input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
 restore acceptance are deliberately scheduled after the dashboard, stable OpenAPI contracts, and the concurrency
 benchmark. Private object storage is required before horizontal or multi-host backend scaling.
 
@@ -72,11 +74,11 @@ staging and production. The initial original-CV storage slice is also deployed a
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
 staging and production acceptance in release `v0.14.0`. Candidate details and document-ingestion history passed staging
-and production acceptance on 21 October 2026; correction/reprocessing and encrypted paired backup acceptance remain
-incomplete. The next delivery sequence is:
+and production acceptance on 21 October 2026. Correction/reprocessing is implemented; its staging/production
+acceptance and encrypted paired backup acceptance remain incomplete. The next delivery sequence is:
 
-1. Add auditable metadata correction and safe reprocessing without duplicate candidates.
-2. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
+1. Validate auditable metadata correction and safe reprocessing in staging and production.
+2. Add OCR for scanned and low-text PDFs with extraction provenance and human review after that acceptance.
 3. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
 4. Add editable speech-to-text input, then optional text-to-speech playback.
 5. Build the final recruitment dashboard and drill-down workflows.

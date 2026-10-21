@@ -100,10 +100,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.
 - [x] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
-- [ ] Add auditable metadata correction and safe document reprocessing.
+- [x] Add auditable, tenant-scoped metadata correction with immutable revision snapshots and safe document
+  reprocessing that rescans the original, preserves human edits, and invalidates prior evaluations.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
-- [ ] Add metadata correction and document reprocessing without duplicating candidates.
+- [x] Reprocess the existing candidate/document without creating duplicate records or modifying the submitted original.
 - [ ] Add metric-level evidence and separate reliability confidence from candidate fit.
 - [ ] Expose approved weight configuration in the frontend.
 - [ ] Persist prompt, model, weights, source-document version, and evaluation audit history.

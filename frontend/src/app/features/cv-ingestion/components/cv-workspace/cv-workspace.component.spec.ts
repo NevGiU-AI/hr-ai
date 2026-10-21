@@ -22,6 +22,7 @@ describe('CvWorkspaceComponent', () => {
     service = jasmine.createSpyObj<CvIngestionService>('CvIngestionService', [
       'uploadPdf', 'uploadArchive', 'importInitial', 'getCandidates', 'getJobs', 'evaluate', 'eraseCandidate',
       'getCandidateDetails', 'downloadOriginal', 'deleteOriginal', 'updateLegalHold',
+      'updateCandidateMetadata', 'reprocessDocument',
     ]);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
@@ -223,9 +224,10 @@ describe('CvWorkspaceComponent', () => {
       yearsExperience: 5, createdAt: '2026-10-01T00:00:00Z', documents: [{
         id: 2, originalFilename: 'ada.pdf', contentType: 'application/pdf', fileSize: 1024,
         source: 'USER_UPLOAD', status: 'IMPORTED', textLength: 120, importedAt: '2026-10-01T00:00:00Z',
+        reprocessedAt: null,
         originalAvailable: true, storedAt: '2026-10-01T00:00:00Z', retentionUntil: '2027-10-01T00:00:00Z',
         legalHold: false, legalHoldAt: null, downloadAllowed: true, administrationAllowed: true,
-      }],
+      }], revisions: [], correctionAllowed: true,
     };
   }
 });

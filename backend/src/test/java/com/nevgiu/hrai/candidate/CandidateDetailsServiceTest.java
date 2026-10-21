@@ -17,7 +17,8 @@ import static org.mockito.Mockito.when;
 class CandidateDetailsServiceTest {
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
-    private final CandidateDetailsService service = new CandidateDetailsService(candidates, documents);
+    private final CandidateMetadataRevisionRepository revisions = mock(CandidateMetadataRevisionRepository.class);
+    private final CandidateDetailsService service = new CandidateDetailsService(candidates, documents, revisions);
 
     @Test
     void returnsSafeDocumentHistoryAndRoleCapabilities() {
@@ -33,6 +34,8 @@ class CandidateDetailsServiceTest {
         document.setStorageKey("opaque/private-key");
         when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
         when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(document));
+        when(revisions.findAllByCandidateIdAndOrganizationIdOrderByCreatedAtDescIdDesc(7L, "tenant-a"))
+                .thenReturn(List.of());
 
         CandidateDetailsResponse response = service.find(7L, principal("ROLE_RECRUITER"));
 

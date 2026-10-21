@@ -15,14 +15,21 @@ decisions.
 - Quarantine uploaded CVs and require a clean ClamAV result before storage promotion or text extraction.
 - Extract CV text and explicitly evaluate a candidate against an approved job.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
+- Review tenant-scoped candidate details and document-ingestion history, then download or administer stored originals
+  according to the signed-in user's role.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
 - Record tenant-scoped security events with retention cleanup and an administrator history UI.
 - Apply versioned PostgreSQL schema changes with Flyway and validate mappings with Hibernate.
 
-Candidate details/history, correction/reprocessing, OCR, CV chat, speech input/playback, and the recruitment dashboard
-remain roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
+Tenant isolation currently uses one shared PostgreSQL schema with `organization_id` on tenant-owned rows. Administrators
+may create users only inside their own organization; there is not yet an organization-management API or UI. Independent
+customer onboarding requires the planned platform-level organization lifecycle described in the
+[tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
+
+Candidate metadata correction/reprocessing, OCR, CV chat, speech input/playback, and the recruitment dashboard remain
+roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
 restore acceptance are deliberately scheduled after the dashboard, stable OpenAPI contracts, and the concurrency
 benchmark. Private object storage is required before horizontal or multi-host backend scaling.
 
@@ -64,10 +71,11 @@ password management, concurrent-session limits, and the final security acceptanc
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
-staging and production acceptance in release `v0.14.0`. Candidate details/history, correction/reprocessing, and encrypted
-paired backup acceptance remain incomplete. The next delivery sequence is:
+staging and production acceptance in release `v0.14.0`. Candidate details and document-ingestion history are implemented
+and await environment acceptance; correction/reprocessing and encrypted paired backup acceptance remain incomplete. The
+next delivery sequence is:
 
-1. Build candidate details and ingestion history using the authorized original-file APIs already implemented.
+1. Validate candidate details and ingestion history in staging and production.
 2. Add auditable metadata correction and safe reprocessing without duplicate candidates.
 3. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
 4. Add imperative, tenant-scoped CV chat with citations and evaluation testing.

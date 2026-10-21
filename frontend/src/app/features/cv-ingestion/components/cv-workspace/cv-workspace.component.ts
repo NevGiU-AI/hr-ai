@@ -2,11 +2,13 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, switchMap } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
   ApiError,
   Candidate,
+  CandidateDetails,
+  CandidateDocumentDetails,
   CvArchiveImportResult,
   CvImportResult,
   EvaluationResponse,
@@ -33,7 +35,8 @@ export class CvWorkspaceComponent implements OnInit {
   selectedCandidateId: number | null = null;
   selectedJobId: number | null = null;
   evaluation: EvaluationResponse | null = null;
-  busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | null = null;
+  candidateDetails: CandidateDetails | null = null;
+  busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | null = null;
   error = '';
 
   readonly maxPdfBytes = 20 * 1024 * 1024;
@@ -105,6 +108,71 @@ export class CvWorkspaceComponent implements OnInit {
       });
   }
 
+  selectCandidate(candidateId: number | null): void {
+    this.selectedCandidateId = candidateId;
+    this.evaluation = null;
+    this.loadCandidateDetails();
+  }
+
+  loadCandidateDetails(): void {
+    if (!this.selectedCandidateId) {
+      this.candidateDetails = null;
+      return;
+    }
+    this.start('details');
+    this.service.getCandidateDetails(this.selectedCandidateId)
+      .pipe(finalize(() => this.busyAction = null))
+      .subscribe({
+        next: (details) => this.candidateDetails = details,
+        error: (error) => this.handleError(error),
+      });
+  }
+
+  downloadOriginal(item: CandidateDocumentDetails): void {
+    if (!item.downloadAllowed || this.busyAction) return;
+    this.start('document');
+    this.service.downloadOriginal(item.id).pipe(finalize(() => this.busyAction = null)).subscribe({
+      next: (content) => {
+        const url = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = item.originalFilename;
+        link.click();
+        // Object URLs retain the downloaded Blob until explicitly released by the page.
+        URL.revokeObjectURL(url);
+      },
+      error: (error) => this.handleError(error),
+    });
+  }
+
+  deleteOriginal(document: CandidateDocumentDetails): void {
+    if (!document.administrationAllowed || !document.originalAvailable || this.busyAction) return;
+    if (!window.confirm(`Delete the stored original for ${document.originalFilename}? Candidate data remains available.`)) return;
+    this.start('document');
+    // Refresh within the same observable chain so the busy state covers both mutation and the authoritative reload.
+    this.service.deleteOriginal(document.id).pipe(
+      switchMap(() => this.service.getCandidateDetails(this.selectedCandidateId!)),
+      finalize(() => this.busyAction = null),
+    ).subscribe({
+      next: (details) => this.candidateDetails = details,
+      error: (error) => this.handleError(error),
+    });
+  }
+
+  updateLegalHold(document: CandidateDocumentDetails): void {
+    if (!document.administrationAllowed || !document.originalAvailable || this.busyAction) return;
+    this.start('document');
+    // Do not flip local state optimistically: retention cleanup may act immediately when an overdue hold is released.
+    this.service.updateLegalHold(document.id, !document.legalHold).pipe(
+      switchMap(() => this.service.getCandidateDetails(this.selectedCandidateId!)),
+      finalize(() => this.busyAction = null),
+    )
+      .subscribe({
+        next: (details) => this.candidateDetails = details,
+        error: (error) => this.handleError(error),
+      });
+  }
+
   eraseCandidate(): void {
     if (!this.isAdministrator || !this.selectedCandidateId || this.busyAction) return;
     const candidate = this.candidates.find((item) => item.id === this.selectedCandidateId);
@@ -139,6 +207,7 @@ export class CvWorkspaceComponent implements OnInit {
           this.selectedCandidateId = candidates[0].id;
         }
         if (!candidates.length) this.selectedCandidateId = null;
+        this.loadCandidateDetails();
       },
       error: (error) => this.handleError(error),
     });

@@ -32,8 +32,11 @@
   audit enforcement, and validate release `v0.8.0` in staging and production.
 - [x] Complete the [final authentication and security validation suite](./19-final-security-validation.md), covering
   authorization, tenant isolation, lockout, audit logs, passwords, concurrent requests, and session policy.
-- [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
-  stable company identities before onboarding independent organizations.
+- [x] Document the current shared-schema multi-tenant model, the absence of organization-management API/UI, and the
+  controlled bootstrap-only path for an initial administrator.
+- [ ] Implement platform-authorized organization lifecycle management with a managed `organizations` table, stable
+  company identities, first-administrator provisioning, status transitions, platform auditing, and cross-tenant tests;
+  replace legacy environment-derived organization identifiers before onboarding independent organizations.
 - [x] Define candidate notice, retention, deletion, legal-hold, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.
@@ -90,7 +93,7 @@ separate value, privacy, and compliance approval.
   original-file/database backup service in staging and production and complete isolated-restore acceptance.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.
-- [ ] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
+- [x] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
 - [ ] Add auditable metadata correction and safe document reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
@@ -98,7 +101,8 @@ separate value, privacy, and compliance approval.
 - [ ] Add metric-level evidence and separate reliability confidence from candidate fit.
 - [ ] Expose approved weight configuration in the frontend.
 - [ ] Persist prompt, model, weights, source-document version, and evaluation audit history.
-- [ ] Build candidate details, ingestion history, and evaluation history UI/API.
+- [x] Build candidate details and document-ingestion history UI/API.
+- [ ] Add evaluation-history retrieval and presentation.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
 - [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.
 

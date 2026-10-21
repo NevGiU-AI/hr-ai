@@ -28,6 +28,35 @@ export interface Candidate {
   cvText: string;
 }
 
+export interface CandidateDocumentDetails {
+  id: number;
+  originalFilename: string;
+  contentType: string;
+  fileSize: number;
+  source: string;
+  status: CvIngestionStatus;
+  textLength: number;
+  importedAt: string;
+  originalAvailable: boolean;
+  storedAt: string | null;
+  retentionUntil: string | null;
+  legalHold: boolean;
+  legalHoldAt: string | null;
+  downloadAllowed: boolean;
+  administrationAllowed: boolean;
+}
+
+export interface CandidateDetails {
+  id: number;
+  name: string;
+  email: string | null;
+  location: string | null;
+  currentTitle: string | null;
+  yearsExperience: number | null;
+  createdAt: string;
+  documents: CandidateDocumentDetails[];
+}
+
 export interface Job {
   id: number;
   title: string;

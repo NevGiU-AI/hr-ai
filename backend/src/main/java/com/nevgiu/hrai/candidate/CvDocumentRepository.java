@@ -20,6 +20,15 @@ public interface CvDocumentRepository extends JpaRepository<CvDocument, Long> {
     @Transactional(readOnly = true)
     Optional<CvDocument> findByIdAndOrganizationId(Long id, String organizationId);
 
+    // Both predicates are required: candidate identifiers alone are not an authorization boundary in a multi-tenant DB.
+    @Transactional(readOnly = true)
+    @Query("""
+            select document from CvDocument document
+            where document.candidate.id = :candidateId and document.organizationId = :organizationId
+            order by document.importedAt desc, document.id desc
+            """)
+    List<CvDocument> findAllByCandidateIdAndOrganizationId(Long candidateId, String organizationId);
+
     /*
      * PESSIMISTIC_WRITE makes PostgreSQL select the matching row FOR UPDATE. A competing deletion, expiry, or hold
      * change waits until the surrounding transaction commits or rolls back, including when it runs on another replica.

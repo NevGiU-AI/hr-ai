@@ -30,6 +30,7 @@ class ApiSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean CandidateRepository candidates;
     @MockitoBean CvIngestionService ingestion;
+    @MockitoBean com.nevgiu.hrai.candidate.CandidateDetailsService candidateDetailsService;
     @MockitoBean CandidateErasureService candidateErasureService;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService securityAuditService;

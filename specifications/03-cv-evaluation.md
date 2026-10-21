@@ -376,7 +376,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Extract candidate name and email deterministically where possible.
 - [ ] Add AI-assisted metadata extraction only for fields that cannot be reliably parsed, with confidence and provenance.
 - [ ] Detect probable templates and non-CV documents for manual review.
-- [ ] Add candidate detail and ingestion-status APIs.
+- [x] Add a tenant-scoped candidate detail and ingestion-history API without exposing storage keys, hashes, or raw CV
+  text.
 - [x] Build Angular PDF/ZIP upload, bulk-result, and explicit evaluation views.
 - [ ] Add correction and reprocessing workflows.
 - [x] Store new original documents privately through a provider abstraction and record retention deadlines.
@@ -431,13 +432,17 @@ Implemented behavior:
 6. Backend `ApiError.message` values are surfaced without exposing stack traces.
 7. Candidate and approved-job selectors refresh after ingestion and evaluation only starts when the user presses **Evaluate candidate**.
 8. The result view shows overall fit, all eight metrics, and the AI explanation.
-9. Angular tests cover all ingestion service endpoints, multipart request construction, structured errors, routing/navigation, file validation, loading states, result rendering, selection gating, explicit evaluation, metric rendering, and provider failures.
+9. Selecting a candidate loads their metadata and document-ingestion history, including storage, retention, and legal-hold
+   state; role-aware controls reuse the authorized original download, deletion, and hold APIs.
+10. Angular tests cover ingestion and document-management endpoints, multipart request construction, structured errors,
+    routing/navigation, file validation, loading states, details/history rendering, selection gating, explicit evaluation,
+    metric rendering, and provider failures.
 
 Remaining frontend improvements:
 
 - Add drag-and-drop and upload byte-progress/cancellation.
 - Add filtering/pagination for large archive result sets.
-- Link result rows to a dedicated candidate/document detail view with bounded extracted-text preview.
+- Add bounded extracted-text preview only after its authorization and privacy rules are approved.
 - Hide the built-in-data action based on authenticated administrator permissions.
 - Add correction/reprocessing screens and full accessibility/end-to-end automation.
 
@@ -449,7 +454,7 @@ Remaining frontend improvements:
 - [x] `NEEDS_REVIEW`, `SKIPPED`, and `FAILED` states have distinct labels and explanations.
 - [x] Uploading never triggers evaluation; evaluation requires an explicit candidate/job action.
 - [x] Backend errors and size restrictions are represented consistently.
-- [ ] Administrative authorization, candidate detail links, upload progress, and full end-to-end browser tests are complete.
+- [ ] Upload progress, bounded extracted-text preview, and full end-to-end browser tests are complete.
 
 ## How to test the complete workflow
 

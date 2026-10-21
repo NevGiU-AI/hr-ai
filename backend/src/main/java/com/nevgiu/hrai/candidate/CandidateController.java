@@ -19,12 +19,21 @@ public class CandidateController {
     private final CandidateRepository candidateRepository;
     private final CvIngestionService cvIngestionService;
     private final CandidateErasureService candidateErasureService;
+    private final CandidateDetailsService candidateDetailsService;
 
     public CandidateController(CandidateRepository candidateRepository, CvIngestionService cvIngestionService,
-                               CandidateErasureService candidateErasureService) {
+                               CandidateErasureService candidateErasureService,
+                               CandidateDetailsService candidateDetailsService) {
         this.candidateRepository = candidateRepository;
         this.cvIngestionService = cvIngestionService;
         this.candidateErasureService = candidateErasureService;
+        this.candidateDetailsService = candidateDetailsService;
+    }
+
+    @GetMapping("/{candidateId}/details")
+    public CandidateDetailsResponse details(@PathVariable Long candidateId,
+                                            @AuthenticationPrincipal AppUserPrincipal principal) {
+        return candidateDetailsService.find(candidateId, principal);
     }
 
     @GetMapping

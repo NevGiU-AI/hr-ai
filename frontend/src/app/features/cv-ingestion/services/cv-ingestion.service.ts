@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
-import { Candidate, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../models/cv-ingestion.models';
+import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../models/cv-ingestion.models';
 
 @Injectable({ providedIn: 'root' })
 export class CvIngestionService {
@@ -23,6 +23,22 @@ export class CvIngestionService {
 
   getCandidates(): Observable<Candidate[]> {
     return this.http.get<Candidate[]>(`${this.apiUrl}/candidates`);
+  }
+
+  getCandidateDetails(candidateId: number): Observable<CandidateDetails> {
+    return this.http.get<CandidateDetails>(`${this.apiUrl}/candidates/${candidateId}/details`);
+  }
+
+  downloadOriginal(documentId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/cv-documents/${documentId}/original`, { responseType: 'blob' });
+  }
+
+  deleteOriginal(documentId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/cv-documents/${documentId}/original`);
+  }
+
+  updateLegalHold(documentId: number, held: boolean): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/cv-documents/${documentId}/legal-hold`, { held });
   }
 
   getJobs(): Observable<Job[]> {

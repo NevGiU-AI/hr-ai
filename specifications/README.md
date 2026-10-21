@@ -37,26 +37,27 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 5. Add vector indexing and secure, evidence-backed typed CV chat.
 6. Extend accepted typed CV chat with editable speech-to-text input and optional text-to-speech playback.
 7. Build dashboard APIs and UI from persisted recruitment data.
-8. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts are stable.
-9. Benchmark bounded backend concurrency and Java virtual threads in staging.
-10. Install and validate encrypted paired backup/restore in staging, including an isolated restoration test.
-11. Install and validate paired backup/restore in production after staging acceptance.
-12. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
-13. Move original files to private object storage before horizontal or multi-host backend scaling.
-14. Consider horizontal or multi-host backend scaling.
-15. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
-16. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
+8. Complete a focused codebase-wide comments and Javadoc review under the contribution standards.
+9. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts and source documentation are stable.
+10. Benchmark bounded backend concurrency and Java virtual threads in staging.
+11. Install and validate encrypted paired backup/restore in staging, including an isolated restoration test.
+12. Install and validate paired backup/restore in production after staging acceptance.
+13. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
+14. Move original files to private object storage before horizontal or multi-host backend scaling.
+15. Consider horizontal or multi-host backend scaling.
+16. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
+17. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
 
 ## Current repository snapshot
 
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Job-offer generation | Implemented, needs hardening | Generate, edit, approve, persist, and list are available. Direct approval, schema-constrained output, lifecycle management, and production security remain. |
-| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, fail-closed malware quarantine, per-file transactions/results, and Angular UI. Tenant-authorized original operations, scheduled expiry, legal holds, and confirmed full erasure passed staging and production acceptance. Candidate details/history, correction, and OCR remain; paired-backup installation and restoration acceptance follow the dashboard, stable OpenAPI contracts, and concurrency benchmark. |
+| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, fail-closed malware quarantine, per-file transactions/results, and Angular UI. Tenant-authorized original operations, scheduled expiry, legal holds, and confirmed full erasure passed staging and production acceptance. Candidate details and document-ingestion history are implemented and await environment acceptance; correction and OCR remain. Paired-backup installation and restoration acceptance follow the dashboard, stable OpenAPI contracts, and concurrency benchmark. |
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
 | CV database chat | Planned | pgvector is available, but indexing, retrieval, memory, citations, editable speech input, and optional speech playback remain. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |
-| Backend Swagger/OpenAPI | Planned after dashboard | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable. |
+| Backend Swagger/OpenAPI | Planned after dashboard and source review | Springdoc, Swagger UI, versioned OpenAPI export, endpoint examples, and contract validation will be added after dashboard APIs are stable and the codebase-wide comments/Javadoc review is complete. |
 | External messaging | Planned | Telegram/WhatsApp choice and integration remain open. |
 | Generated media | Optional, gated | Human-reviewed employer-branding images may be evaluated after core workflows; video follows only if value is proven. Candidate imagery, synthetic interviewers, and multimodal candidate scoring are prohibited. |
 | Backend concurrency | Planned validation | Java 21 and blocking Spring MVC/JPA/AI workflows are suitable for a virtual-thread experiment, but production enablement requires staging benchmarks, downstream limits, and pinned-thread monitoring. |

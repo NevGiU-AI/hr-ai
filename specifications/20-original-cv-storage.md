@@ -478,7 +478,8 @@ tar -tzf "$cv_backup" > /dev/null
 
 ## Remaining governance work
 
-- Add the candidate-details/ingestion-history UI that invokes the authorized original-file APIs.
+- Validate the implemented candidate-details/ingestion-history UI and its authorized original-file actions in staging and
+  production.
 - Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
 - Extend the implemented erasure boundary to any future embeddings, indexes, chat evidence, or other derived AI data
   before those stores are introduced.

@@ -32,8 +32,11 @@
   audit enforcement, and validate release `v0.8.0` in staging and production.
 - [x] Complete the [final authentication and security validation suite](./19-final-security-validation.md), covering
   authorization, tenant isolation, lockout, audit logs, passwords, concurrent requests, and session policy.
-- [ ] Define organization lifecycle management and replace legacy environment-derived organization identifiers with
-  stable company identities before onboarding independent organizations.
+- [x] Document the current shared-schema multi-tenant model, the absence of organization-management API/UI, and the
+  controlled bootstrap-only path for an initial administrator.
+- [ ] Implement platform-authorized organization lifecycle management with a managed `organizations` table, stable
+  company identities, first-administrator provisioning, status transitions, platform auditing, and cross-tenant tests;
+  replace legacy environment-derived organization identifiers before onboarding independent organizations.
 - [x] Define candidate notice, retention, deletion, legal-hold, and data-residency policies.
 - [x] Define the currently supported CV formats and upload limits (PDF, ZIP, 20 MB per file, 100 MB per request).
 - [x] Establish the initial typed API error format and environment configuration.
@@ -50,11 +53,17 @@
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
 **Current delivery sequence:** candidate details and ingestion history -> correction/reprocessing -> OCR -> typed CV chat
--> speech input/playback -> final dashboard -> publish stable OpenAPI contracts -> benchmark bounded concurrency and
-virtual threads -> validate paired backup/restore in staging -> validate it in production -> cross-cutting release
-validation -> private object storage -> consider horizontal or multi-host backend scaling. External messaging follows
-stable web chat, speech controls, and documented APIs; optional image/video generation remains last and requires
-separate value, privacy, and compliance approval.
+-> speech input/playback -> final dashboard -> codebase-wide comments/Javadoc review -> publish stable OpenAPI contracts
+-> benchmark bounded concurrency and virtual threads -> validate paired backup/restore in staging -> validate it in
+production -> cross-cutting release validation -> private object storage -> consider horizontal or multi-host backend
+scaling. External messaging follows stable web chat, speech controls, and documented APIs; optional image/video
+generation remains last and requires separate value, privacy, and compliance approval.
+
+The source-documentation review is a completion milestone, not a mechanical comment-every-method exercise. It must cover
+public contracts and the non-obvious tenant, authorization, privacy, transaction, locking, rollback, scheduling,
+external-integration, and Angular state-management decisions described in
+[the contribution standards](./22-contribution-standards.md#code-comments-and-documentation). Redundant comments on
+self-explanatory code are explicitly out of scope. OpenAPI publication begins only after this review is complete.
 
 ## Phase 1 - Stabilize job-offer generation
 
@@ -90,7 +99,7 @@ separate value, privacy, and compliance approval.
   original-file/database backup service in staging and production and complete isolated-restore acceptance.
 - [x] Add tenant-authorized original-file read/delete APIs with generic cross-tenant responses, transaction-safe
   filesystem deletion, and security auditing; validate the operations in staging and production.
-- [ ] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
+- [x] Add candidate-details and ingestion-history UI/API access to the existing authorized original-file operations.
 - [ ] Add auditable metadata correction and safe document reprocessing.
 - [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
 - [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
@@ -98,7 +107,8 @@ separate value, privacy, and compliance approval.
 - [ ] Add metric-level evidence and separate reliability confidence from candidate fit.
 - [ ] Expose approved weight configuration in the frontend.
 - [ ] Persist prompt, model, weights, source-document version, and evaluation audit history.
-- [ ] Build candidate details, ingestion history, and evaluation history UI/API.
+- [x] Build candidate details and document-ingestion history UI/API.
+- [ ] Add evaluation-history retrieval and presentation.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
 - [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.
 
@@ -138,9 +148,25 @@ separate value, privacy, and compliance approval.
 
 **Exit condition:** Recruiters can monitor roles and candidate evaluations and reach source records from every aggregate view.
 
-## Phase 5 - Publish backend Swagger/OpenAPI documentation
+## Phase 5 - Complete the codebase-wide source-documentation review
 
-This phase starts after the dashboard is complete so the documented API includes the stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an incomplete surface.
+- [ ] Inventory backend and frontend production code by business capability and integration boundary.
+- [ ] Add missing Javadoc to public contracts whose inputs, outputs, errors, side effects, or security rules are not
+  evident from types and names.
+- [ ] Document tenant isolation, authorization, privacy, transaction, locking, rollback compensation, idempotency,
+  scheduling, external storage, Redis, ClamAV, AI-provider, and future OCR boundaries where the reason is non-obvious.
+- [ ] Document complex Angular state synchronization and security-sensitive presentation rules.
+- [ ] Remove inaccurate or redundant comments discovered during the review; do not comment trivial accessors or
+  self-explanatory implementation details.
+- [ ] Run the complete backend and frontend regression suites after the review.
+
+**Exit condition:** Non-obvious public contracts and technical or business boundaries are documented accurately across
+the codebase, redundant commentary is absent, and regression tests pass.
+
+## Phase 6 - Publish backend Swagger/OpenAPI documentation
+
+This phase starts after the dashboard and source-documentation review are complete so the documented API includes the
+stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an incomplete surface.
 
 - [ ] Add and configure Springdoc OpenAPI for the Spring Boot backend.
 - [ ] Document every supported endpoint, request model, response model, validation rule, and HTTP status.
@@ -153,7 +179,7 @@ This phase starts after the dashboard is complete so the documented API includes
 
 **Exit condition:** Backend consumers can discover and test the stable API through reviewed, versioned, security-conscious Swagger/OpenAPI documentation.
 
-## Phase 6 - Benchmark concurrency and virtual threads
+## Phase 7 - Benchmark concurrency and virtual threads
 
 - [ ] Establish platform-thread load-test baselines for AI, JDBC, ingestion, chat, and dashboard workloads.
 - [ ] Evaluate Spring Boot virtual threads in staging for blocking orchestration, with `spring.main.keep-alive` and a
@@ -169,7 +195,7 @@ This phase starts after the dashboard is complete so the documented API includes
 **Exit condition:** the selected thread model is supported by repeatable staging measurements and explicit resource
 limits, and can be reverted through configuration.
 
-## Phase 7 - Install and validate paired backup/restore
+## Phase 8 - Install and validate paired backup/restore
 
 - [ ] Provision a staging-only destination, upload-only credentials, public `age` recipient, Object Lock, and lifecycle
   policy without reusing production credentials or recovery identities.
@@ -183,7 +209,7 @@ limits, and can be reverted through configuration.
 **Exit condition:** staging and production can each produce and restore a complete encrypted PostgreSQL/original-file
 recovery set, with environment-isolated credentials and recorded evidence.
 
-## Phase 8 - Cross-cutting release readiness
+## Phase 9 - Cross-cutting release readiness
 
 - [ ] Run full unit, integration, end-to-end, performance, accessibility, usability, privacy, and security test suites.
 - [ ] Run deterministic AI invariants on every pull request and a stable provider-backed evaluation smoke set where cost and availability permit.
@@ -203,7 +229,7 @@ recovery set, with environment-isolated credentials and recorded evidence.
 **Exit condition:** Operational, security, privacy, AI-quality, performance, accessibility, usability, and product owners
 approve release.
 
-## Phase 9 - Move originals to private object storage and consider horizontal scaling
+## Phase 10 - Move originals to private object storage and consider horizontal scaling
 
 This phase follows release readiness. Private object storage is required before backend processing can be distributed
 across multiple hosts. The current private Docker volume remains supported while the application runs on one backend
@@ -219,7 +245,7 @@ host.
 **Exit condition:** original files are private, durable, and consistently available across intended hosts, and any
 horizontal-scaling decision is supported by measured demand and failure testing.
 
-## Phase 10 - Add external messaging
+## Phase 11 - Add external messaging
 
 - [ ] Implement the selected provider behind a channel-neutral messaging interface.
 - [ ] Link messaging identities to authenticated application users securely.
@@ -230,7 +256,7 @@ horizontal-scaling decision is supported by measured demand and failure testing.
 
 **Exit condition:** External chat has security and answer quality equivalent to the web channel.
 
-## Phase 11 - Add optional generated media
+## Phase 12 - Add optional generated media
 
 - [ ] Validate a measurable employer-branding or communication need before implementing generated media.
 - [ ] Add image generation only for human-reviewed job-post, employer-branding, or interface assets.

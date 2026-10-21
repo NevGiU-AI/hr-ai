@@ -15,10 +15,47 @@ values were convenient environment-specific migration labels; they do not mean t
 are not the intended multi-company model. Because the environments use separate databases, both may eventually use the
 same stable company identifier, such as `nevgiu-ai`, without mixing their data.
 
-Before onboarding independent companies, replace the legacy labels through a reviewed Flyway migration and introduce a
-managed `organizations` table with a stable ID, slug, display name, status, and lifecycle metadata. The migration must
-update users, jobs, candidates, CV documents, evaluations, and security events together. Until then, administrators
-create users only inside their own stored `organization_id`, and there is no organization-creation UI.
+## Current multi-tenant database model
+
+The application currently uses a **shared database, shared schema, tenant-discriminator** model. Organizations share the
+same PostgreSQL tables, while each tenant-owned row carries an `organization_id`. The authenticated user's stored
+organization becomes part of every tenant-sensitive lookup; a numeric record ID alone is never sufficient. For example,
+a candidate is loaded by both `candidateId` and `organizationId`, and a missing or cross-tenant identifier returns the
+same `404` response. This avoids revealing whether another organization owns that identifier.
+
+Isolation is enforced in the Spring service/repository layer today. PostgreSQL row-level security is not enabled, so a
+missed organization predicate would be a security defect. Repository tests and authorization tests therefore remain
+mandatory, and PostgreSQL row-level security should be evaluated as defense in depth before untrusted customer tenants
+are onboarded.
+
+## Current organization creation limitation
+
+There is no supported organization-management API or UI. `POST /api/admin/users` always copies the authenticated
+administrator's `organization_id`; its request body deliberately cannot select another organization. A tenant
+administrator can therefore create users only inside their own organization and cannot establish another tenant.
+
+`AdminAccountInitializer` can technically create an initial administrator with a custom identifier supplied through
+`BOOTSTRAP_ADMIN_ORGANIZATION`. That startup mechanism is intended for controlled bootstrap, requires a globally unique
+administrator email, and must not become the normal customer-onboarding workflow. After a successful bootstrap login,
+the password must be removed from deployment configuration as documented in
+[Authentication and Authorization](./15-authentication-and-authorization.md#bootstrap-administrator).
+
+## Planned organization lifecycle management
+
+Before independent companies are onboarded, add a managed `organizations` table and a platform-operator boundary that
+is separate from tenant `ADMIN`. A protected organization-creation operation should atomically create the organization
+and its first administrator, then write a platform audit record. At minimum, the future model needs:
+
+- an immutable internal identifier, validated unique slug, display name, status, and lifecycle timestamps;
+- platform-authorized creation, activation, suspension, and retirement;
+- first-administrator provisioning or invitation without exposing credentials in logs;
+- a reviewed Flyway migration that replaces legacy `staging` and `production` labels across users, jobs, candidates,
+  CV documents, evaluations, and security events as one coordinated change;
+- tests proving tenant administrators cannot list, create, mutate, or infer other organizations; and
+- an explicit authentication design before allowing one email address to participate in multiple organizations.
+
+Normal candidate, job, CV, evaluation, chat, and AI-tool requests must continue deriving the organization from the
+authenticated principal. They must never accept an organization identifier from user or model-controlled payloads.
 
 Tenant-owned records are:
 

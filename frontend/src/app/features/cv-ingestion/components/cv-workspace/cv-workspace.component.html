@@ -87,7 +87,7 @@
     </div>
     <div class="evaluation-form">
       <label>Candidate
-        <select class="form-select" [(ngModel)]="selectedCandidateId">
+        <select class="form-select" [ngModel]="selectedCandidateId" (ngModelChange)="selectCandidate($event)">
           <option [ngValue]="null" disabled>{{ candidates.length ? 'Select candidate' : 'Import a CV first' }}</option>
           <option *ngFor="let candidate of candidates" [ngValue]="candidate.id">{{ candidate.name }} (#{{ candidate.id }})</option>
         </select>
@@ -106,6 +106,50 @@
         {{ busyAction === 'erasure' ? 'Erasing…' : 'Erase candidate' }}
       </button>
     </div>
+
+    <section class="candidate-details" *ngIf="candidateDetails as details" aria-labelledby="candidate-details-title">
+      <div class="details-heading">
+        <div>
+          <p class="step">Candidate details</p>
+          <h3 id="candidate-details-title">{{ details.name || ('Candidate #' + details.id) }}</h3>
+        </div>
+        <span>Created {{ details.createdAt | date:'medium' }}</span>
+      </div>
+      <dl class="candidate-facts">
+        <div><dt>Email</dt><dd>{{ details.email || 'Not provided' }}</dd></div>
+        <div><dt>Current title</dt><dd>{{ details.currentTitle || 'Not provided' }}</dd></div>
+        <div><dt>Location</dt><dd>{{ details.location || 'Not provided' }}</dd></div>
+        <div><dt>Experience</dt><dd>{{ details.yearsExperience == null ? 'Not provided' : details.yearsExperience + ' years' }}</dd></div>
+      </dl>
+
+      <h4>Ingestion history</h4>
+      <p *ngIf="!details.documents.length" class="text-muted">No CV document is associated with this candidate.</p>
+      <div class="document-list" *ngIf="details.documents.length">
+        <article class="document-card" *ngFor="let item of details.documents">
+          <div>
+            <strong>{{ item.originalFilename }}</strong>
+            <p>{{ item.importedAt | date:'medium' }} · {{ item.fileSize | number }} bytes · {{ item.textLength | number }} extracted characters</p>
+            <div class="document-state">
+              <span class="status" [ngClass]="item.status.toLowerCase()">{{ item.status }}</span>
+              <span>{{ item.source }}</span>
+              <span>{{ item.originalAvailable ? 'Original stored' : 'Original unavailable' }}</span>
+              <span *ngIf="item.retentionUntil">Retained until {{ item.retentionUntil | date:'mediumDate' }}</span>
+              <span *ngIf="item.legalHold" class="hold">Legal hold</span>
+            </div>
+          </div>
+          <div class="document-actions">
+            <button *ngIf="item.downloadAllowed" class="btn btn-sm btn-outline-primary" type="button"
+                    [disabled]="!!busyAction" (click)="downloadOriginal(item)">Download original</button>
+            <button *ngIf="item.administrationAllowed && item.originalAvailable" class="btn btn-sm btn-outline-secondary"
+                    type="button" [disabled]="!!busyAction" (click)="updateLegalHold(item)">
+              {{ item.legalHold ? 'Release hold' : 'Apply hold' }}
+            </button>
+            <button *ngIf="item.administrationAllowed && item.originalAvailable" class="btn btn-sm btn-outline-danger"
+                    type="button" [disabled]="!!busyAction || item.legalHold" (click)="deleteOriginal(item)">Delete original</button>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <p class="erasure-warning" *ngIf="isAdministrator">
       Erasure permanently removes the selected candidate, CV documents, stored originals, and evaluations.

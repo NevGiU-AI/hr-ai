@@ -28,6 +28,20 @@
 .evaluation-form label { color: #35425b; font-size: .9rem; font-weight: 650; }
 .evaluation-form select { margin-top: .35rem; }
 .erasure-warning { color: #8a2530; font-size: .85rem; margin: 1rem 0 0; }
+.candidate-details { border-top: 1px solid #dfe5ef; margin-top: 1.5rem; padding-top: 1.5rem; }
+.details-heading { align-items: end; display: flex; justify-content: space-between; }
+.details-heading h3 { margin: .2rem 0 0; }
+.details-heading > span, .document-card p { color: #657189; font-size: .82rem; }
+.candidate-facts { display: grid; gap: .75rem; grid-template-columns: repeat(4, 1fr); margin: 1rem 0 1.5rem; }
+.candidate-facts div { background: #f5f7fb; border-radius: .5rem; padding: .7rem; }
+.candidate-facts dt { color: #657189; font-size: .75rem; }
+.candidate-facts dd { margin: .2rem 0 0; }
+.document-list { display: grid; gap: .75rem; }
+.document-card { align-items: center; border: 1px solid #dfe5ef; border-radius: .55rem; display: flex; gap: 1rem; justify-content: space-between; padding: 1rem; }
+.document-card p { margin: .25rem 0 .5rem; }
+.document-state, .document-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; }
+.document-state span:not(.status) { background: #eef2f8; border-radius: 999px; color: #526078; font-size: .72rem; padding: .25rem .5rem; }
+.document-state .hold { background: #fff0c7 !important; color: #805500 !important; }
 .evaluation-result { border-top: 1px solid #dfe5ef; display: grid; gap: 1.25rem; grid-template-columns: 180px 1fr; margin-top: 1.5rem; padding-top: 1.5rem; }
 .overall { align-items: center; background: #17233c; border-radius: .8rem; color: white; display: flex; flex-direction: column; justify-content: center; min-height: 150px; text-align: center; }
 .overall strong { font-size: 3rem; line-height: 1; }
@@ -39,7 +53,8 @@
 .explanation h3 { font-size: 1rem; }
 .explanation p { white-space: pre-line; }
 @media (max-width: 850px) {
-  .import-grid, .evaluation-form { grid-template-columns: 1fr; }
+  .import-grid, .evaluation-form, .candidate-facts { grid-template-columns: 1fr; }
+  .document-card, .details-heading { align-items: stretch; flex-direction: column; }
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .evaluation-result { grid-template-columns: 1fr; }
   .metrics { grid-template-columns: repeat(2, 1fr); }

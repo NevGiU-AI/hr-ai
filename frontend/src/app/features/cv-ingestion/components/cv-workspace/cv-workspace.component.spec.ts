@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, Subject, throwError } from 'rxjs';
-import { Candidate, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../../models/cv-ingestion.models';
+import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../../models/cv-ingestion.models';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 import { CvWorkspaceComponent } from './cv-workspace.component';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -21,9 +21,11 @@ describe('CvWorkspaceComponent', () => {
   beforeEach(async () => {
     service = jasmine.createSpyObj<CvIngestionService>('CvIngestionService', [
       'uploadPdf', 'uploadArchive', 'importInitial', 'getCandidates', 'getJobs', 'evaluate', 'eraseCandidate',
+      'getCandidateDetails', 'downloadOriginal', 'deleteOriginal', 'updateLegalHold',
     ]);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
+    service.getCandidateDetails.and.returnValue(of(candidateDetails()));
 
     await TestBed.configureTestingModule({
       imports: [CvWorkspaceComponent],
@@ -43,6 +45,7 @@ describe('CvWorkspaceComponent', () => {
     expect(service.getJobs).toHaveBeenCalled();
     expect(component.selectedCandidateId).toBe(7);
     expect(component.selectedJobId).toBe(12);
+    expect(service.getCandidateDetails).toHaveBeenCalledOnceWith(7);
   });
 
   it('rejects a non-PDF selection', () => {
@@ -111,6 +114,15 @@ describe('CvWorkspaceComponent', () => {
     service.evaluate.and.returnValue(of(response));
     component.evaluate();
     expect(service.evaluate).toHaveBeenCalledOnceWith(7, 12);
+  });
+
+  it('renders tenant-scoped candidate details and ingestion history', () => {
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Candidate details');
+    expect(text).toContain('ada.pdf');
+    expect(text).toContain('Original stored');
+    expect(text).toContain('Download original');
   });
 
   it('does not evaluate without both selections', () => {
@@ -187,6 +199,18 @@ describe('CvWorkspaceComponent', () => {
         employmentGapScore: 9, readabilityScore: 8, aiConfidenceScore: 88,
         overallFitScore: 82, createdAt: '2026-08-01T00:00:00Z',
       },
+    };
+  }
+
+  function candidateDetails(): CandidateDetails {
+    return {
+      id: 7, name: 'Ada Lovelace', email: 'ada@example.com', location: 'London', currentTitle: 'Engineer',
+      yearsExperience: 5, createdAt: '2026-10-01T00:00:00Z', documents: [{
+        id: 2, originalFilename: 'ada.pdf', contentType: 'application/pdf', fileSize: 1024,
+        source: 'USER_UPLOAD', status: 'IMPORTED', textLength: 120, importedAt: '2026-10-01T00:00:00Z',
+        originalAvailable: true, storedAt: '2026-10-01T00:00:00Z', retentionUntil: '2027-10-01T00:00:00Z',
+        legalHold: false, legalHoldAt: null, downloadAllowed: true, administrationAllowed: true,
+      }],
     };
   }
 });

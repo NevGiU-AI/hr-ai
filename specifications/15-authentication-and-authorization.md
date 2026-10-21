@@ -42,6 +42,9 @@ Login failures always return the generic message `Invalid email or password`; th
 
 Account administration exposes tenant-scoped lifecycle operations. Every endpoint requires `ADMIN`.
 The organization is always copied from the authenticated administrator; request bodies cannot select it.
+Consequently, this API creates accounts only within an existing organization; it cannot create a new organization or
+its first administrator. The current limitation, controlled bootstrap path, and planned platform-level organization
+lifecycle are documented in [Organization and tenant isolation](./tenant-isolation.md#current-organization-creation-limitation).
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -144,7 +147,9 @@ The organization identifier is resolved from the authenticated principal and mus
 
 ## Remaining work
 
-- Define organization lifecycle management before onboarding independent customer organizations.
+- Implement platform-authorized organization lifecycle management before onboarding independent customer organizations:
+  managed organization records, stable company identifiers, first-administrator provisioning, status transitions,
+  platform auditing, and cross-tenant security tests. Tenant `ADMIN` must remain scoped to its own organization.
 - Full candidate erasure passed staging and production acceptance on 15 October 2026 in release `v0.14.0`; complete
   broader business-action audit logging. Original-file expiry and legal holds are already enforced and validated.
 - Continue applying the completed [final security validation suite](./19-final-security-validation.md) to security-relevant

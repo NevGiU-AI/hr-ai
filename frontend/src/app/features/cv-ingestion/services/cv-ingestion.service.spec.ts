@@ -73,6 +73,25 @@ describe('CvIngestionService', () => {
     expect(jobCount).toBe(0);
   });
 
+  it('retrieves candidate details and controls the stored original', () => {
+    service.getCandidateDetails(7).subscribe();
+    http.expectOne(`${environment.apiUrl}/candidates/7/details`).flush({ id: 7, documents: [] });
+
+    service.downloadOriginal(9).subscribe();
+    const download = http.expectOne(`${environment.apiUrl}/cv-documents/9/original`);
+    expect(download.request.responseType).toBe('blob');
+    download.flush(new Blob(['pdf']));
+
+    service.updateLegalHold(9, true).subscribe();
+    const hold = http.expectOne(`${environment.apiUrl}/cv-documents/9/legal-hold`);
+    expect(hold.request.method).toBe('PUT');
+    expect(hold.request.body).toEqual({ held: true });
+    hold.flush(null);
+
+    service.deleteOriginal(9).subscribe();
+    expect(http.expectOne(`${environment.apiUrl}/cv-documents/9/original`).request.method).toBe('DELETE');
+  });
+
   it('propagates structured backend errors', () => {
     let message = '';
     service.importInitial().subscribe({ error: (error) => message = error.error.message });

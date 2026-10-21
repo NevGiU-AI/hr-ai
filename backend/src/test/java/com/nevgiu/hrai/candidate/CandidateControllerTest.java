@@ -21,6 +21,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.time.Instant;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +33,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -47,6 +49,7 @@ class CandidateControllerTest {
     @MockitoBean CandidateRepository candidateRepository;
     @MockitoBean CvIngestionService ingestionService;
     @MockitoBean CandidateErasureService candidateErasureService;
+    @MockitoBean CandidateDetailsService candidateDetailsService;
     @MockitoBean SecurityAuditService securityAuditService;
 
     @BeforeEach
@@ -116,5 +119,25 @@ class CandidateControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"confirmed\":false}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.validationErrors.confirmed").exists());
+    }
+
+    @Test
+    void returnsTenantScopedCandidateDetails() throws Exception {
+        when(candidateDetailsService.find(7L, PRINCIPAL)).thenReturn(new CandidateDetailsResponse(
+                7L, "Ada Lovelace", "ada@example.com", "London", "Engineer", 5,
+                Instant.parse("2026-10-19T10:00:00Z"), List.of(new CandidateDetailsResponse.Document(
+                11L, "ada.pdf", "application/pdf", 1024, CvDocumentSource.USER_UPLOAD,
+                CvIngestionStatus.IMPORTED, 3500, Instant.parse("2026-10-19T10:00:00Z"), true,
+                Instant.parse("2026-10-19T10:00:01Z"), Instant.parse("2027-10-19T10:00:01Z"),
+                false, null, true, true))));
+
+        mvc.perform(get("/api/candidates/7/details").with(user(PRINCIPAL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.documents[0].id").value(11))
+                .andExpect(jsonPath("$.documents[0].downloadAllowed").value(true))
+                .andExpect(jsonPath("$.documents[0].administrationAllowed").value(true))
+                .andExpect(jsonPath("$.documents[0].storageKey").doesNotExist())
+                .andExpect(jsonPath("$.documents[0].sha256").doesNotExist());
     }
 }

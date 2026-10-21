@@ -174,6 +174,21 @@ describe('CvWorkspaceComponent', () => {
     expect(service.eraseCandidate).not.toHaveBeenCalled();
   });
 
+  it('disables candidate erasure while any associated document is under legal hold', () => {
+    component.candidateDetails!.documents[0].legalHold = true;
+    const confirm = spyOn(window, 'confirm');
+    fixture.detectChanges();
+
+    component.eraseCandidate();
+
+    const eraseButton = fixture.debugElement.queryAll(By.css('button'))
+      .find((button) => button.nativeElement.textContent.includes('Erase candidate'))!;
+    expect(eraseButton.nativeElement.disabled).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('cannot be erased until all legal holds are released');
+    expect(confirm).not.toHaveBeenCalled();
+    expect(service.eraseCandidate).not.toHaveBeenCalled();
+  });
+
   function importResult(status: CvImportResult['status']): CvImportResult {
     return {
       candidateId: status === 'IMPORTED' || status === 'DUPLICATE' ? 7 : null,

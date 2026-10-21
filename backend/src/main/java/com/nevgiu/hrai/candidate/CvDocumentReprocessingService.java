@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.Instant;
 
+/** Rebuilds derived text from the existing original while preserving the original object and candidate identity. */
 @Service
 public class CvDocumentReprocessingService {
     private final CvDocumentRepository documents;
@@ -45,8 +46,13 @@ public class CvDocumentReprocessingService {
         this.audit = audit;
     }
 
+    /**
+     * Reprocesses a tenant-owned stored original as one database transaction. Storage reads and ClamAV cannot
+     * participate in the transaction, so no database mutation occurs until both external operations succeed.
+     */
     @Transactional
     public void reprocess(Long documentId, AppUserPrincipal actor) {
+        // The initial unlocked read discovers the candidate ID needed to preserve the global mutation lock order.
         CvDocument reference = documents.findByIdAndOrganizationId(documentId, actor.organizationId())
                 .orElseThrow(() -> new CvOriginalAccessException(HttpStatus.NOT_FOUND, "CV document not found"));
         if (reference.getStorageKey() == null || reference.getCandidate() == null) {
@@ -85,6 +91,7 @@ public class CvDocumentReprocessingService {
         try {
             String text = extractor.extract(content);
             if (text.length() < properties.minimumTextLength()) {
+                // Keep the last useful extraction untouched; OCR/manual review can replace it in a later workflow.
                 throw failure(actor, document, HttpStatus.UNPROCESSABLE_ENTITY,
                         "Reprocessing produced too little text; manual review or OCR is required");
             }
@@ -96,6 +103,7 @@ public class CvDocumentReprocessingService {
             document.setReprocessedAt(now);
             // Human-corrected profile fields are preserved; only source-derived CV text is refreshed.
             candidate.setCvText(text);
+            // Historical evaluations remain available for audit, but must no longer be treated as current evidence.
             int invalidated = evaluations.invalidateCurrentByCandidateIdAndOrganizationId(
                     candidate.getId(), actor.organizationId(), now);
             documents.save(document);
@@ -110,6 +118,7 @@ public class CvDocumentReprocessingService {
     private CvIngestionException failure(AppUserPrincipal actor, CvDocument document,
                                          HttpStatus status, String message) {
         Long candidateId = document.getCandidate() == null ? null : document.getCandidate().getId();
+        // Audit only safe IDs and status; never copy filenames, storage keys, signatures, or extracted text.
         audit.candidateAction(SecurityEventType.CV_DOCUMENT_REPROCESS_FAILED, SecurityEventOutcome.FAILURE,
                 actor, candidateId, "documentId=" + document.getId() + ";status=" + status.value());
         return new CvIngestionException(status, message);

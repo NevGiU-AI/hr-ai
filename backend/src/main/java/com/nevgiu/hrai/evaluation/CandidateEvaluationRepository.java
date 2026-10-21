@@ -15,6 +15,7 @@ public interface CandidateEvaluationRepository extends JpaRepository<CandidateEv
     long deleteAllByCandidateIdAndOrganizationId(Long candidateId, String organizationId);
 
     @Modifying
+    // Reprocessing supersedes evidence; timestamping preserves the old result while excluding it from current views.
     @Query("""
             update CandidateEvaluation evaluation set evaluation.invalidatedAt = :invalidatedAt
             where evaluation.candidate.id = :candidateId

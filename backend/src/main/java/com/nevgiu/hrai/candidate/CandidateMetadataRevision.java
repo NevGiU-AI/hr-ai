@@ -10,7 +10,12 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-/** Immutable snapshot of candidate metadata after an authorized manual correction. */
+/**
+ * Immutable snapshot of candidate metadata after an authorized manual correction.
+ *
+ * <p>The actor email is copied intentionally: the history must remain attributable if the administrator account is
+ * later renamed or removed. Candidate erasure removes these snapshots through the database cascade.</p>
+ */
 @Entity
 @Table(name = "candidate_metadata_revisions")
 public class CandidateMetadataRevision {
@@ -28,6 +33,7 @@ public class CandidateMetadataRevision {
 
     protected CandidateMetadataRevision() { }
 
+    /** Copies only editable profile metadata; raw CV text and storage identifiers must never enter revision history. */
     public CandidateMetadataRevision(Candidate candidate, AppUserPrincipal actor) {
         this.organizationId = candidate.getOrganizationId();
         this.candidateId = candidate.getId();

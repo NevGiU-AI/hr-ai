@@ -102,7 +102,9 @@
         {{ busyAction === 'evaluation' ? 'Evaluating…' : 'Evaluate candidate' }}
       </button>
       <button *ngIf="isAdministrator" class="btn btn-outline-danger" type="button"
-              [disabled]="!selectedCandidateId || !!busyAction" (click)="eraseCandidate()">
+              [disabled]="!selectedCandidateId || candidateUnderLegalHold || !!busyAction"
+              [attr.title]="candidateUnderLegalHold ? 'Release all legal holds before erasing this candidate' : null"
+              (click)="eraseCandidate()">
         {{ busyAction === 'erasure' ? 'Erasing…' : 'Erase candidate' }}
       </button>
     </div>
@@ -153,7 +155,8 @@
 
     <p class="erasure-warning" *ngIf="isAdministrator">
       Erasure permanently removes the selected candidate, CV documents, stored originals, and evaluations.
-      Legal holds must be released first.
+      <strong *ngIf="candidateUnderLegalHold">This candidate cannot be erased until all legal holds are released.</strong>
+      <span *ngIf="!candidateUnderLegalHold">Legal holds must be released first.</span>
     </p>
 
     <div class="evaluation-result" *ngIf="evaluation as response">

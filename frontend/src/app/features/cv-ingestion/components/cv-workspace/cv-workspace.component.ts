@@ -46,6 +46,10 @@ export class CvWorkspaceComponent implements OnInit {
     return this.auth.user?.roles.includes('ADMIN') ?? false;
   }
 
+  get candidateUnderLegalHold(): boolean {
+    return this.candidateDetails?.documents.some((document) => document.legalHold) ?? false;
+  }
+
   ngOnInit(): void {
     this.refreshSelections();
   }
@@ -174,7 +178,8 @@ export class CvWorkspaceComponent implements OnInit {
   }
 
   eraseCandidate(): void {
-    if (!this.isAdministrator || !this.selectedCandidateId || this.busyAction) return;
+    // Mirror the backend policy in the UI; the backend remains authoritative against stale or crafted requests.
+    if (!this.isAdministrator || !this.selectedCandidateId || this.candidateUnderLegalHold || this.busyAction) return;
     const candidate = this.candidates.find((item) => item.id === this.selectedCandidateId);
     const label = candidate?.name || `candidate #${this.selectedCandidateId}`;
     if (!window.confirm(

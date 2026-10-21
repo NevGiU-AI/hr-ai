@@ -187,7 +187,8 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 - After the dashboard, OpenAPI, and concurrency milestones, install and validate the implemented encrypted paired
   original-file/database backup service in staging and production.
 - Add OCR and reprocessing for scanned PDFs.
-- Add richer candidate/document detail and ingestion-history APIs.
+- Validate the implemented candidate details and document-ingestion history in production; staging accepted the feature
+  on 21 October 2026.
 - Detect templates and non-CV PDFs more accurately.
 - Make large imports asynchronous and expose job progress.
 - Rescan legacy originals that predate malware quarantine before later processing or retrieval.

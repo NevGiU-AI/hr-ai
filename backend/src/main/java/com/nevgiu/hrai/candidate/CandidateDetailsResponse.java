@@ -42,7 +42,11 @@ public record CandidateDetailsResponse(
             boolean administrationAllowed
     ) { }
 
-    /** PII snapshot is intentionally visible only through the tenant-scoped candidate details endpoint. */
+    /**
+     * This snapshot contains personally identifiable information (PII), including the candidate's name, email,
+     * location, job title, and experience. It is therefore exposed only through the authenticated, tenant-scoped
+     * candidate-details endpoint, which prevents users from reading revision history from another organization.
+     */
     public record Revision(
             Long id,
             String actorEmail,

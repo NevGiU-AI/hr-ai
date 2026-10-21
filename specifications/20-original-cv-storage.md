@@ -388,6 +388,17 @@ tooling exists in the repository, but staging/production installation and isolat
 after the dashboard, OpenAPI, and concurrency milestones. Correction/reprocessing and future object-storage controls
 remain incomplete.
 
+**Candidate-details acceptance recorded in staging 21 October 2026 for main revision `08d8bf1`:** selecting a candidate
+loaded tenant-scoped candidate metadata and document-ingestion history with import, storage, retention, and legal-hold
+state. Response inspection confirmed that storage keys, SHA-256 hashes, organization identifiers, extraction failures,
+and raw/extracted CV text were absent. Administrators could download and administer stored originals; recruiters could
+download but could not delete or change holds; read-only users received no original-file controls and direct unauthorized
+requests remained denied. Missing and cross-tenant identifiers returned the same generic `404`. Applying and releasing a
+hold refreshed authoritative state, held originals could not be deleted, and original-only deletion preserved the
+candidate and evaluation data while making the binary unavailable. Logout/session expiry returned the browser to login,
+and backend/frontend log inspection found no related storage, tenant, authorization, or rollback error. Production
+acceptance remains pending.
+
 ## Full candidate erasure
 
 `DELETE /api/candidates/{candidateId}` is restricted to `ADMIN` and requires the JSON body

@@ -747,6 +747,11 @@ Validation completed:
 - A human functional test successfully generated and approved a job offer, ingested CV data, and evaluated a candidate against the approved job.
 - Release `v0.4.0` deployed Redis-backed account/IP login throttling, temporary lockout, and administrator unlock to
   staging on 17 August 2026. Section 14A is the repeatable behavioral validation procedure.
+- Main revision `08d8bf1` passed candidate-details and document-ingestion-history acceptance on 21 October 2026.
+  Administrator, recruiter, and read-only presentation matched backend permissions; authorized download, legal-hold,
+  release, and original-only deletion behaved correctly; sensitive storage and CV fields were absent; missing and
+  cross-tenant identifiers remained indistinguishable; deletion preserved candidate and evaluation data; session
+  expiration still redirected to login; and recent backend/frontend logs contained no related errors.
 
 No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed environment file was added to Git or documentation.
 

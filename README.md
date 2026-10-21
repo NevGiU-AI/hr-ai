@@ -71,11 +71,11 @@ password management, concurrent-session limits, and the final security acceptanc
 staging and production. The initial original-CV storage slice is also deployed and validated in both environments, and
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
-staging and production acceptance in release `v0.14.0`. Candidate details and document-ingestion history are implemented
-and await environment acceptance; correction/reprocessing and encrypted paired backup acceptance remain incomplete. The
-next delivery sequence is:
+staging and production acceptance in release `v0.14.0`. Candidate details and document-ingestion history passed staging
+acceptance on 21 October 2026 and await production acceptance; correction/reprocessing and encrypted paired backup
+acceptance remain incomplete. The next delivery sequence is:
 
-1. Validate candidate details and ingestion history in staging and production.
+1. Validate candidate details and ingestion history in production.
 2. Add auditable metadata correction and safe reprocessing without duplicate candidates.
 3. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
 4. Add imperative, tenant-scoped CV chat with citations and evaluation testing.

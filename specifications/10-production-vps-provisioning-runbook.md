@@ -788,6 +788,15 @@ bounded cleanup remained enabled on the normal daily `03:43` schedule. Productio
 expiry against real candidate data because held/unheld expiry and immediate expiry after release had already passed in
 controlled staging validation.
 
+**Candidate-details acceptance recorded 21 October 2026 for main revision `4305cba`:** production deployment and the
+candidate-details/document-ingestion-history smoke suite completed successfully. Candidate metadata and document import,
+storage, retention, and legal-hold state rendered correctly without returning storage keys, content hashes, organization
+identifiers, extraction failures, or raw/extracted CV text. Administrator, recruiter, and read-only behavior matched the
+document-operation authorization policy; missing and cross-tenant identifiers remained indistinguishable; original-only
+deletion preserved candidate and evaluation data; and held candidates could not be erased through the workspace while
+backend enforcement remained authoritative. Session expiry still returned the browser to login. Backend and frontend
+log inspection found no related storage, tenant, authorization, purge, or rollback-restoration error.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

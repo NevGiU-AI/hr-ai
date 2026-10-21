@@ -396,8 +396,15 @@ download but could not delete or change holds; read-only users received no origi
 requests remained denied. Missing and cross-tenant identifiers returned the same generic `404`. Applying and releasing a
 hold refreshed authoritative state, held originals could not be deleted, and original-only deletion preserved the
 candidate and evaluation data while making the binary unavailable. Logout/session expiry returned the browser to login,
-and backend/frontend log inspection found no related storage, tenant, authorization, or rollback error. Production
-acceptance remains pending.
+and backend/frontend log inspection found no related storage, tenant, authorization, or rollback error.
+
+**Candidate-details acceptance recorded in production 21 October 2026 for main revision `4305cba`:** deployment and the
+production smoke suite reproduced the accepted tenant-scoped metadata/history behavior and role-aware original-file
+controls. Sensitive internal fields remained absent, missing and cross-tenant identifiers remained generic, original-only
+deletion preserved candidate and evaluation data, and session expiry still returned the browser to login. The deployed
+legal-hold safeguard disabled candidate erasure whenever any associated document was held and explained that all holds
+must first be released; direct backend enforcement remained authoritative. Backend and frontend logs contained no
+related storage, tenant, authorization, purge, or rollback-restoration error.
 
 ## Full candidate erasure
 

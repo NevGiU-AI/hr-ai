@@ -58,8 +58,10 @@ public class TesseractCvOcrEngine implements CvOcrEngine {
                 // Human-facing page numbers start at one, while PDFBox indexes pages from zero.
                 Path image = workDirectory.resolve("page-" + (index + 1) + ".png");
                 Path outputBase = workDirectory.resolve("result-" + (index + 1));
-                // Grayscale retains text contrast without the memory and disk cost of RGB. DPI is
-                // configurable because recognition quality must be balanced against resource cost.
+                // Grayscale retains text contrast without the memory and disk cost of RGB. DPI
+                // means dots per inch: a higher value gives Tesseract more pixels for small text,
+                // but doubling DPI roughly quadruples the image pixels and processing cost. The
+                // configured 300-DPI default is a practical accuracy/cost balance for typical CVs.
                 ImageIO.write(renderer.renderImageWithDPI(index, properties.dpi(), ImageType.GRAY), "png", image.toFile());
                 runTesseract(image, outputBase);
                 // Tesseract appends .tsv to this base path. A separate result per page preserves

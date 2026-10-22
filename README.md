@@ -265,6 +265,11 @@ Flyway integration tests use Testcontainers and run when Docker is available. Th
 adoption of an existing schema, stale audit-constraint removal, original-CV storage metadata, and Hibernate mapping
 validation.
 
+Backend test reports use JUnit Pioneer's
+[`ReplaceCamelCaseAndUnderscoreAndNumber`](https://junit-pioneer.org/docs/replace-camelcase-and-underscore-and-number/)
+as the global JUnit display-name generator. Descriptive method names therefore become readable report entries without
+class-level annotations; an explicit `@DisplayName` still takes precedence.
+
 Frontend tests require Node.js 20:
 
 ```bash

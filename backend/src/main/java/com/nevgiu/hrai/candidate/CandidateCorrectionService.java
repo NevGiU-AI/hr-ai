@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 /** Applies recruiter corrections without modifying the submitted CV or its extracted source text. */
 @Service
 public class CandidateCorrectionService {
@@ -32,10 +34,22 @@ public class CandidateCorrectionService {
         // Locking prevents two editors from silently producing snapshots from the same candidate state.
         Candidate candidate = candidates.findLockedByIdAndOrganizationId(candidateId, actor.organizationId())
                 .orElseThrow(() -> new CvOriginalAccessException(HttpStatus.NOT_FOUND, "Candidate not found"));
-        candidate.setName(request.name().trim());
-        candidate.setEmail(normalize(request.email()));
-        candidate.setLocation(normalize(request.location()));
-        candidate.setCurrentTitle(normalize(request.currentTitle()));
+        String name = request.name().trim();
+        String email = normalize(request.email());
+        String location = normalize(request.location());
+        String currentTitle = normalize(request.currentTitle());
+        if (Objects.equals(candidate.getName(), name)
+                && Objects.equals(candidate.getEmail(), email)
+                && Objects.equals(candidate.getLocation(), location)
+                && Objects.equals(candidate.getCurrentTitle(), currentTitle)
+                && Objects.equals(candidate.getYearsExperience(), request.yearsExperience())) {
+            // A no-op is a successful idempotent request, but it is not a correction and must not pollute history.
+            return;
+        }
+        candidate.setName(name);
+        candidate.setEmail(email);
+        candidate.setLocation(location);
+        candidate.setCurrentTitle(currentTitle);
         candidate.setYearsExperience(request.yearsExperience());
         candidates.save(candidate);
         // Persist the resulting state rather than a diff so each revision remains independently understandable.

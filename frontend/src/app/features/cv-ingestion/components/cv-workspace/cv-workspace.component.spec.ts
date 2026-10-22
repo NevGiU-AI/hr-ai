@@ -126,6 +126,18 @@ describe('CvWorkspaceComponent', () => {
     expect(text).toContain('Download original');
   });
 
+  it('does not submit or record an unchanged metadata correction', () => {
+    component.editMetadata();
+
+    component.saveMetadata();
+    fixture.detectChanges();
+
+    expect(service.updateCandidateMetadata).not.toHaveBeenCalled();
+    expect(component.metadataDraft).toBeNull();
+    expect(component.notice).toBe('No changes to save.');
+    expect(fixture.nativeElement.textContent).toContain('No changes to save.');
+  });
+
   it('does not evaluate without both selections', () => {
     component.selectedCandidateId = null;
     component.evaluate();

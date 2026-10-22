@@ -40,6 +40,7 @@ export class CvWorkspaceComponent implements OnInit {
   metadataDraft: CandidateMetadataUpdate | null = null;
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
+  notice = '';
 
   readonly maxPdfBytes = 20 * 1024 * 1024;
   readonly maxArchiveBytes = 100 * 1024 * 1024;
@@ -140,6 +141,7 @@ export class CvWorkspaceComponent implements OnInit {
   editMetadata(): void {
     const details = this.candidateDetails;
     if (!details?.correctionAllowed || this.busyAction) return;
+    this.notice = '';
     this.metadataDraft = {
       name: details.name,
       email: details.email,
@@ -151,6 +153,12 @@ export class CvWorkspaceComponent implements OnInit {
 
   saveMetadata(): void {
     if (!this.selectedCandidateId || !this.metadataDraft?.name.trim() || this.busyAction) return;
+    if (this.metadataIsUnchanged(this.metadataDraft)) {
+      this.error = '';
+      this.notice = 'No changes to save.';
+      this.metadataDraft = null;
+      return;
+    }
     this.start('metadata');
     this.service.updateCandidateMetadata(this.selectedCandidateId, this.metadataDraft).pipe(
       switchMap(() => this.service.getCandidateDetails(this.selectedCandidateId!)),
@@ -276,6 +284,7 @@ export class CvWorkspaceComponent implements OnInit {
 
   private selectedFile(event: Event, extension: string, limit: number): File | null {
     this.error = '';
+    this.notice = '';
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     if (!file) return null;
@@ -294,11 +303,24 @@ export class CvWorkspaceComponent implements OnInit {
 
   private start(action: typeof this.busyAction): void {
     this.error = '';
+    this.notice = '';
     this.evaluation = action === 'evaluation' ? null : this.evaluation;
     this.busyAction = action;
   }
 
+  private metadataIsUnchanged(update: CandidateMetadataUpdate): boolean {
+    const details = this.candidateDetails;
+    if (!details) return false;
+    const optional = (value: string | null): string | null => value?.trim() || null;
+    return details.name === update.name.trim()
+      && details.email === optional(update.email)
+      && details.location === optional(update.location)
+      && details.currentTitle === optional(update.currentTitle)
+      && details.yearsExperience === update.yearsExperience;
+  }
+
   private handleError(error: HttpErrorResponse): void {
+    this.notice = '';
     const apiError = error.error as Partial<ApiError> | undefined;
     this.error = apiError?.message || error.message || 'The request could not be completed.';
   }

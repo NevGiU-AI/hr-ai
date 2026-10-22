@@ -11,6 +11,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,6 +36,26 @@ class CandidateCorrectionServiceTest {
         assertThat(candidate.getYearsExperience()).isEqualTo(8);
         verify(candidates).save(candidate);
         verify(revisions).save(any(CandidateMetadataRevision.class));
+    }
+
+    @Test
+    void ignoresNormalizedRequestWhenMetadataIsUnchanged() {
+        Candidate candidate = new Candidate();
+        candidate.setId(7L);
+        candidate.setOrganizationId("tenant-a");
+        candidate.setName("Ada Lovelace");
+        candidate.setEmail("ada@example.com");
+        candidate.setLocation(null);
+        candidate.setCurrentTitle("Engineer");
+        candidate.setYearsExperience(8);
+        when(candidates.findLockedByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+
+        service.update(7L, new UpdateCandidateMetadataRequest(
+                " Ada Lovelace ", " ada@example.com ", "  ", " Engineer ", 8), principal());
+
+        verify(candidates, never()).save(any(Candidate.class));
+        verify(revisions, never()).save(any(CandidateMetadataRevision.class));
+        verify(audit, never()).candidateAction(any(), any(), any(), any(), any());
     }
 
     private AppUserPrincipal principal() {

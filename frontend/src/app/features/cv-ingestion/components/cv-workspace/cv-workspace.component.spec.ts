@@ -235,7 +235,9 @@ describe('CvWorkspaceComponent', () => {
       id: 7, name: 'Ada Lovelace', email: 'ada@example.com', location: 'London', currentTitle: 'Engineer',
       yearsExperience: 5, createdAt: '2026-10-01T00:00:00Z', documents: [{
         id: 2, originalFilename: 'ada.pdf', contentType: 'application/pdf', fileSize: 1024,
-        source: 'USER_UPLOAD', status: 'IMPORTED', textLength: 120, importedAt: '2026-10-01T00:00:00Z',
+        source: 'USER_UPLOAD', status: 'IMPORTED', textLength: 120,
+        extractionMethod: 'NATIVE', extractionConfidence: null, extractionPageCount: 0,
+        importedAt: '2026-10-01T00:00:00Z',
         reprocessedAt: null,
         originalAvailable: true, storedAt: '2026-10-01T00:00:00Z', retentionUntil: '2027-10-01T00:00:00Z',
         legalHold: false, legalHoldAt: null, downloadAllowed: true, administrationAllowed: true,

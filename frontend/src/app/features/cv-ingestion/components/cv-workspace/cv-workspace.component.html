@@ -150,6 +150,13 @@
           <div>
             <strong>{{ item.originalFilename }}</strong>
             <p>{{ item.importedAt | date:'medium' }} · {{ item.fileSize | number }} bytes · {{ item.textLength | number }} extracted characters</p>
+            <p>
+              Extraction: {{ item.extractionMethod === 'OCR' ? 'OCR' : 'Native PDF text' }}
+              <ng-container *ngIf="item.extractionConfidence !== null">
+                · {{ item.extractionConfidence | number:'1.0-1' }}% confidence
+                · {{ item.extractionPageCount }} page{{ item.extractionPageCount === 1 ? '' : 's' }}
+              </ng-container>
+            </p>
             <p *ngIf="item.reprocessedAt">Last reprocessed {{ item.reprocessedAt | date:'medium' }}</p>
             <div class="document-state">
               <span class="status" [ngClass]="item.status.toLowerCase()">{{ item.status }}</span>

@@ -109,3 +109,11 @@ app:
     port: ${APP_CV_MALWARE_SCAN_PORT:3310}
     connect-timeout: ${APP_CV_MALWARE_CONNECT_TIMEOUT:2s}
     read-timeout: ${APP_CV_MALWARE_READ_TIMEOUT:30s}
+  cv-ocr:
+    enabled: ${APP_CV_OCR_ENABLED:false}
+    command: ${APP_CV_OCR_COMMAND:tesseract}
+    languages: ${APP_CV_OCR_LANGUAGES:eng+fra+por}
+    dpi: ${APP_CV_OCR_DPI:300}
+    max-pages: ${APP_CV_OCR_MAX_PAGES:30}
+    page-timeout: ${APP_CV_OCR_PAGE_TIMEOUT:30s}
+    minimum-confidence: ${APP_CV_OCR_MINIMUM_CONFIDENCE:70}

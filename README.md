@@ -19,6 +19,8 @@ decisions.
   according to the signed-in user's role.
 - Correct candidate metadata with immutable revision history and safely reprocess a rescanned stored original without
   changing the submitted PDF or creating duplicate candidates; prior evaluations are retained as stale.
+- Fall back to local English/French/Portuguese Tesseract OCR for scanned or low-text PDFs and retain page-level
+  provenance plus confidence for human review.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -30,8 +32,9 @@ may create users only inside their own organization; there is not yet an organiz
 customer onboarding requires the planned platform-level organization lifecycle described in the
 [tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
 
-Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. OCR, CV chat,
-speech input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
+Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR is
+implemented and awaits environment acceptance; CV chat, speech input/playback, and the recruitment dashboard remain
+roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
 horizontal or multi-host backend scaling.
@@ -49,6 +52,7 @@ Spring Boot 3 / Java 21
   |---- PostgreSQL 16 + pgvector  (business data and Flyway history)
   |---- Redis 7.4                 (sessions, revocation, login throttling)
   |---- ClamAV 1.4                (fail-closed CV upload scanning)
+  |---- Tesseract OCR             (bounded local scanned-PDF extraction)
   |---- Private CV volume         (quarantined and clean original PDFs)
   `---- OpenAI through Spring AI  (job generation and candidate evaluation)
 ```
@@ -78,7 +82,7 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
+1. Validate OCR for scanned and low-text PDFs with extraction provenance and human review in staging and production.
 2. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
 3. Add editable speech-to-text input, then optional text-to-speech playback.
 4. Build the final recruitment dashboard and drill-down workflows.

@@ -25,7 +25,12 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends \
+       curl \
+       tesseract-ocr \
+       tesseract-ocr-eng \
+       tesseract-ocr-fra \
+       tesseract-ocr-por \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/target/*.jar app.jar

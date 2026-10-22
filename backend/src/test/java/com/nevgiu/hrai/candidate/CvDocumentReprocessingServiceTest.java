@@ -2,8 +2,11 @@ package com.nevgiu.hrai.candidate;
 
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionProperties;
 import com.nevgiu.hrai.candidate.ingestion.CvTextExtractor;
+import com.nevgiu.hrai.candidate.ingestion.CvTextExtractionPipeline;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
+import com.nevgiu.hrai.candidate.ocr.CvOcrEngine;
+import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
@@ -13,6 +16,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,11 +32,17 @@ class CvDocumentReprocessingServiceTest {
     private final OriginalCvStorage storage = mock(OriginalCvStorage.class);
     private final CvMalwareScanner scanner = mock(CvMalwareScanner.class);
     private final CvTextExtractor extractor = mock(CvTextExtractor.class);
+    private final CvOcrEngine ocrEngine = mock(CvOcrEngine.class);
+    private final CvDocumentPageRepository pages = mock(CvDocumentPageRepository.class);
     private final SecurityAuditService audit = mock(SecurityAuditService.class);
     private final CvIngestionProperties properties = new CvIngestionProperties(
             20_000_000, 100_000_000, 100, 200_000_000, 100, 10, "initial.zip", false);
+    private final CvOcrProperties ocrProperties = new CvOcrProperties(
+            false, "tesseract", "eng+fra+por", 300, 30, Duration.ofSeconds(30), 70);
+    private final CvTextExtractionPipeline pipeline = new CvTextExtractionPipeline(
+            extractor, ocrEngine, properties, ocrProperties);
     private final CvDocumentReprocessingService service = new CvDocumentReprocessingService(
-            documents, candidates, evaluations, storage, scanner, extractor, properties, audit);
+            documents, candidates, evaluations, storage, scanner, pipeline, pages, properties, ocrProperties, audit);
 
     @Test
     void rescansAndRefreshesExistingCandidateWithoutOverwritingCorrectedMetadata() throws Exception {

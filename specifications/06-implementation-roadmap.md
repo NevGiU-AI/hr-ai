@@ -104,8 +104,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   reprocessing that rescans the original, preserves human edits, and invalidates prior evaluations.
 - [x] Validate metadata correction and document reprocessing in staging and production, including no-op submissions,
   role and tenant boundaries, immutable history, evaluation invalidation, and fail-closed malware scanning.
-- [ ] Add native-text quality detection and OCR fallback for scanned or low-text PDFs.
-- [ ] Preserve page references, extraction provenance, and OCR confidence for human review.
+- [x] Add native-text quality detection and bounded local OCR fallback for scanned or low-text PDFs.
+- [x] Preserve OCR page references, extraction provenance, and confidence for human review.
 - [x] Reprocess the existing candidate/document without creating duplicate records or modifying the submitted original.
 - [ ] Add metric-level evidence and separate reliability confidence from candidate fit.
 - [ ] Expose approved weight configuration in the frontend.

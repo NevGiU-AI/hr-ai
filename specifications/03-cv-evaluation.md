@@ -186,7 +186,7 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 - Full candidate erasure passed staging and production acceptance on 15 October 2026 in release `v0.14.0`.
 - After the dashboard, OpenAPI, and concurrency milestones, install and validate the implemented encrypted paired
   original-file/database backup service in staging and production.
-- Add OCR and reprocessing for scanned PDFs.
+- Validate the implemented local OCR fallback for scanned PDFs in staging and production.
 - Candidate details and document-ingestion history passed staging and production acceptance on 21 October 2026.
 - Detect templates and non-CV PDFs more accurately.
 - Make large imports asynchronous and expose job progress.
@@ -528,7 +528,7 @@ Remaining frontend improvements:
 - [x] Per-entry parsing failures do not prevent later archive entries from being processed.
 - [x] Document metadata, source, status, extracted text, and result warnings are traceable.
 - [ ] Original binary documents are stored and governed by retention/deletion policy.
-- [ ] OCR and reprocessing are available for scanned PDFs.
+- [x] OCR and reprocessing are implemented for scanned PDFs; environment acceptance remains.
 - [x] Upload, ingestion-result, candidate/job selection, and evaluation workflows are available in the frontend.
 
 ### Required for evaluation production readiness

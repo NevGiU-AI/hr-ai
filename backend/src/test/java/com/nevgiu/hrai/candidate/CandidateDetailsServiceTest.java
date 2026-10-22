@@ -18,7 +18,8 @@ class CandidateDetailsServiceTest {
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
     private final CandidateMetadataRevisionRepository revisions = mock(CandidateMetadataRevisionRepository.class);
-    private final CandidateDetailsService service = new CandidateDetailsService(candidates, documents, revisions);
+    private final CvDocumentPageRepository pages = mock(CvDocumentPageRepository.class);
+    private final CandidateDetailsService service = new CandidateDetailsService(candidates, documents, revisions, pages);
 
     @Test
     void returnsSafeDocumentHistoryAndRoleCapabilities() {

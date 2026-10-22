@@ -2,10 +2,12 @@ package com.nevgiu.hrai.candidate;
 
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionException;
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionProperties;
-import com.nevgiu.hrai.candidate.ingestion.CvTextExtractor;
+import com.nevgiu.hrai.candidate.ingestion.CvTextExtractionPipeline;
+import com.nevgiu.hrai.candidate.ingestion.CvTextExtractionResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanException;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
+import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorageException;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
@@ -28,22 +30,27 @@ public class CvDocumentReprocessingService {
     private final CandidateEvaluationRepository evaluations;
     private final OriginalCvStorage storage;
     private final CvMalwareScanner scanner;
-    private final CvTextExtractor extractor;
+    private final CvTextExtractionPipeline extractionPipeline;
+    private final CvDocumentPageRepository pages;
     private final CvIngestionProperties properties;
     private final SecurityAuditService audit;
+    private final CvOcrProperties ocrProperties;
 
     public CvDocumentReprocessingService(CvDocumentRepository documents, CandidateRepository candidates,
                                          CandidateEvaluationRepository evaluations, OriginalCvStorage storage,
-                                         CvMalwareScanner scanner, CvTextExtractor extractor,
-                                         CvIngestionProperties properties, SecurityAuditService audit) {
+                                         CvMalwareScanner scanner, CvTextExtractionPipeline extractionPipeline,
+                                         CvDocumentPageRepository pages, CvIngestionProperties properties,
+                                         CvOcrProperties ocrProperties, SecurityAuditService audit) {
         this.documents = documents;
         this.candidates = candidates;
         this.evaluations = evaluations;
         this.storage = storage;
         this.scanner = scanner;
-        this.extractor = extractor;
+        this.extractionPipeline = extractionPipeline;
+        this.pages = pages;
         this.properties = properties;
         this.audit = audit;
+        this.ocrProperties = ocrProperties;
     }
 
     /**
@@ -89,8 +96,11 @@ public class CvDocumentReprocessingService {
         }
 
         try {
-            String text = extractor.extract(content);
-            if (text.length() < properties.minimumTextLength()) {
+            CvTextExtractionResult extraction = extractionPipeline.extract(content);
+            String text = extraction.text();
+            boolean uncertainOcr = extraction.confidence() != null
+                    && extraction.confidence() < ocrProperties.minimumConfidence();
+            if (text.length() < properties.minimumTextLength() || uncertainOcr) {
                 // Keep the last useful extraction untouched; OCR/manual review can replace it in a later workflow.
                 throw failure(actor, document, HttpStatus.UNPROCESSABLE_ENTITY,
                         "Reprocessing produced too little text; manual review or OCR is required");
@@ -98,6 +108,8 @@ public class CvDocumentReprocessingService {
             Instant now = Instant.now();
             document.setExtractedText(text);
             document.setTextLength(text.length());
+            document.setExtractionMethod(extraction.method());
+            document.setExtractionConfidence(extraction.confidence());
             document.setStatus(CvIngestionStatus.IMPORTED);
             document.setIngestionError(null);
             document.setReprocessedAt(now);
@@ -108,6 +120,15 @@ public class CvDocumentReprocessingService {
                     candidate.getId(), actor.organizationId(), now);
             documents.save(document);
             candidates.save(candidate);
+            pages.deleteAllByDocumentId(documentId);
+            extraction.pages().forEach(page -> {
+                CvDocumentPage entity = new CvDocumentPage();
+                entity.setDocument(document);
+                entity.setPageNumber(page.pageNumber());
+                entity.setExtractedText(page.text());
+                entity.setConfidence(page.confidence());
+                pages.save(entity);
+            });
             audit.candidateAction(SecurityEventType.CV_DOCUMENT_REPROCESSED, SecurityEventOutcome.SUCCESS,
                     actor, candidate.getId(), "documentId=" + documentId + ";evaluationsInvalidated=" + invalidated);
         } catch (IOException exception) {

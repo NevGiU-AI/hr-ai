@@ -20,6 +20,10 @@ title, and years of experience. The candidate row is locked while it is changed.
 immutable snapshot in `candidate_metadata_revisions` with the actor and timestamp. The candidate-details response and
 Angular workspace expose this history only through the same tenant-scoped boundary.
 
+After normalizing whitespace and optional blank values, an unchanged submission is treated as an idempotent no-op. The
+UI reports `No changes to save`, and the backend creates no candidate write, revision snapshot, or audit event. The
+backend check remains authoritative for API clients that bypass the UI.
+
 The submitted PDF and extracted CV text are not modified by a metadata correction.
 
 ## Reprocessing
@@ -50,13 +54,14 @@ applied `V4__add_candidate_correction_and_reprocessing.sql`, then test:
 
 1. As `ADMIN`, correct all editable fields and confirm the candidate list/details refresh.
 2. Confirm correction history identifies the actor and retains the earlier snapshot after a second correction.
-3. Repeat correction and reprocessing as `RECRUITER`.
-4. Confirm `REVIEWER` and `READ_ONLY` receive `403` for both mutations.
-5. Confirm a cross-tenant candidate or document ID returns `404` and remains unchanged.
-6. Create an evaluation, reprocess its document, and verify the evaluation row receives `invalidated_at`.
-7. Confirm reprocessing updates `reprocessed_at`, refreshes extracted text, and does not create candidate/document rows.
-8. Confirm manually corrected metadata is unchanged after reprocessing.
-9. Stop ClamAV and confirm reprocessing fails closed; restart it and confirm recovery.
-10. Confirm the three new audit event types appear without PII or storage internals.
+3. Submit the unchanged form and confirm the UI reports no changes and creates no revision or audit event.
+4. Repeat correction and reprocessing as `RECRUITER`.
+5. Confirm `REVIEWER` and `READ_ONLY` receive `403` for both mutations.
+6. Confirm a cross-tenant candidate or document ID returns `404` and remains unchanged.
+7. Create an evaluation, reprocess its document, and verify the evaluation row receives `invalidated_at`.
+8. Confirm reprocessing updates `reprocessed_at`, refreshes extracted text, and does not create candidate/document rows.
+9. Confirm manually corrected metadata is unchanged after reprocessing.
+10. Stop ClamAV and confirm reprocessing fails closed; restart it and confirm recovery.
+11. Confirm the three new audit event types appear without PII or storage internals.
 
 Repeat the accepted smoke tests in production after a validated production backup and protected release deployment.

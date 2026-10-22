@@ -57,8 +57,10 @@ public class CvDocument {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "extraction_method", nullable = false, length = 16)
+    // Existing rows and normal text PDFs are native unless a completed OCR extraction says otherwise.
     private CvExtractionMethod extractionMethod = CvExtractionMethod.NATIVE;
 
+    // Null for native extraction because PDFBox does not produce an OCR-style confidence score.
     @Column(name = "extraction_confidence")
     private Double extractionConfidence;
 

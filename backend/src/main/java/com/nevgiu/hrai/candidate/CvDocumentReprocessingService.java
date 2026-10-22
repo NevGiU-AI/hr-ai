@@ -98,6 +98,8 @@ public class CvDocumentReprocessingService {
         try {
             CvTextExtractionResult extraction = extractionPipeline.extract(content);
             String text = extraction.text();
+            // Confidence is null for native PDF text, so the OCR threshold applies only when an
+            // OCR provider produced a measurable score.
             boolean uncertainOcr = extraction.confidence() != null
                     && extraction.confidence() < ocrProperties.minimumConfidence();
             if (text.length() < properties.minimumTextLength() || uncertainOcr) {
@@ -120,6 +122,8 @@ public class CvDocumentReprocessingService {
                     candidate.getId(), actor.organizationId(), now);
             documents.save(document);
             candidates.save(candidate);
+            // Replace provenance only after the new extraction passes quality checks. Any later
+            // persistence failure rolls both this delete and the inserts back with the transaction.
             pages.deleteAllByDocumentId(documentId);
             extraction.pages().forEach(page -> {
                 CvDocumentPage entity = new CvDocumentPage();

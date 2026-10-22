@@ -33,6 +33,8 @@ public class CandidateDetailsService {
         boolean administrator = hasRole(actor, "ROLE_ADMIN");
         boolean recruiter = hasRole(actor, "ROLE_RECRUITER");
         boolean downloadAllowed = administrator || recruiter;
+        // Page text is intentionally not returned here. Only its count summarizes available OCR
+        // provenance without expanding the candidate-details payload or duplicating CV content.
         List<CandidateDetailsResponse.Document> history = documents
                 .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
                 .stream()
@@ -59,6 +61,7 @@ public class CandidateDetailsService {
         return new CandidateDetailsResponse.Document(document.getId(), document.getOriginalFilename(),
                 document.getContentType(), document.getFileSize(), document.getSource(), document.getStatus(),
                 document.getTextLength(), document.getExtractionMethod(), document.getExtractionConfidence(),
+                // The count query avoids loading page text containing candidate personal information.
                 pages.countByDocumentId(document.getId()), document.getImportedAt(), document.getReprocessedAt(), originalAvailable,
                 document.getStoredAt(),
                 document.getRetentionUntil(), document.isLegalHold(), document.getLegalHoldAt(),

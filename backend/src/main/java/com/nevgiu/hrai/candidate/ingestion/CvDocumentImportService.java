@@ -134,6 +134,8 @@ public class CvDocumentImportService {
         try {
             CvTextExtractionResult extraction = extractionPipeline.extract(content);
             String text = extraction.text();
+            // Store how the current text was obtained. Native extraction has no confidence value;
+            // OCR carries both document-level confidence and page-level provenance.
             document.setExtractedText(text);
             document.setTextLength(text.length());
             document.setExtractionMethod(extraction.method());
@@ -141,8 +143,12 @@ public class CvDocumentImportService {
 
             List<String> warnings = new ArrayList<>();
             if (extraction.ocrAttemptFailed()) {
+                // OCR infrastructure failure is non-destructive: the original remains governed and
+                // the document is visible for retry or manual review.
                 warnings.add("OCR is temporarily unavailable; manual review is required");
             }
+            // A non-null confidence distinguishes OCR from native extraction. The configured
+            // threshold is a workflow gate, not a claim that higher-scoring text is always correct.
             boolean uncertainOcr = extraction.confidence() != null
                     && extraction.confidence() < ocrProperties.minimumConfidence();
             if (text.length() < properties.minimumTextLength() || uncertainOcr) {
@@ -186,6 +192,8 @@ public class CvDocumentImportService {
     }
 
     private void saveOcrPages(CvDocument document, CvTextExtractionResult extraction) {
+        // Native extraction and failed OCR attempts provide an empty list, making this method a
+        // no-op for documents without OCR provenance.
         extraction.pages().forEach(page -> {
             CvDocumentPage entity = new CvDocumentPage();
             entity.setDocument(document);

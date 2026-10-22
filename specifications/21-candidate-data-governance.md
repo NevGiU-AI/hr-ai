@@ -95,8 +95,9 @@ That deletion removes only the stored binary and storage metadata; it is not the
 section 6. These authorized operations passed direct API acceptance in staging and production on 14 October 2026,
 including role enforcement, not-found behavior, original-only deletion, security-event inspection, and matched
 pre-deployment backup validation. Candidate details passed staging and production acceptance. Metadata correction and
-safe reprocessing are implemented with tenant/role enforcement, immutable snapshots, ClamAV rescanning, and evaluation
-invalidation; staging and production acceptance remain. Encrypted paired backup/restore tooling is implemented in the repository; its
+safe reprocessing passed staging and production acceptance on 22 October 2026 with tenant/role enforcement, immutable
+snapshots, ClamAV rescanning, evaluation invalidation, and no history entry for an unchanged submission. Encrypted
+paired backup/restore tooling is implemented in the repository; its
 staging-first installation and isolated-restore acceptance are scheduled after the dashboard, stable OpenAPI contracts,
 and concurrency benchmark. Full erasure passed staging and production acceptance on 15 October 2026 in release
 `v0.14.0`.

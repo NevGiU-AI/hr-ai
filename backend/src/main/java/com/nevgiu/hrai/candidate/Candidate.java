@@ -35,7 +35,9 @@ public class Candidate {
     /**
      * Extracted CV text used by the recruitment workflow. It contains personal data and must only be
      * exposed through tenant-scoped, authorized operations; the original uploaded file is stored
-     * separately by the original-CV storage subsystem.
+     * separately by the original-CV storage subsystem. {@link Lob} tells JPA to persist this potentially
+     * long String as a character large object rather than a length-limited VARCHAR. It is a persistence
+     * mapping only: it neither stores the original PDF nor provides encryption or access control.
      */
     @Lob
     private String cvText;

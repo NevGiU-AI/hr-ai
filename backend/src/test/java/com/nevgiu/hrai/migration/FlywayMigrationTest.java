@@ -43,8 +43,8 @@ class FlywayMigrationTest {
 
         Flyway existingDatabase = flyway(true);
         assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(5);
-        // Baseline version 0 plus four versioned migrations must be recorded after adopting the existing schema.
-        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(5);
+        // Baseline version 0 plus migrations V1-V5 must be recorded after adopting the existing schema.
+        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(6);
         assertThat(count("SELECT COUNT(*) FROM pg_constraint "
                 + "WHERE conrelid = 'security_audit_events'::regclass AND contype = 'c'"))
                 .isEqualTo(0);

@@ -47,7 +47,7 @@ Successful corrections emit `CANDIDATE_METADATA_CORRECTED`. Reprocessing emits `
 `CV_DOCUMENT_REPROCESS_FAILED`. Audit details contain only safe numeric identifiers, status, and counts. They exclude
 candidate profile values, CV text, filenames, content hashes, storage keys, and antivirus signatures.
 
-## Staging validation
+## Environment validation
 
 Before merging, create and validate matched PostgreSQL and `cv-originals` backups. After deployment, confirm Flyway
 applied `V4__add_candidate_correction_and_reprocessing.sql`, then test:
@@ -65,3 +65,17 @@ applied `V4__add_candidate_correction_and_reprocessing.sql`, then test:
 11. Confirm the three new audit event types appear without PII or storage internals.
 
 Repeat the accepted smoke tests in production after a validated production backup and protected release deployment.
+
+### Acceptance record
+
+Staging and production acceptance completed successfully on 22 October 2026. The accepted checks covered:
+
+- Flyway `V4` application and healthy application startup;
+- administrator and recruiter correction/reprocessing permissions;
+- reviewer/read-only denial and tenant-safe `404` behavior;
+- immutable correction history with an actor snapshot;
+- idempotent unchanged submissions producing no revision or audit event;
+- reprocessing without duplicate candidates or documents while preserving corrected metadata;
+- prior-evaluation invalidation and updated document reprocessing metadata;
+- fail-closed ClamAV behavior and successful recovery; and
+- privacy-safe correction/reprocessing security events.

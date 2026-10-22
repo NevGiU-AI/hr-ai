@@ -380,7 +380,7 @@ CV text is personal data and is sent to the configured OpenAI service only when 
   text.
 - [x] Build Angular PDF/ZIP upload, bulk-result, and explicit evaluation views.
 - [x] Add tenant-authorized metadata correction with immutable revision history and safe stored-original reprocessing;
-  staging and production acceptance remain.
+  staging and production acceptance passed on 22 October 2026.
 - [x] Store new original documents privately through a provider abstraction and record retention deadlines.
 - [x] Quarantine new uploads and require a clean ClamAV verdict before storage promotion or parsing.
 - [x] Implement and validate scheduled original-file expiry and legal-hold enforcement.

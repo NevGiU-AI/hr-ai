@@ -27,6 +27,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 21. [Candidate data governance decision record](./21-candidate-data-governance.md)
 22. [Contribution standards](./22-contribution-standards.md)
 23. [Encrypted paired backup and restore](./23-paired-backup-and-restore.md)
+24. [Candidate correction and document reprocessing](./24-candidate-correction-and-reprocessing.md)
 
 ## Recommended delivery order
 
@@ -53,7 +54,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Job-offer generation | Implemented, needs hardening | Generate, edit, approve, persist, and list are available. Direct approval, schema-constrained output, lifecycle management, and production security remain. |
-| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, fail-closed malware quarantine, per-file transactions/results, and Angular UI. Tenant-authorized original operations, scheduled expiry, legal holds, confirmed full erasure, candidate details, and document-ingestion history passed staging and production acceptance. Correction and OCR remain. Paired-backup installation and restoration acceptance follow the dashboard, stable OpenAPI contracts, and concurrency benchmark. |
+| CV ingestion | Implemented, needs hardening | PDF, ZIP, and built-in imports share a guarded pipeline with extraction, duplicate detection, private original-file storage, retention metadata, fail-closed malware quarantine, per-file transactions/results, and Angular UI. Tenant-authorized original operations, scheduled expiry, legal holds, confirmed full erasure, candidate details, and document-ingestion history passed staging and production acceptance. Auditable correction and safe reprocessing are implemented pending environment acceptance; OCR remains. Paired-backup installation and restoration acceptance follow the dashboard, stable OpenAPI contracts, and concurrency benchmark. |
 | Candidate evaluation | Implemented, needs hardening | Explicit job-specific AI evaluation, eight validated metrics, weighting, persistence, and result UI are available. Evidence, versioning, retrieval/history, and bias testing remain. |
 | CV database chat | Planned | pgvector is available, but indexing, retrieval, memory, citations, editable speech input, and optional speech playback remain. |
 | Interactive dashboard | Planned | Aggregate APIs and dashboard UI are not implemented. |

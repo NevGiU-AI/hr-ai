@@ -117,7 +117,25 @@
         </div>
         <span>Created {{ details.createdAt | date:'medium' }}</span>
       </div>
-      <dl class="candidate-facts">
+      <div class="details-actions" *ngIf="details.correctionAllowed && !metadataDraft">
+        <button class="btn btn-sm btn-outline-primary" type="button" [disabled]="!!busyAction"
+                (click)="editMetadata()">Correct metadata</button>
+      </div>
+      <form class="metadata-form" *ngIf="metadataDraft as draft" (ngSubmit)="saveMetadata()">
+        <label>Name <input class="form-control" name="candidateName" required maxlength="255" [(ngModel)]="draft.name" /></label>
+        <label>Email <input class="form-control" name="candidateEmail" type="email" maxlength="320" [(ngModel)]="draft.email" /></label>
+        <label>Current title <input class="form-control" name="candidateTitle" maxlength="255" [(ngModel)]="draft.currentTitle" /></label>
+        <label>Location <input class="form-control" name="candidateLocation" maxlength="255" [(ngModel)]="draft.location" /></label>
+        <label>Years of experience <input class="form-control" name="candidateExperience" type="number" min="0" max="100" [(ngModel)]="draft.yearsExperience" /></label>
+        <div class="metadata-actions">
+          <button class="btn btn-sm btn-primary" type="submit" [disabled]="!draft.name.trim() || !!busyAction">
+            {{ busyAction === 'metadata' ? 'Saving…' : 'Save correction' }}
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" [disabled]="!!busyAction"
+                  (click)="metadataDraft = null">Cancel</button>
+        </div>
+      </form>
+      <dl class="candidate-facts" *ngIf="!metadataDraft">
         <div><dt>Email</dt><dd>{{ details.email || 'Not provided' }}</dd></div>
         <div><dt>Current title</dt><dd>{{ details.currentTitle || 'Not provided' }}</dd></div>
         <div><dt>Location</dt><dd>{{ details.location || 'Not provided' }}</dd></div>
@@ -131,6 +149,7 @@
           <div>
             <strong>{{ item.originalFilename }}</strong>
             <p>{{ item.importedAt | date:'medium' }} · {{ item.fileSize | number }} bytes · {{ item.textLength | number }} extracted characters</p>
+            <p *ngIf="item.reprocessedAt">Last reprocessed {{ item.reprocessedAt | date:'medium' }}</p>
             <div class="document-state">
               <span class="status" [ngClass]="item.status.toLowerCase()">{{ item.status }}</span>
               <span>{{ item.source }}</span>
@@ -140,6 +159,8 @@
             </div>
           </div>
           <div class="document-actions">
+            <button *ngIf="details.correctionAllowed && item.originalAvailable" class="btn btn-sm btn-outline-primary"
+                    type="button" [disabled]="!!busyAction" (click)="reprocessDocument(item)">Reprocess</button>
             <button *ngIf="item.downloadAllowed" class="btn btn-sm btn-outline-primary" type="button"
                     [disabled]="!!busyAction" (click)="downloadOriginal(item)">Download original</button>
             <button *ngIf="item.administrationAllowed && item.originalAvailable" class="btn btn-sm btn-outline-secondary"
@@ -151,6 +172,16 @@
           </div>
         </article>
       </div>
+
+      <details class="revision-history" *ngIf="details.revisions.length">
+        <summary>Metadata correction history ({{ details.revisions.length }})</summary>
+        <ol>
+          <li *ngFor="let revision of details.revisions">
+            <strong>{{ revision.createdAt | date:'medium' }}</strong> by {{ revision.actorEmail }} —
+            {{ revision.name }}<span *ngIf="revision.currentTitle">, {{ revision.currentTitle }}</span>
+          </li>
+        </ol>
+      </details>
     </section>
 
     <p class="erasure-warning" *ngIf="isAdministrator">

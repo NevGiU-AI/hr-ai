@@ -379,7 +379,8 @@ CV text is personal data and is sent to the configured OpenAI service only when 
 - [x] Add a tenant-scoped candidate detail and ingestion-history API without exposing storage keys, hashes, or raw CV
   text.
 - [x] Build Angular PDF/ZIP upload, bulk-result, and explicit evaluation views.
-- [ ] Add correction and reprocessing workflows.
+- [x] Add tenant-authorized metadata correction with immutable revision history and safe stored-original reprocessing;
+  staging and production acceptance remain.
 - [x] Store new original documents privately through a provider abstraction and record retention deadlines.
 - [x] Quarantine new uploads and require a clean ClamAV verdict before storage promotion or parsing.
 - [x] Implement and validate scheduled original-file expiry and legal-hold enforcement.

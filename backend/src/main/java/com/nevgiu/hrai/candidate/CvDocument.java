@@ -60,6 +60,8 @@ public class CvDocument {
 
     private Instant importedAt = Instant.now();
 
+    private Instant reprocessedAt;
+
     @Column(name = "storage_key", unique = true, length = 160)
     private String storageKey;
 
@@ -104,6 +106,8 @@ public class CvDocument {
     public void setIngestionError(String ingestionError) { this.ingestionError = ingestionError; }
     public Instant getImportedAt() { return importedAt; }
     public void setImportedAt(Instant importedAt) { this.importedAt = importedAt; }
+    public Instant getReprocessedAt() { return reprocessedAt; }
+    public void setReprocessedAt(Instant reprocessedAt) { this.reprocessedAt = reprocessedAt; }
     public String getStorageKey() { return storageKey; }
     public void setStorageKey(String storageKey) { this.storageKey = storageKey; }
     public Instant getStoredAt() { return storedAt; }

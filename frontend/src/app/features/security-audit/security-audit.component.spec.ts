@@ -78,6 +78,18 @@ describe('SecurityAuditComponent', () => {
       details: 'candidateId=47;storedOriginalsDeleted=2',
     }))).toBe('2 stored original files deleted');
   });
+
+  it('shows candidate target and friendly reprocessing details', () => {
+    const reprocessed = event({
+      targetUserId: null,
+      targetEmail: null,
+      eventType: 'CV_DOCUMENT_REPROCESSED',
+      details: 'candidateId=47;documentId=9;evaluationsInvalidated=2',
+    });
+    expect(component.targetIdentity(reprocessed)).toBe('Candidate #47');
+    expect(component.eventDetails(reprocessed))
+      .toBe('Document #9 reprocessed; 2 prior evaluations marked stale');
+  });
 });
 
 function event(overrides: Partial<SecurityAuditEvent>): SecurityAuditEvent {

@@ -477,6 +477,25 @@ Before the first production release, exercise a controlled staging failure and v
 
 Do not automatically restore a database backup for ordinary application failure. Database restoration is destructive and requires an explicit incident decision based on the migration and data-loss impact.
 
+### Flyway rollback boundary
+
+Application rollback and database recovery are separate operations. Reverting source code or restoring a previous
+image does not undo an applied Flyway migration or remove its successful entry from `flyway_schema_history`. A rollback
+candidate must contain the database's applied migration history and remain compatible with the resulting schema.
+
+Prefer additive expand-and-contract migrations so the previous and current application versions can both operate
+during the rollback window. Correct a faulty schema with a new, higher-version migration whenever that can preserve
+data safely. Never edit an applied migration, delete Flyway history, change its checksum, or treat `flyway repair` as
+an undo operation.
+
+Restore the pre-deployment backup only when a reviewed incident concludes that forward correction is unsafe. Stop
+writes first, preserve the failed state for investigation, restore the matching application release, and validate
+Flyway history and business-data counts. When a release also affected original CV binaries, PostgreSQL and the matched
+`cv-originals` archive form one recovery set and must be restored consistently. The detailed operator procedure and
+decision order, official Redgate Flyway and PostgreSQL references, and the distinction between vendor behavior and the
+project-specific matched-recovery policy are maintained in
+[`deploy/README.md`](../deploy/README.md#flyway-rollback-and-recovery).
+
 ## Data protection and production blockers
 
 Authentication, role-based authorization, restricted CORS, administrator-only built-in import, and organization tenant

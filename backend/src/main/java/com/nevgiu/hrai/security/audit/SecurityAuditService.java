@@ -100,6 +100,15 @@ public class SecurityAuditService {
                 type, outcome, safe(safeDetails)));
     }
 
+    public void candidateAction(SecurityEventType type, SecurityEventOutcome outcome,
+                                AppUserPrincipal actor, Long candidateId, String details) {
+        if (actor == null) return;
+        // Keep audit data useful without copying candidate PII, extracted text, filenames, or storage keys.
+        String safeDetails = "candidateId=" + candidateId + (details == null ? "" : ";" + details);
+        save(new SecurityAuditEvent(actor.organizationId(), actor.id(), actor.username(), null, null, null, null,
+                type, outcome, safe(safeDetails)));
+    }
+
     public SecurityAuditPageResponse findAll(String organizationId, int page, int size) {
         var result = events.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId,
                 PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size))));

@@ -9,6 +9,7 @@ import {
   Candidate,
   CandidateDetails,
   CandidateDocumentDetails,
+  CandidateMetadataUpdate,
   CvArchiveImportResult,
   CvImportResult,
   EvaluationResponse,
@@ -36,7 +37,8 @@ export class CvWorkspaceComponent implements OnInit {
   selectedJobId: number | null = null;
   evaluation: EvaluationResponse | null = null;
   candidateDetails: CandidateDetails | null = null;
-  busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | null = null;
+  metadataDraft: CandidateMetadataUpdate | null = null;
+  busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
 
   readonly maxPdfBytes = 20 * 1024 * 1024;
@@ -127,9 +129,56 @@ export class CvWorkspaceComponent implements OnInit {
     this.service.getCandidateDetails(this.selectedCandidateId)
       .pipe(finalize(() => this.busyAction = null))
       .subscribe({
-        next: (details) => this.candidateDetails = details,
+        next: (details) => {
+          this.candidateDetails = details;
+          this.metadataDraft = null;
+        },
         error: (error) => this.handleError(error),
       });
+  }
+
+  editMetadata(): void {
+    const details = this.candidateDetails;
+    if (!details?.correctionAllowed || this.busyAction) return;
+    this.metadataDraft = {
+      name: details.name,
+      email: details.email,
+      location: details.location,
+      currentTitle: details.currentTitle,
+      yearsExperience: details.yearsExperience,
+    };
+  }
+
+  saveMetadata(): void {
+    if (!this.selectedCandidateId || !this.metadataDraft?.name.trim() || this.busyAction) return;
+    this.start('metadata');
+    this.service.updateCandidateMetadata(this.selectedCandidateId, this.metadataDraft).pipe(
+      switchMap(() => this.service.getCandidateDetails(this.selectedCandidateId!)),
+      finalize(() => this.busyAction = null),
+    ).subscribe({
+      next: (details) => {
+        this.candidateDetails = details;
+        this.metadataDraft = null;
+        this.refreshSelections(details.id);
+      },
+      error: (error) => this.handleError(error),
+    });
+  }
+
+  reprocessDocument(document: CandidateDocumentDetails): void {
+    if (!this.candidateDetails?.correctionAllowed || !document.originalAvailable || this.busyAction) return;
+    if (!window.confirm('Reprocess this stored original? Existing evaluations will be marked stale.')) return;
+    this.start('document');
+    this.service.reprocessDocument(document.id).pipe(
+      switchMap(() => this.service.getCandidateDetails(this.selectedCandidateId!)),
+      finalize(() => this.busyAction = null),
+    ).subscribe({
+      next: (details) => {
+        this.candidateDetails = details;
+        this.evaluation = null;
+      },
+      error: (error) => this.handleError(error),
+    });
   }
 
   downloadOriginal(item: CandidateDocumentDetails): void {

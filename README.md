@@ -17,6 +17,8 @@ decisions.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
 - Review tenant-scoped candidate details and document-ingestion history, then download or administer stored originals
   according to the signed-in user's role.
+- Correct candidate metadata with immutable revision history and safely reprocess a rescanned stored original without
+  changing the submitted PDF or creating duplicate candidates; prior evaluations are retained as stale.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -28,8 +30,8 @@ may create users only inside their own organization; there is not yet an organiz
 customer onboarding requires the planned platform-level organization lifecycle described in the
 [tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
 
-Candidate metadata correction/reprocessing, OCR, CV chat, speech input/playback, and the recruitment dashboard remain
-roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
+Candidate metadata correction/reprocessing is implemented and awaiting environment acceptance. OCR, CV chat, speech
+input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented, but its staging and production installation plus isolated
 restore acceptance are deliberately scheduled after the dashboard, stable OpenAPI contracts, and the concurrency
 benchmark. Private object storage is required before horizontal or multi-host backend scaling.
 
@@ -72,11 +74,11 @@ staging and production. The initial original-CV storage slice is also deployed a
 tenant-authorized original-file operations, scheduled expiry, and administrator-managed legal holds have passed
 staging and production acceptance through release `v0.13.0`. Administrator-confirmed full candidate erasure passed
 staging and production acceptance in release `v0.14.0`. Candidate details and document-ingestion history passed staging
-and production acceptance on 21 October 2026; correction/reprocessing and encrypted paired backup acceptance remain
-incomplete. The next delivery sequence is:
+and production acceptance on 21 October 2026. Correction/reprocessing is implemented; its staging/production
+acceptance and encrypted paired backup acceptance remain incomplete. The next delivery sequence is:
 
-1. Add auditable metadata correction and safe reprocessing without duplicate candidates.
-2. Add OCR for scanned and low-text PDFs with extraction provenance and human review.
+1. Validate auditable metadata correction and safe reprocessing in staging and production.
+2. Add OCR for scanned and low-text PDFs with extraction provenance and human review after that acceptance.
 3. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
 4. Add editable speech-to-text input, then optional text-to-speech playback.
 5. Build the final recruitment dashboard and drill-down workflows.
@@ -191,8 +193,9 @@ or production schemas.
 
 The local Compose configuration enables one-time baselining so an existing developer database created before Flyway can
 be adopted. New empty databases run the ordered migration history, currently `V1__baseline_schema.sql`,
-`V2__add_original_cv_storage_metadata.sql`, then `V3__add_cv_legal_hold.sql`. Staging and production require a validated
-backup and the controlled, temporary baseline flag documented in their runbooks.
+`V2__add_original_cv_storage_metadata.sql`, `V3__add_cv_legal_hold.sql`, then
+`V4__add_candidate_correction_and_reprocessing.sql`. Staging and production require a validated backup and the
+controlled, temporary baseline flag documented in their runbooks.
 
 Migration rules:
 
@@ -201,6 +204,11 @@ Migration rules:
 - Rehearse migrations against a restored production backup.
 - Keep migrations compatible with the previous application image or document a separate recovery procedure.
 - Never delete or manually rewrite `flyway_schema_history`.
+- Treat application rollback and database recovery as separate operations: Flyway migrations are not undone when Git
+  or the deployment script restores an older application image. Prefer a compatible image rollback or a new forward
+  corrective migration; restore the validated pre-deployment recovery set only for a reviewed destructive incident.
+
+The complete Flyway rollback decision procedure is documented in [`deploy/README.md`](deploy/README.md#flyway-rollback-and-recovery).
 
 ## Recruitment workflow
 
@@ -256,6 +264,11 @@ mvn test
 Flyway integration tests use Testcontainers and run when Docker is available. They verify a clean PostgreSQL schema,
 adoption of an existing schema, stale audit-constraint removal, original-CV storage metadata, and Hibernate mapping
 validation.
+
+Backend test reports use JUnit Pioneer's
+[`ReplaceCamelCaseAndUnderscoreAndNumber`](https://junit-pioneer.org/docs/replace-camelcase-and-underscore-and-number/)
+as the global JUnit display-name generator. Descriptive method names therefore become readable report entries without
+class-level annotations; an explicit `@DisplayName` still takes precedence.
 
 Frontend tests require Node.js 20:
 

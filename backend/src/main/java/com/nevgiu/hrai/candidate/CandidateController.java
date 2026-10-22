@@ -20,20 +20,31 @@ public class CandidateController {
     private final CvIngestionService cvIngestionService;
     private final CandidateErasureService candidateErasureService;
     private final CandidateDetailsService candidateDetailsService;
+    private final CandidateCorrectionService candidateCorrectionService;
 
     public CandidateController(CandidateRepository candidateRepository, CvIngestionService cvIngestionService,
                                CandidateErasureService candidateErasureService,
-                               CandidateDetailsService candidateDetailsService) {
+                               CandidateDetailsService candidateDetailsService,
+                               CandidateCorrectionService candidateCorrectionService) {
         this.candidateRepository = candidateRepository;
         this.cvIngestionService = cvIngestionService;
         this.candidateErasureService = candidateErasureService;
         this.candidateDetailsService = candidateDetailsService;
+        this.candidateCorrectionService = candidateCorrectionService;
     }
 
     @GetMapping("/{candidateId}/details")
     public CandidateDetailsResponse details(@PathVariable Long candidateId,
                                             @AuthenticationPrincipal AppUserPrincipal principal) {
         return candidateDetailsService.find(candidateId, principal);
+    }
+
+    @PutMapping("/{candidateId}/metadata")
+    public ResponseEntity<Void> updateMetadata(@PathVariable Long candidateId,
+                                               @Valid @RequestBody UpdateCandidateMetadataRequest request,
+                                               @AuthenticationPrincipal AppUserPrincipal principal) {
+        candidateCorrectionService.update(candidateId, request, principal);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

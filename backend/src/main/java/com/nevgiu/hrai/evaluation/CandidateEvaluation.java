@@ -44,6 +44,9 @@ public class CandidateEvaluation {
 
     private Instant createdAt = Instant.now();
 
+    // Reprocessing changes the evidence used by this result; retain the record for audit but exclude it as current.
+    private Instant invalidatedAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getOrganizationId() { return organizationId; }
@@ -87,4 +90,6 @@ public class CandidateEvaluation {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getInvalidatedAt() { return invalidatedAt; }
+    public void setInvalidatedAt(Instant invalidatedAt) { this.invalidatedAt = invalidatedAt; }
 }

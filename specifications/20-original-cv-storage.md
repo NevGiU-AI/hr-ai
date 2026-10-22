@@ -498,7 +498,8 @@ tar -tzf "$cv_backup" > /dev/null
 
 - Validate the implemented candidate-details/ingestion-history UI and its authorized original-file actions in staging and
   production.
-- Add auditable metadata correction and reprocessing without changing the submitted original or duplicating candidates.
+- Validate the implemented auditable metadata correction and reprocessing workflow in staging and production; it keeps
+  the submitted original unchanged and reuses the existing candidate/document.
 - Extend the implemented erasure boundary to any future embeddings, indexes, chat evidence, or other derived AI data
   before those stores are introduced.
 - After the dashboard, OpenAPI, and concurrency milestones, install the implemented encrypted paired backup service in

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,12 +25,14 @@ public class CvOriginalController {
     private final CvOriginalService originals;
     private final CvLegalHoldService legalHolds;
     private final CvRetentionService retention;
+    private final CvDocumentReprocessingService reprocessing;
 
     public CvOriginalController(CvOriginalService originals, CvLegalHoldService legalHolds,
-                                CvRetentionService retention) {
+                                CvRetentionService retention, CvDocumentReprocessingService reprocessing) {
         this.originals = originals;
         this.legalHolds = legalHolds;
         this.retention = retention;
+        this.reprocessing = reprocessing;
     }
 
     @GetMapping("/{documentId}/original")
@@ -62,6 +65,13 @@ public class CvOriginalController {
             // CvLegalHoldService has committed before this call, allowing the new expiry transaction to see the release.
             retention.expire(documentId);
         }
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{documentId}/reprocess")
+    public ResponseEntity<Void> reprocess(@PathVariable Long documentId,
+                                          @AuthenticationPrincipal AppUserPrincipal actor) {
+        reprocessing.reprocess(documentId, actor);
         return ResponseEntity.noContent().build();
     }
 }

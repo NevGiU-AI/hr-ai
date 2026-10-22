@@ -11,18 +11,38 @@ public class Candidate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Identifies the organization that owns this candidate. Repository queries and service operations
+     * must include this value so candidate data cannot cross tenant boundaries.
+     */
     @Column(nullable = false, length = 100, columnDefinition = "varchar(100) default 'default'")
     private String organizationId;
 
     private String name;
+
+    /**
+     * The value {@code 320} follows the commonly used maximum mailbox length: up to 64 characters
+     * for the local part, {@code @}, and up to 255 characters for the domain. This mapping must remain
+     * aligned with request validation and the database column to avoid accepting an address that
+     * persistence would later reject.
+     */
+    @Column(length = 320)
     private String email;
     private String location;
     private String currentTitle;
     private Integer yearsExperience;
 
+    /**
+     * Extracted CV text used by the recruitment workflow. It contains personal data and must only be
+     * exposed through tenant-scoped, authorized operations; the original uploaded file is stored
+     * separately by the original-CV storage subsystem. {@link Lob} tells JPA to persist this potentially
+     * long String as a character large object rather than a length-limited VARCHAR. It is a persistence
+     * mapping only: it neither stores the original PDF nor provides encryption or access control.
+     */
     @Lob
     private String cvText;
 
+    /** Records when the candidate row was first created; metadata corrections do not replace it. */
     private Instant createdAt = Instant.now();
 
     public Long getId() { return id; }

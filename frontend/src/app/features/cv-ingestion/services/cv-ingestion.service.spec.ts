@@ -90,6 +90,13 @@ describe('CvIngestionService', () => {
 
     service.deleteOriginal(9).subscribe();
     expect(http.expectOne(`${environment.apiUrl}/cv-documents/9/original`).request.method).toBe('DELETE');
+
+    service.updateCandidateMetadata(7, { name: 'Ada', email: null, location: null,
+      currentTitle: null, yearsExperience: null }).subscribe();
+    expect(http.expectOne(`${environment.apiUrl}/candidates/7/metadata`).request.method).toBe('PUT');
+
+    service.reprocessDocument(9).subscribe();
+    expect(http.expectOne(`${environment.apiUrl}/cv-documents/9/reprocess`).request.method).toBe('POST');
   });
 
   it('propagates structured backend errors', () => {

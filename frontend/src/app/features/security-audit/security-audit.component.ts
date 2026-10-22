@@ -60,7 +60,7 @@ export class SecurityAuditComponent implements OnInit {
       return this.identity(event.targetEmail, event.targetUserId);
     }
 
-    if (this.isCandidateErasureEvent(event.eventType)) {
+    if (this.isCandidateEvent(event.eventType)) {
       // Candidate audit events deliberately avoid the user-account target columns. Their safe candidate database ID
       // is retained in the bounded details field after the candidate record itself has been erased.
       const candidateId = event.details?.match(/(?:^|;)candidateId=(\d+)(?:;|$)/)?.[1];
@@ -84,6 +84,24 @@ export class SecurityAuditComponent implements OnInit {
       }
     }
 
+    if (event.eventType === 'CANDIDATE_METADATA_CORRECTED') {
+      return 'Candidate metadata corrected';
+    }
+
+    if (event.eventType === 'CV_DOCUMENT_REPROCESSED') {
+      const documentId = event.details?.match(/(?:^|;)documentId=(\d+)(?:;|$)/)?.[1];
+      const invalidated = event.details?.match(/(?:^|;)evaluationsInvalidated=(\d+)(?:;|$)/)?.[1];
+      if (documentId && invalidated != null) {
+        const count = Number(invalidated);
+        return `Document #${documentId} reprocessed; ${count} prior evaluation${count === 1 ? '' : 's'} marked stale`;
+      }
+    }
+
+    if (event.eventType === 'CV_DOCUMENT_REPROCESS_FAILED') {
+      const documentId = event.details?.match(/(?:^|;)documentId=(\d+)(?:;|$)/)?.[1];
+      return documentId ? `Document #${documentId} could not be reprocessed` : 'Document reprocessing failed';
+    }
+
     return event.details || '—';
   }
 
@@ -91,8 +109,9 @@ export class SecurityAuditComponent implements OnInit {
     return ['LOGIN_FAILED', 'LOGIN_THROTTLED', 'ACCOUNT_LOCKED'].includes(eventType);
   }
 
-  private isCandidateErasureEvent(eventType: string): boolean {
-    // All outcomes share the same safe target representation, including denied and operational-failure attempts.
-    return ['CANDIDATE_ERASED', 'CANDIDATE_ERASURE_DENIED', 'CANDIDATE_ERASURE_FAILED'].includes(eventType);
+  private isCandidateEvent(eventType: string): boolean {
+    // Candidate lifecycle events store a safe candidate ID in details rather than misusing account-target columns.
+    return ['CANDIDATE_ERASED', 'CANDIDATE_ERASURE_DENIED', 'CANDIDATE_ERASURE_FAILED',
+      'CANDIDATE_METADATA_CORRECTED', 'CV_DOCUMENT_REPROCESSED', 'CV_DOCUMENT_REPROCESS_FAILED'].includes(eventType);
   }
 }

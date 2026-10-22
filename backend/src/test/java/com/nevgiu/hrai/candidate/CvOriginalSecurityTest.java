@@ -20,6 +20,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CvOriginalController.class)
@@ -29,6 +30,7 @@ class CvOriginalSecurityTest {
     @MockitoBean CvOriginalService originals;
     @MockitoBean CvLegalHoldService legalHolds;
     @MockitoBean CvRetentionService retention;
+    @MockitoBean CvDocumentReprocessingService reprocessing;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService audit;
 
@@ -60,6 +62,20 @@ class CvOriginalSecurityTest {
         mvc.perform(delete("/api/cv-documents/7/original")
                         .with(user(principal("ROLE_ADMIN"))).with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void allowsRecruiterToReprocessOriginal() throws Exception {
+        mvc.perform(post("/api/cv-documents/7/reprocess")
+                        .with(user(principal("ROLE_RECRUITER"))).with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deniesReadOnlyReprocessing() throws Exception {
+        mvc.perform(post("/api/cv-documents/7/reprocess")
+                        .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
+                .andExpect(status().isForbidden());
     }
 
     @Test

@@ -142,6 +142,13 @@ and the completion condition clear. Remove obsolete comments in the same change 
 Tests should communicate behavior through descriptive names and assertions. Comment test setup only when the scenario or
 fixture has a non-obvious constraint.
 
+Backend tests globally use JUnit Pioneer's
+[`ReplaceCamelCaseAndUnderscoreAndNumber`](https://junit-pioneer.org/docs/replace-camelcase-and-underscore-and-number/)
+through `backend/src/test/resources/junit-platform.properties`. Name test methods descriptively using camel case and,
+when preserving a code identifier as one phrase improves clarity, paired underscores. Do not repeat
+`@DisplayNameGeneration` on individual test classes. Use `@DisplayName` only when the generated text cannot accurately
+express the scenario; JUnit gives that explicit name precedence.
+
 ## Review and completion
 
 Before requesting review:

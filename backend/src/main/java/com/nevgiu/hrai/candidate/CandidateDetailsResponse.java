@@ -15,7 +15,9 @@ public record CandidateDetailsResponse(
         String currentTitle,
         Integer yearsExperience,
         Instant createdAt,
-        List<Document> documents
+        List<Document> documents,
+        List<Revision> revisions,
+        boolean correctionAllowed
 ) {
     /**
      * Describes an ingestion attempt and the actions the current principal may be offered. The capability booleans are
@@ -30,6 +32,7 @@ public record CandidateDetailsResponse(
             CvIngestionStatus status,
             int textLength,
             Instant importedAt,
+            Instant reprocessedAt,
             boolean originalAvailable,
             Instant storedAt,
             Instant retentionUntil,
@@ -37,5 +40,21 @@ public record CandidateDetailsResponse(
             Instant legalHoldAt,
             boolean downloadAllowed,
             boolean administrationAllowed
+    ) { }
+
+    /**
+     * This snapshot contains personally identifiable information (PII), including the candidate's name, email,
+     * location, job title, and experience. It is therefore exposed only through the authenticated, tenant-scoped
+     * candidate-details endpoint, which prevents users from reading revision history from another organization.
+     */
+    public record Revision(
+            Long id,
+            String actorEmail,
+            String name,
+            String email,
+            String location,
+            String currentTitle,
+            Integer yearsExperience,
+            Instant createdAt
     ) { }
 }

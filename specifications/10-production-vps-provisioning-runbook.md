@@ -726,7 +726,7 @@ CV_MALWARE_READ_TIMEOUT=30s
 
 Create and checksum matched production PostgreSQL and `cv-originals` backups. The dump protects storage metadata but
 does not contain PDF binaries. After the protected production deployment completes, confirm healthy services, the
-Flyway schema version expected by the release (`3` from `v0.13.0` onward), successful Hibernate validation, the private
+latest Flyway schema version packaged by the release, successful Hibernate validation, the private
 volume, and ClamAV:
 
 ```bash

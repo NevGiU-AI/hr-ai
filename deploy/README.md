@@ -219,6 +219,36 @@ Configuration changes still require versioned backup and restoration. Flyway mig
 reversed by application-image rollback, so every migration must remain compatible with the previous application image
 or have a separate reviewed recovery procedure. Exercise the image rollback path on staging before production.
 
+### Flyway rollback and recovery
+
+Reverting Java code or restoring a previous backend image does not undo an applied Flyway migration. Flyway records the
+migration in `flyway_schema_history`, and the database remains at that schema version. The previous backend image must
+therefore be compatible with the expanded schema and must still package every migration already recorded by the
+database; otherwise Flyway validation can reject startup because an applied migration is missing locally.
+
+Use this decision order when a release containing a migration fails:
+
+1. If the migration is additive and backward-compatible, restore the previous application images and leave the schema
+   and `flyway_schema_history` unchanged.
+2. If the new schema or data needs correction, deploy a reviewed higher-version migration, for example V5 correcting
+   V4. Do not edit or remove V4 after it has reached a shared environment.
+3. If the migration caused destructive corruption that cannot safely be corrected forward, stop backend writes,
+   preserve the failed database for investigation, explicitly approve recovery, restore the validated pre-deployment
+   PostgreSQL backup, and deploy the matching pre-migration application release.
+4. If the failed release also changed original CV files or their lifecycle metadata, restore the PostgreSQL dump and
+   its matching `cv-originals` archive as one recovery set. Restoring only one side can leave database metadata and
+   stored binaries inconsistent.
+
+Schema reversal through a higher migration can itself be destructive. Dropping a table or column loses the data it
+contains, so such a migration requires an explicit data-impact review, a validated backup, and a staging rehearsal.
+Prefer expand-and-contract migrations: add compatible schema first, deploy code that can use it, and remove obsolete
+schema only in a later release after the rollback-compatibility window has closed.
+
+Never simulate rollback by deleting rows from `flyway_schema_history`, changing recorded checksums, or editing an
+already-applied migration. `flyway repair` repairs migration-history metadata; it does not reverse schema or data
+changes. Automatic deployment rollback intentionally never restores PostgreSQL because restoration is destructive and
+requires an incident-specific decision.
+
 ## Automatic staging flow
 
 1. A push or pull request runs `CI`.

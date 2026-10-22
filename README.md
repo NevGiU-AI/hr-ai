@@ -193,8 +193,9 @@ or production schemas.
 
 The local Compose configuration enables one-time baselining so an existing developer database created before Flyway can
 be adopted. New empty databases run the ordered migration history, currently `V1__baseline_schema.sql`,
-`V2__add_original_cv_storage_metadata.sql`, then `V3__add_cv_legal_hold.sql`. Staging and production require a validated
-backup and the controlled, temporary baseline flag documented in their runbooks.
+`V2__add_original_cv_storage_metadata.sql`, `V3__add_cv_legal_hold.sql`, then
+`V4__add_candidate_correction_and_reprocessing.sql`. Staging and production require a validated backup and the
+controlled, temporary baseline flag documented in their runbooks.
 
 Migration rules:
 
@@ -203,6 +204,11 @@ Migration rules:
 - Rehearse migrations against a restored production backup.
 - Keep migrations compatible with the previous application image or document a separate recovery procedure.
 - Never delete or manually rewrite `flyway_schema_history`.
+- Treat application rollback and database recovery as separate operations: Flyway migrations are not undone when Git
+  or the deployment script restores an older application image. Prefer a compatible image rollback or a new forward
+  corrective migration; restore the validated pre-deployment recovery set only for a reviewed destructive incident.
+
+The complete Flyway rollback decision procedure is documented in [`deploy/README.md`](deploy/README.md#flyway-rollback-and-recovery).
 
 ## Recruitment workflow
 

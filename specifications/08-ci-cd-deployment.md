@@ -492,7 +492,9 @@ Restore the pre-deployment backup only when a reviewed incident concludes that f
 writes first, preserve the failed state for investigation, restore the matching application release, and validate
 Flyway history and business-data counts. When a release also affected original CV binaries, PostgreSQL and the matched
 `cv-originals` archive form one recovery set and must be restored consistently. The detailed operator procedure and
-decision order are maintained in [`deploy/README.md`](../deploy/README.md#flyway-rollback-and-recovery).
+decision order, official Redgate Flyway and PostgreSQL references, and the distinction between vendor behavior and the
+project-specific matched-recovery policy are maintained in
+[`deploy/README.md`](../deploy/README.md#flyway-rollback-and-recovery).
 
 ## Data protection and production blockers
 

@@ -249,6 +249,30 @@ already-applied migration. `flyway repair` repairs migration-history metadata; i
 changes. Automatic deployment rollback intentionally never restores PostgreSQL because restoration is destructive and
 requires an incident-specific decision.
 
+Flyway does offer optional Undo migrations in its Teams edition, but they require a matching `U` script and Redgate
+warns that destructive data changes are difficult to reconstruct. This project uses versioned `V` migrations through
+`flyway-core`, has no Undo scripts, and does not use `flyway undo`; the reviewed forward-correction or backup-restoration
+procedure above remains the supported recovery path.
+
+Authoritative references:
+
+- [Redgate Flyway: versioned migrations](https://documentation.red-gate.com/fd/versioned-migrations-273973333.html)
+  confirms that versioned migrations run once, are tracked with checksums, should not be changed after reaching a
+  permanent downstream environment, and should normally be corrected with a new versioned migration.
+- [Redgate Flyway: schema history table](https://documentation.red-gate.com/flyway/flyway-concepts/migrations/flyway-schema-history-table)
+  documents applied states, checksums, validation, and the behavior when an applied migration can no longer be found.
+- [Redgate Flyway: repair](https://documentation.red-gate.com/flyway/reference/commands/repair) defines `repair` as a
+  schema-history operation and notes that database objects left by a failed migration still require separate cleanup.
+- [Redgate Flyway: Undo migrations](https://documentation.red-gate.com/flyway/flyway-concepts/migrations/undo-migrations)
+  documents the Teams-only matching-script model and its limitations for destructive schema and data changes.
+- [PostgreSQL: `pg_dump`](https://www.postgresql.org/docs/current/app-pgdump.html) and
+  [PostgreSQL: `pg_restore`](https://www.postgresql.org/docs/current/app-pgrestore.html) define the supported archive
+  and reconstruction mechanism used by this project's database recovery procedure.
+
+The requirement to restore PostgreSQL and `cv-originals` as a matched set is a project-specific consistency policy:
+Flyway and PostgreSQL document database migration and restoration, but they do not know about the separately stored CV
+binaries referenced by application database rows.
+
 ## Automatic staging flow
 
 1. A push or pull request runs `CI`.

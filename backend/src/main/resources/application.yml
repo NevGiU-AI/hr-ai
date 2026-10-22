@@ -37,6 +37,9 @@ spring:
       port: ${APP_REDIS_PORT:6379}
       password: ${APP_REDIS_PASSWORD:local-redis-secret}
       timeout: 2s
+      repositories:
+        # Business repositories are JPA-backed; Redis is used directly for sessions and security counters.
+        enabled: false
   session:
     redis:
       flush-mode: immediate

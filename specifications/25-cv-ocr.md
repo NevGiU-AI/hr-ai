@@ -59,3 +59,23 @@ Before deployment, validate matched PostgreSQL and `cv-originals` backups. In st
 9. Review logs and ensure they contain no filenames, OCR text, candidate PII, storage keys, or antivirus signatures.
 
 Repeat the accepted safe smoke tests in production after a validated production backup and protected release.
+
+### Staging acceptance — 23 October 2026
+
+Staging acceptance completed successfully after deploying the OCR and evaluation-history releases:
+
+- Flyway `V5` was present, Hibernate validation completed, and the backend became healthy.
+- A normal text PDF remained on the `NATIVE` path without unnecessary OCR page records.
+- A disposable image-only CV PDF invoked Tesseract and produced `OCR` extraction metadata, page-level provenance,
+  confidence, and usable candidate text.
+- Reprocessing reused the stored original and existing candidate/document records rather than creating duplicates.
+- Reprocessing preserved the historical evaluation rows and marked their prior current results stale.
+- A subsequent evaluation became current and appeared with the earlier stale results in the Angular evaluation-history
+  panel.
+- Missing and cross-tenant candidate history requests retained generic not-found behavior.
+- Database inspection and backend/ClamAV log review showed the expected provenance and no new application errors or
+  logged CV content.
+
+Production acceptance remains required. Multilingual accuracy, low-confidence review routing, forced Tesseract failure,
+and destructive retention/erasure scenarios remain part of the broader environment test matrix when those specific
+paths are exercised.

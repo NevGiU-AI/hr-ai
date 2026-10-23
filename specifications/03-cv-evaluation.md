@@ -186,7 +186,7 @@ Ingestion does not invoke AI evaluation. A recruiter must explicitly select a ca
 - Full candidate erasure passed staging and production acceptance on 15 October 2026 in release `v0.14.0`.
 - After the dashboard, OpenAPI, and concurrency milestones, install and validate the implemented encrypted paired
   original-file/database backup service in staging and production.
-- Validate the implemented local OCR fallback for scanned PDFs in staging and production.
+- OCR and evaluation-history staging acceptance passed on 23 October 2026; production acceptance remains.
 - Candidate details and document-ingestion history passed staging and production acceptance on 21 October 2026.
 - Detect templates and non-CV PDFs more accurately.
 - Make large imports asynchronous and expose job progress.
@@ -468,6 +468,8 @@ Remaining frontend improvements:
 - [x] `NEEDS_REVIEW`, `SKIPPED`, and `FAILED` states have distinct labels and explanations.
 - [x] Uploading never triggers evaluation; evaluation requires an explicit candidate/job action.
 - [x] Persisted candidate evaluation history distinguishes current results from results invalidated by reprocessing.
+- [x] Staging verified that OCR reprocessing makes prior evaluations stale and that a subsequent evaluation appears as
+  current alongside the retained history.
 - [x] Backend errors and size restrictions are represented consistently.
 - [ ] Upload progress, bounded extracted-text preview, and full end-to-end browser tests are complete.
 
@@ -542,7 +544,7 @@ Remaining frontend improvements:
 - [x] Per-entry parsing failures do not prevent later archive entries from being processed.
 - [x] Document metadata, source, status, extracted text, and result warnings are traceable.
 - [ ] Original binary documents are stored and governed by retention/deletion policy.
-- [x] OCR and reprocessing are implemented for scanned PDFs; environment acceptance remains.
+- [x] OCR and reprocessing are implemented for scanned PDFs and accepted in staging; production acceptance remains.
 - [x] Upload, ingestion-result, candidate/job selection, and evaluation workflows are available in the frontend.
 
 ### Required for evaluation production readiness

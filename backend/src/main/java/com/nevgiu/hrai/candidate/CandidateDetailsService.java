@@ -12,12 +12,15 @@ public class CandidateDetailsService {
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
     private final CandidateMetadataRevisionRepository revisions;
+    private final CvDocumentPageRepository pages;
 
     public CandidateDetailsService(CandidateRepository candidates, CvDocumentRepository documents,
-                                   CandidateMetadataRevisionRepository revisions) {
+                                   CandidateMetadataRevisionRepository revisions,
+                                   CvDocumentPageRepository pages) {
         this.candidates = candidates;
         this.documents = documents;
         this.revisions = revisions;
+        this.pages = pages;
     }
 
     @Transactional(readOnly = true)
@@ -30,6 +33,8 @@ public class CandidateDetailsService {
         boolean administrator = hasRole(actor, "ROLE_ADMIN");
         boolean recruiter = hasRole(actor, "ROLE_RECRUITER");
         boolean downloadAllowed = administrator || recruiter;
+        // Page text is intentionally not returned here. Only its count summarizes available OCR
+        // provenance without expanding the candidate-details payload or duplicating CV content.
         List<CandidateDetailsResponse.Document> history = documents
                 .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
                 .stream()
@@ -55,7 +60,9 @@ public class CandidateDetailsService {
         boolean originalAvailable = document.getStorageKey() != null;
         return new CandidateDetailsResponse.Document(document.getId(), document.getOriginalFilename(),
                 document.getContentType(), document.getFileSize(), document.getSource(), document.getStatus(),
-                document.getTextLength(), document.getImportedAt(), document.getReprocessedAt(), originalAvailable,
+                document.getTextLength(), document.getExtractionMethod(), document.getExtractionConfidence(),
+                // The count query avoids loading page text containing candidate personal information.
+                pages.countByDocumentId(document.getId()), document.getImportedAt(), document.getReprocessedAt(), originalAvailable,
                 document.getStoredAt(),
                 document.getRetentionUntil(), document.isLegalHold(), document.getLegalHoldAt(),
                 originalAvailable && downloadAllowed, administrator);

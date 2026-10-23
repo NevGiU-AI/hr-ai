@@ -55,6 +55,15 @@ public class CvDocument {
 
     private int textLength;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "extraction_method", nullable = false, length = 16)
+    // Existing rows and normal text PDFs are native unless a completed OCR extraction says otherwise.
+    private CvExtractionMethod extractionMethod = CvExtractionMethod.NATIVE;
+
+    // Null for native extraction because PDFBox does not produce an OCR-style confidence score.
+    @Column(name = "extraction_confidence")
+    private Double extractionConfidence;
+
     @Lob
     private String ingestionError;
 
@@ -102,6 +111,10 @@ public class CvDocument {
     public void setExtractedText(String extractedText) { this.extractedText = extractedText; }
     public int getTextLength() { return textLength; }
     public void setTextLength(int textLength) { this.textLength = textLength; }
+    public CvExtractionMethod getExtractionMethod() { return extractionMethod; }
+    public void setExtractionMethod(CvExtractionMethod extractionMethod) { this.extractionMethod = extractionMethod; }
+    public Double getExtractionConfidence() { return extractionConfidence; }
+    public void setExtractionConfidence(Double extractionConfidence) { this.extractionConfidence = extractionConfidence; }
     public String getIngestionError() { return ingestionError; }
     public void setIngestionError(String ingestionError) { this.ingestionError = ingestionError; }
     public Instant getImportedAt() { return importedAt; }

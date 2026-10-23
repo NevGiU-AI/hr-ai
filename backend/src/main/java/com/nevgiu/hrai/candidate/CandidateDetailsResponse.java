@@ -22,6 +22,8 @@ public record CandidateDetailsResponse(
     /**
      * Describes an ingestion attempt and the actions the current principal may be offered. The capability booleans are
      * presentation hints only; the original-file and legal-hold endpoints independently enforce authorization.
+     * Extraction confidence is nullable because embedded PDF text has no OCR confidence score; the page count reports
+     * available OCR provenance without exposing the page text in this summary response.
      */
     public record Document(
             Long id,
@@ -31,6 +33,9 @@ public record CandidateDetailsResponse(
             CvDocumentSource source,
             CvIngestionStatus status,
             int textLength,
+            CvExtractionMethod extractionMethod,
+            Double extractionConfidence,
+            long extractionPageCount,
             Instant importedAt,
             Instant reprocessedAt,
             boolean originalAvailable,

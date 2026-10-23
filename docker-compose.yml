@@ -61,6 +61,8 @@ services:
       APP_CV_MALWARE_SCAN_ENABLED: "true"
       APP_CV_MALWARE_SCAN_HOST: clamav
       APP_CV_MALWARE_SCAN_PORT: 3310
+      APP_CV_OCR_ENABLED: ${APP_CV_OCR_ENABLED:-true}
+      APP_CV_OCR_LANGUAGES: ${APP_CV_OCR_LANGUAGES:-eng+fra+por}
       #JWT_SECRET: change-me-change-me-change-me-change-me
     ports:
       - "8080:8080"

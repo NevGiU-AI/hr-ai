@@ -36,6 +36,9 @@ export interface CandidateDocumentDetails {
   source: string;
   status: CvIngestionStatus;
   textLength: number;
+  extractionMethod: 'NATIVE' | 'OCR';
+  extractionConfidence: number | null;
+  extractionPageCount: number;
   importedAt: string;
   reprocessedAt: string | null;
   originalAvailable: boolean;

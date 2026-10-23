@@ -3,6 +3,8 @@ package com.nevgiu.hrai.candidate.ingestion;
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocument;
+import com.nevgiu.hrai.candidate.CvDocumentPage;
+import com.nevgiu.hrai.candidate.CvDocumentPageRepository;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
@@ -10,6 +12,7 @@ import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanException;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
+import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
 import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorageException;
@@ -42,28 +45,34 @@ public class CvDocumentImportService {
 
     private final CandidateRepository candidateRepository;
     private final CvDocumentRepository documentRepository;
-    private final CvTextExtractor textExtractor;
+    private final CvTextExtractionPipeline extractionPipeline;
+    private final CvDocumentPageRepository pageRepository;
     private final CvIngestionProperties properties;
     private final CvStorageProperties storageProperties;
     private final OriginalCvStorage originalCvStorage;
     private final CvMalwareScanner malwareScanner;
+    private final CvOcrProperties ocrProperties;
 
     public CvDocumentImportService(
             CandidateRepository candidateRepository,
             CvDocumentRepository documentRepository,
-            CvTextExtractor textExtractor,
+            CvDocumentPageRepository pageRepository,
+            CvTextExtractionPipeline extractionPipeline,
             CvIngestionProperties properties,
             CvStorageProperties storageProperties,
             OriginalCvStorage originalCvStorage,
-            CvMalwareScanner malwareScanner
+            CvMalwareScanner malwareScanner,
+            CvOcrProperties ocrProperties
     ) {
         this.candidateRepository = candidateRepository;
         this.documentRepository = documentRepository;
-        this.textExtractor = textExtractor;
+        this.pageRepository = pageRepository;
+        this.extractionPipeline = extractionPipeline;
         this.properties = properties;
         this.storageProperties = storageProperties;
         this.originalCvStorage = originalCvStorage;
         this.malwareScanner = malwareScanner;
+        this.ocrProperties = ocrProperties;
     }
 
     /**
@@ -123,15 +132,32 @@ public class CvDocumentImportService {
         deleteStoredFileOnRollback(storedCv.storageKey());
 
         try {
-            String text = textExtractor.extract(content);
+            CvTextExtractionResult extraction = extractionPipeline.extract(content);
+            String text = extraction.text();
+            // Store how the current text was obtained. Native extraction has no confidence value;
+            // OCR carries both document-level confidence and page-level provenance.
             document.setExtractedText(text);
             document.setTextLength(text.length());
+            document.setExtractionMethod(extraction.method());
+            document.setExtractionConfidence(extraction.confidence());
 
             List<String> warnings = new ArrayList<>();
-            if (text.length() < properties.minimumTextLength()) {
+            if (extraction.ocrAttemptFailed()) {
+                // OCR infrastructure failure is non-destructive: the original remains governed and
+                // the document is visible for retry or manual review.
+                warnings.add("OCR is temporarily unavailable; manual review is required");
+            }
+            // A non-null confidence distinguishes OCR from native extraction. The configured
+            // threshold is a workflow gate, not a claim that higher-scoring text is always correct.
+            boolean uncertainOcr = extraction.confidence() != null
+                    && extraction.confidence() < ocrProperties.minimumConfidence();
+            if (text.length() < properties.minimumTextLength() || uncertainOcr) {
                 document.setStatus(CvIngestionStatus.NEEDS_REVIEW);
-                warnings.add("Little or no text was extracted; OCR or manual review may be required");
+                warnings.add(extraction.method() == com.nevgiu.hrai.candidate.CvExtractionMethod.OCR
+                        ? "OCR output requires human review"
+                        : "Little or no text was extracted; OCR or manual review may be required");
                 CvDocument saved = documentRepository.save(document);
+                saveOcrPages(saved, extraction);
                 return new CvImportResult(null, saved.getId(), safeFilename, saved.getStatus(), PDF_CONTENT_TYPE,
                         saved.getTextLength(), warnings);
             }
@@ -146,6 +172,7 @@ public class CvDocumentImportService {
             document.setCandidate(candidate);
             document.setStatus(CvIngestionStatus.IMPORTED);
             CvDocument saved = documentRepository.save(document);
+            saveOcrPages(saved, extraction);
             return new CvImportResult(candidate.getId(), saved.getId(), safeFilename, saved.getStatus(), PDF_CONTENT_TYPE,
                     saved.getTextLength(), warnings);
         } catch (IOException e) {
@@ -162,6 +189,19 @@ public class CvDocumentImportService {
             }
             throw e;
         }
+    }
+
+    private void saveOcrPages(CvDocument document, CvTextExtractionResult extraction) {
+        // Native extraction and failed OCR attempts provide an empty list, making this method a
+        // no-op for documents without OCR provenance.
+        extraction.pages().forEach(page -> {
+            CvDocumentPage entity = new CvDocumentPage();
+            entity.setDocument(document);
+            entity.setPageNumber(page.pageNumber());
+            entity.setExtractedText(page.text());
+            entity.setConfidence(page.confidence());
+            pageRepository.save(entity);
+        });
     }
 
     private String validatePdf(String filename, String contentType, byte[] content) {

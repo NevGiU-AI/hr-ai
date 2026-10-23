@@ -7,6 +7,9 @@ import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
+import com.nevgiu.hrai.candidate.ocr.CvOcrEngine;
+import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
+import com.nevgiu.hrai.candidate.ocr.CvOcrResult;
 import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.QuarantinedCv;
@@ -34,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.flyway.enabled=false"
 })
-@Import({CvIngestionService.class, CvDocumentImportService.class,
+@Import({CvIngestionService.class, CvDocumentImportService.class, CvTextExtractionPipeline.class,
         CvArchiveTransactionIntegrationTest.TestBeans.class})
 class CvArchiveTransactionIntegrationTest {
 
@@ -98,6 +101,17 @@ class CvArchiveTransactionIntegrationTest {
         @Bean
         CvStorageProperties cvStorageProperties() {
             return new CvStorageProperties("build/test-cv-storage", Duration.ofDays(365));
+        }
+
+        @Bean
+        CvOcrProperties cvOcrProperties() {
+            return new CvOcrProperties(false, "tesseract", "eng+fra+por", 300, 30,
+                    Duration.ofSeconds(30), 70);
+        }
+
+        @Bean
+        CvOcrEngine cvOcrEngine() {
+            return content -> new CvOcrResult("", 0, java.util.List.of());
         }
 
         @Bean

@@ -4,6 +4,9 @@ import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocument;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
+import com.nevgiu.hrai.candidate.CvDocumentPageRepository;
+import com.nevgiu.hrai.candidate.CvDocumentPage;
+import com.nevgiu.hrai.candidate.CvExtractionMethod;
 import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
@@ -11,6 +14,9 @@ import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanException;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanResult;
 import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
+import com.nevgiu.hrai.candidate.ocr.CvOcrEngine;
+import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
+import com.nevgiu.hrai.candidate.ocr.CvOcrResult;
 import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.QuarantinedCv;
@@ -43,6 +49,7 @@ class CvIngestionServiceTest {
     private CvDocumentRepository documentRepository;
     private OriginalCvStorage originalCvStorage;
     private CvMalwareScanner malwareScanner;
+    private CvDocumentPageRepository pageRepository;
     private CvDocumentImportService documentImportService;
     private CvIngestionService service;
     private final AtomicLong ids = new AtomicLong(1);
@@ -53,6 +60,7 @@ class CvIngestionServiceTest {
         documentRepository = mock(CvDocumentRepository.class);
         originalCvStorage = mock(OriginalCvStorage.class);
         malwareScanner = mock(CvMalwareScanner.class);
+        pageRepository = mock(CvDocumentPageRepository.class);
         CvTextExtractor extractor = content -> "Ada Lovelace\nada@example.com\nSoftware engineer with extensive analytical experience.";
         CvIngestionProperties properties = new CvIngestionProperties(
                 1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
@@ -174,6 +182,30 @@ class CvIngestionServiceTest {
     }
 
     @Test
+    void importsConfidentOcrTextAndPersistsPageProvenance() {
+        CvIngestionProperties properties = new CvIngestionProperties(
+                1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
+                "classpath:intial/CVs.zip", true);
+        CvOcrEngine ocr = mock(CvOcrEngine.class);
+        when(ocr.extract(any())).thenReturn(new CvOcrResult(
+                "Ada Lovelace ada@example.com experienced analytical software engineer", 91,
+                java.util.List.of(new CvOcrResult.Page(1, "Ada Lovelace", 91))));
+        CvIngestionService ocrService = service(content -> "", properties, ocr, true);
+
+        CvImportResult result = ocrService.importPdf(
+                "scan.pdf", "application/pdf", minimalPdfBytes(), CvDocumentSource.USER_UPLOAD, "tenant-a");
+
+        assertThat(result.status()).isEqualTo(CvIngestionStatus.IMPORTED);
+        ArgumentCaptor<CvDocument> document = ArgumentCaptor.forClass(CvDocument.class);
+        verify(documentRepository).save(document.capture());
+        assertThat(document.getValue().getExtractionMethod()).isEqualTo(CvExtractionMethod.OCR);
+        assertThat(document.getValue().getExtractionConfidence()).isEqualTo(91);
+        ArgumentCaptor<CvDocumentPage> page = ArgumentCaptor.forClass(CvDocumentPage.class);
+        verify(pageRepository).save(page.capture());
+        assertThat(page.getValue().getPageNumber()).isEqualTo(1);
+    }
+
+    @Test
     void rejectsPdfEntryLargerThanConfiguredLimit() throws Exception {
         CvIngestionProperties properties = new CvIngestionProperties(
                 8, 2_000_000, 10, 2_000_000, 100, 1,
@@ -234,9 +266,19 @@ class CvIngestionServiceTest {
     }
 
     private CvIngestionService service(CvTextExtractor extractor, CvIngestionProperties properties) {
-        documentImportService = new CvDocumentImportService(candidateRepository, documentRepository, extractor, properties,
+        return service(extractor, properties, mock(CvOcrEngine.class), false);
+    }
+
+    private CvIngestionService service(CvTextExtractor extractor, CvIngestionProperties properties,
+                                       CvOcrEngine ocrEngine, boolean ocrEnabled) {
+        CvOcrProperties ocrProperties = new CvOcrProperties(
+                ocrEnabled, "tesseract", "eng+fra+por", 300, 30, Duration.ofSeconds(30), 70);
+        CvTextExtractionPipeline pipeline = new CvTextExtractionPipeline(
+                extractor, ocrEngine, properties, ocrProperties);
+        documentImportService = new CvDocumentImportService(candidateRepository, documentRepository, pageRepository,
+                pipeline, properties,
                 new CvStorageProperties("build/test-cv-storage", Duration.ofDays(365)),
-                originalCvStorage, malwareScanner);
+                originalCvStorage, malwareScanner, ocrProperties);
         return new CvIngestionService(properties, documentImportService, new DefaultResourceLoader());
     }
 

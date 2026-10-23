@@ -128,7 +128,8 @@ class CandidateControllerTest {
                 7L, "Ada Lovelace", "ada@example.com", "London", "Engineer", 5,
                 Instant.parse("2026-10-19T10:00:00Z"), List.of(new CandidateDetailsResponse.Document(
                 11L, "ada.pdf", "application/pdf", 1024, CvDocumentSource.USER_UPLOAD,
-                CvIngestionStatus.IMPORTED, 3500, Instant.parse("2026-10-19T10:00:00Z"), null, true,
+                CvIngestionStatus.IMPORTED, 3500, CvExtractionMethod.NATIVE, null, 0,
+                Instant.parse("2026-10-19T10:00:00Z"), null, true,
                 Instant.parse("2026-10-19T10:00:01Z"), Instant.parse("2027-10-19T10:00:01Z"),
                 false, null, true, true)), List.of(), true));
 

@@ -19,6 +19,7 @@ decisions.
   according to the signed-in user's role.
 - Correct candidate metadata with immutable revision history and safely reprocess a rescanned stored original without
   changing the submitted PDF or creating duplicate candidates; prior evaluations are retained as stale.
+- Review tenant-scoped evaluation history with job context, complete scoring, and explicit current/stale status.
 - Fall back to local English/French/Portuguese Tesseract OCR for scanned or low-text PDFs and retain page-level
   provenance plus confidence for human review.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
@@ -92,11 +93,13 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 7. Benchmark bounded concurrency and Java virtual threads in staging.
 8. Install and validate encrypted paired backup/restore in staging.
 9. Install and validate paired backup/restore in production after staging acceptance.
-10. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
-11. Move original files to private object storage.
-12. Consider horizontal or multi-host scaling.
-13. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
-14. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+10. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version
+    metadata after production backup/restore acceptance.
+11. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+12. Move original files to private object storage.
+13. Consider horizontal or multi-host scaling.
+14. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+15. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

@@ -299,7 +299,18 @@ Use `weights: null` for the documented default weights:
 
 The response contains an `evaluation` object with its persisted ID, candidate and job IDs, all eight metrics, the overall fit score, explanation, and creation time. It also exposes the explanation at the response's top level for the current frontend contract.
 
-Each successful request creates a new evaluation record. Re-evaluation does not overwrite an earlier row, but there is currently no evaluation history or retrieval endpoint and the prompt/model/source-document versions needed for complete reproducibility are not stored.
+Each successful request creates a new evaluation record. Re-evaluation does not overwrite an earlier row. Authenticated
+users can retrieve the selected candidate's tenant-scoped history, newest first:
+
+```http
+GET /api/evaluations?candidateId=42
+```
+
+Each history item includes candidate and job context, scores, explanation, creation time, and current/stale state. A
+missing or cross-tenant candidate ID returns `404`. Reprocessing timestamps existing current evaluations as stale because
+their underlying CV evidence changed. Prompt, model, weights, and source-document versions still need to be persisted for
+complete reproducibility. This is deliberately scheduled after paired backup/restore has been installed and validated in
+production so the additional CV-bearing audit data enters an accepted recovery lifecycle.
 
 ## Implemented data model
 
@@ -435,7 +446,9 @@ Implemented behavior:
 8. The result view shows overall fit, all eight metrics, and the AI explanation.
 9. Selecting a candidate loads their metadata and document-ingestion history, including storage, retention, and legal-hold
    state; role-aware controls reuse the authorized original download, deletion, and hold APIs.
-10. Angular tests cover ingestion and document-management endpoints, multipart request construction, structured errors,
+10. The selected candidate's persisted evaluation history shows job context, metrics, explanations, and an explicit
+    current or stale state; stale entries explain that reprocessing changed the source evidence.
+11. Angular tests cover ingestion and document-management endpoints, multipart request construction, structured errors,
     routing/navigation, file validation, loading states, details/history rendering, selection gating, explicit evaluation,
     metric rendering, and provider failures.
 
@@ -454,6 +467,7 @@ Remaining frontend improvements:
 - [x] The built-in archive can be loaded and duplicate results are visible on repeat runs.
 - [x] `NEEDS_REVIEW`, `SKIPPED`, and `FAILED` states have distinct labels and explanations.
 - [x] Uploading never triggers evaluation; evaluation requires an explicit candidate/job action.
+- [x] Persisted candidate evaluation history distinguishes current results from results invalidated by reprocessing.
 - [x] Backend errors and size restrictions are represented consistently.
 - [ ] Upload progress, bounded extracted-text preview, and full end-to-end browser tests are complete.
 

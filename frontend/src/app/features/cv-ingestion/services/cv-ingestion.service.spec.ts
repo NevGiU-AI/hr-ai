@@ -36,6 +36,14 @@ describe('CvIngestionService', () => {
     request.flush({ evaluation: {}, explanation: 'Good fit' });
   });
 
+  it('retrieves tenant-scoped evaluation history for a candidate', () => {
+    service.getEvaluationHistory(7).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/evaluations?candidateId=7`);
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
+
   it('submits explicit confirmation when erasing a candidate', () => {
     service.eraseCandidate(7).subscribe();
 

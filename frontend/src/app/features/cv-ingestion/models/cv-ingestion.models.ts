@@ -110,6 +110,14 @@ export interface EvaluationResponse {
   explanation: string;
 }
 
+export interface EvaluationHistoryItem extends CandidateEvaluation {
+  candidateName: string;
+  jobTitle: string;
+  aiExplanation: string;
+  invalidatedAt: string | null;
+  current: boolean;
+}
+
 export interface ApiError {
   status: number;
   error: string;

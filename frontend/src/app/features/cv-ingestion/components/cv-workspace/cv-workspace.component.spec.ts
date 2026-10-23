@@ -2,7 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, Subject, throwError } from 'rxjs';
-import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../../models/cv-ingestion.models';
+import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationHistoryItem,
+  EvaluationResponse, Job } from '../../models/cv-ingestion.models';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 import { CvWorkspaceComponent } from './cv-workspace.component';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -23,10 +24,12 @@ describe('CvWorkspaceComponent', () => {
       'uploadPdf', 'uploadArchive', 'importInitial', 'getCandidates', 'getJobs', 'evaluate', 'eraseCandidate',
       'getCandidateDetails', 'downloadOriginal', 'deleteOriginal', 'updateLegalHold',
       'updateCandidateMetadata', 'reprocessDocument',
+      'getEvaluationHistory',
     ]);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
     service.getCandidateDetails.and.returnValue(of(candidateDetails()));
+    service.getEvaluationHistory.and.returnValue(of([historyItem()]));
 
     await TestBed.configureTestingModule({
       imports: [CvWorkspaceComponent],
@@ -47,6 +50,7 @@ describe('CvWorkspaceComponent', () => {
     expect(component.selectedCandidateId).toBe(7);
     expect(component.selectedJobId).toBe(12);
     expect(service.getCandidateDetails).toHaveBeenCalledOnceWith(7);
+    expect(service.getEvaluationHistory).toHaveBeenCalledOnceWith(7);
   });
 
   it('rejects a non-PDF selection', () => {
@@ -155,6 +159,18 @@ describe('CvWorkspaceComponent', () => {
     expect(text).toContain('Strong backend alignment');
   });
 
+  it('renders current and stale persisted evaluation history', () => {
+    const stale = { ...historyItem(), id: 2, current: false, invalidatedAt: '2026-10-23T09:00:00Z' };
+    component.evaluationHistory = [historyItem(), stale];
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('Evaluation history');
+    expect(text).toContain('Backend Engineer');
+    expect(text).toContain('Current');
+    expect(text).toContain('Stale');
+  });
+
   it('clears stale evaluation and displays structured provider errors', () => {
     component.evaluation = evaluationResponse();
     service.evaluate.and.returnValue(throwError(() => new HttpErrorResponse({
@@ -227,6 +243,14 @@ describe('CvWorkspaceComponent', () => {
         employmentGapScore: 9, readabilityScore: 8, aiConfidenceScore: 88,
         overallFitScore: 82, createdAt: '2026-08-01T00:00:00Z',
       },
+    };
+  }
+
+  function historyItem(): EvaluationHistoryItem {
+    return {
+      ...evaluationResponse().evaluation,
+      candidateName: 'Ada Lovelace', jobTitle: 'Backend Engineer', aiExplanation: 'Strong backend alignment',
+      invalidatedAt: null, current: true,
     };
   }
 

@@ -49,6 +49,11 @@ class TenantIsolationRepositoryTest {
                 .containsExactly("Backend Engineer");
         assertThat(jobs.findByIdAndOrganizationId(jobB.getId(), "tenant-a")).isEmpty();
         assertThat(evaluations.findAllByOrganizationId("tenant-a")).containsExactly(evaluationA);
+        assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(candidateA.getId(), "tenant-a"))
+                .extracting(com.nevgiu.hrai.evaluation.dto.EvaluationHistoryItem::id)
+                .containsExactly(evaluationA.getId());
+        assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(
+                candidateB.getId(), "tenant-a")).isEmpty();
     }
 
     private Candidate candidate(String organizationId, String name) {

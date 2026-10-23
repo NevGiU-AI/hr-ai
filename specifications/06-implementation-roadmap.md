@@ -55,9 +55,10 @@
 **Current delivery sequence:** candidate details and ingestion history -> correction/reprocessing -> OCR -> typed CV chat
 -> speech input/playback -> final dashboard -> codebase-wide comments/Javadoc review -> publish stable OpenAPI contracts
 -> benchmark bounded concurrency and virtual threads -> validate paired backup/restore in staging -> validate it in
-production -> cross-cutting release validation -> private object storage -> consider horizontal or multi-host backend
-scaling. External messaging follows stable web chat, speech controls, and documented APIs; optional image/video
-generation remains last and requires separate value, privacy, and compliance approval.
+production -> persist evaluation reproducibility metadata -> cross-cutting release validation -> private object storage
+-> consider horizontal or multi-host backend scaling. External messaging follows stable web chat, speech controls, and
+documented APIs; optional image/video generation remains last and requires separate value, privacy, and compliance
+approval.
 
 The source-documentation review is a completion milestone, not a mechanical comment-every-method exercise. It must cover
 public contracts and the non-obvious tenant, authorization, privacy, transaction, locking, rollback, scheduling,
@@ -109,12 +110,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Reprocess the existing candidate/document without creating duplicate records or modifying the submitted original.
 - [ ] Add metric-level evidence and separate reliability confidence from candidate fit.
 - [ ] Expose approved weight configuration in the frontend.
-- [ ] Persist prompt, model, weights, source-document version, and evaluation audit history.
 - [x] Build candidate details and document-ingestion history UI/API.
 - [x] Validate candidate details, ingestion history, sensitive-field exclusion, role-aware original-file controls, and
   tenant-safe not-found behavior in staging.
 - [x] Validate the candidate details and ingestion-history slice in production, including legal-hold erasure guidance.
-- [ ] Add evaluation-history retrieval and presentation.
+- [x] Add tenant-scoped evaluation-history retrieval and presentation with candidate/job context and current/stale state;
+  staging and production acceptance remain.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
 - [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.
 
@@ -210,6 +211,9 @@ limits, and can be reverted through configuration.
   representative downloads, and deletion replay.
 - [ ] Install the same service in production only after staging acceptance, using production-only configuration.
 - [ ] Repeat the manual upload, Object Lock, isolated restore, and application-health checks in production.
+- [ ] After production paired backup/restore acceptance, persist versioned evaluation prompts, requested model and
+  configuration, exact weights, source-document/text fingerprints, and privacy-safe history metadata. Preserve legacy
+  evaluations without inventing unavailable values, and treat CV-bearing prompt snapshots as personal data.
 - [ ] Enable each timer only after that environment passes its complete acceptance sequence.
 
 **Exit condition:** staging and production can each produce and restore a complete encrypted PostgreSQL/original-file

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize, switchMap } from 'rxjs';
+import { finalize, forkJoin, switchMap } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
   ApiError,
@@ -12,6 +12,7 @@ import {
   CandidateMetadataUpdate,
   CvArchiveImportResult,
   CvImportResult,
+  EvaluationHistoryItem,
   EvaluationResponse,
   Job,
 } from '../../models/cv-ingestion.models';
@@ -36,6 +37,7 @@ export class CvWorkspaceComponent implements OnInit {
   selectedCandidateId: number | null = null;
   selectedJobId: number | null = null;
   evaluation: EvaluationResponse | null = null;
+  evaluationHistory: EvaluationHistoryItem[] = [];
   candidateDetails: CandidateDetails | null = null;
   metadataDraft: CandidateMetadataUpdate | null = null;
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
@@ -110,7 +112,10 @@ export class CvWorkspaceComponent implements OnInit {
     this.service.evaluate(this.selectedCandidateId, this.selectedJobId)
       .pipe(finalize(() => this.busyAction = null))
       .subscribe({
-        next: (result) => this.evaluation = result,
+        next: (result) => {
+          this.evaluation = result;
+          this.loadEvaluationHistory();
+        },
         error: (error) => this.handleError(error),
       });
   }
@@ -124,14 +129,19 @@ export class CvWorkspaceComponent implements OnInit {
   loadCandidateDetails(): void {
     if (!this.selectedCandidateId) {
       this.candidateDetails = null;
+      this.evaluationHistory = [];
       return;
     }
     this.start('details');
-    this.service.getCandidateDetails(this.selectedCandidateId)
+    forkJoin({
+      details: this.service.getCandidateDetails(this.selectedCandidateId),
+      evaluations: this.service.getEvaluationHistory(this.selectedCandidateId),
+    })
       .pipe(finalize(() => this.busyAction = null))
       .subscribe({
-        next: (details) => {
+        next: ({ details, evaluations }) => {
           this.candidateDetails = details;
+          this.evaluationHistory = evaluations;
           this.metadataDraft = null;
         },
         error: (error) => this.handleError(error),
@@ -178,11 +188,15 @@ export class CvWorkspaceComponent implements OnInit {
     if (!window.confirm('Reprocess this stored original? Existing evaluations will be marked stale.')) return;
     this.start('document');
     this.service.reprocessDocument(document.id).pipe(
-      switchMap(() => this.service.getCandidateDetails(this.selectedCandidateId!)),
+      switchMap(() => forkJoin({
+        details: this.service.getCandidateDetails(this.selectedCandidateId!),
+        evaluations: this.service.getEvaluationHistory(this.selectedCandidateId!),
+      })),
       finalize(() => this.busyAction = null),
     ).subscribe({
-      next: (details) => {
+      next: ({ details, evaluations }) => {
         this.candidateDetails = details;
+        this.evaluationHistory = evaluations;
         this.evaluation = null;
       },
       error: (error) => this.handleError(error),
@@ -249,6 +263,7 @@ export class CvWorkspaceComponent implements OnInit {
       next: () => {
         this.selectedCandidateId = null;
         this.evaluation = null;
+        this.evaluationHistory = [];
         this.refreshSelections();
       },
       error: (error) => this.handleError(error),
@@ -257,6 +272,21 @@ export class CvWorkspaceComponent implements OnInit {
 
   trackResult(_: number, item: CvImportResult): string {
     return `${item.originalFilename}-${item.documentId ?? item.status}`;
+  }
+
+  trackEvaluation(_: number, item: EvaluationHistoryItem): number {
+    return item.id;
+  }
+
+  private loadEvaluationHistory(): void {
+    if (!this.selectedCandidateId) {
+      this.evaluationHistory = [];
+      return;
+    }
+    this.service.getEvaluationHistory(this.selectedCandidateId).subscribe({
+      next: (items) => this.evaluationHistory = items,
+      error: (error) => this.handleError(error),
+    });
   }
 
   private refreshSelections(preferredCandidateId?: number | null): void {

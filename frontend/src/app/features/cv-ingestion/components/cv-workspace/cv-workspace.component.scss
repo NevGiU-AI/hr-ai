@@ -57,6 +57,7 @@
 .explanation { grid-column: 1 / -1; }
 .explanation h3 { font-size: 1rem; }
 .explanation p { white-space: pre-line; }
+.history-card summary { cursor: pointer; }
 @media (max-width: 850px) {
   .import-grid, .evaluation-form, .candidate-facts { grid-template-columns: 1fr; }
   .document-card, .details-heading { align-items: stretch; flex-direction: column; }

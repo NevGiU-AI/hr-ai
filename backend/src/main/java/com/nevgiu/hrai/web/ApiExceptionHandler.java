@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.web;
 
 import com.nevgiu.hrai.candidate.ingestion.CvIngestionException;
+import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.candidate.CvOriginalAccessException;
 import com.nevgiu.hrai.candidate.CandidateErasureException;
 import com.nevgiu.hrai.evaluation.EvaluationException;
@@ -46,6 +47,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EvaluationException.class)
     public ResponseEntity<ApiError> handleEvaluation(EvaluationException exception, HttpServletRequest request) {
         return response(exception.getStatus(), exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(CvChatException.class)
+    public ResponseEntity<ApiError> handleCvChat(CvChatException exception, HttpServletRequest request) {
+        return response(exception.status(), exception.getMessage(), request, Map.of());
     }
 
     @ExceptionHandler(CvOriginalAccessException.class)

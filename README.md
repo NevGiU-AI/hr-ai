@@ -22,6 +22,9 @@ decisions.
 - Review tenant-scoped evaluation history with job context, complete scoring, and explicit current/stale status.
 - Fall back to local English/French/Portuguese Tesseract OCR for scanned or low-text PDFs and retain page-level
   provenance plus confidence for human review.
+- Ask a bounded, tenant-authorized question about one candidate through the imperative CV-chat backend, with required
+  document/page citations and rejection of unsupported model references. The Angular chat UI and semantic search are
+  still roadmap work.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -34,7 +37,8 @@ customer onboarding requires the planned platform-level organization lifecycle d
 [tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
 
 Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR and
-evaluation history passed staging and production acceptance on 23 October 2026 in release `v0.17.0`. CV chat, speech
+evaluation history passed staging and production acceptance on 23 October 2026 in release `v0.17.0`. The first
+candidate-specific CV-chat backend foundation is implemented; its web UI, broader semantic retrieval, speech
 input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
@@ -55,7 +59,7 @@ Spring Boot 3 / Java 21
   |---- ClamAV 1.4                (fail-closed CV upload scanning)
   |---- Tesseract OCR             (bounded local scanned-PDF extraction)
   |---- Private CV volume         (quarantined and clean original PDFs)
-  `---- OpenAI through Spring AI  (job generation and candidate evaluation)
+  `---- OpenAI through Spring AI  (job generation, evaluation, and bounded CV chat)
 ```
 
 Staging and production place Caddy in front of the frontend and API containers for TLS and routing. PostgreSQL, Redis,
@@ -83,7 +87,7 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
+1. Complete the imperative, tenant-scoped CV chat UI, semantic retrieval, conversation memory, and evaluation testing.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,

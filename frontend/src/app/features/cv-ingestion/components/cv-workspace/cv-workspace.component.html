@@ -212,5 +212,46 @@
       </div>
       <div class="explanation"><h3>AI explanation</h3><p>{{ response.explanation }}</p></div>
     </div>
+
+    <section class="evaluation-history border-top mt-4 pt-4" *ngIf="selectedCandidateId"
+             aria-labelledby="evaluation-history-title">
+      <div class="d-flex align-items-end justify-content-between mb-3">
+        <div>
+          <p class="step">Persisted results</p>
+          <h3 id="evaluation-history-title">Evaluation history</h3>
+        </div>
+        <span class="text-muted small">{{ evaluationHistory.length }} evaluation{{ evaluationHistory.length === 1 ? '' : 's' }}</span>
+      </div>
+      <p class="text-muted" *ngIf="!evaluationHistory.length">This candidate has not been evaluated yet.</p>
+      <div class="d-grid gap-3" *ngIf="evaluationHistory.length">
+        <details class="history-card border rounded p-3" *ngFor="let item of evaluationHistory; trackBy: trackEvaluation">
+          <summary class="d-flex flex-wrap align-items-center gap-3">
+            <span class="d-flex flex-column me-auto">
+              <strong>{{ item.jobTitle }}</strong>
+              <small class="text-muted">{{ item.createdAt | date:'medium' }}</small>
+            </span>
+            <span class="fw-bold">{{ item.overallFitScore }}/100</span>
+            <span class="badge" [ngClass]="item.current ? 'text-bg-success' : 'text-bg-warning'">
+              {{ item.current ? 'Current' : 'Stale' }}
+            </span>
+          </summary>
+          <p class="alert alert-warning mt-3 mb-0" *ngIf="!item.current">
+            This evaluation became stale on {{ item.invalidatedAt | date:'medium' }} because the candidate CV evidence
+            was reprocessed. Run a new evaluation before relying on this result.
+          </p>
+          <div class="metrics mt-3">
+            <div><span>Skills match</span><strong>{{ item.skillsMatchScore }}%</strong></div>
+            <div><span>Experience</span><strong>{{ item.experienceRelevanceScore }}/10</strong></div>
+            <div><span>Education</span><strong>{{ item.educationFitScore }}/10</strong></div>
+            <div><span>Achievements</span><strong>{{ item.achievementImpactScore }}/10</strong></div>
+            <div><span>Keywords</span><strong>{{ item.keywordDensityScore }}%</strong></div>
+            <div><span>Readability</span><strong>{{ item.readabilityScore }}/10</strong></div>
+            <div><span>Gap review</span><strong>{{ item.employmentGapScore }}/10</strong></div>
+            <div><span>AI confidence</span><strong>{{ item.aiConfidenceScore }}%</strong></div>
+          </div>
+          <div class="explanation mt-3"><h4 class="fs-6">AI explanation</h4><p>{{ item.aiExplanation }}</p></div>
+        </details>
+      </div>
+    </section>
   </section>
 </div>

@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
-import { Candidate, CandidateDetails, CandidateMetadataUpdate, CvArchiveImportResult, CvImportResult, EvaluationResponse, Job } from '../models/cv-ingestion.models';
+import { Candidate, CandidateDetails, CandidateMetadataUpdate, CvArchiveImportResult, CvImportResult,
+  EvaluationHistoryItem, EvaluationResponse, Job } from '../models/cv-ingestion.models';
 
 @Injectable({ providedIn: 'root' })
 export class CvIngestionService {
@@ -55,6 +56,10 @@ export class CvIngestionService {
 
   evaluate(candidateId: number, jobId: number): Observable<EvaluationResponse> {
     return this.http.post<EvaluationResponse>(`${this.apiUrl}/evaluations`, { candidateId, jobId, weights: null });
+  }
+
+  getEvaluationHistory(candidateId: number): Observable<EvaluationHistoryItem[]> {
+    return this.http.get<EvaluationHistoryItem[]>(`${this.apiUrl}/evaluations?candidateId=${candidateId}`);
   }
 
   eraseCandidate(candidateId: number): Observable<void> {

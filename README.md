@@ -19,6 +19,7 @@ decisions.
   according to the signed-in user's role.
 - Correct candidate metadata with immutable revision history and safely reprocess a rescanned stored original without
   changing the submitted PDF or creating duplicate candidates; prior evaluations are retained as stale.
+- Review tenant-scoped evaluation history with job context, complete scoring, and explicit current/stale status.
 - Fall back to local English/French/Portuguese Tesseract OCR for scanned or low-text PDFs and retain page-level
   provenance plus confidence for human review.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.

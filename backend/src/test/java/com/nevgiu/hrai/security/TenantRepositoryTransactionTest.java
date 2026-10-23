@@ -23,6 +23,8 @@ class TenantRepositoryTransactionTest {
         assertReadOnlyTransaction(CvDocumentRepository.class, "findByOrganizationIdAndSha256",
                 String.class, String.class);
         assertReadOnlyTransaction(CandidateEvaluationRepository.class, "findAllByOrganizationId", String.class);
+        assertReadOnlyTransaction(CandidateEvaluationRepository.class,
+                "findHistoryByCandidateIdAndOrganizationId", Long.class, String.class);
     }
 
     private void assertReadOnlyTransaction(Class<?> repository, String methodName, Class<?>... parameterTypes)

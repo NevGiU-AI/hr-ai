@@ -114,7 +114,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Validate candidate details, ingestion history, sensitive-field exclusion, role-aware original-file controls, and
   tenant-safe not-found behavior in staging.
 - [x] Validate the candidate details and ingestion-history slice in production, including legal-hold erasure guidance.
-- [ ] Add evaluation-history retrieval and presentation.
+- [x] Add tenant-scoped evaluation-history retrieval and presentation with candidate/job context and current/stale state;
+  staging and production acceptance remain.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
 - [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.
 

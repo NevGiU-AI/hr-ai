@@ -34,7 +34,7 @@ customer onboarding requires the planned platform-level organization lifecycle d
 [tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
 
 Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR and
-evaluation history passed staging acceptance on 23 October 2026; production acceptance remains. CV chat, speech
+evaluation history passed staging and production acceptance on 23 October 2026 in release `v0.17.0`. CV chat, speech
 input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
@@ -83,23 +83,22 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Validate the accepted OCR and evaluation-history smoke paths in production.
-2. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
-3. Add editable speech-to-text input, then optional text-to-speech playback.
-4. Build the final recruitment dashboard and drill-down workflows.
-5. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
+1. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
+2. Add editable speech-to-text input, then optional text-to-speech playback.
+3. Build the final recruitment dashboard and drill-down workflows.
+4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
    transactions, integrations, and business rules.
-6. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
-7. Benchmark bounded concurrency and Java virtual threads in staging.
-8. Install and validate encrypted paired backup/restore in staging.
-9. Install and validate paired backup/restore in production after staging acceptance.
-10. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version
+5. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
+6. Benchmark bounded concurrency and Java virtual threads in staging.
+7. Install and validate encrypted paired backup/restore in staging.
+8. Install and validate paired backup/restore in production after staging acceptance.
+9. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version
     metadata after production backup/restore acceptance.
-11. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
-12. Move original files to private object storage.
-13. Consider horizontal or multi-host scaling.
-14. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
-15. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+10. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+11. Move original files to private object storage.
+12. Consider horizontal or multi-host scaling.
+13. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+14. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

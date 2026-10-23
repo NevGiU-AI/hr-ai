@@ -33,9 +33,9 @@ may create users only inside their own organization; there is not yet an organiz
 customer onboarding requires the planned platform-level organization lifecycle described in the
 [tenant-isolation specification](specifications/tenant-isolation.md#planned-organization-lifecycle-management).
 
-Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR is
-implemented and awaits environment acceptance; CV chat, speech input/playback, and the recruitment dashboard remain
-roadmap work. The paired backup tooling is implemented,
+Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR and
+evaluation history passed staging acceptance on 23 October 2026; production acceptance remains. CV chat, speech
+input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
 horizontal or multi-host backend scaling.
@@ -83,7 +83,7 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Validate OCR for scanned and low-text PDFs with extraction provenance and human review in staging and production.
+1. Validate the accepted OCR and evaluation-history smoke paths in production.
 2. Add imperative, tenant-scoped CV chat with citations and evaluation testing.
 3. Add editable speech-to-text input, then optional text-to-speech playback.
 4. Build the final recruitment dashboard and drill-down workflows.

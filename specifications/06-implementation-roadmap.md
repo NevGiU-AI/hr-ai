@@ -115,7 +115,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   tenant-safe not-found behavior in staging.
 - [x] Validate the candidate details and ingestion-history slice in production, including legal-hold erasure guidance.
 - [x] Add tenant-scoped evaluation-history retrieval and presentation with candidate/job context and current/stale state;
-  staging and production acceptance remain.
+  staging acceptance passed on 23 October 2026 and production acceptance remains.
+- [x] Validate native extraction, image-only OCR provenance, duplicate-safe reprocessing, stale/current evaluation
+  history, tenant boundaries, and logs in staging.
+- [ ] Validate the accepted OCR and evaluation-history smoke paths in production after a matched backup and protected
+  release.
 - [ ] Validate scoring consistency, bias controls, and adversarial inputs.
 - [ ] Add golden CV, OCR, evidence, counterfactual, and ranking-stability evaluation datasets with deterministic and calibrated semantic metrics.
 

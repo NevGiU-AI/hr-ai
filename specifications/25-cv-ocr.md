@@ -76,6 +76,18 @@ Staging acceptance completed successfully after deploying the OCR and evaluation
 - Database inspection and backend/ClamAV log review showed the expected provenance and no new application errors or
   logged CV content.
 
-Production acceptance remains required. Multilingual accuracy, low-confidence review routing, forced Tesseract failure,
-and destructive retention/erasure scenarios remain part of the broader environment test matrix when those specific
-paths are exercised.
+### Production acceptance — 23 October 2026
+
+Release `v0.17.0` completed the protected production deployment and production-safe OCR/evaluation-history smoke tests:
+
+- Flyway `V5`, Hibernate validation, backend health, and the configured Tesseract languages were verified.
+- Native text extraction continued to use `NATIVE`, while a disposable image-only CV used `OCR` and retained confidence
+  plus page provenance.
+- Reprocessing reused the candidate/document, retained historical evaluations as stale, and a subsequent evaluation
+  appeared as current in the history panel.
+- Candidate, job, original-file, authentication, and tenant-scoped not-found behavior remained functional.
+- Database and log inspection showed the expected records with no new application errors or logged CV content.
+
+The deliberately disruptive invalid-command test remains staging-only. Multilingual accuracy, low-confidence review
+routing, and destructive retention/erasure scenarios remain part of the broader regression matrix rather than routine
+production smoke testing.

@@ -93,11 +93,13 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 7. Benchmark bounded concurrency and Java virtual threads in staging.
 8. Install and validate encrypted paired backup/restore in staging.
 9. Install and validate paired backup/restore in production after staging acceptance.
-10. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
-11. Move original files to private object storage.
-12. Consider horizontal or multi-host scaling.
-13. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
-14. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+10. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version
+    metadata after production backup/restore acceptance.
+11. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+12. Move original files to private object storage.
+13. Consider horizontal or multi-host scaling.
+14. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+15. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 

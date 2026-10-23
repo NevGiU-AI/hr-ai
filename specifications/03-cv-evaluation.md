@@ -309,7 +309,8 @@ GET /api/evaluations?candidateId=42
 Each history item includes candidate and job context, scores, explanation, creation time, and current/stale state. A
 missing or cross-tenant candidate ID returns `404`. Reprocessing timestamps existing current evaluations as stale because
 their underlying CV evidence changed. Prompt, model, weights, and source-document versions still need to be persisted for
-complete reproducibility.
+complete reproducibility. This is deliberately scheduled after paired backup/restore has been installed and validated in
+production so the additional CV-bearing audit data enters an accepted recovery lifecycle.
 
 ## Implemented data model
 

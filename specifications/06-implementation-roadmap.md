@@ -127,6 +127,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 
 ## Phase 3 - Add semantic indexing and multimodal web chat
 
+- [x] Add an imperative, candidate-specific chat backend with tenant-scoped evidence loading, bounded OCR/native
+  citations, role and CSRF enforcement, unsupported-citation rejection, and stable provider failures.
 - [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
 - [ ] Create embeddings and index CV chunks with authorization metadata.
 - [ ] Implement retrieval, filtering, candidate detail, and comparison tools.

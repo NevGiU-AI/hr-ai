@@ -2,6 +2,7 @@ package com.nevgiu.hrai.security;
 
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
+import com.nevgiu.hrai.candidate.CvDocumentPageRepository;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
 import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,8 @@ class TenantRepositoryTransactionTest {
         assertReadOnlyTransaction(JobRepository.class, "findByIdAndOrganizationId", Long.class, String.class);
         assertReadOnlyTransaction(CvDocumentRepository.class, "findByOrganizationIdAndSha256",
                 String.class, String.class);
+        assertReadOnlyTransaction(CvDocumentPageRepository.class,
+                "findAllByDocumentIdOrderByPageNumber", Long.class);
         assertReadOnlyTransaction(CandidateEvaluationRepository.class, "findAllByOrganizationId", String.class);
         assertReadOnlyTransaction(CandidateEvaluationRepository.class,
                 "findHistoryByCandidateIdAndOrganizationId", Long.class, String.class);

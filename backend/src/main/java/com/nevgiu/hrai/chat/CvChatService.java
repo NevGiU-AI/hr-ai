@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 @Service
 public class CvChatService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CvChatService.class);
+
+    // Only backend-issued document and OCR-page references are recognized; arbitrary model links are never trusted.
     private static final Pattern CITATION = Pattern.compile("\\[(CV-(?:\\d+(?:-P\\d+)?|CANDIDATE-\\d+))\\]");
 
     private final CvChatEvidenceService evidenceService;
@@ -24,6 +26,10 @@ public class CvChatService {
         this.model = model;
     }
 
+    /**
+     * Builds a grounded answer without keeping the evidence-loading transaction open during the provider call.
+     * The returned citation objects are reconstructed from authorized server-side evidence, never model-provided text.
+     */
     public CvChatResponse ask(Long candidateId, String question, String organizationId) {
         // Evidence is loaded in a short read transaction; no JDBC connection is held while OpenAI responds.
         List<CvChatEvidence> evidence = evidenceService.find(candidateId, organizationId);
@@ -43,6 +49,7 @@ public class CvChatService {
     }
 
     private List<CvChatResponse.Citation> citedEvidence(String answer, List<CvChatEvidence> evidence) {
+        // Linked maps preserve evidence/citation order while collapsing a reference repeated throughout the answer.
         Map<String, CvChatEvidence> allowed = new LinkedHashMap<>();
         evidence.forEach(item -> allowed.put(item.reference(), item));
         Map<String, CvChatEvidence> cited = new LinkedHashMap<>();
@@ -50,6 +57,7 @@ public class CvChatService {
         while (matcher.find()) {
             CvChatEvidence item = allowed.get(matcher.group(1));
             if (item == null) {
+                // A syntactically valid but unknown reference is a hallucinated citation and invalidates the answer.
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,
                         "CV chat provider returned an unsupported citation");
             }

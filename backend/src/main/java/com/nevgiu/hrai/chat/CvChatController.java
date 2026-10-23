@@ -18,6 +18,12 @@ public class CvChatController {
         this.service = service;
     }
 
+    /**
+     * Answers one question about an explicitly selected candidate.
+     *
+     * <p>The organization is always taken from the authenticated server-side principal. It is intentionally absent
+     * from the request body so a caller or the model cannot select a different tenant.</p>
+     */
     @PostMapping("/{candidateId}")
     public CvChatResponse ask(@PathVariable Long candidateId, @Valid @RequestBody CvChatRequest request,
                               @AuthenticationPrincipal AppUserPrincipal actor) {

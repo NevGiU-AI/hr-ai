@@ -37,13 +37,16 @@ class CvChatEvidenceService {
         if (history.isEmpty()) {
             evidence = nativeEvidence(candidate, null);
         } else {
+            // The repository orders newest imports first. Chat uses only the current document, never obsolete history.
             CvDocument current = history.getFirst();
+            // Page rows exist for OCR extractions and preserve the page numbers a human reviewer sees in the PDF.
             List<CvChatEvidence> pageEvidence = pages.findAllByDocumentIdOrderByPageNumber(current.getId()).stream()
                     .limit(properties.maxEvidencePages())
                     .filter(page -> page.getExtractedText() != null && !page.getExtractedText().isBlank())
                     .map(page -> new CvChatEvidence("CV-" + current.getId() + "-P" + page.getPageNumber(),
                             candidate.getId(), current.getId(), page.getPageNumber(), excerpt(page.getExtractedText())))
                     .toList();
+            // Native extraction has no page provenance, so it receives one document-level citation instead.
             evidence = pageEvidence.isEmpty() ? nativeEvidence(candidate, current.getId()) : pageEvidence;
         }
         if (evidence.isEmpty()) {
@@ -63,6 +66,7 @@ class CvChatEvidenceService {
     }
 
     private String excerpt(String text) {
+        // Normalization makes excerpts deterministic and avoids spending model tokens on PDF/OCR layout whitespace.
         String normalized = text.replaceAll("\\s+", " ").trim();
         return normalized.length() <= properties.maxExcerptCharacters()
                 ? normalized

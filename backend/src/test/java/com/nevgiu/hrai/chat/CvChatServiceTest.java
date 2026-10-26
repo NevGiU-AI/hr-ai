@@ -47,6 +47,45 @@ class CvChatServiceTest {
     }
 
     @Test
+    void returnsBackendControlledMessageWhenJobRelevantEvidenceIsInsufficient() {
+        stubEvidence();
+        when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn("  INSUFFICIENT_EVIDENCE  ");
+
+        CvChatResponse response = service.ask(7L, "Does the candidate know Kubernetes?", "tenant-a");
+
+        assertThat(response.answer())
+                .isEqualTo("The available CV evidence does not provide enough information to answer this question.");
+        assertThat(response.citations()).isEmpty();
+    }
+
+    @Test
+    void returnsBackendControlledMessageForOutOfScopeOrSensitiveQuestions() {
+        stubEvidence();
+        when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn("OUT_OF_SCOPE");
+
+        CvChatResponse response = service.ask(7L, "What is the candidate's political affiliation?", "tenant-a");
+
+        assertThat(response.answer()).isEqualTo(
+                "I can only answer job-relevant questions supported by the authorized CV evidence. "
+                        + "I cannot provide or infer protected or sensitive personal characteristics.");
+        assertThat(response.citations()).isEmpty();
+    }
+
+    @Test
+    void stillRejectsArbitraryUncitedProviderText() {
+        stubEvidence();
+        when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn("This is an uncited provider answer.");
+
+        assertThatThrownBy(() -> service.ask(7L, "Summarize", "tenant-a"))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat provider returned an answer without evidence citations")
+                .satisfies(error -> assertThat(((CvChatException) error).status().value()).isEqualTo(502));
+    }
+
+    @Test
     void hidesProviderFailuresBehindAStableApiError() {
         when(evidenceService.find(7L, "tenant-a")).thenReturn(List.of(
                 new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null, "Java engineer")));
@@ -57,6 +96,11 @@ class CvChatServiceTest {
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV chat provider is unavailable")
                 .satisfies(error -> assertThat(((CvChatException) error).status().value()).isEqualTo(502));
+    }
+
+    private void stubEvidence() {
+        when(evidenceService.find(7L, "tenant-a")).thenReturn(List.of(
+                new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null, "Java engineer")));
     }
 
 }

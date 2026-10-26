@@ -17,7 +17,9 @@ The first backend slice supports an imperative question about one explicitly sel
 - OCR documents contribute bounded page evidence such as `[CV-12-P2]`. Native extraction contributes document-level
   evidence such as `[CV-12]`.
 - Every returned answer must contain at least one supplied reference. Unknown, invented, or absent citations cause a
-  stable `502` response instead of returning an ungrounded answer.
+  stable `502` response instead of returning an ungrounded answer. The only exceptions are exact, model-internal
+  `INSUFFICIENT_EVIDENCE` and `OUT_OF_SCOPE` control results. Java replaces those markers with fixed safe wording and
+  an empty citation list; arbitrary uncited model prose remains invalid.
 - Evidence/page and excerpt limits are configurable with `CV_CHAT_MAX_EVIDENCE_PAGES` and
   `CV_CHAT_MAX_EXCERPT_CHARACTERS`; deployment defaults are `10` and `1200`.
 
@@ -89,6 +91,9 @@ Outputs:
 - Candidate comparison uses the requested criteria consistently.
 - Ambiguous questions trigger clarification instead of guessed answers.
 - No-result and service-failure states are explicit and actionable.
+- Job-relevant questions unsupported by the evidence return a fixed insufficient-evidence response without citations.
+- Unrelated questions and requests for protected or sensitive characteristics return a fixed out-of-scope response;
+  those characteristics are neither disclosed nor inferred even when CV text mentions them.
 - CV prompt injection cannot override system policy or expose unrelated records.
 - Spoken queries produce an editable transcript before submission and follow the same authorization path as typed queries.
 - Raw query audio is not retained by default, and retention exceptions require explicit policy and consent.

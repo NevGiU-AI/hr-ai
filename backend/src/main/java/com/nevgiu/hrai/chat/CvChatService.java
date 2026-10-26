@@ -14,6 +14,11 @@ import java.util.regex.Pattern;
 @Service
 public class CvChatService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CvChatService.class);
+    private static final String INSUFFICIENT_EVIDENCE_MESSAGE =
+            "The available CV evidence does not provide enough information to answer this question.";
+    private static final String OUT_OF_SCOPE_MESSAGE =
+            "I can only answer job-relevant questions supported by the authorized CV evidence. "
+                    + "I cannot provide or infer protected or sensitive personal characteristics.";
 
     // Only backend-issued document and OCR-page references are recognized; arbitrary model links are never trusted.
     private static final Pattern CITATION = Pattern.compile("\\[(CV-(?:\\d+(?:-P\\d+)?|CANDIDATE-\\d+))\\]");
@@ -44,6 +49,15 @@ public class CvChatService {
         }
         if (answer == null || answer.isBlank()) {
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat provider returned an empty response");
+        }
+        String normalizedAnswer = answer.trim();
+        // Only exact control results are trusted. Java supplies the displayed wording so provider prose cannot smuggle
+        // uncited claims into a refusal or insufficient-evidence response.
+        if (CvChatModel.INSUFFICIENT_EVIDENCE.equals(normalizedAnswer)) {
+            return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
+        }
+        if (CvChatModel.OUT_OF_SCOPE.equals(normalizedAnswer)) {
+            return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
         }
         return new CvChatResponse(answer, citedEvidence(answer, evidence));
     }

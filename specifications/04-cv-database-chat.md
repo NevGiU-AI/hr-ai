@@ -27,7 +27,9 @@ This slice does not yet provide vector indexing, multi-candidate search/comparis
 Angular chat interface, streaming, or speech controls. Those remain explicit roadmap work and must not be inferred from
 the presence of this endpoint.
 
-## Staging acceptance
+## Environment acceptance
+
+### Staging
 
 The candidate-specific backend foundation and safe-refusal correction passed staging acceptance on 27 October 2026
 for main revision `2f85ddc`. The accepted checks covered:
@@ -41,8 +43,20 @@ for main revision `2f85ddc`. The accepted checks covered:
   tenant-scoped candidate evidence;
 - privacy-safe logs without recruiter questions, CV excerpts, prompts, or provider responses.
 
-Production acceptance remains required before this backend foundation is considered promoted. The Angular interface,
-semantic retrieval, conversation memory, and formal AI evaluation suite remain separate implementation slices.
+### Production
+
+The same candidate-specific backend and safe-refusal behavior passed production acceptance on 27 October 2026 without
+adding CV-chat variables to the production environment file. Production used the reviewed Compose defaults of ten
+evidence pages and 1,200 characters per excerpt. The accepted checks covered:
+
+- healthy deployment and effective default configuration;
+- grounded answers with valid backend-issued citations;
+- fixed insufficient-evidence and out-of-scope responses with an empty citation list;
+- request validation, CSRF enforcement, authentication, role policy, and generic not-found behavior; and
+- privacy-safe application logs without questions, CV excerpts, prompts, provider responses, or credentials.
+
+The Angular interface, semantic retrieval, conversation memory, and formal AI evaluation suite remain separate
+implementation slices; environment acceptance of this bounded backend does not mark those capabilities complete.
 
 ## Supported interactions
 

@@ -27,6 +27,23 @@ This slice does not yet provide vector indexing, multi-candidate search/comparis
 Angular chat interface, streaming, or speech controls. Those remain explicit roadmap work and must not be inferred from
 the presence of this endpoint.
 
+## Staging acceptance
+
+The candidate-specific backend foundation and safe-refusal correction passed staging acceptance on 27 October 2026
+for main revision `2f85ddc`. The accepted checks covered:
+
+- healthy deployment with the configured evidence-page and excerpt limits;
+- grounded native and OCR answers with backend-issued document or page citations;
+- fixed `200` responses with an empty citation list for job-relevant insufficient evidence and out-of-scope or
+  sensitive questions;
+- continued rejection of unsupported answers rather than displaying arbitrary uncited provider prose;
+- request validation, CSRF enforcement, authenticated role policy, generic missing/cross-tenant `404` behavior, and
+  tenant-scoped candidate evidence;
+- privacy-safe logs without recruiter questions, CV excerpts, prompts, or provider responses.
+
+Production acceptance remains required before this backend foundation is considered promoted. The Angular interface,
+semantic retrieval, conversation memory, and formal AI evaluation suite remain separate implementation slices.
+
 ## Supported interactions
 
 - Find candidates by skills, experience, location, education, title, employer, or evaluation metric.

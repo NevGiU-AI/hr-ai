@@ -129,6 +129,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 
 - [x] Add an imperative, candidate-specific chat backend with tenant-scoped evidence loading, bounded OCR/native
   citations, role and CSRF enforcement, unsupported-citation rejection, and stable provider failures.
+- [x] Validate the candidate-specific backend, grounded native/OCR citations, safe insufficient-evidence and
+  out-of-scope responses, authorization boundaries, and privacy-safe logs in staging on 27 October 2026.
+- [ ] Promote the accepted candidate-specific backend to production and repeat the focused smoke and privacy checks.
 - [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
 - [ ] Create embeddings and index CV chunks with authorization metadata.
 - [ ] Implement retrieval, filtering, candidate detail, and comparison tools.

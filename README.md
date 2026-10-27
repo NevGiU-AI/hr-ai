@@ -38,7 +38,8 @@ customer onboarding requires the planned platform-level organization lifecycle d
 
 Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR and
 evaluation history passed staging and production acceptance on 23 October 2026 in release `v0.17.0`. The first
-candidate-specific CV-chat backend foundation is implemented; its web UI, broader semantic retrieval, speech
+candidate-specific CV-chat backend foundation, including grounded citations and controlled safe refusals, passed
+staging acceptance on 27 October 2026. Its web UI, broader semantic retrieval, production acceptance, speech
 input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before

@@ -190,7 +190,8 @@
             <h6>Sources</h6>
             <ol class="citation-list d-grid gap-3 mb-0">
               <li *ngFor="let citation of response.citations">
-                <a [href]="citationTarget(citation)">{{ citationLabel(citation) }}</a>
+                <!-- Use Angular routing so the root base URL cannot turn a fragment into the application's default route. -->
+                <a routerLink="/candidates/import" [fragment]="citationFragment(citation)">{{ citationLabel(citation) }}</a>
                 <blockquote class="border-start border-3 ps-3 mt-1 mb-0 text-muted small">{{ citation.excerpt }}</blockquote>
               </li>
             </ol>

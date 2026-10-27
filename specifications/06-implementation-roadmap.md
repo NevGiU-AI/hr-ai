@@ -143,7 +143,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [ ] Add preview-only command tools, then require explicit confirmation, idempotency, and audit records before any state change or external communication.
 - [ ] Pin tool implementation to the current Spring AI version and evaluate the 2.x `ToolCallingAdvisor` migration separately with regression tests.
 - [ ] Persist scoped conversation memory.
-- [ ] Build the Angular chat interface and structured result cards.
+- [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
+  and document-linked citations.
+- [ ] Build semantic multi-candidate search and structured result cards.
 - [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
 - [ ] Add push-to-talk speech input with a visible, editable transcript before submission.

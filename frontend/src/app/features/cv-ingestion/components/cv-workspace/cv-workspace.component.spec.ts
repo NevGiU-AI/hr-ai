@@ -5,6 +5,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationHistoryItem,
   EvaluationResponse, Job } from '../../models/cv-ingestion.models';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
+import { CvChatService } from '../../services/cv-chat.service';
 import { CvWorkspaceComponent } from './cv-workspace.component';
 import { AuthService } from '../../../../core/auth/auth.service';
 
@@ -12,6 +13,7 @@ describe('CvWorkspaceComponent', () => {
   let fixture: ComponentFixture<CvWorkspaceComponent>;
   let component: CvWorkspaceComponent;
   let service: jasmine.SpyObj<CvIngestionService>;
+  let chatService: jasmine.SpyObj<CvChatService>;
   const auth = { user: { id: 1, email: 'admin@example.com', organizationId: 'tenant-a', roles: ['ADMIN'] } };
 
   const candidate: Candidate = {
@@ -20,12 +22,15 @@ describe('CvWorkspaceComponent', () => {
   const job: Job = { id: 12, title: 'Backend Engineer', level: 'Senior', summary: 'Build APIs' };
 
   beforeEach(async () => {
+    // Each test starts as an administrator; authorization tests may temporarily change this role list.
+    auth.user.roles = ['ADMIN'];
     service = jasmine.createSpyObj<CvIngestionService>('CvIngestionService', [
       'uploadPdf', 'uploadArchive', 'importInitial', 'getCandidates', 'getJobs', 'evaluate', 'eraseCandidate',
       'getCandidateDetails', 'downloadOriginal', 'deleteOriginal', 'updateLegalHold',
       'updateCandidateMetadata', 'reprocessDocument',
       'getEvaluationHistory',
     ]);
+    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', ['ask']);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
     service.getCandidateDetails.and.returnValue(of(candidateDetails()));
@@ -35,6 +40,7 @@ describe('CvWorkspaceComponent', () => {
       imports: [CvWorkspaceComponent],
       providers: [
         { provide: CvIngestionService, useValue: service },
+        { provide: CvChatService, useValue: chatService },
         { provide: AuthService, useValue: auth },
       ],
     }).compileComponents();
@@ -128,6 +134,73 @@ describe('CvWorkspaceComponent', () => {
     expect(text).toContain('ada.pdf');
     expect(text).toContain('Original stored');
     expect(text).toContain('Download original');
+  });
+
+  it('asks about the selected candidate and renders linked citations', () => {
+    chatService.ask.and.returnValue(of({
+      answer: 'Ada lists Java experience [CV-2].',
+      citations: [{ reference: 'CV-2', candidateId: 7, documentId: 2, pageNumber: null,
+        excerpt: 'Java engineer' }],
+    }));
+    component.chatQuestion = '  Which skills are stated?  ';
+
+    component.askCv();
+    fixture.detectChanges();
+
+    expect(chatService.ask).toHaveBeenCalledOnceWith(7, 'Which skills are stated?');
+    expect(fixture.nativeElement.textContent).toContain('Ada lists Java experience');
+    const citation = fixture.debugElement.query(By.css('.citation-list a'));
+    expect(citation.nativeElement.getAttribute('href')).toBe('#cv-document-2');
+    expect(citation.nativeElement.textContent).toContain('CV document 2');
+  });
+
+  it('renders a controlled safe response without requiring citations', () => {
+    chatService.ask.and.returnValue(of({
+      answer: 'The available CV evidence does not provide enough information to answer this question.',
+      citations: [],
+    }));
+    component.chatQuestion = 'Does the CV state a Kubernetes certification?';
+
+    component.askCv();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('does not provide enough information');
+    expect(fixture.nativeElement.textContent).toContain('no source citation is required');
+  });
+
+  it('prevents duplicate chat submissions while a request is active', () => {
+    const pending = new Subject<never>();
+    chatService.ask.and.returnValue(pending);
+    component.chatQuestion = 'Summarize the stated skills.';
+
+    component.askCv();
+    component.askCv();
+    fixture.detectChanges();
+
+    expect(chatService.ask).toHaveBeenCalledTimes(1);
+    expect(component.chatBusy).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('Reviewing the authorized CV evidence');
+  });
+
+  it('shows a structured chat error and keeps the question available for retry', () => {
+    chatService.ask.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 502, error: { message: 'CV chat provider is unavailable' },
+    })));
+    component.chatQuestion = 'Summarize the CV.';
+
+    component.askCv();
+    fixture.detectChanges();
+
+    expect(component.chatError).toBe('CV chat provider is unavailable');
+    expect(component.chatQuestion).toBe('Summarize the CV.');
+    expect(fixture.nativeElement.textContent).toContain('Retry');
+  });
+
+  it('does not offer CV chat to a read-only user', () => {
+    auth.user.roles = ['READ_ONLY'];
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.cv-chat'))).toBeNull();
   });
 
   it('does not submit or record an unchanged metadata correction', () => {

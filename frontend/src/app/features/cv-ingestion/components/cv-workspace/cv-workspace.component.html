@@ -88,7 +88,8 @@
     </div>
     <div class="evaluation-form">
       <label>Candidate
-        <select class="form-select" [ngModel]="selectedCandidateId" (ngModelChange)="selectCandidate($event)">
+        <select class="form-select" [ngModel]="selectedCandidateId" (ngModelChange)="selectCandidate($event)"
+                [disabled]="chatBusy">
           <option [ngValue]="null" disabled>{{ candidates.length ? 'Select candidate' : 'Import a CV first' }}</option>
           <option *ngFor="let candidate of candidates" [ngValue]="candidate.id">{{ candidate.name }} (#{{ candidate.id }})</option>
         </select>
@@ -143,10 +144,64 @@
         <div><dt>Experience</dt><dd>{{ details.yearsExperience == null ? 'Not provided' : details.yearsExperience + ' years' }}</dd></div>
       </dl>
 
+      <section class="cv-chat bg-light border rounded p-3 my-4" *ngIf="canUseCvChat" aria-labelledby="cv-chat-title">
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+          <div>
+            <p class="step">Grounded assistant</p>
+            <h4 id="cv-chat-title">Ask about this CV</h4>
+          </div>
+          <span class="text-muted small">Answers use only authorized CV evidence.</span>
+        </div>
+
+        <form (ngSubmit)="askCv()">
+          <label for="cv-chat-question" class="form-label">Question</label>
+          <textarea id="cv-chat-question" name="cvChatQuestion" class="form-control" rows="3" maxlength="2000"
+                    [(ngModel)]="chatQuestion" [disabled]="chatBusy"
+                    aria-describedby="cv-chat-help cv-chat-count"
+                    placeholder="For example: Which backend skills are explicitly stated?"></textarea>
+          <div class="d-flex justify-content-between gap-3 text-muted small mt-1 mb-2">
+            <small id="cv-chat-help">Do not request protected or sensitive personal characteristics.</small>
+            <small id="cv-chat-count">{{ chatQuestion.length | number }}/2,000</small>
+          </div>
+          <button class="btn btn-primary" type="submit"
+                  [disabled]="!chatQuestion.trim() || chatQuestion.length > 2000 || chatBusy">
+            {{ chatBusy ? 'Asking…' : 'Ask about this CV' }}
+          </button>
+        </form>
+
+        <p class="text-muted mt-3 mb-0" role="status" aria-live="polite" *ngIf="chatBusy">
+          Reviewing the authorized CV evidence…
+        </p>
+        <div class="alert alert-danger mt-3" role="alert" *ngIf="chatError">
+          <p class="mb-2">{{ chatError }}</p>
+          <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="chatBusy" (click)="askCv()">
+            Retry
+          </button>
+        </div>
+
+        <article class="cv-chat-answer bg-white border-start border-4 border-primary rounded mt-3 p-3"
+                 *ngIf="chatResponse as response" aria-live="polite">
+          <h5>Answer</h5>
+          <p>{{ response.answer }}</p>
+          <p class="bg-light rounded text-muted small p-2" *ngIf="!response.citations.length">
+            This controlled response makes no factual claim about the candidate, so no source citation is required.
+          </p>
+          <div *ngIf="response.citations.length">
+            <h6>Sources</h6>
+            <ol class="citation-list d-grid gap-3 mb-0">
+              <li *ngFor="let citation of response.citations">
+                <a [href]="citationTarget(citation)">{{ citationLabel(citation) }}</a>
+                <blockquote class="border-start border-3 ps-3 mt-1 mb-0 text-muted small">{{ citation.excerpt }}</blockquote>
+              </li>
+            </ol>
+          </div>
+        </article>
+      </section>
+
       <h4>Ingestion history</h4>
       <p *ngIf="!details.documents.length" class="text-muted">No CV document is associated with this candidate.</p>
       <div class="document-list" *ngIf="details.documents.length">
-        <article class="document-card" *ngFor="let item of details.documents">
+        <article class="document-card" *ngFor="let item of details.documents" [id]="'cv-document-' + item.id">
           <div>
             <strong>{{ item.originalFilename }}</strong>
             <p>{{ item.importedAt | date:'medium' }} · {{ item.fileSize | number }} bytes · {{ item.textLength | number }} extracted characters</p>

@@ -41,6 +41,7 @@
 .metadata-actions { align-items: end; display: flex; gap: .5rem; }
 .revision-history { margin-top: 1rem; }
 .revision-history ol { margin: .75rem 0 0; }
+.cv-chat-answer > p { white-space: pre-line; }
 .document-list { display: grid; gap: .75rem; }
 .document-card { align-items: center; border: 1px solid #dfe5ef; border-radius: .55rem; display: flex; gap: 1rem; justify-content: space-between; padding: 1rem; }
 .document-card p { margin: .25rem 0 .5rem; }

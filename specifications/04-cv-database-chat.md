@@ -22,10 +22,13 @@ The first backend slice supports an imperative question about one explicitly sel
   an empty citation list; arbitrary uncited model prose remains invalid.
 - Evidence/page and excerpt limits are configurable with `CV_CHAT_MAX_EVIDENCE_PAGES` and
   `CV_CHAT_MAX_EXCERPT_CHARACTERS`; deployment defaults are `10` and `1200`.
+- The Angular candidate workspace exposes this bounded endpoint only to `ADMIN`, `RECRUITER`, and `REVIEWER`. It
+  validates and submits one question for the selected candidate, displays progress and structured retryable failures,
+  distinguishes fixed safe responses from evidence-backed answers, and links each citation to its document card.
 
-This slice does not yet provide vector indexing, multi-candidate search/comparison, persisted conversation memory, the
-Angular chat interface, streaming, or speech controls. Those remain explicit roadmap work and must not be inferred from
-the presence of this endpoint.
+This slice does not yet provide vector indexing, multi-candidate search/comparison, persisted conversation memory,
+streaming, or speech controls. Those remain explicit roadmap work and must not be inferred from the presence of the
+candidate-specific interface.
 
 ## Environment acceptance
 
@@ -55,8 +58,9 @@ evidence pages and 1,200 characters per excerpt. The accepted checks covered:
 - request validation, CSRF enforcement, authentication, role policy, and generic not-found behavior; and
 - privacy-safe application logs without questions, CV excerpts, prompts, provider responses, or credentials.
 
-The Angular interface, semantic retrieval, conversation memory, and formal AI evaluation suite remain separate
-implementation slices; environment acceptance of this bounded backend does not mark those capabilities complete.
+The candidate-specific Angular interface is now implemented and awaiting environment acceptance. Semantic retrieval,
+multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain separate implementation
+slices; environment acceptance of this bounded backend does not mark those capabilities complete.
 
 ## Supported interactions
 

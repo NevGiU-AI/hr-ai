@@ -16,6 +16,8 @@ import {
   EvaluationResponse,
   Job,
 } from '../../models/cv-ingestion.models';
+import { CvChatCitation, CvChatResponse } from '../../models/cv-chat.models';
+import { CvChatService } from '../../services/cv-chat.service';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 
 @Component({
@@ -27,6 +29,7 @@ import { CvIngestionService } from '../../services/cv-ingestion.service';
 })
 export class CvWorkspaceComponent implements OnInit {
   private readonly service = inject(CvIngestionService);
+  private readonly chatService = inject(CvChatService);
   private readonly auth = inject(AuthService);
 
   pdfFile: File | null = null;
@@ -40,6 +43,10 @@ export class CvWorkspaceComponent implements OnInit {
   evaluationHistory: EvaluationHistoryItem[] = [];
   candidateDetails: CandidateDetails | null = null;
   metadataDraft: CandidateMetadataUpdate | null = null;
+  chatQuestion = '';
+  chatResponse: CvChatResponse | null = null;
+  chatError = '';
+  chatBusy = false;
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
   notice = '';
@@ -49,6 +56,10 @@ export class CvWorkspaceComponent implements OnInit {
 
   get isAdministrator(): boolean {
     return this.auth.user?.roles.includes('ADMIN') ?? false;
+  }
+
+  get canUseCvChat(): boolean {
+    return this.auth.user?.roles.some((role) => ['ADMIN', 'RECRUITER', 'REVIEWER'].includes(role)) ?? false;
   }
 
   get candidateUnderLegalHold(): boolean {
@@ -121,9 +132,42 @@ export class CvWorkspaceComponent implements OnInit {
   }
 
   selectCandidate(candidateId: number | null): void {
+    if (candidateId !== this.selectedCandidateId) this.resetChat();
     this.selectedCandidateId = candidateId;
     this.evaluation = null;
     this.loadCandidateDetails();
+  }
+
+  askCv(): void {
+    const candidateId = this.selectedCandidateId;
+    const question = this.chatQuestion.trim();
+    if (!candidateId || !this.canUseCvChat || !question || question.length > 2000 || this.chatBusy) return;
+
+    this.chatBusy = true;
+    this.chatError = '';
+    this.chatResponse = null;
+    this.chatService.ask(candidateId, question).pipe(finalize(() => this.chatBusy = false)).subscribe({
+      next: (response) => {
+        // Ignore a late response if application state changes the selected candidate before completion.
+        if (this.selectedCandidateId === candidateId) this.chatResponse = response;
+      },
+      error: (error: HttpErrorResponse) => {
+        if (this.selectedCandidateId !== candidateId) return;
+        const apiError = error.error as Partial<ApiError> | undefined;
+        this.chatError = apiError?.message || error.message || 'CV chat could not complete the request.';
+      },
+    });
+  }
+
+  citationLabel(citation: CvChatCitation): string {
+    if (citation.documentId === null) return `Candidate ${citation.candidateId} CV evidence`;
+    return citation.pageNumber === null
+      ? `CV document ${citation.documentId}`
+      : `CV document ${citation.documentId}, page ${citation.pageNumber}`;
+  }
+
+  citationTarget(citation: CvChatCitation): string {
+    return citation.documentId === null ? '#candidate-details-title' : `#cv-document-${citation.documentId}`;
   }
 
   loadCandidateDetails(): void {
@@ -293,12 +337,14 @@ export class CvWorkspaceComponent implements OnInit {
     this.service.getCandidates().subscribe({
       next: (candidates) => {
         this.candidates = candidates;
+        const previousCandidateId = this.selectedCandidateId;
         if (preferredCandidateId && candidates.some((item) => item.id === preferredCandidateId)) {
           this.selectedCandidateId = preferredCandidateId;
         } else if (!this.selectedCandidateId || !candidates.some((item) => item.id === this.selectedCandidateId)) {
           this.selectedCandidateId = candidates[0].id;
         }
         if (!candidates.length) this.selectedCandidateId = null;
+        if (this.selectedCandidateId !== previousCandidateId) this.resetChat();
         this.loadCandidateDetails();
       },
       error: (error) => this.handleError(error),
@@ -310,6 +356,12 @@ export class CvWorkspaceComponent implements OnInit {
       },
       error: (error) => this.handleError(error),
     });
+  }
+
+  private resetChat(): void {
+    this.chatQuestion = '';
+    this.chatResponse = null;
+    this.chatError = '';
   }
 
   private selectedFile(event: Event, extension: string, limit: number): File | null {

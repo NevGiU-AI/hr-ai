@@ -23,8 +23,9 @@ decisions.
 - Fall back to local English/French/Portuguese Tesseract OCR for scanned or low-text PDFs and retain page-level
   provenance plus confidence for human review.
 - Ask a bounded, tenant-authorized question about one candidate through the imperative CV-chat backend, with required
-  document/page citations and rejection of unsupported model references. The Angular chat UI and semantic search are
-  still roadmap work.
+  document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
+  corresponding role-aware question, safe-response, error/retry, and linked-citation experience. Semantic search and
+  multi-candidate chat remain roadmap work.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -39,8 +40,9 @@ customer onboarding requires the planned platform-level organization lifecycle d
 Candidate metadata correction/reprocessing passed staging and production acceptance on 22 October 2026. Local OCR and
 evaluation history passed staging and production acceptance on 23 October 2026 in release `v0.17.0`. The first
 candidate-specific CV-chat backend foundation, including grounded citations and controlled safe refusals, passed
-staging and production acceptance on 27 October 2026. Its web UI, broader semantic retrieval, speech
-input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
+staging and production acceptance on 27 October 2026. Its candidate-specific web UI is implemented and awaiting
+environment acceptance; broader semantic retrieval, speech input/playback, and the recruitment dashboard remain
+roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
 horizontal or multi-host backend scaling.
@@ -88,7 +90,8 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Complete the imperative, tenant-scoped CV chat UI, semantic retrieval, conversation memory, and evaluation testing.
+1. Validate the candidate-specific CV chat UI in staging and production, then add semantic retrieval, conversation
+   memory, multi-candidate result cards, and formal evaluation testing.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,

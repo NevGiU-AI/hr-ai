@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { finalize, forkJoin, switchMap } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
@@ -23,7 +24,7 @@ import { CvIngestionService } from '../../services/cv-ingestion.service';
 @Component({
   selector: 'app-cv-workspace',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './cv-workspace.component.html',
   styleUrl: './cv-workspace.component.scss',
 })
@@ -166,8 +167,8 @@ export class CvWorkspaceComponent implements OnInit {
       : `CV document ${citation.documentId}, page ${citation.pageNumber}`;
   }
 
-  citationTarget(citation: CvChatCitation): string {
-    return citation.documentId === null ? '#candidate-details-title' : `#cv-document-${citation.documentId}`;
+  citationFragment(citation: CvChatCitation): string {
+    return citation.documentId === null ? 'candidate-details-title' : `cv-document-${citation.documentId}`;
   }
 
   loadCandidateDetails(): void {

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, EvaluationHistoryItem,
   EvaluationResponse, Job } from '../../models/cv-ingestion.models';
@@ -39,6 +40,7 @@ describe('CvWorkspaceComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CvWorkspaceComponent],
       providers: [
+        provideRouter([]),
         { provide: CvIngestionService, useValue: service },
         { provide: CvChatService, useValue: chatService },
         { provide: AuthService, useValue: auth },
@@ -150,7 +152,8 @@ describe('CvWorkspaceComponent', () => {
     expect(chatService.ask).toHaveBeenCalledOnceWith(7, 'Which skills are stated?');
     expect(fixture.nativeElement.textContent).toContain('Ada lists Java experience');
     const citation = fixture.debugElement.query(By.css('.citation-list a'));
-    expect(citation.nativeElement.getAttribute('href')).toBe('#cv-document-2');
+    // The full candidate-workspace route prevents <base href="/"> from resolving the link through the default route.
+    expect(citation.nativeElement.getAttribute('href')).toBe('/candidates/import#cv-document-2');
     expect(citation.nativeElement.textContent).toContain('CV document 2');
   });
 

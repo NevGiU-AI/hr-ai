@@ -59,7 +59,7 @@ class CvSemanticIndexRepository {
         return vectorStore.similaritySearch(request).stream().map(this::match).toList();
     }
 
-    /** Finds missing or stale indexes without loading any PII-bearing extracted text. */
+    /** Finds missing or stale indexes without loading extracted text containing personally identifiable information. */
     List<CvSemanticIndexTarget> findPending(int limit) {
         return jdbc.query("""
                 SELECT document.id AS document_id, document.organization_id

@@ -133,12 +133,15 @@ app:
   cv-semantic-index:
     # Opt in per environment after the V6 backup/migration and embedding-cost review.
     enabled: ${APP_CV_SEMANTIC_INDEX_ENABLED:false}
-    # Character-based deterministic chunking keeps retries stable; overlap preserves boundary context.
+    # Character-based (not token-based) chunking keeps retries stable and tries to stop at nearby whitespace.
     chunk-characters: ${APP_CV_SEMANTIC_CHUNK_CHARACTERS:1200}
+    # Adjacent chunks repeat this many characters; validation requires overlap to remain below chunk size.
     overlap-characters: ${APP_CV_SEMANTIC_CHUNK_OVERLAP:200}
-    # Cost and disclosure bounds apply per CV and per provider request.
+    # This limit covers the complete CV, including all OCR pages, rather than resetting for each page.
     max-chunks-per-document: ${APP_CV_SEMANTIC_MAX_CHUNKS_PER_DOCUMENT:100}
+    # Spring AI batches at most this many chunk documents per embedding/vector-store operation.
     embedding-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
-    # Reconciliation gradually backfills existing CVs and retries transient provider failures.
+    # Each scheduled run processes one bounded group of missing/stale documents; failures remain pending for retry.
     reconciliation-batch-size: ${APP_CV_SEMANTIC_RECONCILIATION_BATCH_SIZE:50}
+    # Six-field Spring cron: second minute hour day-of-month month day-of-week; default is hourly at :11.
     reconciliation-cron: ${APP_CV_SEMANTIC_RECONCILIATION_CRON:0 11 * * * *}

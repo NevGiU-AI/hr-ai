@@ -108,7 +108,9 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
 1. Validate and enable the semantic-indexing foundation in staging, then integrate tenant-scoped retrieval into chat,
-   conversation memory, multi-candidate result cards, and formal CV-chat evaluation testing.
+   organization-scoped candidate-name resolution, conversation memory, multi-candidate result cards, cited comparison,
+   and formal CV-chat evaluation testing. Candidate names or UI selections must resolve to verified tenant-scoped IDs
+   before evidence retrieval; missing or ambiguous names are never guessed.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,

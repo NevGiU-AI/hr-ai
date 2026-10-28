@@ -115,10 +115,27 @@ separate implementation slices; acceptance of this bounded interface does not ma
 - Find candidates by skills, experience, location, education, title, employer, or evaluation metric.
 - Apply multiple filters and refine them over follow-up turns.
 - Ask questions about a specific candidate.
-- Compare selected candidates against explicit criteria.
+- Compare candidates identified through structured UI selection or unambiguous natural-language references against
+  recruiter-selected criteria.
 - Return concise summaries with references to candidate profiles.
 - Ask for clarification when the request is ambiguous.
 - Explain when no candidate matches or when an internal operation fails.
+
+### Candidate identification and comparison
+
+Candidate identification is a deterministic authorization step, separate from the comparison criteria. A recruiter
+may select candidates in the UI or write an unambiguous request such as “Compare Jane Smith and Peter Jones.” The
+backend resolves each reference only inside the authenticated organization and converts every resolved name to a
+verified tenant-scoped candidate ID before retrieving CV, evaluation, or job-fit evidence.
+
+If a referenced name does not exist in that organization, the request follows the generic not-found contract. If a
+name matches more than one candidate, the application asks the recruiter to choose the intended record rather than
+guessing. The recruiter may then compare the verified candidate set using any authorized criterion, including skills,
+experience, education, leadership evidence, evaluation results, or fit for an explicitly selected job.
+
+The model never performs global name resolution, invents or silently expands the candidate set, or supplies the
+organization boundary. Comparison uses only authorized evidence for the resolved IDs, and every factual conclusion
+requires candidate/document citations.
 
 ## Inputs and outputs
 
@@ -155,7 +172,11 @@ Outputs:
    missing/stale backfill in staging; evaluation-summary indexing remains future work.
 5. Implement organization- and role-based retrieval filters before semantic search.
 6. Build a retrieval service that returns relevant chunks plus structured candidate data.
-7. Build Spring AI tools for candidate search, candidate detail, filtering, comparison, evidence, document status, and governed dashboard aggregates. Make tools request-scoped, inject authenticated user and organization context outside model-controlled arguments, and separate bounded query tools from preview-and-confirm command tools.
+7. Build Spring AI tools for candidate search, tenant-scoped name resolution, candidate detail, filtering, comparison,
+   evidence, document status, and governed dashboard aggregates. Resolve UI selections or unambiguous names to
+   verified candidate IDs before retrieval; return not found or require disambiguation instead of allowing the model
+   to guess the candidate set. Make tools request-scoped, inject authenticated user and organization context outside
+   model-controlled arguments, and separate bounded query tools from preview-and-confirm command tools.
 8. Require semantic-search responses to cite candidate records or source excerpts and prohibit unsupported claims.
 9. Persist conversation state with clear retention and deletion rules.
 10. Implement the web chat UI with text responses, result cards, loading states, and follow-up prompts.
@@ -174,8 +195,11 @@ Outputs:
 
 - Follow-up questions retain the correct conversation context.
 - Search results respect organization and user permissions.
+- Structured selections and natural-language names resolve only within the authenticated organization; missing names
+  use generic not-found behavior and ambiguous names require recruiter selection.
 - Each factual candidate claim links to supporting source data.
-- Candidate comparison uses the requested criteria consistently.
+- Candidate comparison uses only the verified candidate IDs, the explicitly requested criteria, and cited authorized
+  evidence; the model cannot invent or widen the candidate set.
 - Ambiguous questions trigger clarification instead of guessed answers.
 - No-result and service-failure states are explicit and actionable.
 - Job-relevant questions unsupported by the evidence return a fixed insufficient-evidence response without citations.

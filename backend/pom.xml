@@ -24,6 +24,9 @@
         <java.version>21</java.version>
         <spring-ai.version>1.1.0</spring-ai.version>
         <junit-pioneer.version>2.3.0</junit-pioneer.version>
+        <!-- Testcontainers 1.21.4 adds Docker Engine 29 API negotiation; 1.21.3 silently skipped container tests
+             on current Windows Docker Desktop installations after failing environment discovery. -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencyManagement>

@@ -10,6 +10,7 @@ import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
 import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorageException;
+import com.nevgiu.hrai.candidate.semantic.CvSemanticIndexCoordinator;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
@@ -35,12 +36,14 @@ public class CvDocumentReprocessingService {
     private final CvIngestionProperties properties;
     private final SecurityAuditService audit;
     private final CvOcrProperties ocrProperties;
+    private final CvSemanticIndexCoordinator semanticIndexing;
 
     public CvDocumentReprocessingService(CvDocumentRepository documents, CandidateRepository candidates,
                                          CandidateEvaluationRepository evaluations, OriginalCvStorage storage,
                                          CvMalwareScanner scanner, CvTextExtractionPipeline extractionPipeline,
                                          CvDocumentPageRepository pages, CvIngestionProperties properties,
-                                         CvOcrProperties ocrProperties, SecurityAuditService audit) {
+                                         CvOcrProperties ocrProperties, SecurityAuditService audit,
+                                         CvSemanticIndexCoordinator semanticIndexing) {
         this.documents = documents;
         this.candidates = candidates;
         this.evaluations = evaluations;
@@ -51,6 +54,7 @@ public class CvDocumentReprocessingService {
         this.properties = properties;
         this.audit = audit;
         this.ocrProperties = ocrProperties;
+        this.semanticIndexing = semanticIndexing;
     }
 
     /**
@@ -133,6 +137,8 @@ public class CvDocumentReprocessingService {
                 entity.setConfidence(page.confidence());
                 pages.save(entity);
             });
+            // The coordinator observes this transaction and replaces vectors only after the refreshed evidence commits.
+            semanticIndexing.request(documentId, actor.organizationId());
             audit.candidateAction(SecurityEventType.CV_DOCUMENT_REPROCESSED, SecurityEventOutcome.SUCCESS,
                     actor, candidate.getId(), "documentId=" + documentId + ";evaluationsInvalidated=" + invalidated);
         } catch (IOException exception) {

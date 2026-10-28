@@ -26,6 +26,11 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
+      embedding:
+        options:
+          # The Flyway vector column is fixed at 1,536 dimensions; keep model and dimensions explicit.
+          model: ${APP_CV_SEMANTIC_EMBEDDING_MODEL:text-embedding-3-small}
+          dimensions: 1536
 
   servlet:
     multipart:
@@ -45,13 +50,6 @@ spring:
       flush-mode: immediate
       repository-type: indexed
       namespace: ${APP_REDIS_SESSION_NAMESPACE:hr-ai:session}
-#      embedding:
-#    vectorstore:
-#      pgvector:
-#        initialize-schema: true
-#        table-name: document_chunks
-#        index-type: hnsw
-#        distance-type: COSINE_DISTANCE
 
 server:
   forward-headers-strategy: framework
@@ -120,3 +118,12 @@ app:
   cv-chat:
     max-evidence-pages: ${APP_CV_CHAT_MAX_EVIDENCE_PAGES:10}
     max-excerpt-characters: ${APP_CV_CHAT_MAX_EXCERPT_CHARACTERS:1200}
+  cv-semantic-index:
+    # Opt in per environment after the V6 backup/migration and embedding-cost review.
+    enabled: ${APP_CV_SEMANTIC_INDEX_ENABLED:false}
+    chunk-characters: ${APP_CV_SEMANTIC_CHUNK_CHARACTERS:1200}
+    overlap-characters: ${APP_CV_SEMANTIC_CHUNK_OVERLAP:200}
+    max-chunks-per-document: ${APP_CV_SEMANTIC_MAX_CHUNKS_PER_DOCUMENT:100}
+    embedding-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
+    reconciliation-batch-size: ${APP_CV_SEMANTIC_RECONCILIATION_BATCH_SIZE:50}
+    reconciliation-cron: ${APP_CV_SEMANTIC_RECONCILIATION_CRON:0 11 * * * *}

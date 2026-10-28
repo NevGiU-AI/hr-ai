@@ -133,8 +133,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   out-of-scope responses, authorization boundaries, and privacy-safe logs in staging on 27 October 2026.
 - [x] Promote the accepted candidate-specific backend to production and repeat the focused smoke and privacy checks
   successfully on 27 October 2026.
-- [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
-- [ ] Create embeddings and index CV chunks with authorization metadata.
+- [x] Add the Flyway-owned pgvector chunk schema, bounded native/OCR chunking, Spring AI embeddings, composite tenant
+  constraints, post-commit indexing, reprocessing replacement, deletion cascades, and bounded reconciliation backfill.
+- [ ] Validate V6 and the opt-in indexing lifecycle in staging before enabling semantic retrieval in user-facing chat.
+- [ ] Integrate the internal tenant-scoped similarity service into authorized chat retrieval.
 - [ ] Implement retrieval, filtering, candidate detail, and comparison tools.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.

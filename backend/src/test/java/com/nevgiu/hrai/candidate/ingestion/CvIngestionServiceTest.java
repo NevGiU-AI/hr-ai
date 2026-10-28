@@ -21,11 +21,13 @@ import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.QuarantinedCv;
 import com.nevgiu.hrai.candidate.storage.StoredCv;
+import com.nevgiu.hrai.candidate.semantic.CvSemanticIndexCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,6 +53,7 @@ class CvIngestionServiceTest {
     private CvMalwareScanner malwareScanner;
     private CvDocumentPageRepository pageRepository;
     private CvDocumentImportService documentImportService;
+    private CvSemanticIndexCoordinator semanticIndexing;
     private CvIngestionService service;
     private final AtomicLong ids = new AtomicLong(1);
 
@@ -61,6 +64,7 @@ class CvIngestionServiceTest {
         originalCvStorage = mock(OriginalCvStorage.class);
         malwareScanner = mock(CvMalwareScanner.class);
         pageRepository = mock(CvDocumentPageRepository.class);
+        semanticIndexing = mock(CvSemanticIndexCoordinator.class);
         CvTextExtractor extractor = content -> "Ada Lovelace\nada@example.com\nSoftware engineer with extensive analytical experience.";
         CvIngestionProperties properties = new CvIngestionProperties(
                 1_000_000, 2_000_000, 10, 2_000_000, 100, 50,
@@ -77,7 +81,11 @@ class CvIngestionServiceTest {
             candidate.setId(ids.getAndIncrement());
             return candidate;
         });
-        when(documentRepository.save(any(CvDocument.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentRepository.save(any(CvDocument.class))).thenAnswer(invocation -> {
+            CvDocument document = invocation.getArgument(0);
+            if (document.getId() == null) ReflectionTestUtils.setField(document, "id", ids.getAndIncrement());
+            return document;
+        });
     }
 
     @Test
@@ -96,6 +104,7 @@ class CvIngestionServiceTest {
         assertThat(document.getValue().getStorageKey()).isEqualTo("tenant-key/document.pdf");
         assertThat(document.getValue().getStoredAt()).isEqualTo(Instant.parse("2026-09-19T10:00:00Z"));
         assertThat(document.getValue().getRetentionUntil()).isEqualTo(Instant.parse("2027-09-19T10:00:00Z"));
+        verify(semanticIndexing).request(result.documentId(), "tenant-a");
     }
 
     @Test
@@ -179,6 +188,7 @@ class CvIngestionServiceTest {
         assertThat(result.status()).isEqualTo(CvIngestionStatus.NEEDS_REVIEW);
         assertThat(result.candidateId()).isNull();
         assertThat(result.warnings()).isNotEmpty();
+        verify(semanticIndexing, org.mockito.Mockito.never()).request(any(), any());
     }
 
     @Test
@@ -279,7 +289,7 @@ class CvIngestionServiceTest {
                 pipeline, properties,
                 new CvStorageProperties("build/test-cv-storage", Duration.ofDays(365)),
                 originalCvStorage, malwareScanner, ocrProperties);
-        return new CvIngestionService(properties, documentImportService, new DefaultResourceLoader());
+        return new CvIngestionService(properties, documentImportService, new DefaultResourceLoader(), semanticIndexing);
     }
 
     private byte[] zip(Entry... entries) throws Exception {

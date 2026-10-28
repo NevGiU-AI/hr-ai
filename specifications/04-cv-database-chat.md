@@ -26,9 +26,33 @@ The first backend slice supports an imperative question about one explicitly sel
   validates and submits one question for the selected candidate, displays progress and structured retryable failures,
   distinguishes fixed safe responses from evidence-backed answers, and links each citation to its document card.
 
-This slice does not yet provide vector indexing, multi-candidate search/comparison, persisted conversation memory,
-streaming, or speech controls. Those remain explicit roadmap work and must not be inferred from the presence of the
-candidate-specific interface.
+The accepted candidate-specific endpoint does not yet consume vector retrieval or provide multi-candidate
+search/comparison, persisted conversation memory, streaming, or speech controls. Those remain explicit roadmap work
+and must not be inferred from the presence of the candidate-specific interface.
+
+## Semantic-indexing foundation
+
+The next backend slice adds an opt-in index without yet changing the accepted chat endpoint:
+
+- Flyway V6 enables pgvector and creates `cv_semantic_chunks` with 1,536-dimensional embeddings and an HNSW cosine
+  index. Composite `(id, organization_id)` foreign keys prevent a chunk from referencing a candidate or document in a
+  different tenant.
+- Native text is divided into bounded overlapping document chunks. OCR is chunked one page at a time so retrieval can
+  preserve reviewer-visible page citations.
+- `text-embedding-3-small` is the default pinned embedding model. The configured 1,536 dimensions must match the
+  Flyway schema; a mismatched provider response is rejected before persistence.
+- Indexing begins only after successful CV import or reprocessing commit. The provider call therefore cannot extend or
+  roll back the business-data transaction. Replacement of one document's old chunks with its new chunks is atomic.
+- Candidate/document erasure removes chunks through database cascades. A bounded hourly reconciliation pass retries
+  provider failures, indexes pre-existing documents, and replaces rows whose source version is stale.
+- Every similarity query requires an application-supplied organization identifier and the repository repeats that
+  predicate in SQL. An optional candidate-ID filter can narrow—but never widen—the tenant boundary.
+- Extracted chunks and embeddings are sensitive derived candidate data. They remain in PostgreSQL, are never written to
+  application logs, and are sent to the configured embedding provider only when indexing is explicitly enabled.
+
+`CV_SEMANTIC_INDEX_ENABLED` defaults to `false`. V6 migration, provider cost/privacy review, backfill behavior, tenant
+isolation, replacement, erasure, and retrieval quality must pass staging acceptance before enabling user-facing
+semantic chat. No semantic-search controller or Angular result UI is exposed by this foundation slice.
 
 ## Environment acceptance
 
@@ -113,9 +137,12 @@ Outputs:
 
 1. [x] Establish an imperative, candidate-specific endpoint with tenant authorization, bounded evidence, mandatory
    citations, provider-error handling, and role/CSRF tests.
-2. Enable and configure the Spring AI pgvector integration.
-3. Design the chunking strategy and metadata schema for candidate, organization, CV, and job identifiers.
-4. Index normalized CV content and evaluation summaries after ingestion.
+2. [x] Add Flyway-owned pgvector storage and configure Spring AI's embedding model with a fixed 1,536-dimensional
+   contract. The feature remains opt-in until environment migration and acceptance.
+3. [x] Add bounded, overlapping native/OCR chunking with organization, candidate, document, page, source-version, and
+   lifecycle metadata protected by composite tenant foreign keys.
+4. [ ] Validate automatic post-commit indexing, reprocessing replacement, deletion cascades, and scheduled
+   missing/stale backfill in staging; evaluation-summary indexing remains future work.
 5. Implement organization- and role-based retrieval filters before semantic search.
 6. Build a retrieval service that returns relevant chunks plus structured candidate data.
 7. Build Spring AI tools for candidate search, candidate detail, filtering, comparison, evidence, document status, and governed dashboard aggregates. Make tools request-scoped, inject authenticated user and organization context outside model-controlled arguments, and separate bounded query tools from preview-and-confirm command tools.

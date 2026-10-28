@@ -4,6 +4,7 @@ import com.nevgiu.hrai.candidate.CvDocumentSource;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvArchiveImportResult;
 import com.nevgiu.hrai.candidate.ingestion.dto.CvImportResult;
+import com.nevgiu.hrai.candidate.semantic.CvSemanticIndexCoordinator;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
@@ -27,15 +28,18 @@ public class CvIngestionService {
     private final CvIngestionProperties properties;
     private final CvDocumentImportService documentImportService;
     private final ResourceLoader resourceLoader;
+    private final CvSemanticIndexCoordinator semanticIndexing;
 
     public CvIngestionService(
             CvIngestionProperties properties,
             CvDocumentImportService documentImportService,
-            ResourceLoader resourceLoader
+            ResourceLoader resourceLoader,
+            CvSemanticIndexCoordinator semanticIndexing
     ) {
         this.properties = properties;
         this.documentImportService = documentImportService;
         this.resourceLoader = resourceLoader;
+        this.semanticIndexing = semanticIndexing;
     }
 
     public CvImportResult importPdf(MultipartFile file, String organizationId) {
@@ -116,8 +120,7 @@ public class CvIngestionService {
                             && ((double) content.length / entry.getCompressedSize()) > properties.maxCompressionRatio()) {
                         throw new CvIngestionException(HttpStatus.PAYLOAD_TOO_LARGE, "ZIP entry has an unsafe compression ratio: " + entryName);
                     }
-                    results.add(documentImportService.importPdf(
-                            entryName, PDF_CONTENT_TYPE, content, source, organizationId));
+                    results.add(importAndIndex(entryName, PDF_CONTENT_TYPE, content, source, organizationId));
                 } catch (CvIngestionException e) {
                     if (e.getStatus() == HttpStatus.PAYLOAD_TOO_LARGE) {
                         throw e;
@@ -136,7 +139,17 @@ public class CvIngestionService {
 
     public CvImportResult importPdf(String filename, String contentType, byte[] content, CvDocumentSource source,
                                     String organizationId) {
-        return documentImportService.importPdf(filename, contentType, content, source, organizationId);
+        return importAndIndex(filename, contentType, content, source, organizationId);
+    }
+
+    private CvImportResult importAndIndex(String filename, String contentType, byte[] content,
+                                          CvDocumentSource source, String organizationId) {
+        // CvDocumentImportService uses REQUIRES_NEW, so this provider call starts only after its database commit.
+        CvImportResult result = documentImportService.importPdf(filename, contentType, content, source, organizationId);
+        if (result.status() == CvIngestionStatus.IMPORTED) {
+            semanticIndexing.request(result.documentId(), organizationId);
+        }
+        return result;
     }
 
     private void validateArchiveName(String filename) {

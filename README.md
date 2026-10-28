@@ -26,6 +26,9 @@ decisions.
   document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
   corresponding role-aware question, safe-response, error/retry, and linked-citation experience. Semantic search and
   multi-candidate chat remain roadmap work.
+- Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, embeds them outside the CV
+  database transaction, stores tenant-constrained vectors in pgvector, retries missing/stale indexes, and removes them
+  through document/candidate deletion cascades. Environment migration and retrieval acceptance remain pending.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -91,7 +94,8 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Add semantic retrieval, conversation memory, multi-candidate result cards, and formal CV-chat evaluation testing.
+1. Validate and enable the semantic-indexing foundation in staging, then integrate tenant-scoped retrieval into chat,
+   conversation memory, multi-candidate result cards, and formal CV-chat evaluation testing.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,

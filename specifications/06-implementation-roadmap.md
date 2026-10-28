@@ -145,6 +145,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [ ] Persist scoped conversation memory.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.
+- [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on
+  28 October 2026.
+- [ ] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
+  navigation, failure, and privacy checks.
 - [ ] Build semantic multi-candidate search and structured result cards.
 - [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.

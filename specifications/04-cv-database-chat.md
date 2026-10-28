@@ -46,6 +46,17 @@ for main revision `2f85ddc`. The accepted checks covered:
   tenant-scoped candidate evidence;
 - privacy-safe logs without recruiter questions, CV excerpts, prompts, or provider responses.
 
+The candidate-specific Angular interface passed staging acceptance on 28 October 2026 at main revision `c321437`.
+The accepted checks covered:
+
+- visibility for `ADMIN`, `RECRUITER`, and `REVIEWER`, with no chat interface for `READ_ONLY`;
+- grounded native-text and OCR answers, fixed safe responses without citations, and structured loading, failure, and
+  retry states;
+- clearing the previous response when the selected candidate changed;
+- document and OCR-page citation labels linked to the matching ingestion-history document card; and
+- corrected citation navigation that keeps `/candidates/import` active and scrolls to the selected document instead of
+  resolving the root fragment through the default `/jobs/job-offer` route.
+
 ### Production
 
 The same candidate-specific backend and safe-refusal behavior passed production acceptance on 27 October 2026 without
@@ -58,9 +69,9 @@ evidence pages and 1,200 characters per excerpt. The accepted checks covered:
 - request validation, CSRF enforcement, authentication, role policy, and generic not-found behavior; and
 - privacy-safe application logs without questions, CV excerpts, prompts, provider responses, or credentials.
 
-The candidate-specific Angular interface is now implemented and awaiting environment acceptance. Semantic retrieval,
-multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain separate implementation
-slices; environment acceptance of this bounded backend does not mark those capabilities complete.
+The candidate-specific Angular interface is accepted in staging and still requires focused production acceptance.
+Semantic retrieval, multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain
+separate implementation slices; acceptance of this bounded interface does not mark those capabilities complete.
 
 ## Supported interactions
 

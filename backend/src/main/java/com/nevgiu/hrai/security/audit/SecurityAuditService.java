@@ -103,7 +103,8 @@ public class SecurityAuditService {
     public void candidateAction(SecurityEventType type, SecurityEventOutcome outcome,
                                 AppUserPrincipal actor, Long candidateId, String details) {
         if (actor == null) return;
-        // Keep audit data useful without copying candidate PII, extracted text, filenames, or storage keys.
+        // Keep audit data useful without copying candidate personally identifiable information (PII), extracted text,
+        // filenames, or storage keys.
         String safeDetails = "candidateId=" + candidateId + (details == null ? "" : ";" + details);
         save(new SecurityAuditEvent(actor.organizationId(), actor.id(), actor.username(), null, null, null, null,
                 type, outcome, safe(safeDetails)));

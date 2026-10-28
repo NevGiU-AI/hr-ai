@@ -26,6 +26,10 @@ decisions.
   document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
   corresponding role-aware question, safe-response, error/retry, and linked-citation experience. Semantic search and
   multi-candidate chat remain roadmap work.
+- Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
+  `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
+  references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
+  Environment migration and retrieval acceptance remain pending.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -73,12 +77,24 @@ and ClamAV remain on the private Compose network.
 
 - Angular 19, TypeScript, Bootstrap, Nginx
 - Spring Boot 3.5, Java 21, Spring Security, Spring Data JPA, Spring Session
-- Spring AI with OpenAI
+- Spring AI with OpenAI and `PgVectorStore`
 - PostgreSQL 16 with pgvector
 - Flyway versioned schema migrations
 - Redis 7.4
 - ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
+
+### PostgreSQL and pgvector
+
+PostgreSQL is the relational database that stores application records, transactions, constraints, JSON data, and
+Flyway history. pgvector is a PostgreSQL extension—not a separate database—that adds fixed-dimension vector columns,
+distance operators, and approximate-nearest-neighbour indexes such as HNSW. The application therefore continues to
+use normal PostgreSQL for all business data and adds pgvector only for semantic CV embeddings and similarity search.
+
+The `pgvector/pgvector:pg16` image is PostgreSQL 16 with the extension files already installed. Flyway must still run
+`CREATE EXTENSION IF NOT EXISTS vector` inside each application database before a `vector(1536)` column can be used.
+Spring AI `PgVectorStore` writes documents and performs metadata-filtered similarity searches; Flyway remains the only
+schema owner and creates the compatible table, tenant constraints, and HNSW cosine index.
 
 ## Current roadmap
 
@@ -91,7 +107,10 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Add semantic retrieval, conversation memory, multi-candidate result cards, and formal CV-chat evaluation testing.
+1. Validate and enable the semantic-indexing foundation in staging, then integrate tenant-scoped retrieval into chat,
+   organization-scoped candidate-name resolution, conversation memory, multi-candidate result cards, cited comparison,
+   and formal CV-chat evaluation testing. Candidate names or UI selections must resolve to verified tenant-scoped IDs
+   before evidence retrieval; missing or ambiguous names are never guessed.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
@@ -275,9 +294,12 @@ cd backend
 mvn test
 ```
 
-Flyway integration tests use Testcontainers and run when Docker is available. They verify a clean PostgreSQL schema,
-adoption of an existing schema, stale audit-constraint removal, original-CV storage metadata, and Hibernate mapping
-validation.
+Flyway integration tests use Testcontainers and run when Docker is available. They use
+`pgvector/pgvector:pg16` rather than plain `postgres:16` so V6 can enable and exercise the real vector extension. The
+test declaration marks that image as a compatible substitute for `postgres`; this satisfies Testcontainers' image
+compatibility check without changing or renaming the image. The tests verify a clean PostgreSQL schema, adoption of an
+existing schema, stale audit-constraint removal, original-CV storage metadata, pgvector infrastructure, and Hibernate
+mapping validation.
 
 Backend test reports use JUnit Pioneer's
 [`ReplaceCamelCaseAndUnderscoreAndNumber`](https://junit-pioneer.org/docs/replace-camelcase-and-underscore-and-number/)

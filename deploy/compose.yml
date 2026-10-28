@@ -74,6 +74,21 @@ services:
       APP_CV_OCR_MINIMUM_CONFIDENCE: ${CV_OCR_MINIMUM_CONFIDENCE:-70}
       APP_CV_CHAT_MAX_EVIDENCE_PAGES: ${CV_CHAT_MAX_EVIDENCE_PAGES:-10}
       APP_CV_CHAT_MAX_EXCERPT_CHARACTERS: ${CV_CHAT_MAX_EXCERPT_CHARACTERS:-1200}
+      # Semantic indexing is deployed dark by default and enabled only after migration/environment acceptance.
+      APP_CV_SEMANTIC_INDEX_ENABLED: ${CV_SEMANTIC_INDEX_ENABLED:-false}
+      APP_CV_SEMANTIC_EMBEDDING_MODEL: ${CV_SEMANTIC_EMBEDDING_MODEL:-text-embedding-3-small}
+      # Maximum normalized characters in one vector document; this is a deterministic character, not token, limit.
+      APP_CV_SEMANTIC_CHUNK_CHARACTERS: ${CV_SEMANTIC_CHUNK_CHARACTERS:-1200}
+      # Repeated characters between adjacent chunks preserve context that crosses a boundary.
+      APP_CV_SEMANTIC_CHUNK_OVERLAP: ${CV_SEMANTIC_CHUNK_OVERLAP:-200}
+      # Per-CV safety cap bounds personal-data disclosure, provider cost, storage, and processing time.
+      APP_CV_SEMANTIC_MAX_CHUNKS_PER_DOCUMENT: ${CV_SEMANTIC_MAX_CHUNKS_PER_DOCUMENT:-100}
+      # Maximum chunk documents Spring AI sends/stores together; it does not increase the per-CV cap.
+      APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE: ${CV_SEMANTIC_EMBEDDING_BATCH_SIZE:-32}
+      # Maximum missing or stale CV documents considered by one reconciliation execution.
+      APP_CV_SEMANTIC_RECONCILIATION_BATCH_SIZE: ${CV_SEMANTIC_RECONCILIATION_BATCH_SIZE:-50}
+      # Spring cron uses second minute hour day month weekday; this default runs hourly at minute 11.
+      APP_CV_SEMANTIC_RECONCILIATION_CRON: ${CV_SEMANTIC_RECONCILIATION_CRON:-0 11 * * * *}
       APP_SECURITY_BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION: ${BOOTSTRAP_ADMIN_ORGANIZATION:-default}

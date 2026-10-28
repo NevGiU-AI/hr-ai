@@ -26,6 +26,27 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
+      embedding:
+        options:
+          # The Flyway vector column is fixed at 1,536 dimensions; keep model and dimensions explicit.
+          model: ${APP_CV_SEMANTIC_EMBEDDING_MODEL:text-embedding-3-small}
+          dimensions: 1536
+      vectorstore:
+        pgvector:
+          # Flyway V6 owns this schema. Startup validates and uses it but never creates or replaces it.
+          initialize-schema: false
+          schema-validation: true
+          table-name: cv_semantic_chunks
+          # These values must remain aligned with V6 and the configured OpenAI embedding dimensions above.
+          dimensions: 1536
+          # HNSW is a graph-based approximate nearest-neighbour index: faster retrieval at the cost of extra
+          # storage, memory, and insert/build work compared with an exact full-table vector scan.
+          index-type: HNSW
+          # Cosine distance ranks semantic direction rather than vector magnitude; smaller distance means that the
+          # query and CV chunk are more semantically similar.
+          distance-type: COSINE_DISTANCE
+          # Spring AI splits larger add operations into bounded provider/database batches.
+          max-document-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
 
   servlet:
     multipart:
@@ -45,13 +66,6 @@ spring:
       flush-mode: immediate
       repository-type: indexed
       namespace: ${APP_REDIS_SESSION_NAMESPACE:hr-ai:session}
-#      embedding:
-#    vectorstore:
-#      pgvector:
-#        initialize-schema: true
-#        table-name: document_chunks
-#        index-type: hnsw
-#        distance-type: COSINE_DISTANCE
 
 server:
   forward-headers-strategy: framework
@@ -120,3 +134,18 @@ app:
   cv-chat:
     max-evidence-pages: ${APP_CV_CHAT_MAX_EVIDENCE_PAGES:10}
     max-excerpt-characters: ${APP_CV_CHAT_MAX_EXCERPT_CHARACTERS:1200}
+  cv-semantic-index:
+    # Opt in per environment after the V6 backup/migration and embedding-cost review.
+    enabled: ${APP_CV_SEMANTIC_INDEX_ENABLED:false}
+    # Character-based (not token-based) chunking keeps retries stable and tries to stop at nearby whitespace.
+    chunk-characters: ${APP_CV_SEMANTIC_CHUNK_CHARACTERS:1200}
+    # Adjacent chunks repeat this many characters; validation requires overlap to remain below chunk size.
+    overlap-characters: ${APP_CV_SEMANTIC_CHUNK_OVERLAP:200}
+    # This limit covers the complete CV, including all OCR pages, rather than resetting for each page.
+    max-chunks-per-document: ${APP_CV_SEMANTIC_MAX_CHUNKS_PER_DOCUMENT:100}
+    # Spring AI batches at most this many chunk documents per embedding/vector-store operation.
+    embedding-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
+    # Each scheduled run processes one bounded group of missing/stale documents; failures remain pending for retry.
+    reconciliation-batch-size: ${APP_CV_SEMANTIC_RECONCILIATION_BATCH_SIZE:50}
+    # Six-field Spring cron: second minute hour day-of-month month day-of-week; default is hourly at :11.
+    reconciliation-cron: ${APP_CV_SEMANTIC_RECONCILIATION_CRON:0 11 * * * *}

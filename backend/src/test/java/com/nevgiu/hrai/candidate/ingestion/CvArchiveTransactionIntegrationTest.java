@@ -14,6 +14,7 @@ import com.nevgiu.hrai.candidate.storage.CvStorageProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.QuarantinedCv;
 import com.nevgiu.hrai.candidate.storage.StoredCv;
+import com.nevgiu.hrai.candidate.semantic.CvSemanticIndexCoordinator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -31,6 +32,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @DataJpaTest(properties = {
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
@@ -117,6 +119,12 @@ class CvArchiveTransactionIntegrationTest {
         @Bean
         CvMalwareScanner cvMalwareScanner() {
             return content -> CvMalwareScanResult.CLEAN;
+        }
+
+        @Bean
+        CvSemanticIndexCoordinator cvSemanticIndexCoordinator() {
+            // This test targets archive transaction isolation; semantic lifecycle behavior has dedicated unit tests.
+            return mock(CvSemanticIndexCoordinator.class);
         }
 
         @Bean

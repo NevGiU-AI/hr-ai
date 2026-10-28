@@ -62,7 +62,8 @@ applied `V4__add_candidate_correction_and_reprocessing.sql`, then test:
 8. Confirm reprocessing updates `reprocessed_at`, refreshes extracted text, and does not create candidate/document rows.
 9. Confirm manually corrected metadata is unchanged after reprocessing.
 10. Stop ClamAV and confirm reprocessing fails closed; restart it and confirm recovery.
-11. Confirm the three new audit event types appear without PII or storage internals.
+11. Confirm the three new audit event types appear without personally identifiable information (PII) or storage
+    internals.
 
 Repeat the accepted smoke tests in production after a validated production backup and protected release deployment.
 

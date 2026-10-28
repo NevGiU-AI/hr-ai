@@ -26,9 +26,61 @@ The first backend slice supports an imperative question about one explicitly sel
   validates and submits one question for the selected candidate, displays progress and structured retryable failures,
   distinguishes fixed safe responses from evidence-backed answers, and links each citation to its document card.
 
-This slice does not yet provide vector indexing, multi-candidate search/comparison, persisted conversation memory,
-streaming, or speech controls. Those remain explicit roadmap work and must not be inferred from the presence of the
-candidate-specific interface.
+The accepted candidate-specific endpoint does not yet consume vector retrieval or provide multi-candidate
+search/comparison, persisted conversation memory, streaming, or speech controls. Those remain explicit roadmap work
+and must not be inferred from the presence of the candidate-specific interface.
+
+## Semantic-indexing foundation
+
+The next backend slice adds an opt-in index without yet changing the accepted chat endpoint:
+
+PostgreSQL remains the application's relational database. pgvector is an extension loaded into that same database; it
+adds the `vector` type, cosine-distance operations, and HNSW/IVFFlat indexing rather than introducing another data
+service. The deployment and migration tests use `pgvector/pgvector:pg16`, which is PostgreSQL 16 with the extension
+files installed. Flyway still enables `vector` per database and owns every schema object. Testcontainers is explicitly
+told that this image is a compatible substitute for the standard `postgres` image so its PostgreSQL container support
+can supply the JDBC URL, credentials, lifecycle, and cleanup normally.
+
+- Flyway V6 enables pgvector and creates the Spring AI `PgVectorStore`-compatible `cv_semantic_chunks` table with
+  1,536-dimensional embeddings and an HNSW cosine index. Spring AI owns document persistence and portable metadata
+  filtering, while Flyway remains the only schema owner. Generated relational columns and composite
+  `(id, organization_id)` foreign keys prevent metadata from referencing a candidate or document in another tenant.
+- Native text is divided into bounded overlapping document chunks. OCR is chunked one page at a time so retrieval can
+  preserve reviewer-visible page citations.
+- `text-embedding-3-small` is the default pinned embedding model. Spring AI and the Flyway vector column are both
+  configured for 1,536 dimensions, so a provider/configuration mismatch fails instead of silently changing the schema.
+- Indexing begins only after successful CV import or reprocessing commit. The provider call therefore cannot extend or
+  roll back the business-data transaction. Replacement of one document's old chunks with its new chunks is atomic.
+- Candidate/document erasure removes chunks through database cascades. A bounded hourly reconciliation pass retries
+  provider failures, indexes pre-existing documents, and replaces rows whose source version is stale.
+- Every similarity query requires an application-supplied organization identifier and supplies it to Spring AI as a
+  mandatory metadata filter. An optional candidate-ID filter can narrow—but never widen—the tenant boundary. Generated
+  database columns provide a second tenant-integrity boundary underneath the portable Spring AI metadata contract.
+- Extracted chunks and embeddings are sensitive derived candidate data. They remain in PostgreSQL, are never written to
+  application logs, and are sent to the configured embedding provider only when indexing is explicitly enabled.
+
+### Vector similarity and indexing
+
+`COSINE_DISTANCE` defines semantic proximity. PostgreSQL compares the direction of the recruiter-question embedding
+with each eligible CV-chunk embedding using pgvector's `<=>` operator. A smaller distance means the vectors point in
+more similar semantic directions; when a similarity score is needed, it can be expressed as `1 - cosine distance`.
+This suits text retrieval because related wording can remain close even when the literal terms or vector magnitudes
+differ.
+
+`HNSW` means Hierarchical Navigable Small World. It builds a layered graph linking nearby vectors so PostgreSQL can
+navigate toward likely nearest neighbours instead of comparing the question with every stored chunk. It provides fast,
+high-recall interactive retrieval, but consumes additional storage and memory, makes inserts/index construction more
+expensive, and returns approximate rather than guaranteed exact nearest neighbours. The configured 1,536-dimensional
+OpenAI embeddings fit pgvector's standard-vector HNSW limit.
+
+These settings serve separate responsibilities: cosine distance defines what “near” means, while HNSW finds nearby
+vectors efficiently. Neither setting authorizes access. Spring AI must first apply the mandatory organization metadata
+filter and any optional candidate-ID narrowing filter; the generated relational columns and foreign keys provide the
+database-level tenant-integrity boundary.
+
+`CV_SEMANTIC_INDEX_ENABLED` defaults to `false`. V6 migration, provider cost/privacy review, backfill behavior, tenant
+isolation, replacement, erasure, and retrieval quality must pass staging acceptance before enabling user-facing
+semantic chat. No semantic-search controller or Angular result UI is exposed by this foundation slice.
 
 ## Environment acceptance
 
@@ -82,10 +134,27 @@ separate implementation slices; acceptance of this bounded interface does not ma
 - Find candidates by skills, experience, location, education, title, employer, or evaluation metric.
 - Apply multiple filters and refine them over follow-up turns.
 - Ask questions about a specific candidate.
-- Compare selected candidates against explicit criteria.
+- Compare candidates identified through structured UI selection or unambiguous natural-language references against
+  recruiter-selected criteria.
 - Return concise summaries with references to candidate profiles.
 - Ask for clarification when the request is ambiguous.
 - Explain when no candidate matches or when an internal operation fails.
+
+### Candidate identification and comparison
+
+Candidate identification is a deterministic authorization step, separate from the comparison criteria. A recruiter
+may select candidates in the UI or write an unambiguous request such as “Compare Jane Smith and Peter Jones.” The
+backend resolves each reference only inside the authenticated organization and converts every resolved name to a
+verified tenant-scoped candidate ID before retrieving CV, evaluation, or job-fit evidence.
+
+If a referenced name does not exist in that organization, the request follows the generic not-found contract. If a
+name matches more than one candidate, the application asks the recruiter to choose the intended record rather than
+guessing. The recruiter may then compare the verified candidate set using any authorized criterion, including skills,
+experience, education, leadership evidence, evaluation results, or fit for an explicitly selected job.
+
+The model never performs global name resolution, invents or silently expands the candidate set, or supplies the
+organization boundary. Comparison uses only authorized evidence for the resolved IDs, and every factual conclusion
+requires candidate/document citations.
 
 ## Inputs and outputs
 
@@ -113,12 +182,20 @@ Outputs:
 
 1. [x] Establish an imperative, candidate-specific endpoint with tenant authorization, bounded evidence, mandatory
    citations, provider-error handling, and role/CSRF tests.
-2. Enable and configure the Spring AI pgvector integration.
-3. Design the chunking strategy and metadata schema for candidate, organization, CV, and job identifiers.
-4. Index normalized CV content and evaluation summaries after ingestion.
+2. [x] Add Flyway-owned, Spring AI `PgVectorStore`-compatible storage and configure its embedding model with a fixed
+   1,536-dimensional contract. Spring AI schema initialization remains disabled; the feature remains opt-in until
+   environment migration and acceptance.
+3. [x] Add bounded, overlapping native/OCR chunking with organization, candidate, document, page, source-version, and
+   lifecycle metadata protected by composite tenant foreign keys.
+4. [ ] Validate automatic post-commit indexing, reprocessing replacement, deletion cascades, and scheduled
+   missing/stale backfill in staging; evaluation-summary indexing remains future work.
 5. Implement organization- and role-based retrieval filters before semantic search.
 6. Build a retrieval service that returns relevant chunks plus structured candidate data.
-7. Build Spring AI tools for candidate search, candidate detail, filtering, comparison, evidence, document status, and governed dashboard aggregates. Make tools request-scoped, inject authenticated user and organization context outside model-controlled arguments, and separate bounded query tools from preview-and-confirm command tools.
+7. Build Spring AI tools for candidate search, tenant-scoped name resolution, candidate detail, filtering, comparison,
+   evidence, document status, and governed dashboard aggregates. Resolve UI selections or unambiguous names to
+   verified candidate IDs before retrieval; return not found or require disambiguation instead of allowing the model
+   to guess the candidate set. Make tools request-scoped, inject authenticated user and organization context outside
+   model-controlled arguments, and separate bounded query tools from preview-and-confirm command tools.
 8. Require semantic-search responses to cite candidate records or source excerpts and prohibit unsupported claims.
 9. Persist conversation state with clear retention and deletion rules.
 10. Implement the web chat UI with text responses, result cards, loading states, and follow-up prompts.
@@ -137,8 +214,11 @@ Outputs:
 
 - Follow-up questions retain the correct conversation context.
 - Search results respect organization and user permissions.
+- Structured selections and natural-language names resolve only within the authenticated organization; missing names
+  use generic not-found behavior and ambiguous names require recruiter selection.
 - Each factual candidate claim links to supporting source data.
-- Candidate comparison uses the requested criteria consistently.
+- Candidate comparison uses only the verified candidate IDs, the explicitly requested criteria, and cited authorized
+  evidence; the model cannot invent or widen the candidate set.
 - Ambiguous questions trigger clarification instead of guessed answers.
 - No-result and service-failure states are explicit and actionable.
 - Job-relevant questions unsupported by the evidence return a fixed insufficient-evidence response without citations.

@@ -8,6 +8,7 @@ import com.nevgiu.hrai.candidate.malware.CvMalwareScanner;
 import com.nevgiu.hrai.candidate.ocr.CvOcrEngine;
 import com.nevgiu.hrai.candidate.ocr.CvOcrProperties;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
+import com.nevgiu.hrai.candidate.semantic.CvSemanticIndexCoordinator;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
@@ -35,6 +36,8 @@ class CvDocumentReprocessingServiceTest {
     private final CvOcrEngine ocrEngine = mock(CvOcrEngine.class);
     private final CvDocumentPageRepository pages = mock(CvDocumentPageRepository.class);
     private final SecurityAuditService audit = mock(SecurityAuditService.class);
+    // The mock proves successful reprocessing schedules replacement without invoking an external embedding provider.
+    private final CvSemanticIndexCoordinator semanticIndexing = mock(CvSemanticIndexCoordinator.class);
     private final CvIngestionProperties properties = new CvIngestionProperties(
             20_000_000, 100_000_000, 100, 200_000_000, 100, 10, "initial.zip", false);
     private final CvOcrProperties ocrProperties = new CvOcrProperties(
@@ -42,7 +45,8 @@ class CvDocumentReprocessingServiceTest {
     private final CvTextExtractionPipeline pipeline = new CvTextExtractionPipeline(
             extractor, ocrEngine, properties, ocrProperties);
     private final CvDocumentReprocessingService service = new CvDocumentReprocessingService(
-            documents, candidates, evaluations, storage, scanner, pipeline, pages, properties, ocrProperties, audit);
+            documents, candidates, evaluations, storage, scanner, pipeline, pages, properties, ocrProperties, audit,
+            semanticIndexing);
 
     @Test
     void rescansAndRefreshesExistingCandidateWithoutOverwritingCorrectedMetadata() throws Exception {
@@ -67,6 +71,7 @@ class CvDocumentReprocessingServiceTest {
         assertThat(candidate.getCvText()).contains("refreshed extracted CV text");
         assertThat(document.getReprocessedAt()).isNotNull();
         verify(evaluations).invalidateCurrentByCandidateIdAndOrganizationId(eq(7L), eq("tenant-a"), any());
+        verify(semanticIndexing).request(9L, "tenant-a");
     }
 
     private AppUserPrincipal principal() {

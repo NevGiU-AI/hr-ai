@@ -133,9 +133,15 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   out-of-scope responses, authorization boundaries, and privacy-safe logs in staging on 27 October 2026.
 - [x] Promote the accepted candidate-specific backend to production and repeat the focused smoke and privacy checks
   successfully on 27 October 2026.
-- [ ] Add the backend vector-store integration; the PostgreSQL image supports pgvector, but CV chunking, embeddings, indexing, and retrieval are not implemented.
-- [ ] Create embeddings and index CV chunks with authorization metadata.
-- [ ] Implement retrieval, filtering, candidate detail, and comparison tools.
+- [x] Add the Flyway-owned Spring AI `PgVectorStore` schema, bounded native/OCR chunking, portable tenant metadata,
+  composite tenant constraints, post-commit indexing, reprocessing replacement, deletion cascades, and bounded
+  reconciliation backfill.
+- [ ] Validate V6 and the opt-in indexing lifecycle in staging before enabling semantic retrieval in user-facing chat.
+- [ ] Integrate the internal tenant-scoped similarity service into authorized chat retrieval.
+- [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
+- [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
+  them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior
+  for missing or non-unique names.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.
@@ -149,7 +155,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   28 October 2026.
 - [x] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
   navigation, failure, and privacy checks successfully on 28 October 2026.
-- [ ] Build semantic multi-candidate search and structured result cards.
+- [ ] Build semantic multi-candidate search and structured result cards. Keep candidate identification separate from
+  comparison criteria so recruiters can compare the verified set by skills, experience, education, leadership,
+  evaluation results, or fit for an explicitly selected job.
+- [ ] Prove the model cannot resolve names globally, invent candidates, silently widen the selected set, or retrieve
+  evidence outside the authenticated organization; require citations for every factual comparison.
 - [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
 - [ ] Add push-to-talk speech input with a visible, editable transcript before submission.

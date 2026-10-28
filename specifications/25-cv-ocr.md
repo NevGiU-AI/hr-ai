@@ -56,7 +56,8 @@ Before deployment, validate matched PostgreSQL and `cv-originals` backups. In st
 7. Confirm original download, deletion, retention, legal hold, and full erasure still include OCR-backed documents.
 8. Inspect the database and confirm page provenance belongs only to the document and disappears through cascading
    document/candidate erasure.
-9. Review logs and ensure they contain no filenames, OCR text, candidate PII, storage keys, or antivirus signatures.
+9. Review logs and ensure they contain no filenames, OCR text, candidate personally identifiable information (PII),
+   storage keys, or antivirus signatures.
 
 Repeat the accepted safe smoke tests in production after a validated production backup and protected release.
 

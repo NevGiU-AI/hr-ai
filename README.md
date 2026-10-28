@@ -84,6 +84,18 @@ and ClamAV remain on the private Compose network.
 - ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
 
+### PostgreSQL and pgvector
+
+PostgreSQL is the relational database that stores application records, transactions, constraints, JSON data, and
+Flyway history. pgvector is a PostgreSQL extension—not a separate database—that adds fixed-dimension vector columns,
+distance operators, and approximate-nearest-neighbour indexes such as HNSW. The application therefore continues to
+use normal PostgreSQL for all business data and adds pgvector only for semantic CV embeddings and similarity search.
+
+The `pgvector/pgvector:pg16` image is PostgreSQL 16 with the extension files already installed. Flyway must still run
+`CREATE EXTENSION IF NOT EXISTS vector` inside each application database before a `vector(1536)` column can be used.
+Spring AI `PgVectorStore` writes documents and performs metadata-filtered similarity searches; Flyway remains the only
+schema owner and creates the compatible table, tenant constraints, and HNSW cosine index.
+
 ## Current roadmap
 
 The authentication foundation—including tenant isolation, Redis sessions, throttling/lockout, security auditing,
@@ -280,9 +292,12 @@ cd backend
 mvn test
 ```
 
-Flyway integration tests use Testcontainers and run when Docker is available. They verify a clean PostgreSQL schema,
-adoption of an existing schema, stale audit-constraint removal, original-CV storage metadata, and Hibernate mapping
-validation.
+Flyway integration tests use Testcontainers and run when Docker is available. They use
+`pgvector/pgvector:pg16` rather than plain `postgres:16` so V6 can enable and exercise the real vector extension. The
+test declaration marks that image as a compatible substitute for `postgres`; this satisfies Testcontainers' image
+compatibility check without changing or renaming the image. The tests verify a clean PostgreSQL schema, adoption of an
+existing schema, stale audit-constraint removal, original-CV storage metadata, pgvector infrastructure, and Hibernate
+mapping validation.
 
 Backend test reports use JUnit Pioneer's
 [`ReplaceCamelCaseAndUnderscoreAndNumber`](https://junit-pioneer.org/docs/replace-camelcase-and-underscore-and-number/)

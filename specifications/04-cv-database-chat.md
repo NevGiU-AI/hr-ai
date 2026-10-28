@@ -34,6 +34,13 @@ and must not be inferred from the presence of the candidate-specific interface.
 
 The next backend slice adds an opt-in index without yet changing the accepted chat endpoint:
 
+PostgreSQL remains the application's relational database. pgvector is an extension loaded into that same database; it
+adds the `vector` type, cosine-distance operations, and HNSW/IVFFlat indexing rather than introducing another data
+service. The deployment and migration tests use `pgvector/pgvector:pg16`, which is PostgreSQL 16 with the extension
+files installed. Flyway still enables `vector` per database and owns every schema object. Testcontainers is explicitly
+told that this image is a compatible substitute for the standard `postgres` image so its PostgreSQL container support
+can supply the JDBC URL, credentials, lifecycle, and cleanup normally.
+
 - Flyway V6 enables pgvector and creates the Spring AI `PgVectorStore`-compatible `cv_semantic_chunks` table with
   1,536-dimensional embeddings and an HNSW cosine index. Spring AI owns document persistence and portable metadata
   filtering, while Flyway remains the only schema owner. Generated relational columns and composite

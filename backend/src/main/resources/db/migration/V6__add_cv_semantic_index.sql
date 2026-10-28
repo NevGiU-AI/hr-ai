@@ -21,7 +21,9 @@ BEGIN
 END
 $$;
 
-CREATE TABLE cv_semantic_chunks (
+-- IF NOT EXISTS is required by the project's controlled baseline-adoption path, where Flyway
+-- may apply the versioned history to a schema that was already created by a previous release.
+CREATE TABLE IF NOT EXISTS cv_semantic_chunks (
     -- These four columns are the native Spring AI PgVectorStore contract. Flyway owns
     -- their creation; Spring AI schema initialization remains disabled.
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -51,8 +53,8 @@ CREATE TABLE cv_semantic_chunks (
     CONSTRAINT ck_cv_semantic_chunks_content CHECK (length(btrim(content)) > 0)
 );
 
-CREATE INDEX idx_cv_semantic_chunks_tenant_candidate
+CREATE INDEX IF NOT EXISTS idx_cv_semantic_chunks_tenant_candidate
     ON cv_semantic_chunks (organization_id, candidate_id, document_id);
 
-CREATE INDEX idx_cv_semantic_chunks_embedding_hnsw
+CREATE INDEX IF NOT EXISTS idx_cv_semantic_chunks_embedding_hnsw
     ON cv_semantic_chunks USING hnsw (embedding vector_cosine_ops);

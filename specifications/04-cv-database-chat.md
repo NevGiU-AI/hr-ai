@@ -69,7 +69,11 @@ evidence pages and 1,200 characters per excerpt. The accepted checks covered:
 - request validation, CSRF enforcement, authentication, role policy, and generic not-found behavior; and
 - privacy-safe application logs without questions, CV excerpts, prompts, provider responses, or credentials.
 
-The candidate-specific Angular interface is accepted in staging and still requires focused production acceptance.
+The candidate-specific Angular interface passed focused production acceptance on 28 October 2026 at main revision
+`43dd2c3`. The accepted checks repeated the staging role visibility, native-text and OCR answers, fixed safe responses,
+loading and failure behavior, candidate-change reset, and privacy-safe log review. Document and page citations remained
+on `/candidates/import` and scrolled to the matching ingestion-history document card.
+
 Semantic retrieval, multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain
 separate implementation slices; acceptance of this bounded interface does not mark those capabilities complete.
 

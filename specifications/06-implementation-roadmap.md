@@ -147,8 +147,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and document-linked citations.
 - [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on
   28 October 2026.
-- [ ] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
-  navigation, failure, and privacy checks.
+- [x] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
+  navigation, failure, and privacy checks successfully on 28 October 2026.
 - [ ] Build semantic multi-candidate search and structured result cards.
 - [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.

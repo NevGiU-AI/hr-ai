@@ -59,6 +59,25 @@ can supply the JDBC URL, credentials, lifecycle, and cleanup normally.
 - Extracted chunks and embeddings are sensitive derived candidate data. They remain in PostgreSQL, are never written to
   application logs, and are sent to the configured embedding provider only when indexing is explicitly enabled.
 
+### Vector similarity and indexing
+
+`COSINE_DISTANCE` defines semantic proximity. PostgreSQL compares the direction of the recruiter-question embedding
+with each eligible CV-chunk embedding using pgvector's `<=>` operator. A smaller distance means the vectors point in
+more similar semantic directions; when a similarity score is needed, it can be expressed as `1 - cosine distance`.
+This suits text retrieval because related wording can remain close even when the literal terms or vector magnitudes
+differ.
+
+`HNSW` means Hierarchical Navigable Small World. It builds a layered graph linking nearby vectors so PostgreSQL can
+navigate toward likely nearest neighbours instead of comparing the question with every stored chunk. It provides fast,
+high-recall interactive retrieval, but consumes additional storage and memory, makes inserts/index construction more
+expensive, and returns approximate rather than guaranteed exact nearest neighbours. The configured 1,536-dimensional
+OpenAI embeddings fit pgvector's standard-vector HNSW limit.
+
+These settings serve separate responsibilities: cosine distance defines what “near” means, while HNSW finds nearby
+vectors efficiently. Neither setting authorizes access. Spring AI must first apply the mandatory organization metadata
+filter and any optional candidate-ID narrowing filter; the generated relational columns and foreign keys provide the
+database-level tenant-integrity boundary.
+
 `CV_SEMANTIC_INDEX_ENABLED` defaults to `false`. V6 migration, provider cost/privacy review, backfill behavior, tenant
 isolation, replacement, erasure, and retrieval quality must pass staging acceptance before enabling user-facing
 semantic chat. No semantic-search controller or Angular result UI is exposed by this foundation slice.

@@ -56,5 +56,8 @@ CREATE TABLE IF NOT EXISTS cv_semantic_chunks (
 CREATE INDEX IF NOT EXISTS idx_cv_semantic_chunks_tenant_candidate
     ON cv_semantic_chunks (organization_id, candidate_id, document_id);
 
+-- HNSW (Hierarchical Navigable Small World) organizes embeddings as a layered graph for fast approximate
+-- nearest-neighbour retrieval. vector_cosine_ops makes graph proximity use the same cosine-distance semantics
+-- configured in Spring AI; smaller <=> distance means a more semantically similar chunk.
 CREATE INDEX IF NOT EXISTS idx_cv_semantic_chunks_embedding_hnsw
     ON cv_semantic_chunks USING hnsw (embedding vector_cosine_ops);

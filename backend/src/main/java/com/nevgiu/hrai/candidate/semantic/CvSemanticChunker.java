@@ -38,6 +38,9 @@ class CvSemanticChunker {
             // The limit covers the complete CV, not each page, to bound provider cost for unusually long files.
             if (chunks.size() == properties.maxChunksPerDocument()) break;
         }
+        // Do not expose the mutable ArrayList used during construction. The shallow immutable snapshot prevents
+        // callers from reordering, adding, or removing chunks after deterministic indexes and IDs have been assigned;
+        // copying at most maxChunksPerDocument references is negligible beside OCR and embedding-provider work.
         return List.copyOf(chunks);
     }
 

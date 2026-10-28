@@ -33,10 +33,18 @@ class CvSemanticIndexRepository {
     void replace(CvSemanticSource source, List<CvSemanticChunk> chunks) {
         // Delete and add share one database transaction. A failed embedding call or insert therefore
         // restores the previous index instead of leaving the document only partially searchable.
-        Filter.Expression documentScope = documentScope(source.organizationId(), source.documentId());
-        vectorStore.delete(documentScope);
+        var documentScope = documentScope(source.organizationId(), source.documentId());
+        try {
+            vectorStore.delete(documentScope);
+        } catch (RuntimeException exception) {
+            throw CvSemanticIndexingException.at(CvSemanticIndexingStage.DELETE_EXISTING, exception);
+        }
         if (chunks.isEmpty()) return;
-        vectorStore.add(chunks.stream().map(chunk -> document(source, chunk)).toList());
+        try {
+            vectorStore.add(chunks.stream().map(chunk -> document(source, chunk)).toList());
+        } catch (RuntimeException exception) {
+            throw CvSemanticIndexingException.at(CvSemanticIndexingStage.INSERT_REPLACEMENT, exception);
+        }
     }
 
     /**

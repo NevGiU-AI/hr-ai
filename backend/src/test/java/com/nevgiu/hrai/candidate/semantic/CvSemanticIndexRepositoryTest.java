@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -22,8 +23,9 @@ import static org.mockito.Mockito.when;
 /** Verifies the Spring AI document contract and mandatory tenant filtering without calling an embedding provider. */
 class CvSemanticIndexRepositoryTest {
     private final VectorStore vectorStore = mock(VectorStore.class);
+    private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
     private final CvSemanticIndexRepository repository =
-            new CvSemanticIndexRepository(vectorStore, mock(JdbcTemplate.class));
+            new CvSemanticIndexRepository(vectorStore, jdbc);
 
     @Test
     void replacesAStoredDocumentThroughSpringAiWithTenantMetadata() {
@@ -67,6 +69,29 @@ class CvSemanticIndexRepositoryTest {
         assertThat(request.getValue().getTopK()).isEqualTo(5);
         assertThat(matches).containsExactly(new CvSemanticMatch(7L, 9L, 2, "evidence", .91,
                 Instant.parse("2026-10-28T00:00:00Z")));
+    }
+
+    @Test
+    void identifiesDeleteAndInsertFailuresWithoutCopyingSensitiveMessages() {
+        RuntimeException deleteFailure = new RuntimeException("sensitive delete message");
+        doThrow(deleteFailure).when(vectorStore).delete(any(Filter.Expression.class));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> repository.replace(source(), List.of()))
+                .isInstanceOfSatisfying(CvSemanticIndexingException.class, failure -> {
+                    assertThat(failure.stage()).isEqualTo(CvSemanticIndexingStage.DELETE_EXISTING);
+                    assertThat(failure.getMessage()).doesNotContain("sensitive delete message");
+                });
+
+        org.mockito.Mockito.reset(vectorStore);
+        RuntimeException insertFailure = new RuntimeException("sensitive embedding message");
+        doThrow(insertFailure).when(vectorStore).add(any());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> repository.replace(source(),
+                        List.of(new CvSemanticChunk(0, null, "evidence"))))
+                .isInstanceOfSatisfying(CvSemanticIndexingException.class, failure -> {
+                    assertThat(failure.stage()).isEqualTo(CvSemanticIndexingStage.INSERT_REPLACEMENT);
+                    assertThat(failure.getMessage()).doesNotContain("sensitive embedding message");
+                });
     }
 
     private CvSemanticSource source() {

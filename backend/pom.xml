@@ -24,6 +24,12 @@
         <java.version>21</java.version>
         <spring-ai.version>1.1.0</spring-ai.version>
         <junit-pioneer.version>2.3.0</junit-pioneer.version>
+        <!-- Spring Boot's parent POM consumes this property when it imports the Testcontainers BOM. It therefore
+             controls every versionless org.testcontainers dependency declared below (JUnit, PostgreSQL, JDBC, and
+             their transitive Testcontainers core modules). Version 1.21.4 adds Docker Engine 29 API negotiation;
+             1.21.3 silently skipped container tests on current Windows Docker Desktop installations after failing
+             environment discovery. -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencyManagement>

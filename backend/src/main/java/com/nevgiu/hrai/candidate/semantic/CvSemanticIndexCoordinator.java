@@ -44,10 +44,19 @@ public class CvSemanticIndexCoordinator {
         try {
             indexService.index(documentId, organizationId);
         } catch (RuntimeException exception) {
-            // Log only opaque identifiers and the exception type. Provider messages may echo personally identifiable
-            // information (PII) from the CV chunks sent for embedding.
-            log.error("CV semantic indexing failed for organizationId={} documentId={} failureType={}",
-                    organizationId, documentId, exception.getClass().getSimpleName());
+            // Log only opaque identifiers, the bounded operation stage, and exception class names. Exception/provider
+            // messages may echo personally identifiable information (PII) from CV chunks sent for embedding.
+            CvSemanticIndexingStage stage = exception instanceof CvSemanticIndexingException indexingException
+                    ? indexingException.stage() : null;
+            log.error("CV semantic indexing failed for organizationId={} documentId={} stage={} failureType={} "
+                            + "rootCauseType={}", organizationId, documentId, stage,
+                    exception.getClass().getSimpleName(), rootCauseType(exception));
         }
+    }
+
+    private String rootCauseType(Throwable failure) {
+        Throwable root = failure;
+        while (root.getCause() != null && root.getCause() != root) root = root.getCause();
+        return root.getClass().getSimpleName();
     }
 }

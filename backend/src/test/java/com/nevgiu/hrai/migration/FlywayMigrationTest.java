@@ -54,19 +54,23 @@ class FlywayMigrationTest {
                 """);
         execute("""
                 INSERT INTO cv_semantic_chunks
-                  (organization_id, candidate_id, document_id, chunk_index, content, embedding, source_version)
+                  (content, metadata, embedding)
                 VALUES
-                  ('tenant-a', 9001, 9002, 0, 'tenant evidence',
-                   CAST(array_fill(0::real, ARRAY[1536]) AS vector), CURRENT_TIMESTAMP)
+                  ('tenant evidence',
+                   '{"organizationId":"tenant-a","candidateId":"9001","documentId":"9002",\
+                     "chunkIndex":0,"sourceVersion":"2026-10-28T00:00:00Z"}',
+                   CAST(array_fill(0::real, ARRAY[1536]) AS vector))
                 """);
         assertThat(count("SELECT COUNT(*) FROM cv_semantic_chunks WHERE organization_id = 'tenant-a'"))
                 .isEqualTo(1);
         assertThatThrownBy(() -> execute("""
                 INSERT INTO cv_semantic_chunks
-                  (organization_id, candidate_id, document_id, chunk_index, content, embedding, source_version)
+                  (content, metadata, embedding)
                 VALUES
-                  ('tenant-b', 9001, 9002, 1, 'cross tenant evidence',
-                   CAST(array_fill(0::real, ARRAY[1536]) AS vector), CURRENT_TIMESTAMP)
+                  ('cross tenant evidence',
+                   '{"organizationId":"tenant-b","candidateId":"9001","documentId":"9002",\
+                     "chunkIndex":1,"sourceVersion":"2026-10-28T00:00:00Z"}',
+                   CAST(array_fill(0::real, ARRAY[1536]) AS vector))
                 """))
                 .hasMessageContaining("fk_cv_semantic_chunks_candidate_tenant");
         execute("DELETE FROM cv_documents WHERE id = 9002");

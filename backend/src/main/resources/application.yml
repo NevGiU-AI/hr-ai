@@ -31,6 +31,16 @@ spring:
           # The Flyway vector column is fixed at 1,536 dimensions; keep model and dimensions explicit.
           model: ${APP_CV_SEMANTIC_EMBEDDING_MODEL:text-embedding-3-small}
           dimensions: 1536
+      vectorstore:
+        pgvector:
+          # Flyway V6 owns this schema. Startup validates and uses it but never creates or replaces it.
+          initialize-schema: false
+          schema-validation: true
+          table-name: cv_semantic_chunks
+          dimensions: 1536
+          index-type: HNSW
+          distance-type: COSINE_DISTANCE
+          max-document-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
 
   servlet:
     multipart:

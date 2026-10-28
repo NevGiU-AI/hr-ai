@@ -1,75 +1,56 @@
 package com.nevgiu.hrai.candidate.semantic;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
-import java.sql.Timestamp;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-/** Uses explicit tenant predicates for every vector mutation and retrieval. */
+/** Adapts domain chunks to Spring AI PgVectorStore documents with mandatory tenant filters. */
 @Repository
 class CvSemanticIndexRepository {
-    private static final String INSERT_SQL = """
-            INSERT INTO cv_semantic_chunks
-              (organization_id, candidate_id, document_id, page_number, chunk_index, content, embedding, source_version)
-            VALUES (?, ?, ?, ?, ?, ?, CAST(? AS vector), ?)
-            """;
-
+    private final VectorStore vectorStore;
     private final JdbcTemplate jdbc;
-    private final NamedParameterJdbcTemplate namedJdbc;
 
-    CvSemanticIndexRepository(JdbcTemplate jdbc, NamedParameterJdbcTemplate namedJdbc) {
+    CvSemanticIndexRepository(VectorStore vectorStore, JdbcTemplate jdbc) {
+        this.vectorStore = vectorStore;
         this.jdbc = jdbc;
-        this.namedJdbc = namedJdbc;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    void replace(CvSemanticSource source, List<CvSemanticChunk> chunks, List<float[]> embeddings) {
-        if (chunks.size() != embeddings.size()) {
-            throw new IllegalArgumentException("Every semantic chunk requires exactly one embedding");
-        }
-        jdbc.update("DELETE FROM cv_semantic_chunks WHERE document_id = ? AND organization_id = ?",
-                source.documentId(), source.organizationId());
+    void replace(CvSemanticSource source, List<CvSemanticChunk> chunks) {
+        // Delete and add share one database transaction. A failed embedding call or insert therefore
+        // restores the previous index instead of leaving the document only partially searchable.
+        Filter.Expression documentScope = documentScope(source.organizationId(), source.documentId());
+        vectorStore.delete(documentScope);
         if (chunks.isEmpty()) return;
-        jdbc.batchUpdate(INSERT_SQL, chunks, chunks.size(), (statement, chunk) -> {
-            statement.setString(1, source.organizationId());
-            statement.setLong(2, source.candidateId());
-            statement.setLong(3, source.documentId());
-            if (chunk.pageNumber() == null) statement.setNull(4, java.sql.Types.INTEGER);
-            else statement.setInt(4, chunk.pageNumber());
-            statement.setInt(5, chunk.index());
-            statement.setString(6, chunk.content());
-            statement.setString(7, vector(embeddings.get(chunk.index())));
-            statement.setTimestamp(8, Timestamp.from(source.sourceVersion()));
-        });
+        vectorStore.add(chunks.stream().map(chunk -> document(source, chunk)).toList());
     }
 
-    List<CvSemanticMatch> search(String organizationId, float[] queryEmbedding,
-                                 List<Long> candidateIds, int limit) {
-        String candidateFilter = candidateIds == null || candidateIds.isEmpty()
-                ? "" : " AND candidate_id IN (:candidateIds)";
-        String sql = """
-                SELECT candidate_id, document_id, page_number, content,
-                       1 - (embedding <=> CAST(:embedding AS vector)) AS similarity, source_version
-                FROM cv_semantic_chunks
-                WHERE organization_id = :organizationId
-                """ + candidateFilter + """
-                ORDER BY embedding <=> CAST(:embedding AS vector), id
-                LIMIT :limit
-                """;
-        MapSqlParameterSource parameters = new MapSqlParameterSource()
-                .addValue("organizationId", organizationId)
-                .addValue("embedding", vector(queryEmbedding))
-                .addValue("limit", limit);
-        if (!candidateFilter.isEmpty()) parameters.addValue("candidateIds", candidateIds);
-        return namedJdbc.query(sql, parameters, (result, row) -> new CvSemanticMatch(
-                result.getLong("candidate_id"), result.getLong("document_id"),
-                (Integer) result.getObject("page_number"), result.getString("content"),
-                result.getDouble("similarity"), result.getTimestamp("source_version").toInstant()));
+    List<CvSemanticMatch> search(String organizationId, String query, List<Long> candidateIds, int limit) {
+        FilterExpressionBuilder filters = new FilterExpressionBuilder();
+        FilterExpressionBuilder.Op scope = filters.eq("organizationId", organizationId);
+        if (candidateIds != null && !candidateIds.isEmpty()) {
+            // Use the List<Object> overload deliberately. Passing List<String> selects the varargs overload and
+            // produces a nested JSON-filter value that cannot match the scalar candidateId metadata.
+            List<Object> candidateFilter = candidateIds.stream()
+                    .map(candidateId -> (Object) String.valueOf(candidateId)).toList();
+            scope = filters.and(scope, filters.in("candidateId", candidateFilter));
+        }
+        SearchRequest request = SearchRequest.builder().query(query).topK(limit)
+                .similarityThresholdAll().filterExpression(scope.build()).build();
+        return vectorStore.similaritySearch(request).stream().map(this::match).toList();
     }
 
     /** Finds missing or stale indexes without loading any PII-bearing extracted text. */
@@ -83,7 +64,7 @@ class CvSemanticIndexRepository {
                     SELECT 1 FROM cv_semantic_chunks chunk
                     WHERE chunk.document_id = document.id
                       AND chunk.organization_id = document.organization_id
-                      AND chunk.source_version = COALESCE(document.reprocessed_at, document.imported_at)
+                      AND chunk.source_version::timestamptz = COALESCE(document.reprocessed_at, document.imported_at)
                   )
                 ORDER BY COALESCE(document.reprocessed_at, document.imported_at), document.id
                 LIMIT ?
@@ -91,12 +72,34 @@ class CvSemanticIndexRepository {
                 result.getLong("document_id"), result.getString("organization_id")), limit);
     }
 
-    private String vector(float[] values) {
-        StringBuilder result = new StringBuilder("[");
-        for (int index = 0; index < values.length; index++) {
-            if (index > 0) result.append(',');
-            result.append(values[index]);
-        }
-        return result.append(']').toString();
+    private Document document(CvSemanticSource source, CvSemanticChunk chunk) {
+        // IDs are deterministic so retries are idempotent. Tenant ownership remains metadata as well,
+        // because every Spring AI search/delete must include it as a portable filter expression.
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("organizationId", source.organizationId());
+        metadata.put("candidateId", String.valueOf(source.candidateId()));
+        metadata.put("documentId", String.valueOf(source.documentId()));
+        if (chunk.pageNumber() != null) metadata.put("pageNumber", chunk.pageNumber());
+        metadata.put("chunkIndex", chunk.index());
+        metadata.put("sourceVersion", source.sourceVersion().toString());
+        String identity = source.organizationId() + ":" + source.documentId() + ":" + chunk.index();
+        return new Document(UUID.nameUUIDFromBytes(identity.getBytes(StandardCharsets.UTF_8)).toString(),
+                chunk.content(), metadata);
+    }
+
+    private CvSemanticMatch match(Document document) {
+        Map<String, Object> metadata = document.getMetadata();
+        Object page = metadata.get("pageNumber");
+        return new CvSemanticMatch(Long.valueOf(metadata.get("candidateId").toString()),
+                Long.valueOf(metadata.get("documentId").toString()),
+                page == null ? null : Integer.valueOf(page.toString()), document.getText(),
+                document.getScore() == null ? 0 : document.getScore(),
+                Instant.parse(metadata.get("sourceVersion").toString()));
+    }
+
+    private Filter.Expression documentScope(String organizationId, Long documentId) {
+        FilterExpressionBuilder filters = new FilterExpressionBuilder();
+        return filters.and(filters.eq("organizationId", organizationId),
+                filters.eq("documentId", String.valueOf(documentId))).build();
     }
 }

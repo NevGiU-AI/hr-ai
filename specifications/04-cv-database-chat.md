@@ -34,19 +34,21 @@ and must not be inferred from the presence of the candidate-specific interface.
 
 The next backend slice adds an opt-in index without yet changing the accepted chat endpoint:
 
-- Flyway V6 enables pgvector and creates `cv_semantic_chunks` with 1,536-dimensional embeddings and an HNSW cosine
-  index. Composite `(id, organization_id)` foreign keys prevent a chunk from referencing a candidate or document in a
-  different tenant.
+- Flyway V6 enables pgvector and creates the Spring AI `PgVectorStore`-compatible `cv_semantic_chunks` table with
+  1,536-dimensional embeddings and an HNSW cosine index. Spring AI owns document persistence and portable metadata
+  filtering, while Flyway remains the only schema owner. Generated relational columns and composite
+  `(id, organization_id)` foreign keys prevent metadata from referencing a candidate or document in another tenant.
 - Native text is divided into bounded overlapping document chunks. OCR is chunked one page at a time so retrieval can
   preserve reviewer-visible page citations.
-- `text-embedding-3-small` is the default pinned embedding model. The configured 1,536 dimensions must match the
-  Flyway schema; a mismatched provider response is rejected before persistence.
+- `text-embedding-3-small` is the default pinned embedding model. Spring AI and the Flyway vector column are both
+  configured for 1,536 dimensions, so a provider/configuration mismatch fails instead of silently changing the schema.
 - Indexing begins only after successful CV import or reprocessing commit. The provider call therefore cannot extend or
   roll back the business-data transaction. Replacement of one document's old chunks with its new chunks is atomic.
 - Candidate/document erasure removes chunks through database cascades. A bounded hourly reconciliation pass retries
   provider failures, indexes pre-existing documents, and replaces rows whose source version is stale.
-- Every similarity query requires an application-supplied organization identifier and the repository repeats that
-  predicate in SQL. An optional candidate-ID filter can narrow—but never widen—the tenant boundary.
+- Every similarity query requires an application-supplied organization identifier and supplies it to Spring AI as a
+  mandatory metadata filter. An optional candidate-ID filter can narrow—but never widen—the tenant boundary. Generated
+  database columns provide a second tenant-integrity boundary underneath the portable Spring AI metadata contract.
 - Extracted chunks and embeddings are sensitive derived candidate data. They remain in PostgreSQL, are never written to
   application logs, and are sent to the configured embedding provider only when indexing is explicitly enabled.
 
@@ -137,8 +139,9 @@ Outputs:
 
 1. [x] Establish an imperative, candidate-specific endpoint with tenant authorization, bounded evidence, mandatory
    citations, provider-error handling, and role/CSRF tests.
-2. [x] Add Flyway-owned pgvector storage and configure Spring AI's embedding model with a fixed 1,536-dimensional
-   contract. The feature remains opt-in until environment migration and acceptance.
+2. [x] Add Flyway-owned, Spring AI `PgVectorStore`-compatible storage and configure its embedding model with a fixed
+   1,536-dimensional contract. Spring AI schema initialization remains disabled; the feature remains opt-in until
+   environment migration and acceptance.
 3. [x] Add bounded, overlapping native/OCR chunking with organization, candidate, document, page, source-version, and
    lifecycle metadata protected by composite tenant foreign keys.
 4. [ ] Validate automatic post-commit indexing, reprocessing replacement, deletion cascades, and scheduled

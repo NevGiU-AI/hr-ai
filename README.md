@@ -26,9 +26,10 @@ decisions.
   document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
   corresponding role-aware question, safe-response, error/retry, and linked-citation experience. Semantic search and
   multi-candidate chat remain roadmap work.
-- Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, embeds them outside the CV
-  database transaction, stores tenant-constrained vectors in pgvector, retries missing/stale indexes, and removes them
-  through document/candidate deletion cascades. Environment migration and retrieval acceptance remain pending.
+- Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
+  `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
+  references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
+  Environment migration and retrieval acceptance remain pending.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -76,7 +77,7 @@ and ClamAV remain on the private Compose network.
 
 - Angular 19, TypeScript, Bootstrap, Nginx
 - Spring Boot 3.5, Java 21, Spring Security, Spring Data JPA, Spring Session
-- Spring AI with OpenAI
+- Spring AI with OpenAI and `PgVectorStore`
 - PostgreSQL 16 with pgvector
 - Flyway versioned schema migrations
 - Redis 7.4

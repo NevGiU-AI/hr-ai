@@ -9,11 +9,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+/** Verifies that semantic side effects follow the owning transaction's final outcome. */
 class CvSemanticIndexCoordinatorTest {
     private final CvSemanticIndexService indexService = mock(CvSemanticIndexService.class);
 
     @AfterEach
     void clearSynchronization() {
+        // TransactionSynchronizationManager uses thread-local state that must not leak into another unit test.
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.clearSynchronization();
         }

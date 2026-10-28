@@ -19,6 +19,11 @@ public class CvSemanticIndexCoordinator {
         this.properties = properties;
     }
 
+    /**
+     * Requests best-effort indexing for a committed, tenant-owned CV document.
+     * When called inside a transaction, the callback is deliberately discarded on rollback so vector evidence can
+     * never describe business data that was not committed.
+     */
     public void request(Long documentId, String organizationId) {
         if (!properties.enabled() || documentId == null) return;
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -30,6 +35,7 @@ public class CvSemanticIndexCoordinator {
                 }
             });
         } else {
+            // Reconciliation and other background callers have no owning transaction and can index immediately.
             indexSafely(documentId, organizationId);
         }
     }

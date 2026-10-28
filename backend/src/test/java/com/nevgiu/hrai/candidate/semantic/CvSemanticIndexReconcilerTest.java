@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/** Verifies feature-flag behavior and the bounded reconciliation work queue. */
 class CvSemanticIndexReconcilerTest {
     private final CvSemanticIndexRepository repository = mock(CvSemanticIndexRepository.class);
     private final CvSemanticIndexCoordinator coordinator = mock(CvSemanticIndexCoordinator.class);

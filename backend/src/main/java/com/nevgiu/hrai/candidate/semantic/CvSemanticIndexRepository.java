@@ -28,6 +28,7 @@ class CvSemanticIndexRepository {
         this.jdbc = jdbc;
     }
 
+    /** Replaces every chunk for one tenant-owned document as a single independent transaction. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     void replace(CvSemanticSource source, List<CvSemanticChunk> chunks) {
         // Delete and add share one database transaction. A failed embedding call or insert therefore
@@ -38,6 +39,10 @@ class CvSemanticIndexRepository {
         vectorStore.add(chunks.stream().map(chunk -> document(source, chunk)).toList());
     }
 
+    /**
+     * Executes semantic retrieval through Spring AI with an organization filter that is always present.
+     * Candidate IDs are optional narrowing constraints and can never replace or widen the tenant boundary.
+     */
     List<CvSemanticMatch> search(String organizationId, String query, List<Long> candidateIds, int limit) {
         FilterExpressionBuilder filters = new FilterExpressionBuilder();
         FilterExpressionBuilder.Op scope = filters.eq("organizationId", organizationId);
@@ -49,6 +54,7 @@ class CvSemanticIndexRepository {
             scope = filters.and(scope, filters.in("candidateId", candidateFilter));
         }
         SearchRequest request = SearchRequest.builder().query(query).topK(limit)
+                // Accept all scores at this storage boundary; later retrieval policy owns quality thresholds.
                 .similarityThresholdAll().filterExpression(scope.build()).build();
         return vectorStore.similaritySearch(request).stream().map(this::match).toList();
     }
@@ -88,6 +94,7 @@ class CvSemanticIndexRepository {
     }
 
     private CvSemanticMatch match(Document document) {
+        // Spring AI deserializes JSON metadata into generic values, so conversions remain defensive and explicit.
         Map<String, Object> metadata = document.getMetadata();
         Object page = metadata.get("pageNumber");
         return new CvSemanticMatch(Long.valueOf(metadata.get("candidateId").toString()),
@@ -98,6 +105,7 @@ class CvSemanticIndexRepository {
     }
 
     private Filter.Expression documentScope(String organizationId, Long documentId) {
+        // Replacement deletion is scoped by both values even though document IDs are currently globally unique.
         FilterExpressionBuilder filters = new FilterExpressionBuilder();
         return filters.and(filters.eq("organizationId", organizationId),
                 filters.eq("documentId", String.valueOf(documentId))).build();

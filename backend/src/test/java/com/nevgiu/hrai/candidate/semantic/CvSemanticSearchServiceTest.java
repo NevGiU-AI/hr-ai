@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/** Verifies input bounds and propagation of the authenticated tenant boundary to storage. */
 class CvSemanticSearchServiceTest {
     private final CvSemanticIndexRepository repository = mock(CvSemanticIndexRepository.class);
     private final CvSemanticSearchService service = new CvSemanticSearchService(repository);

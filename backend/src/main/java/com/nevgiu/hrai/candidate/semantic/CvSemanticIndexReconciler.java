@@ -17,6 +17,10 @@ class CvSemanticIndexReconciler {
         this.properties = properties;
     }
 
+    /**
+     * Processes one bounded batch per schedule rather than attempting an unbounded startup backfill.
+     * Failed provider calls remain pending and are naturally retried by a later run.
+     */
     @Scheduled(cron = "${app.cv-semantic-index.reconciliation-cron:0 11 * * * *}")
     void reconcile() {
         if (!properties.enabled()) return;

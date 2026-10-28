@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/** Verifies orchestration between source loading, deterministic chunking, and vector replacement. */
 class CvSemanticIndexServiceTest {
     private final CvSemanticSourceLoader sourceLoader = mock(CvSemanticSourceLoader.class);
     private final CvSemanticChunker chunker = mock(CvSemanticChunker.class);

@@ -14,9 +14,14 @@ class CvSemanticChunker {
         this.properties = properties;
     }
 
+    /**
+     * Splits the immutable extraction snapshot into bounded chunks in stable document/page order.
+     * Stable ordering is important because chunk indexes are used to derive repeatable vector-store IDs.
+     */
     List<CvSemanticChunk> chunk(CvSemanticSource source) {
         List<CvSemanticChunk> chunks = new ArrayList<>();
         for (CvSemanticTextUnit unit : source.textUnits()) {
+            // Process each OCR page independently so one retrieved chunk always maps to one reviewer-visible page.
             String text = normalize(unit.text());
             int start = 0;
             while (start < text.length() && chunks.size() < properties.maxChunksPerDocument()) {
@@ -30,6 +35,7 @@ class CvSemanticChunker {
                 // Overlap preserves meaning that spans a boundary while guaranteeing forward progress.
                 start = Math.max(start + 1, end - properties.overlapCharacters());
             }
+            // The limit covers the complete CV, not each page, to bound provider cost for unusually long files.
             if (chunks.size() == properties.maxChunksPerDocument()) break;
         }
         return List.copyOf(chunks);
@@ -43,6 +49,7 @@ class CvSemanticChunker {
     }
 
     private String normalize(String text) {
+        // OCR commonly emits repeated newlines/tabs; normalization makes retries produce identical chunk boundaries.
         return text == null ? "" : text.replaceAll("\\s+", " ").trim();
     }
 }

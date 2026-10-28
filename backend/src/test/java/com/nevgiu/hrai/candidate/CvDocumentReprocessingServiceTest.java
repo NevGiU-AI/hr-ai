@@ -36,6 +36,7 @@ class CvDocumentReprocessingServiceTest {
     private final CvOcrEngine ocrEngine = mock(CvOcrEngine.class);
     private final CvDocumentPageRepository pages = mock(CvDocumentPageRepository.class);
     private final SecurityAuditService audit = mock(SecurityAuditService.class);
+    // The mock proves successful reprocessing schedules replacement without invoking an external embedding provider.
     private final CvSemanticIndexCoordinator semanticIndexing = mock(CvSemanticIndexCoordinator.class);
     private final CvIngestionProperties properties = new CvIngestionProperties(
             20_000_000, 100_000_000, 100, 200_000_000, 100, 10, "initial.zip", false);

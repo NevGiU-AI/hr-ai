@@ -7,6 +7,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** Verifies deterministic cost bounds and the OCR-page citation boundary. */
 class CvSemanticChunkerTest {
 
     @Test

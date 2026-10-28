@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/** Verifies the Spring AI document contract and mandatory tenant filtering without calling an embedding provider. */
 class CvSemanticIndexRepositoryTest {
     private final VectorStore vectorStore = mock(VectorStore.class);
     private final CvSemanticIndexRepository repository =
@@ -32,6 +33,7 @@ class CvSemanticIndexRepositoryTest {
         repository.replace(source, chunks);
 
         var ordered = inOrder(vectorStore);
+        // Deleting first and adding second inside one transaction is the repository's atomic replacement contract.
         ordered.verify(vectorStore).delete(any(Filter.Expression.class));
         ArgumentCaptor<List<Document>> documents = ArgumentCaptor.forClass(List.class);
         ordered.verify(vectorStore).add(documents.capture());

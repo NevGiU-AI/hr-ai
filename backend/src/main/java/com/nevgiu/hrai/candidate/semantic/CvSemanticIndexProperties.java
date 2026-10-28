@@ -9,12 +9,18 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties("app.cv-semantic-index")
 public record CvSemanticIndexProperties(
+        // Feature flag permits Flyway/schema deployment before any CV text is sent to the embedding provider.
         boolean enabled,
+        // Character bounds are deterministic approximations; the provider still performs its own token accounting.
         @Min(400) @Max(4000) int chunkCharacters,
         @Min(0) @Max(1000) int overlapCharacters,
+        // Caps both personal-data disclosure and embedding cost for one document.
         @Min(1) @Max(200) int maxChunksPerDocument,
+        // Shared with Spring AI PgVectorStore's maximum document batch size through application.yml.
         @Min(1) @Max(100) int embeddingBatchSize,
+        // Limits how many missing/stale documents one scheduled run can enqueue.
         @Min(1) @Max(500) int reconciliationBatchSize,
+        // Kept in the typed configuration for operational visibility; @Scheduled resolves the same property directly.
         String reconciliationCron
 ) {
     public CvSemanticIndexProperties {

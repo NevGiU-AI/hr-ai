@@ -18,6 +18,10 @@ class CvSemanticIndexService {
         this.repository = repository;
     }
 
+    /**
+     * Loads only eligible committed evidence, chunks it deterministically, and delegates embedding/persistence to
+     * Spring AI. An empty optional means the document was deleted, is incomplete, or belongs to another tenant.
+     */
     void index(Long documentId, String organizationId) {
         CvSemanticSource source = sourceLoader.load(documentId, organizationId).orElse(null);
         if (source == null) return;

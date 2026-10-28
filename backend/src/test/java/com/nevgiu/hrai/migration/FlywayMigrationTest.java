@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Testcontainers(disabledWithoutDocker = true)
 class FlywayMigrationTest {
 
+    // Declare the pgvector image as PostgreSQL-compatible so Testcontainers supplies its normal JDBC lifecycle.
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
             DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));
@@ -42,6 +43,8 @@ class FlywayMigrationTest {
                 .isEqualTo(1);
         assertThat(count("SELECT COUNT(*) FROM pg_extension WHERE extname = 'vector'"))
                 .isEqualTo(1);
+        // Insert through Spring AI's native content/metadata/embedding contract; generated columns must enforce tenant
+        // ownership without requiring the Java adapter to duplicate relational values.
         execute("INSERT INTO candidates (id, organization_id, name) VALUES (9001, 'tenant-a', 'Index Test')");
         execute("""
                 INSERT INTO cv_documents
@@ -63,6 +66,7 @@ class FlywayMigrationTest {
                 """);
         assertThat(count("SELECT COUNT(*) FROM cv_semantic_chunks WHERE organization_id = 'tenant-a'"))
                 .isEqualTo(1);
+        // Metadata claiming another tenant must fail at the generated composite foreign-key boundary.
         assertThatThrownBy(() -> execute("""
                 INSERT INTO cv_semantic_chunks
                   (content, metadata, embedding)
@@ -74,6 +78,7 @@ class FlywayMigrationTest {
                 """))
                 .hasMessageContaining("fk_cv_semantic_chunks_candidate_tenant");
         execute("DELETE FROM cv_documents WHERE id = 9002");
+        // Candidate/document erasure must remove derived embeddings without a separate provider call.
         assertThat(count("SELECT COUNT(*) FROM cv_semantic_chunks WHERE document_id = 9002")).isZero();
 
         execute("DROP TABLE flyway_schema_history");

@@ -1,4 +1,7 @@
 package com.nevgiu.hrai.candidate.semantic;
 
-/** Minimal ownership data for one missing or stale semantic index. */
+/**
+ * Minimal, non-PII work item returned by reconciliation.
+ * Extracted text is loaded only when this item is actually processed.
+ */
 record CvSemanticIndexTarget(Long documentId, String organizationId) { }

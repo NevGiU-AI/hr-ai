@@ -37,9 +37,11 @@ spring:
           initialize-schema: false
           schema-validation: true
           table-name: cv_semantic_chunks
+          # These values must remain aligned with V6 and the configured OpenAI embedding dimensions above.
           dimensions: 1536
           index-type: HNSW
           distance-type: COSINE_DISTANCE
+          # Spring AI splits larger add operations into bounded provider/database batches.
           max-document-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
 
   servlet:
@@ -131,9 +133,12 @@ app:
   cv-semantic-index:
     # Opt in per environment after the V6 backup/migration and embedding-cost review.
     enabled: ${APP_CV_SEMANTIC_INDEX_ENABLED:false}
+    # Character-based deterministic chunking keeps retries stable; overlap preserves boundary context.
     chunk-characters: ${APP_CV_SEMANTIC_CHUNK_CHARACTERS:1200}
     overlap-characters: ${APP_CV_SEMANTIC_CHUNK_OVERLAP:200}
+    # Cost and disclosure bounds apply per CV and per provider request.
     max-chunks-per-document: ${APP_CV_SEMANTIC_MAX_CHUNKS_PER_DOCUMENT:100}
     embedding-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
+    # Reconciliation gradually backfills existing CVs and retries transient provider failures.
     reconciliation-batch-size: ${APP_CV_SEMANTIC_RECONCILIATION_BATCH_SIZE:50}
     reconciliation-cron: ${APP_CV_SEMANTIC_RECONCILIATION_CRON:0 11 * * * *}

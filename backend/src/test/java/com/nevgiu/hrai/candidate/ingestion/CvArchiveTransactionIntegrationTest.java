@@ -123,6 +123,7 @@ class CvArchiveTransactionIntegrationTest {
 
         @Bean
         CvSemanticIndexCoordinator cvSemanticIndexCoordinator() {
+            // This test targets archive transaction isolation; semantic lifecycle behavior has dedicated unit tests.
             return mock(CvSemanticIndexCoordinator.class);
         }
 

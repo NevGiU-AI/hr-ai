@@ -83,6 +83,7 @@ class CvIngestionServiceTest {
         });
         when(documentRepository.save(any(CvDocument.class))).thenAnswer(invocation -> {
             CvDocument document = invocation.getArgument(0);
+            // Repository mocks do not generate database IDs; indexing needs the persisted document identity.
             if (document.getId() == null) ReflectionTestUtils.setField(document, "id", ids.getAndIncrement());
             return document;
         });

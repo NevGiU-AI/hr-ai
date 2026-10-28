@@ -18,6 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers(disabledWithoutDocker = true)
 class FlywayHibernateValidationTest {
 
+    // Plain postgres:16 does not ship the vector extension files required by V6.
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
             DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"));

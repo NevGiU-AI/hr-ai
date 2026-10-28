@@ -13,6 +13,10 @@ public class CvSemanticSearchService {
         this.repository = repository;
     }
 
+    /**
+     * Searches only inside an authenticated organization, optionally narrowed to already authorized candidate IDs.
+     * This internal method intentionally accepts organization context from application code, not model-generated data.
+     */
     public List<CvSemanticMatch> search(String organizationId, String query,
                                         List<Long> candidateIds, int limit) {
         if (organizationId == null || organizationId.isBlank()) {

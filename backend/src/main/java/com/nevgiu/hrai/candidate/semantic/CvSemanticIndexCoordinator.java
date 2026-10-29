@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.sql.SQLException;
+
 /** Defers indexing until commit and prevents an embedding outage from invalidating a successful CV operation. */
 @Service
 public class CvSemanticIndexCoordinator {
@@ -49,8 +51,8 @@ public class CvSemanticIndexCoordinator {
             CvSemanticIndexingStage stage = exception instanceof CvSemanticIndexingException indexingException
                     ? indexingException.stage() : null;
             log.error("CV semantic indexing failed for organizationId={} documentId={} stage={} failureType={} "
-                            + "rootCauseType={}", organizationId, documentId, stage,
-                    exception.getClass().getSimpleName(), rootCauseType(exception));
+                            + "rootCauseType={} sqlState={}", organizationId, documentId, stage,
+                    exception.getClass().getSimpleName(), rootCauseType(exception), sqlState(exception));
         }
     }
 
@@ -58,5 +60,19 @@ public class CvSemanticIndexCoordinator {
         Throwable root = failure;
         while (root.getCause() != null && root.getCause() != root) root = root.getCause();
         return root.getClass().getSimpleName();
+    }
+
+    /**
+     * Extracts only PostgreSQL's standardized five-character failure category. Unlike an exception message or SQL
+     * parameter dump, the SQL state cannot contain CV evidence, embedding values, or other personally identifiable
+     * information (PII).
+     */
+    private String sqlState(Throwable failure) {
+        Throwable current = failure;
+        while (current != null) {
+            if (current instanceof SQLException sqlException) return sqlException.getSQLState();
+            current = current.getCause();
+        }
+        return null;
     }
 }

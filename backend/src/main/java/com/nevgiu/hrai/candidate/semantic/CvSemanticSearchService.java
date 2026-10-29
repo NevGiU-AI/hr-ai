@@ -1,6 +1,8 @@
 package com.nevgiu.hrai.candidate.semantic;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,7 +18,10 @@ public class CvSemanticSearchService {
     /**
      * Searches only inside an authenticated organization, optionally narrowed to already authorized candidate IDs.
      * This internal method intentionally accepts organization context from application code, not model-generated data.
+     * NOT_SUPPORTED suspends a caller's JPA transaction while the embedding provider and vector store run, preventing
+     * a slow network call from holding a relational connection or candidate read transaction open.
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<CvSemanticMatch> search(String organizationId, String query,
                                         List<Long> candidateIds, int limit) {
         if (organizationId == null || organizationId.isBlank()) {

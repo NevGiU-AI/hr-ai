@@ -36,11 +36,17 @@ public class CvChatService {
      * The returned citation objects are reconstructed from authorized server-side evidence, never model-provided text.
      */
     public CvChatResponse ask(Long candidateId, String question, String organizationId) {
+        String normalizedQuestion = question.trim();
         // Evidence is loaded in a short read transaction; no JDBC connection is held while OpenAI responds.
-        List<CvChatEvidence> evidence = evidenceService.find(candidateId, organizationId);
+        List<CvChatEvidence> evidence = evidenceService.find(candidateId, normalizedQuestion, organizationId);
+        // An empty semantic result is a normal evidence outcome, not a provider failure. Avoid sending unrelated
+        // fallback text to the model and return wording controlled entirely by the backend.
+        if (evidence.isEmpty()) {
+            return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
+        }
         String answer;
         try {
-            answer = model.answer(question.trim(), evidence);
+            answer = model.answer(normalizedQuestion, evidence);
         } catch (RuntimeException providerFailure) {
             // Keep provider internals and potentially sensitive prompt fragments out of the API response.
             LOGGER.warn("CV chat provider call failed for candidateId={} organizationId={} failureType={}",

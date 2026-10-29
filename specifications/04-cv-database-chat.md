@@ -12,8 +12,9 @@ The first backend slice supports an imperative question about one explicitly sel
 - `ADMIN`, `RECRUITER`, and `REVIEWER` may call it; `READ_ONLY` may not.
 - The authenticated principal supplies the organization. The model cannot choose or override it, and missing and
   cross-organization candidate identifiers both return `404`.
-- The backend loads a short evidence snapshot in a read-only transaction, closes that transaction, and only then makes
-  the slower Spring AI provider call.
+- The backend verifies the candidate and current document in a read-only transaction. Semantic search suspends that
+  JPA transaction while it embeds the question and queries pgvector, and the later chat-model call runs after evidence
+  loading has completed; slow provider calls therefore do not retain relational transactions or connections.
 - OCR documents contribute bounded page evidence such as `[CV-12-P2]`. Native extraction contributes document-level
   evidence such as `[CV-12]`.
 - Every returned answer must contain at least one supplied reference. Unknown, invented, or absent citations cause a
@@ -21,18 +22,20 @@ The first backend slice supports an imperative question about one explicitly sel
   `INSUFFICIENT_EVIDENCE` and `OUT_OF_SCOPE` control results. Java replaces those markers with fixed safe wording and
   an empty citation list; arbitrary uncited model prose remains invalid.
 - Evidence/page and excerpt limits are configurable with `CV_CHAT_MAX_EVIDENCE_PAGES` and
-  `CV_CHAT_MAX_EXCERPT_CHARACTERS`; deployment defaults are `10` and `1200`.
+  `CV_CHAT_MAX_EXCERPT_CHARACTERS`; deployment defaults are `10` and `1200`. Semantic retrieval adds an independent
+  rollout switch plus result/relevance bounds described below.
 - The Angular candidate workspace exposes this bounded endpoint only to `ADMIN`, `RECRUITER`, and `REVIEWER`. It
   validates and submits one question for the selected candidate, displays progress and structured retryable failures,
   distinguishes fixed safe responses from evidence-backed answers, and links each citation to its document card.
 
-The accepted candidate-specific endpoint does not yet consume vector retrieval or provide multi-candidate
-search/comparison, persisted conversation memory, streaming, or speech controls. Those remain explicit roadmap work
-and must not be inferred from the presence of the candidate-specific interface.
+The candidate-specific endpoint can now consume vector retrieval when its separate environment switch is enabled. It
+does not yet provide multi-candidate search/comparison, persisted conversation memory, streaming, or speech controls.
+Those remain explicit roadmap work and must not be inferred from this single-candidate retrieval slice.
 
 ## Semantic-indexing foundation
 
-The next backend slice adds an opt-in index without yet changing the accepted chat endpoint:
+The indexing foundation remains independently deployable, and the candidate-chat endpoint now has a separately
+controlled opt-in retrieval path:
 
 PostgreSQL remains the application's relational database. pgvector is an extension loaded into that same database; it
 adds the `vector` type, cosine-distance operations, and HNSW/IVFFlat indexing rather than introducing another data
@@ -78,9 +81,19 @@ vectors efficiently. Neither setting authorizes access. Spring AI must first app
 filter and any optional candidate-ID narrowing filter; the generated relational columns and foreign keys provide the
 database-level tenant-integrity boundary.
 
-`CV_SEMANTIC_INDEX_ENABLED` defaults to `false`. The V6 migration and indexing lifecycle have passed staging
-acceptance, but provider cost/privacy review and retrieval quality must still pass before enabling user-facing semantic
-chat. No semantic-search controller or Angular result UI is exposed by this foundation slice.
+`CV_SEMANTIC_INDEX_ENABLED` defaults to `false` and controls index creation/reconciliation.
+`CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED` separately defaults to `false`, allowing an accepted index to remain operational
+while query-time behavior is tested. When enabled, the selected candidate is authorized before search; the authenticated
+organization and verified candidate ID become mandatory vector filters; only the current document and matching source
+version are accepted; low-scoring matches are rejected; repeated chunks from one document/page are merged into one
+bounded citation; and an empty result returns the backend-controlled insufficient-evidence response without calling
+the chat model. Retrieval failures return a stable `502` without logging questions, excerpts, embeddings, or provider
+messages.
+
+`CV_CHAT_SEMANTIC_MAX_MATCHES` defaults to `6` and is validated between `1` and `20`.
+`CV_CHAT_SEMANTIC_MIN_SIMILARITY` defaults to `0.55` and is validated between `0.0` and `1.0`; it is an initial reviewed
+staging value, not a universal quality claim. The existing excerpt limit still bounds every merged citation. No public
+semantic-search controller is exposed: retrieval remains inside the authorized candidate-chat request.
 
 ## Environment acceptance
 

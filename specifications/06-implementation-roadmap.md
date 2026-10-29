@@ -142,7 +142,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Promote the staging-accepted semantic-indexing foundation to production and repeat the focused lifecycle checks.
   Immediate three-chunk indexing, zero pending reconciliation work, privacy-safe error review, and complete
   candidate/document/chunk cleanup passed on 29 October 2026 at main revision `64a7a00`.
-- [ ] Integrate the internal tenant-scoped similarity service into authorized chat retrieval.
+- [x] Integrate the internal tenant-scoped similarity service into authorized single-candidate chat retrieval behind a
+  separate dark-launch switch, with verified organization/candidate filters, current-source-version checks, bounded
+  similarity policy, merged reviewer-visible citations, transaction suspension during vector I/O, and safe empty/failure
+  behavior. Staging and production acceptance remain required before the switch is enabled in each environment.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

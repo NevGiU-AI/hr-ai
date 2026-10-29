@@ -18,7 +18,7 @@ class CvChatServiceTest {
     void answersFromTenantScopedEvidenceAndReturnsOnlyCitedSources() {
         CvChatEvidence evidence = new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null,
                 "Java and Spring Boot engineer with PostgreSQL experience.");
-        when(evidenceService.find(7L, "tenant-a")).thenReturn(List.of(evidence));
+        when(evidenceService.find(7L, "Does this candidate know Java?", "tenant-a")).thenReturn(List.of(evidence));
         when(model.answer(org.mockito.ArgumentMatchers.eq("Does this candidate know Java?"),
                 org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("The CV lists Java and Spring Boot experience [CV-CANDIDATE-7].");
@@ -35,7 +35,7 @@ class CvChatServiceTest {
 
     @Test
     void rejectsProviderCitationsThatWereNotInAuthorizedEvidence() {
-        when(evidenceService.find(7L, "tenant-a")).thenReturn(List.of(
+        when(evidenceService.find(7L, "Summarize", "tenant-a")).thenReturn(List.of(
                 new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null, "Java engineer")));
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("Unsupported claim [CV-CANDIDATE-999].");
@@ -48,7 +48,7 @@ class CvChatServiceTest {
 
     @Test
     void returnsBackendControlledMessageWhenJobRelevantEvidenceIsInsufficient() {
-        stubEvidence();
+        stubEvidence("Does the candidate know Kubernetes?");
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("  INSUFFICIENT_EVIDENCE  ");
 
@@ -61,7 +61,7 @@ class CvChatServiceTest {
 
     @Test
     void returnsBackendControlledMessageForOutOfScopeOrSensitiveQuestions() {
-        stubEvidence();
+        stubEvidence("What is the candidate's political affiliation?");
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("OUT_OF_SCOPE");
 
@@ -75,7 +75,7 @@ class CvChatServiceTest {
 
     @Test
     void stillRejectsArbitraryUncitedProviderText() {
-        stubEvidence();
+        stubEvidence("Summarize");
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("This is an uncited provider answer.");
 
@@ -87,7 +87,7 @@ class CvChatServiceTest {
 
     @Test
     void hidesProviderFailuresBehindAStableApiError() {
-        when(evidenceService.find(7L, "tenant-a")).thenReturn(List.of(
+        when(evidenceService.find(7L, "Summarize", "tenant-a")).thenReturn(List.of(
                 new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null, "Java engineer")));
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
                 .thenThrow(new IllegalStateException("provider response contained internal details"));
@@ -98,8 +98,20 @@ class CvChatServiceTest {
                 .satisfies(error -> assertThat(((CvChatException) error).status().value()).isEqualTo(502));
     }
 
-    private void stubEvidence() {
-        when(evidenceService.find(7L, "tenant-a")).thenReturn(List.of(
+    @Test
+    void returnsControlledInsufficientEvidenceWithoutCallingTheModelWhenRetrievalFindsNothing() {
+        when(evidenceService.find(7L, "Kubernetes", "tenant-a")).thenReturn(List.of());
+
+        CvChatResponse response = service.ask(7L, " Kubernetes ", "tenant-a");
+
+        assertThat(response.answer())
+                .isEqualTo("The available CV evidence does not provide enough information to answer this question.");
+        assertThat(response.citations()).isEmpty();
+        org.mockito.Mockito.verifyNoInteractions(model);
+    }
+
+    private void stubEvidence(String question) {
+        when(evidenceService.find(7L, question, "tenant-a")).thenReturn(List.of(
                 new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null, "Java engineer")));
     }
 

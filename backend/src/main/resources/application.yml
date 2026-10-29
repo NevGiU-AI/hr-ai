@@ -136,6 +136,10 @@ app:
   cv-chat:
     max-evidence-pages: ${APP_CV_CHAT_MAX_EVIDENCE_PAGES:10}
     max-excerpt-characters: ${APP_CV_CHAT_MAX_EXCERPT_CHARACTERS:1200}
+    # Keep retrieval dark until indexing is accepted in the target environment and focused chat checks can run.
+    semantic-retrieval-enabled: ${APP_CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED:false}
+    semantic-max-matches: ${APP_CV_CHAT_SEMANTIC_MAX_MATCHES:6}
+    semantic-min-similarity: ${APP_CV_CHAT_SEMANTIC_MIN_SIMILARITY:0.55}
   cv-semantic-index:
     # Opt in per environment after the V6 backup/migration and embedding-cost review.
     enabled: ${APP_CV_SEMANTIC_INDEX_ENABLED:false}

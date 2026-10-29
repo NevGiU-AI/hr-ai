@@ -74,6 +74,11 @@ services:
       APP_CV_OCR_MINIMUM_CONFIDENCE: ${CV_OCR_MINIMUM_CONFIDENCE:-70}
       APP_CV_CHAT_MAX_EVIDENCE_PAGES: ${CV_CHAT_MAX_EVIDENCE_PAGES:-10}
       APP_CV_CHAT_MAX_EXCERPT_CHARACTERS: ${CV_CHAT_MAX_EXCERPT_CHARACTERS:-1200}
+      # Retrieval rolls out independently after the semantic index itself has passed environment acceptance.
+      APP_CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED: ${CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED:-false}
+      # Query-time disclosure and relevance bounds; tune only through reviewed staging evidence.
+      APP_CV_CHAT_SEMANTIC_MAX_MATCHES: ${CV_CHAT_SEMANTIC_MAX_MATCHES:-6}
+      APP_CV_CHAT_SEMANTIC_MIN_SIMILARITY: ${CV_CHAT_SEMANTIC_MIN_SIMILARITY:-0.55}
       # Semantic indexing is deployed dark by default and enabled only after migration/environment acceptance.
       APP_CV_SEMANTIC_INDEX_ENABLED: ${CV_SEMANTIC_INDEX_ENABLED:-false}
       APP_CV_SEMANTIC_EMBEDDING_MODEL: ${CV_SEMANTIC_EMBEDDING_MODEL:-text-embedding-3-small}

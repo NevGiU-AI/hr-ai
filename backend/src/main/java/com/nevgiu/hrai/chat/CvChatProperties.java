@@ -1,5 +1,7 @@
 package com.nevgiu.hrai.chat;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,5 +24,14 @@ public record CvChatProperties(
         @Min(1) @Max(30) int maxEvidencePages,
 
         // Excerpts below 200 characters are rarely useful; 4,000 caps personal data and tokens sent per evidence item.
-        @Min(200) @Max(4000) int maxExcerptCharacters
+        @Min(200) @Max(4000) int maxExcerptCharacters,
+
+        // Retrieval has its own rollout switch so indexing can remain healthy while chat behavior is validated.
+        boolean semanticRetrievalEnabled,
+
+        // Only a small number of query-relevant chunks may be disclosed to the model for one question.
+        @Min(1) @Max(20) int semanticMaxMatches,
+
+        // Low-scoring neighbors are rejected before model invocation instead of being presented as relevant evidence.
+        @DecimalMin("0.0") @DecimalMax("1.0") double semanticMinSimilarity
 ) { }

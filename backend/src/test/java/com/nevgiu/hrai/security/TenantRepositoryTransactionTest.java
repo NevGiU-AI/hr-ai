@@ -5,9 +5,11 @@ import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.candidate.CvDocumentPageRepository;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
 import com.nevgiu.hrai.job.JobRepository;
+import com.nevgiu.hrai.candidate.semantic.CvSemanticSearchService;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.lang.reflect.Method;
 
@@ -29,6 +31,16 @@ class TenantRepositoryTransactionTest {
         assertReadOnlyTransaction(CandidateEvaluationRepository.class, "findAllByOrganizationId", String.class);
         assertReadOnlyTransaction(CandidateEvaluationRepository.class,
                 "findHistoryByCandidateIdAndOrganizationId", Long.class, String.class);
+    }
+
+    @Test
+    void semanticSearchSuspendsJpaTransactionsDuringEmbeddingAndVectorIo() throws Exception {
+        Method method = CvSemanticSearchService.class.getMethod(
+                "search", String.class, String.class, java.util.List.class, int.class);
+        Transactional transaction = AnnotatedElementUtils.findMergedAnnotation(method, Transactional.class);
+
+        assertThat(transaction).isNotNull();
+        assertThat(transaction.propagation()).isEqualTo(Propagation.NOT_SUPPORTED);
     }
 
     private void assertReadOnlyTransaction(Class<?> repository, String methodName, Class<?>... parameterTypes)

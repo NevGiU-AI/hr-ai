@@ -24,13 +24,15 @@ decisions.
   provenance plus confidence for human review.
 - Ask a bounded, tenant-authorized question about one candidate through the imperative CV-chat backend, with required
   document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
-  corresponding role-aware question, safe-response, error/retry, and linked-citation experience. Semantic search and
-  multi-candidate chat remain roadmap work.
+  corresponding role-aware question, safe-response, error/retry, and linked-citation experience. An independently
+  enabled retrieval path now supplies current, tenant/candidate-filtered pgvector chunks with bounded similarity and
+  stale-source rejection; environment acceptance remains required. Multi-candidate chat remains roadmap work.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
   Flyway V6, immediate indexing, scheduled reconciliation, and deletion cleanup passed staging and production
-  acceptance on 29 October 2026. User-facing semantic retrieval remains pending.
+  acceptance on 29 October 2026. The separately switched single-candidate retrieval integration is implemented and
+  awaits staging and production acceptance.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.

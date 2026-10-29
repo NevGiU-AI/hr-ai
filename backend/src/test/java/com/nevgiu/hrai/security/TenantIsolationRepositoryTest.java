@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest(properties = {
@@ -25,14 +27,19 @@ class TenantIsolationRepositoryTest {
 
     @Test
     void scopesCandidatesJobsAndEvaluationsToTheirOrganization() {
-        Candidate candidateA = candidates.save(candidate("tenant-a", "Ada"));
+        Candidate olderCandidateA = candidate("tenant-a", "Ada");
+        olderCandidateA.setCreatedAt(Instant.parse("2026-01-01T10:00:00Z"));
+        olderCandidateA = candidates.save(olderCandidateA);
+        Candidate newerCandidateA = candidate("tenant-a", "Katherine");
+        newerCandidateA.setCreatedAt(Instant.parse("2026-01-02T10:00:00Z"));
+        newerCandidateA = candidates.save(newerCandidateA);
         Candidate candidateB = candidates.save(candidate("tenant-b", "Grace"));
         Job jobA = jobs.save(job("tenant-a", "Backend Engineer"));
         Job jobB = jobs.save(job("tenant-b", "Platform Engineer"));
 
         CandidateEvaluation evaluationA = new CandidateEvaluation();
         evaluationA.setOrganizationId("tenant-a");
-        evaluationA.setCandidate(candidateA);
+        evaluationA.setCandidate(olderCandidateA);
         evaluationA.setJob(jobA);
         evaluations.save(evaluationA);
 
@@ -42,14 +49,15 @@ class TenantIsolationRepositoryTest {
         evaluationB.setJob(jobB);
         evaluations.save(evaluationB);
 
-        assertThat(candidates.findAllByOrganizationId("tenant-a")).extracting(Candidate::getName)
-                .containsExactly("Ada");
+        assertThat(candidates.findAllByOrganizationIdOrderByCreatedAtDescIdDesc("tenant-a"))
+                .extracting(Candidate::getName)
+                .containsExactly("Katherine", "Ada");
         assertThat(candidates.findByIdAndOrganizationId(candidateB.getId(), "tenant-a")).isEmpty();
         assertThat(jobs.findAllByOrganizationId("tenant-a")).extracting(Job::getTitle)
                 .containsExactly("Backend Engineer");
         assertThat(jobs.findByIdAndOrganizationId(jobB.getId(), "tenant-a")).isEmpty();
         assertThat(evaluations.findAllByOrganizationId("tenant-a")).containsExactly(evaluationA);
-        assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(candidateA.getId(), "tenant-a"))
+        assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(olderCandidateA.getId(), "tenant-a"))
                 .extracting(com.nevgiu.hrai.evaluation.dto.EvaluationHistoryItem::id)
                 .containsExactly(evaluationA.getId());
         assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(

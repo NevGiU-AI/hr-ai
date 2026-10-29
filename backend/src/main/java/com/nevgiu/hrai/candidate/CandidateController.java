@@ -49,7 +49,7 @@ public class CandidateController {
 
     @GetMapping
     public Iterable<Candidate> findAll(@AuthenticationPrincipal AppUserPrincipal principal) {
-        return candidateRepository.findAllByOrganizationId(principal.organizationId());
+        return candidateRepository.findAllByOrganizationIdOrderByCreatedAtDescIdDesc(principal.organizationId());
     }
 
     @PostMapping

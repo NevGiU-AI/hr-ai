@@ -31,22 +31,24 @@ spring:
           # The Flyway vector column is fixed at 1,536 dimensions; keep model and dimensions explicit.
           model: ${APP_CV_SEMANTIC_EMBEDDING_MODEL:text-embedding-3-small}
           dimensions: 1536
-      vectorstore:
-        pgvector:
-          # Flyway V6 owns this schema. Startup validates and uses it but never creates or replaces it.
-          initialize-schema: false
-          schema-validation: true
-          table-name: cv_semantic_chunks
-          # These values must remain aligned with V6 and the configured OpenAI embedding dimensions above.
-          dimensions: 1536
-          # HNSW is a graph-based approximate nearest-neighbour index: faster retrieval at the cost of extra
-          # storage, memory, and insert/build work compared with an exact full-table vector scan.
-          index-type: HNSW
-          # Cosine distance ranks semantic direction rather than vector magnitude; smaller distance means that the
-          # query and CV chunk are more semantically similar.
-          distance-type: COSINE_DISTANCE
-          # Spring AI splits larger add operations into bounded provider/database batches.
-          max-document-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
+    # Vector-store configuration is a sibling of the OpenAI model configuration. Nesting it below `openai` makes
+    # Spring AI ignore these values and silently use its default `vector_store` table instead of Flyway V6's table.
+    vectorstore:
+      pgvector:
+        # Flyway V6 owns this schema. Startup validates and uses it but never creates or replaces it.
+        initialize-schema: false
+        schema-validation: true
+        table-name: cv_semantic_chunks
+        # These values must remain aligned with V6 and the configured OpenAI embedding dimensions above.
+        dimensions: 1536
+        # HNSW is a graph-based approximate nearest-neighbour index: faster retrieval at the cost of extra
+        # storage, memory, and insert/build work compared with an exact full-table vector scan.
+        index-type: HNSW
+        # Cosine distance ranks semantic direction rather than vector magnitude; smaller distance means that the
+        # query and CV chunk are more semantically similar.
+        distance-type: COSINE_DISTANCE
+        # Spring AI splits larger add operations into bounded provider/database batches.
+        max-document-batch-size: ${APP_CV_SEMANTIC_EMBEDDING_BATCH_SIZE:32}
 
   servlet:
     multipart:

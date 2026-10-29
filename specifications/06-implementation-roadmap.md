@@ -136,7 +136,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Add the Flyway-owned Spring AI `PgVectorStore` schema, bounded native/OCR chunking, portable tenant metadata,
   composite tenant constraints, post-commit indexing, reprocessing replacement, deletion cascades, and bounded
   reconciliation backfill.
-- [ ] Validate V6 and the opt-in indexing lifecycle in staging before enabling semantic retrieval in user-facing chat.
+- [x] Validate V6 and the opt-in indexing lifecycle in staging before enabling semantic retrieval in user-facing chat.
+  Immediate indexing, scheduled recovery, zero pending work, tenant-scoped chunks, and privacy-safe logs passed on
+  29 October 2026 after correcting relational replacement deletion and the Spring AI pgvector property hierarchy.
+- [ ] Promote the staging-accepted semantic-indexing foundation to production and repeat the focused lifecycle checks.
 - [ ] Integrate the internal tenant-scoped similarity service into authorized chat retrieval.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert

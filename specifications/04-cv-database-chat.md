@@ -78,9 +78,9 @@ vectors efficiently. Neither setting authorizes access. Spring AI must first app
 filter and any optional candidate-ID narrowing filter; the generated relational columns and foreign keys provide the
 database-level tenant-integrity boundary.
 
-`CV_SEMANTIC_INDEX_ENABLED` defaults to `false`. V6 migration, provider cost/privacy review, backfill behavior, tenant
-isolation, replacement, erasure, and retrieval quality must pass staging acceptance before enabling user-facing
-semantic chat. No semantic-search controller or Angular result UI is exposed by this foundation slice.
+`CV_SEMANTIC_INDEX_ENABLED` defaults to `false`. The V6 migration and indexing lifecycle have passed staging
+acceptance, but provider cost/privacy review and retrieval quality must still pass before enabling user-facing semantic
+chat. No semantic-search controller or Angular result UI is exposed by this foundation slice.
 
 ## Environment acceptance
 
@@ -108,6 +108,26 @@ The accepted checks covered:
 - document and OCR-page citation labels linked to the matching ingestion-history document card; and
 - corrected citation navigation that keeps `/candidates/import` active and scrolls to the selected document instead of
   resolving the root fragment through the default `/jobs/job-offer` route.
+
+The opt-in semantic-indexing foundation passed staging acceptance on 29 October 2026 at main revision `2db9a7a`. The
+accepted checks covered:
+
+- Flyway V6 and Spring AI schema validation against the Flyway-owned `cv_semantic_chunks` table with 1,536-dimensional
+  vectors and the HNSW cosine index;
+- immediate post-commit indexing of native-text document `64` into five tenant-scoped chunks;
+- bounded reconciliation recovery of documents `62` and `63` into three and two chunks respectively at the normal
+  `02:11 UTC` scheduled run, followed by a zero pending-document count;
+- privacy-safe operational logs with no CV excerpts, embeddings, or provider responses and no remaining
+  `DELETE_EXISTING`, `INSERT_REPLACEMENT`, or default `vector_store` errors; and
+- harmless PDFBox/FontBox missing-PostScript-name warnings that did not prevent extraction or semantic indexing.
+
+Staging validation exposed and corrected two integration defects before acceptance. Spring AI's metadata-JSONPath
+deletion failed against the deployed environment, so atomic replacement now uses a parameterized deletion through
+V6's generated `organization_id` and `document_id` columns. The pgvector configuration was also incorrectly nested
+under `spring.ai.openai`, causing Spring AI to ignore `table-name` and insert into its nonexistent default
+`public.vector_store`; it is now correctly bound under `spring.ai.vectorstore.pgvector`. Container-backed replacement,
+rollback, tenant-isolation, reconciliation, and deletion-cascade regressions protect both corrections. The accepted
+index remains an internal foundation; the candidate chat endpoint does not consume semantic retrieval yet.
 
 ### Production
 

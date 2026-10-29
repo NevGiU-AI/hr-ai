@@ -752,6 +752,13 @@ Validation completed:
   release, and original-only deletion behaved correctly; sensitive storage and CV fields were absent; missing and
   cross-tenant identifiers remained indistinguishable; deletion preserved candidate and evaluation data; session
   expiration still redirected to login; and recent backend/frontend logs contained no related errors.
+- Main revision `2db9a7a` passed the opt-in semantic-indexing acceptance on 29 October 2026. Flyway V6 and Spring AI
+  validated the Flyway-owned `cv_semantic_chunks` table; document `64` produced five chunks immediately; the normal
+  `02:11 UTC` reconciliation run recovered previously failed documents `62` and `63` with three and two chunks; the
+  pending count returned to zero; and the reconciliation window contained no deletion, insertion, or default-table
+  errors. Acceptance followed corrections for Spring AI JSONPath replacement deletion and an incorrectly nested
+  pgvector property that had selected the nonexistent default `public.vector_store`. FontBox missing-PostScript-name
+  warnings from the disposable PDF were non-fatal and did not prevent extraction or indexing.
 
 No OpenAI key, PostgreSQL password, private SSH key, GHCR token, or completed environment file was added to Git or documentation.
 

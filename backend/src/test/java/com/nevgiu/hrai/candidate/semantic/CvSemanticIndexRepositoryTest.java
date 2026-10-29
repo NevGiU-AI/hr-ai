@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,8 @@ class CvSemanticIndexRepositoryTest {
 
         var ordered = inOrder(vectorStore);
         // Deleting first and adding second inside one transaction is the repository's atomic replacement contract.
-        ordered.verify(vectorStore).delete(any(Filter.Expression.class));
+        verify(jdbc).update("DELETE FROM cv_semantic_chunks WHERE organization_id = ? AND document_id = ?",
+                "tenant-a", 9L);
         ArgumentCaptor<List<Document>> documents = ArgumentCaptor.forClass(List.class);
         ordered.verify(vectorStore).add(documents.capture());
         Document stored = documents.getValue().getFirst();
@@ -74,7 +76,9 @@ class CvSemanticIndexRepositoryTest {
     @Test
     void identifiesDeleteAndInsertFailuresWithoutCopyingSensitiveMessages() {
         RuntimeException deleteFailure = new RuntimeException("sensitive delete message");
-        doThrow(deleteFailure).when(vectorStore).delete(any(Filter.Expression.class));
+        doThrow(deleteFailure).when(jdbc).update(
+                eq("DELETE FROM cv_semantic_chunks WHERE organization_id = ? AND document_id = ?"),
+                eq("tenant-a"), eq(9L));
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> repository.replace(source(), List.of()))
                 .isInstanceOfSatisfying(CvSemanticIndexingException.class, failure -> {
@@ -82,7 +86,7 @@ class CvSemanticIndexRepositoryTest {
                     assertThat(failure.getMessage()).doesNotContain("sensitive delete message");
                 });
 
-        org.mockito.Mockito.reset(vectorStore);
+        org.mockito.Mockito.reset(vectorStore, jdbc);
         RuntimeException insertFailure = new RuntimeException("sensitive embedding message");
         doThrow(insertFailure).when(vectorStore).add(any());
 

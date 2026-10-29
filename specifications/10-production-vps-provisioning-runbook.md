@@ -797,6 +797,15 @@ deletion preserved candidate and evaluation data; and held candidates could not 
 backend enforcement remained authoritative. Session expiry still returned the browser to login. Backend and frontend
 log inspection found no related storage, tenant, authorization, purge, or rollback-restoration error.
 
+**Semantic-indexing acceptance recorded 29 October 2026 for main revision `64a7a00`:** production ran with
+`CV_SEMANTIC_INDEX_ENABLED=true`; the backend, Flyway V6, pgvector extension, and Flyway-owned
+`cv_semantic_chunks` schema were healthy. Disposable document `4` produced three tenant-scoped chunks immediately,
+the latest-source reconciliation query returned zero pending documents, and the focused backend log review returned no
+`DELETE_EXISTING`, `INSERT_REPLACEMENT`, PostgreSQL, or default `vector_store` errors. Administrator-confirmed erasure
+of the disposable candidate removed the candidate, document, and all three chunks; the three post-erasure counts were
+zero. No real applicant data was altered by this smoke test. Tenant-scoped semantic retrieval remains a separate chat
+integration slice.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

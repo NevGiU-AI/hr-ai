@@ -29,8 +29,8 @@ decisions.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
-  Flyway V6, immediate indexing, and scheduled reconciliation passed staging acceptance on 29 October 2026;
-  production promotion and user-facing semantic retrieval remain pending.
+  Flyway V6, immediate indexing, scheduled reconciliation, and deletion cleanup passed staging and production
+  acceptance on 29 October 2026. User-facing semantic retrieval remains pending.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -108,7 +108,7 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Promote the staging-accepted semantic-indexing foundation to production, then integrate tenant-scoped retrieval into chat,
+1. Integrate the staging- and production-accepted semantic index into tenant-scoped chat retrieval, then add
    organization-scoped candidate-name resolution, conversation memory, multi-candidate result cards, cited comparison,
    and formal CV-chat evaluation testing. Candidate names or UI selections must resolve to verified tenant-scoped IDs
    before evidence retrieval; missing or ambiguous names are never guessed.

@@ -146,6 +146,14 @@ The candidate-specific Angular interface passed focused production acceptance on
 loading and failure behavior, candidate-change reset, and privacy-safe log review. Document and page citations remained
 on `/candidates/import` and scrolled to the matching ingestion-history document card.
 
+The semantic-indexing foundation passed production acceptance on 29 October 2026 at main revision `64a7a00`, with
+`CV_SEMANTIC_INDEX_ENABLED=true`. Flyway V6 and the pgvector schema were healthy; disposable production document `4`
+was indexed immediately into three tenant-scoped chunks; the reconciliation query reported zero pending documents;
+and the focused log review found no replacement-deletion, replacement-insertion, PostgreSQL, or default-table errors.
+Administrator-confirmed erasure of the disposable candidate then removed its candidate row, document row, and all
+semantic chunks: each post-erasure count was zero. This validates the internal indexing lifecycle in production; it
+does not yet enable semantic retrieval in candidate chat.
+
 Semantic retrieval, multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain
 separate implementation slices; acceptance of this bounded interface does not mark those capabilities complete.
 

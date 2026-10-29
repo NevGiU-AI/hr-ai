@@ -4,7 +4,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +32,13 @@ class CvSemanticIndexRepository {
     void replace(CvSemanticSource source, List<CvSemanticChunk> chunks) {
         // Delete and add share one database transaction. A failed embedding call or insert therefore
         // restores the previous index instead of leaving the document only partially searchable.
-        var documentScope = documentScope(source.organizationId(), source.documentId());
         try {
-            vectorStore.delete(documentScope);
+            // V6 exposes tenant and document ownership as generated relational columns. Deleting through those
+            // columns avoids PgVectorStore's dynamically rendered JSONPath DELETE, which failed for every pending
+            // staging document with a PostgreSQL exception before insertion was reached. Parameters also prevent
+            // tenant/document values from becoming SQL syntax.
+            jdbc.update("DELETE FROM cv_semantic_chunks WHERE organization_id = ? AND document_id = ?",
+                    source.organizationId(), source.documentId());
         } catch (RuntimeException exception) {
             throw CvSemanticIndexingException.at(CvSemanticIndexingStage.DELETE_EXISTING, exception);
         }
@@ -112,10 +115,4 @@ class CvSemanticIndexRepository {
                 Instant.parse(metadata.get("sourceVersion").toString()));
     }
 
-    private Filter.Expression documentScope(String organizationId, Long documentId) {
-        // Replacement deletion is scoped by both values even though document IDs are currently globally unique.
-        FilterExpressionBuilder filters = new FilterExpressionBuilder();
-        return filters.and(filters.eq("organizationId", organizationId),
-                filters.eq("documentId", String.valueOf(documentId))).build();
-    }
 }

@@ -10,8 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CandidateRepository extends JpaRepository<Candidate, Long> {
+    /**
+     * Returns one organization's candidates newest first. The ID supplies a stable tie-breaker when
+     * rows share the same creation timestamp, so repeated requests cannot arbitrarily reorder them.
+     */
     @Transactional(readOnly = true)
-    List<Candidate> findAllByOrganizationId(String organizationId);
+    List<Candidate> findAllByOrganizationIdOrderByCreatedAtDescIdDesc(String organizationId);
 
     @Transactional(readOnly = true)
     Optional<Candidate> findByIdAndOrganizationId(Long id, String organizationId);

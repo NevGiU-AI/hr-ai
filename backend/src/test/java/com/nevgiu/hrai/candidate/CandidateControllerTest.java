@@ -29,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -106,6 +107,21 @@ class CandidateControllerTest {
     }
 
     @Test
+    void returnsTenantCandidatesInRepositoryOrder() throws Exception {
+        Candidate newest = candidate(9L, "Katherine Johnson", Instant.parse("2026-01-02T10:00:00Z"));
+        Candidate older = candidate(7L, "Ada Lovelace", Instant.parse("2026-01-01T10:00:00Z"));
+        when(candidateRepository.findAllByOrganizationIdOrderByCreatedAtDescIdDesc("tenant-a"))
+                .thenReturn(List.of(newest, older));
+
+        mvc.perform(get("/api/candidates").with(user(PRINCIPAL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(9))
+                .andExpect(jsonPath("$[1].id").value(7));
+
+        verify(candidateRepository).findAllByOrganizationIdOrderByCreatedAtDescIdDesc("tenant-a");
+    }
+
+    @Test
     void erasesCandidateOnlyWithExplicitConfirmation() throws Exception {
         mvc.perform(delete("/api/candidates/7").with(user(PRINCIPAL))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"confirmed\":true}"))
@@ -141,5 +157,14 @@ class CandidateControllerTest {
                 .andExpect(jsonPath("$.documents[0].administrationAllowed").value(true))
                 .andExpect(jsonPath("$.documents[0].storageKey").doesNotExist())
                 .andExpect(jsonPath("$.documents[0].sha256").doesNotExist());
+    }
+
+    private Candidate candidate(Long id, String name, Instant createdAt) {
+        Candidate candidate = new Candidate();
+        candidate.setId(id);
+        candidate.setOrganizationId("tenant-a");
+        candidate.setName(name);
+        candidate.setCreatedAt(createdAt);
+        return candidate;
     }
 }

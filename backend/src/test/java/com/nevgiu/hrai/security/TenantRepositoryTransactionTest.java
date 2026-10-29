@@ -17,7 +17,8 @@ class TenantRepositoryTransactionTest {
 
     @Test
     void tenantQueriesThatHydrateLobFieldsAreReadOnlyTransactional() throws Exception {
-        assertReadOnlyTransaction(CandidateRepository.class, "findAllByOrganizationId", String.class);
+        assertReadOnlyTransaction(CandidateRepository.class,
+                "findAllByOrganizationIdOrderByCreatedAtDescIdDesc", String.class);
         assertReadOnlyTransaction(CandidateRepository.class, "findByIdAndOrganizationId", Long.class, String.class);
         assertReadOnlyTransaction(JobRepository.class, "findAllByOrganizationId", String.class);
         assertReadOnlyTransaction(JobRepository.class, "findByIdAndOrganizationId", Long.class, String.class);

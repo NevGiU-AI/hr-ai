@@ -217,6 +217,21 @@ judgments passed for every generated answer. The run completed in 28.43 seconds.
 warnings came from test instrumentation and did not indicate an evaluation failure. Staging and production environment
 acceptance remain pending.
 
+#### Multilingual staging acceptance — 30 October 2026
+
+PR #106 at main revision `d46f435` passed its scoped staging checks. English answers remained grounded and cited;
+repeated French and Portuguese grounded answers preserved their question language; sensitive/unrelated refusal policy,
+tenant-scoped citations, privacy-safe logs, and backend health remained correct. These results complement the earlier
+synthetic provider gate rather than replacing it.
+
+The real-CV French paraphrase `Sur quoi a-t-il travaillé chez KLx ?` remained below the accepted retrieval boundary and
+returned controlled insufficient evidence, while the English equivalent and another French formulation retrieved the
+expected document. This is an accepted safe failure for PR #106's language-preservation scope, not evidence that
+multilingual retrieval is complete. Preserve the pair as a future expected-document recall fixture and measure
+similarity/query normalization or translation before changing the global threshold. Application-owned safe messages
+and their Angular explanatory text remain English; structured outcomes and deterministic EN/FR/PT localization are
+scheduled immediately before dashboard implementation. Production acceptance of PR #106 remains pending.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

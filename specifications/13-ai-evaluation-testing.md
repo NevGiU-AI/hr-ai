@@ -138,7 +138,20 @@ retrieval success and controlled insufficient evidence, and a successful French 
 French answer on repetition. The next dataset must therefore record expected documents, required concepts, citations,
 question/answer language, paraphrase families, and repeated-run stability. These are retrieval and generated-answer
 evaluation requirements, not failures of the accepted pre-retrieval policy classifier. Production policy acceptance
-remains pending.
+was completed later the same day.
+
+#### Production acceptance — 30 October 2026
+
+Release `v0.22.0` at main revision `6d96d2b` passed the focused production question-policy checks without any new
+environment, schema, Compose, or frontend configuration. Professional Java-engineer and Angular-project questions
+continued to grounded cited answers. Religion and weather requests returned the fixed refusal without citations and
+produced privacy-safe `PRE_RETRIEVAL_POLICY` decisions with the expected `SENSITIVE` and `OUT_OF_SCOPE` labels. Logs
+contained no question or CV content. The 21-case provider-backed evaluation had already passed before promotion and was
+not converted into a production runtime dependency.
+
+Production policy acceptance does not close the broader evaluation milestone. Multilingual paraphrase retrieval,
+response-language consistency, repeated-run stability, expected-document recall, groundedness, fact-checking, and
+citation-quality gates remain the immediate next evaluation slice.
 
 ### Spring AI tools
 

@@ -29,7 +29,8 @@ decisions.
   stale-source rejection. A strict pre-retrieval question-policy decision prevents unrelated or sensitive questions
   from initiating candidate-evidence search. Staging and production accepted the calibrated `0.35` retrieval threshold
   on 30 October 2026; the corrected policy boundary and its 21-case provider-backed evaluation passed staging the same
-  day, while production acceptance remains pending. Multi-candidate chat remains roadmap work.
+  day, then the same policy behavior passed production acceptance in release `v0.22.0`. Multi-candidate chat remains
+  roadmap work.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -57,7 +58,8 @@ acceptance on 30 October 2026 at a calibrated `0.35` similarity threshold. The p
 staging acceptance on 30 October 2026 after correcting a terse professional-question false refusal and calibrating a
 versioned English/French/Portuguese policy dataset. Multilingual paraphrase recall and response-language consistency
 remain measured limitations for the next retrieval/answer evaluation slice. Broader multi-candidate retrieval, speech
-input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
+input/playback, and the recruitment dashboard remain roadmap work. Production repeated the focused question-policy
+checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
 horizontal or multi-host backend scaling.

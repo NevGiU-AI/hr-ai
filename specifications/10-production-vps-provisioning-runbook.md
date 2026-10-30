@@ -821,6 +821,15 @@ CV_CHAT_SEMANTIC_MAX_MATCHES=6
 CV_CHAT_SEMANTIC_MIN_SIMILARITY=0.35
 ```
 
+**Pre-retrieval question-policy acceptance recorded 30 October 2026 for release `v0.22.0` at main revision
+`6d96d2b`:** production deployed the staging-accepted correction without adding environment variables or changing
+Flyway, the database, Compose, or the frontend. The terse Java-engineer and Angular-project questions returned grounded
+answers with authorized citations. Religion and weather requests returned the controlled refusal without citations;
+backend logs identified `PRE_RETRIEVAL_POLICY` decisions with `SENSITIVE` and `OUT_OF_SCOPE` labels while containing no
+question or CV content. The earlier provider-backed evaluation had passed all 21 synthetic English, French, and
+Portuguese policy cases. Multilingual paraphrase recall and response-language stability remain separate retrieval and
+generated-answer evaluation work rather than a completed production capability.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

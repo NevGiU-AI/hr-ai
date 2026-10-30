@@ -185,6 +185,23 @@ education evidence, while genuinely absent restaurant and salary information sti
 insufficient-evidence response without citations. This value is the accepted initial deployment default, not a quality
 guarantee for every model, language, CV corpus, or future embedding change.
 
+The pre-retrieval question-policy correction passed focused staging acceptance on 30 October 2026 after PR #103 was
+merged at main revision `87821a4`. The opt-in provider-backed evaluation classified all 21 synthetic, human-reviewed
+English, French, and Portuguese cases correctly with `gpt-4o-mini`, including terse professional wording, sensitive
+traits, unrelated requests, adversarial instructions, and the distinction between employment by a religious
+organization and the candidate's personal religion. End-to-end checks confirmed that `Is it a Java engineer ?`
+continued to semantic retrieval and returned a grounded `[CV-61]` answer. Religion and weather requests were rejected
+at `PRE_RETRIEVAL_POLICY` as `SENSITIVE` and `OUT_OF_SCOPE`; privacy-safe logs contained candidate/organization IDs,
+stage, and label but no question or CV content. An Angular-project question also returned the expected grounded
+`[CV-61]` citation.
+
+This acceptance is limited to question-policy behavior. Multilingual probing exposed a separate retrieval/answer
+quality gap: the English KLx question retrieved grounded evidence, one French paraphrase returned insufficient evidence,
+and another French paraphrase retrieved the same evidence but did not consistently preserve French across repeated
+answers. These observations do not weaken the policy acceptance, but multilingual paraphrase recall and response-language
+consistency remain required inputs to the next versioned retrieval and generated-answer evaluation suite. Production
+acceptance of the policy correction remains pending.
+
 ### Production
 
 The same candidate-specific backend and safe-refusal behavior passed production acceptance on 27 October 2026 without
@@ -219,8 +236,9 @@ information retained the controlled insufficient-evidence response without factu
 log review found no semantic-retrieval failures or disclosure of recruiter questions, CV excerpts, embeddings, or
 provider payloads.
 
-Multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain separate implementation
-slices; acceptance of this bounded single-candidate path does not mark those capabilities complete.
+Multi-candidate result cards, conversation memory, and the complete retrieval/generated-answer evaluation suite remain
+separate implementation slices. The first versioned question-policy dataset is operational, but acceptance of this
+bounded single-candidate path does not mark broader AI evaluation complete.
 
 ## Supported interactions
 

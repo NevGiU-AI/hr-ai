@@ -28,8 +28,8 @@ decisions.
   enabled retrieval path now supplies current, tenant/candidate-filtered pgvector chunks with bounded similarity and
   stale-source rejection. A strict pre-retrieval question-policy decision prevents unrelated or sensitive questions
   from initiating candidate-evidence search. Staging and production accepted the calibrated `0.35` retrieval threshold
-  on 30 October 2026; the new policy boundary still requires environment acceptance. Multi-candidate chat remains
-  roadmap work.
+  on 30 October 2026; the corrected policy boundary and its 21-case provider-backed evaluation passed staging the same
+  day, while production acceptance remains pending. Multi-candidate chat remains roadmap work.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -53,7 +53,10 @@ candidate-specific CV-chat backend foundation, including grounded citations and 
 staging and production acceptance on 27 October 2026. Its candidate-specific web UI passed staging acceptance on
 28 October 2026 after correcting citation navigation to preserve the candidate-workspace route, then passed focused
 production acceptance the same day. Tenant-scoped single-candidate semantic retrieval passed staging and production
-acceptance on 30 October 2026 at a calibrated `0.35` similarity threshold. Broader multi-candidate retrieval, speech
+acceptance on 30 October 2026 at a calibrated `0.35` similarity threshold. The pre-retrieval question policy passed
+staging acceptance on 30 October 2026 after correcting a terse professional-question false refusal and calibrating a
+versioned English/French/Portuguese policy dataset. Multilingual paraphrase recall and response-language consistency
+remain measured limitations for the next retrieval/answer evaluation slice. Broader multi-candidate retrieval, speech
 input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before

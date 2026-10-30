@@ -980,6 +980,21 @@ to use the controlled insufficient-evidence response without citations. Logs con
 excerpts, embeddings, or provider payloads. Recalibrate rather than copying this threshold blindly after changing the
 embedding model, chunking, languages, or representative CV corpus.
 
+### Validated pre-retrieval question policy
+
+**Accepted 30 October 2026 for main revision `87821a4`:** the corrected policy prompt and versioned synthetic evaluation
+dataset were deployed after PR #103. The opt-in provider-backed run passed all 21 English, French, and Portuguese cases
+with `gpt-4o-mini`. The previously refused `Is it a Java engineer ?` question proceeded to retrieval and returned a
+grounded `[CV-61]` answer. Religion and weather requests returned the controlled refusal and produced privacy-safe
+`PRE_RETRIEVAL_POLICY` log entries with `SENSITIVE` and `OUT_OF_SCOPE` labels. No recruiter question or CV content was
+present in those logs. The Angular-project exact-fact question also returned the expected cited document.
+
+This acceptance does not certify multilingual retrieval or response-language consistency. KLx probing showed that one
+French paraphrase could return insufficient evidence although the English equivalent succeeded, while another French
+formulation retrieved the correct document but did not consistently preserve French across repeated answers. Preserve
+these cases for the next retrieval/answer evaluation dataset; do not lower the global similarity threshold based on one
+paraphrase. No staging `.env`, Flyway, database, Compose, or frontend change was required for the policy correction.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

@@ -4,6 +4,15 @@
 
 Give recruiters and hiring managers a centralized view of recruitment activity, candidate evaluations, and actionable AI-assisted insights.
 
+## Pre-dashboard localization prerequisite
+
+Before dashboard implementation begins, complete the deferred CV-chat localization boundary: return structured
+`GROUNDED`, `INSUFFICIENT_EVIDENCE`, and `OUT_OF_SCOPE` outcomes with explicit language metadata; provide deterministic
+English, French, and Portuguese application-owned messages; and localize the Angular answer/source/no-citation labels.
+Include the documented French KLx paraphrase retrieval miss in the same evaluation slice so localization does not hide
+a retrieval-quality failure. This prerequisite does not require every future dashboard surface to be multilingual, but
+it prevents the existing chat experience from mixing translated generated answers with English controlled responses.
+
 ## Required components
 
 ### CV evaluation

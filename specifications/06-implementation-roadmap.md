@@ -164,8 +164,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Add the first synthetic multilingual retrieval/generated-answer dataset and opt-in Spring AI evaluation harness.
   It checks EN/FR/PT expected-document recall at the accepted threshold, required evidence, tenant/candidate filtering,
   citations, response language, repeated answers, relevancy, and fact checking. Live-provider and environment
-  acceptance were separated deliberately: the focused live-provider gate passed on 30 October 2026, while staging and
-  production environment acceptance remain required before this behavior can be promoted.
+  acceptance are separated deliberately: the focused live-provider gate and scoped staging acceptance passed on
+  30 October 2026, with staging running main revision `d46f435`; production acceptance remains pending.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior
@@ -190,6 +190,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   evidence outside the authenticated organization; require citations for every factual comparison.
 - [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
+- [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
+  application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,
+  French, and Portuguese, and evaluate both localization and the documented French KLx paraphrase retrieval miss.
 - [ ] Add push-to-talk speech input with a visible, editable transcript before submission.
 - [ ] Delete raw voice input after transcription by default and document any approved retention exception.
 - [ ] Add optional text-to-speech playback with pause, speed, accessibility, and privacy controls.

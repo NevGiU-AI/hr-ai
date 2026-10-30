@@ -995,6 +995,21 @@ formulation retrieved the correct document but did not consistently preserve Fre
 these cases for the next retrieval/answer evaluation dataset; do not lower the global similarity threshold based on one
 paraphrase. No staging `.env`, Flyway, database, Compose, or frontend change was required for the policy correction.
 
+### Validated multilingual grounded-answer behavior
+
+**Accepted 30 October 2026 for main revision `d46f435`:** PR #106 deployed without environment, Flyway, database,
+Compose, or frontend configuration changes. English grounded answers remained correct. Repeated grounded French and
+Portuguese questions preserved their language and authorized citations; policy refusals, backend health, and privacy-
+safe logs did not regress. The opt-in synthetic provider gate had already passed seven EN/FR/PT retrieval cases, two
+runs of each representative language answer, deterministic tenant/candidate/citation/language assertions, and Spring AI
+relevancy and fact-checking evaluation.
+
+The real-CV paraphrase `Sur quoi a-t-il travaillé chez KLx ?` still returned controlled insufficient evidence. The
+English equivalent and another French formulation retrieved the expected document, so record this as a safe multilingual
+recall limitation rather than lowering the global threshold from one case. Application-owned controlled messages and
+the Angular no-citation explanation remain English until the planned pre-dashboard localization slice. Production
+acceptance remains pending.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

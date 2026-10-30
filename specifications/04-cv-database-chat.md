@@ -203,7 +203,22 @@ quality gap: the English KLx question retrieved grounded evidence, one French pa
 and another French paraphrase retrieved the same evidence but did not consistently preserve French across repeated
 answers. These observations do not weaken the policy acceptance, but multilingual paraphrase recall and response-language
 consistency remain required inputs to the next versioned retrieval and generated-answer evaluation suite. Production
-acceptance of the policy correction remains pending.
+acceptance of the policy correction completed later the same day in release `v0.22.0`.
+
+The multilingual retrieval/generated-answer slice passed scoped staging acceptance on 30 October 2026 after PR #106
+was merged at main revision `d46f435`. English grounded answers remained correct; repeated grounded French and
+Portuguese answers preserved the question language and authorized citations; sensitive and unrelated policy behavior,
+privacy-safe logs, and backend health did not regress. The versioned live-provider gate also passed all seven synthetic
+retrieval cases, its repeated EN/FR/PT answer subset, deterministic tenant/candidate/reference/language assertions, and
+Spring AI relevancy and fact-checking judgments.
+
+Acceptance preserves one explicit limitation. The real-CV question `Sur quoi a-t-il travaillé chez KLx ?` still returned
+controlled insufficient evidence although the English equivalent and another French formulation retrieved `[CV-61]`.
+No unsupported claim or citation was produced. PR #106 intentionally changed answer-language preservation, not deployed
+chunking, embeddings, or threshold policy, so this safe multilingual recall miss requires a separate measured retrieval
+correction. Application-owned out-of-scope and insufficient-evidence messages plus the Angular explanatory note remain
+English; structured outcomes and EN/FR/PT controlled-message localization are deferred until immediately before the
+dashboard.
 
 ### Production
 

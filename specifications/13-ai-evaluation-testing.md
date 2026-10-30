@@ -124,6 +124,22 @@ configuration, so they must not be added to staging or production `.env` files. 
 groundedness, fact-checking, citation, and retrieval-quality evaluation remains a later CV-chat suite; this first slice
 only measures question-policy classification.
 
+#### Staging acceptance — 30 October 2026
+
+The question-policy evaluation and corrected prompt passed staging acceptance after PR #103 was merged at main revision
+`87821a4`. The provider-backed `gpt-4o-mini` run classified all 21 version `1.0.0` cases correctly. Focused UI checks
+then confirmed a grounded cited answer for the previously refused terse Java-engineer question and pre-retrieval
+`SENSITIVE` and `OUT_OF_SCOPE` decisions for religion and weather questions. The refusal logs disclosed neither question
+text nor CV content.
+
+The same exploratory run identified, but did not accept, broader multilingual retrieval and generation quality. An
+English KLx question returned the expected `[CV-61]` evidence; semantically similar French formulations varied between
+retrieval success and controlled insufficient evidence, and a successful French query did not consistently receive a
+French answer on repetition. The next dataset must therefore record expected documents, required concepts, citations,
+question/answer language, paraphrase families, and repeated-run stability. These are retrieval and generated-answer
+evaluation requirements, not failures of the accepted pre-retrieval policy classifier. Production policy acceptance
+remains pending.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

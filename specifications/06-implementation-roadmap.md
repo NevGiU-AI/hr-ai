@@ -148,7 +148,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   behavior.
 - [x] Validate tenant-scoped single-candidate semantic retrieval in staging. Exact facts, paraphrased experience, and
   education evidence returned citations at the calibrated `0.35` threshold, while absent restaurant and salary facts
-  retained the controlled insufficient-evidence response on 30 October 2026. Production acceptance remains required.
+  retained the controlled insufficient-evidence response on 30 October 2026.
+- [x] Promote the calibrated single-candidate retrieval path to production and repeat the focused configuration,
+  grounded-answer, citation, insufficient-evidence, tenant-scope, and privacy-safe log checks successfully on
+  30 October 2026 in release `v0.21.0`.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

@@ -174,11 +174,19 @@ was indexed immediately into three tenant-scoped chunks; the reconciliation quer
 and the focused log review found no replacement-deletion, replacement-insertion, PostgreSQL, or default-table errors.
 Administrator-confirmed erasure of the disposable candidate then removed its candidate row, document row, and all
 semantic chunks: each post-erasure count was zero. This validates the internal indexing lifecycle in production; it
-does not yet enable semantic retrieval in candidate chat.
+does not itself enable semantic retrieval in candidate chat.
 
-Production semantic-retrieval acceptance, multi-candidate result cards, conversation memory, and the formal AI
-evaluation suite remain separate implementation slices; acceptance of the bounded staging path does not mark those
-capabilities complete.
+The separately switched tenant-scoped single-candidate retrieval path passed focused production acceptance on
+30 October 2026 in release `v0.21.0` at main revision `0b9bf79`. Production kept semantic indexing enabled, enabled
+query-time retrieval with six maximum matches and the staging-calibrated `0.35` minimum similarity, and confirmed
+healthy deployment plus effective configuration. Exact company/technology facts, paraphrased experience, and indexed
+education evidence returned grounded citations for the selected candidate; genuinely absent restaurant and salary
+information retained the controlled insufficient-evidence response without factual claims or citations. The focused
+log review found no semantic-retrieval failures or disclosure of recruiter questions, CV excerpts, embeddings, or
+provider payloads.
+
+Multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain separate implementation
+slices; acceptance of this bounded single-candidate path does not mark those capabilities complete.
 
 ## Supported interactions
 

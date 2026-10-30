@@ -155,6 +155,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Add a strict pre-retrieval question-policy boundary that separates prohibited/unrelated questions from permitted
   questions lacking CV evidence, rejects malformed policy output, avoids candidate retrieval for refused questions,
   and retains answer-model refusal as defense in depth. Staging and production acceptance remain required.
+- [x] Add the first versioned, privacy-safe question-policy evaluation dataset and an opt-in provider-backed regression
+  gate covering English, French, Portuguese, sensitive/unrelated intent, professional boundary cases, adversarial
+  wording, and the observed terse Java-engineer false refusal. Broader retrieval and answer evaluation remains pending.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

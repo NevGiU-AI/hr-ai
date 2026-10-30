@@ -44,9 +44,13 @@ CV evidence still receives the separate controlled insufficient-evidence respons
 
 The classifier sees only the normalized question and must return exactly one application-owned label. Blank, arbitrary,
 or failed provider output fails closed with a stable `502`; logs contain candidate/organization identifiers and failure
-type but never the question or provider message. The answer model retains its own `OUT_OF_SCOPE` handling as a
-defense-in-depth layer after retrieval. Authorization, tenant filtering, and citation enforcement remain deterministic
-application controls and never depend on either model.
+type but never the question or provider message. Classification uses temperature `0` and explicit examples for short,
+yes/no, and grammatically imperfect recruiter questions so wording such as `Is it a Java engineer?` remains
+`JOB_RELEVANT`. Sensitive intent still takes precedence when a question combines professional wording with a request
+for a protected characteristic. Privacy-safe refusal logs distinguish `PRE_RETRIEVAL_POLICY` from
+`ANSWER_MODEL_POLICY`, allowing operators to identify the refusing layer without recording question or CV content.
+The answer model retains its own `OUT_OF_SCOPE` handling as a defense-in-depth layer after retrieval. Authorization,
+tenant filtering, and citation enforcement remain deterministic application controls and never depend on either model.
 
 This placement follows OWASP's model-based guardrail guidance, which describes input screening before the primary model,
 warns that keyword filters miss paraphrases and other languages, and explicitly notes that every guardrail call adds

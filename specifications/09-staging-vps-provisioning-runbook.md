@@ -960,6 +960,26 @@ evaluation data remained because this workflow removes only the original binary 
 and backend logs were verified, and the temporary accelerated test schedule was restored to the normal daily `03:43`
 cron.
 
+### Validated semantic indexing and single-candidate retrieval
+
+**Indexing accepted 29 October 2026; retrieval accepted 30 October 2026:** staging runs with semantic indexing and
+query-time candidate-chat retrieval independently enabled:
+
+```dotenv
+CV_SEMANTIC_INDEX_ENABLED=true
+CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED=true
+CV_CHAT_SEMANTIC_MAX_MATCHES=6
+CV_CHAT_SEMANTIC_MIN_SIMILARITY=0.35
+```
+
+Flyway V6, the 1,536-dimensional pgvector schema, immediate indexing, scheduled reconciliation, zero pending documents,
+and deletion cascades passed before retrieval was enabled. Retrieval was first deployed dark, then calibrated with
+indexed exact facts, paraphrased experience, education evidence, and genuinely absent restaurant and salary facts. The
+initial `0.55` threshold rejected valid evidence; `0.35` retained grounded citations while absent information continued
+to use the controlled insufficient-evidence response without citations. Logs contained no recruiter questions, CV
+excerpts, embeddings, or provider payloads. Recalibrate rather than copying this threshold blindly after changing the
+embedding model, chunking, languages, or representative CV corpus.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

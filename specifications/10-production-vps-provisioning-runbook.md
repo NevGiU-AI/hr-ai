@@ -803,8 +803,23 @@ log inspection found no related storage, tenant, authorization, purge, or rollba
 the latest-source reconciliation query returned zero pending documents, and the focused backend log review returned no
 `DELETE_EXISTING`, `INSERT_REPLACEMENT`, PostgreSQL, or default `vector_store` errors. Administrator-confirmed erasure
 of the disposable candidate removed the candidate, document, and all three chunks; the three post-erasure counts were
-zero. No real applicant data was altered by this smoke test. Tenant-scoped semantic retrieval remains a separate chat
-integration slice.
+zero. No real applicant data was altered by this smoke test. Indexing remained independently controlled from
+query-time candidate-chat retrieval.
+
+**Single-candidate semantic-retrieval acceptance recorded 30 October 2026 for release `v0.21.0` at main revision
+`0b9bf79`:** production retained `CV_SEMANTIC_INDEX_ENABLED=true` and enabled retrieval with six maximum matches and the
+staging-calibrated `0.35` minimum similarity. Backend health and effective configuration were verified. Indexed exact
+facts, paraphrased experience, and education evidence returned grounded citations belonging to the selected candidate;
+genuinely absent restaurant and salary information returned the controlled insufficient-evidence response without
+citations. The focused log review found no semantic-retrieval errors and no recruiter questions, CV excerpts,
+embeddings, or provider payloads. The accepted production values are:
+
+```dotenv
+CV_SEMANTIC_INDEX_ENABLED=true
+CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED=true
+CV_CHAT_SEMANTIC_MAX_MATCHES=6
+CV_CHAT_SEMANTIC_MIN_SIMILARITY=0.35
+```
 
 ### 15. Configure bounded Docker log rotation
 

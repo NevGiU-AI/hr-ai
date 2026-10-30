@@ -78,6 +78,10 @@ BOOTSTRAP_ADMIN_PASSWORD=<random password of at least 12 characters>
 BOOTSTRAP_ADMIN_ORGANIZATION=default
 SESSION_TIMEOUT=30m
 SECURITY_MAXIMUM_SESSIONS=3
+CV_SEMANTIC_INDEX_ENABLED=true
+CV_CHAT_SEMANTIC_RETRIEVAL_ENABLED=true
+CV_CHAT_SEMANTIC_MAX_MATCHES=6
+CV_CHAT_SEMANTIC_MIN_SIMILARITY=0.35
 ```
 
 Use immutable GHCR image digests once image publication is implemented:
@@ -94,6 +98,13 @@ The bootstrap administrator variables are required for the first secured startup
 `SECURITY_MAXIMUM_SESSIONS` limits each account across the shared Redis session store. The default is `3`; a successful
 login that would exceed it removes the oldest-created session. Use the same reviewed value in staging and
 production unless a documented environment-specific policy requires otherwise.
+
+The repository example keeps semantic indexing and retrieval disabled as safe dark-launch values for a completely new
+environment. The existing staging and production environments passed indexing lifecycle and single-candidate retrieval
+acceptance and therefore explicitly use the four semantic values shown above. Indexing controls chunk creation and
+reconciliation; retrieval independently controls whether candidate chat queries those chunks. Changing the embedding
+model, chunking policy, supported languages, or representative CV corpus requires renewed quality calibration before
+changing the accepted `0.35` similarity threshold.
 
 `ACME_EMAIL` is the monitored operational contact Caddy passes to the ACME certificate authority when registering the account used to obtain and renew HTTPS certificates. It may receive certificate expiration, renewal-failure, policy, or account-recovery notices. It is not an application login, SMTP setting, OpenAI credential, or frontend value, and it is not normally embedded in the public certificate.
 

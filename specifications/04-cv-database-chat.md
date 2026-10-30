@@ -236,6 +236,14 @@ information retained the controlled insufficient-evidence response without factu
 log review found no semantic-retrieval failures or disclosure of recruiter questions, CV excerpts, embeddings, or
 provider payloads.
 
+The corrected pre-retrieval question policy passed focused production acceptance on 30 October 2026 in release
+`v0.22.0` at main revision `6d96d2b`. The healthy deployment required no new environment, Flyway, database, Compose,
+or frontend configuration. The terse Java-engineer and Angular-project questions continued to grounded retrieval and
+returned authorized citations. Religion and weather questions returned the controlled refusal without citations and
+were logged at `PRE_RETRIEVAL_POLICY` with `SENSITIVE` and `OUT_OF_SCOPE` labels. Log review confirmed that neither
+recruiter questions nor CV content was recorded. This production acceptance covers the policy correction; the staging-
+observed multilingual paraphrase-recall and response-language limitations remain pending evaluation work.
+
 Multi-candidate result cards, conversation memory, and the complete retrieval/generated-answer evaluation suite remain
 separate implementation slices. The first versioned question-policy dataset is operational, but acceptance of this
 bounded single-candidate path does not mark broader AI evaluation complete.

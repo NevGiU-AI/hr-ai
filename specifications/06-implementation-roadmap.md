@@ -155,7 +155,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Add a strict pre-retrieval question-policy boundary that separates prohibited/unrelated questions from permitted
   questions lacking CV evidence, rejects malformed policy output, avoids candidate retrieval for refused questions,
   and retains answer-model refusal as defense in depth. The corrected boundary passed staging acceptance on
-  30 October 2026 at main revision `87821a4`; production acceptance remains required.
+  30 October 2026 at main revision `87821a4`, then focused production acceptance in release `v0.22.0` at main revision
+  `6d96d2b`.
 - [x] Add the first versioned, privacy-safe question-policy evaluation dataset and an opt-in provider-backed regression
   gate covering English, French, Portuguese, sensitive/unrelated intent, professional boundary cases, adversarial
   wording, and the observed terse Java-engineer false refusal. The live `gpt-4o-mini` run passed all 21 cases before

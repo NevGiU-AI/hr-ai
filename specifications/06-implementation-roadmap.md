@@ -165,7 +165,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   It checks EN/FR/PT expected-document recall at the accepted threshold, required evidence, tenant/candidate filtering,
   citations, response language, repeated answers, relevancy, and fact checking. Live-provider and environment
   acceptance are separated deliberately: the focused live-provider gate and scoped staging acceptance passed on
-  30 October 2026, with staging running main revision `d46f435`; production acceptance remains pending.
+  30 October 2026, with staging running main revision `d46f435`; focused production acceptance followed in release
+  `v0.23.0` at main revision `083b9c4`. The known French KLx paraphrase recall miss remains future correction work.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

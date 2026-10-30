@@ -262,6 +262,14 @@ were logged at `PRE_RETRIEVAL_POLICY` with `SENSITIVE` and `OUT_OF_SCOPE` labels
 recruiter questions nor CV content was recorded. This production acceptance covers the policy correction; the staging-
 observed multilingual paraphrase-recall and response-language limitations remain pending evaluation work.
 
+The multilingual generated-answer behavior passed focused production acceptance later on 30 October 2026 in release
+`v0.23.0` at main revision `083b9c4`. English grounded answers remained correct; repeated grounded French and Portuguese
+answers preserved their question language and authorized citations; policy refusals, tenant boundaries, backend health,
+and privacy-safe logs did not regress. No new environment, Flyway, database, Compose, or frontend configuration was
+required. The real-CV French KLx paraphrase remains a documented controlled insufficient-evidence case rather than a
+resolved retrieval path. Application-owned safe messages and their Angular explanatory text remain English until the
+planned pre-dashboard localization slice.
+
 Multi-candidate result cards, conversation memory, and the complete retrieval/generated-answer evaluation suite remain
 separate implementation slices. The first versioned question-policy dataset is operational, but acceptance of this
 bounded single-candidate path does not mark broader AI evaluation complete.

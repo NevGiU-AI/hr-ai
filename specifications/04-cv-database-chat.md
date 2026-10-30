@@ -91,7 +91,7 @@ the chat model. Retrieval failures return a stable `502` without logging questio
 messages.
 
 `CV_CHAT_SEMANTIC_MAX_MATCHES` defaults to `6` and is validated between `1` and `20`.
-`CV_CHAT_SEMANTIC_MIN_SIMILARITY` defaults to `0.55` and is validated between `0.0` and `1.0`; it is an initial reviewed
+`CV_CHAT_SEMANTIC_MIN_SIMILARITY` defaults to `0.35` and is validated between `0.0` and `1.0`; it is an initial reviewed
 staging value, not a universal quality claim. The existing excerpt limit still bounds every merged citation. No public
 semantic-search controller is exposed: retrieval remains inside the authorized candidate-chat request.
 
@@ -140,7 +140,16 @@ V6's generated `organization_id` and `document_id` columns. The pgvector configu
 under `spring.ai.openai`, causing Spring AI to ignore `table-name` and insert into its nonexistent default
 `public.vector_store`; it is now correctly bound under `spring.ai.vectorstore.pgvector`. Container-backed replacement,
 rollback, tenant-isolation, reconciliation, and deletion-cascade regressions protect both corrections. The accepted
-index remains an internal foundation; the candidate chat endpoint does not consume semantic retrieval yet.
+index remains independently controlled from query-time semantic retrieval.
+
+The tenant-scoped single-candidate retrieval path passed staging acceptance on 30 October 2026 after PR #98 was merged
+at main revision `990f0cb`. Retrieval remained dark during the initial health and legacy-chat smoke checks, then was
+enabled independently while indexing stayed active. Calibration used indexed facts from several question shapes rather
+than accepting a threshold from one successful request. The original `0.55` value rejected valid grounded evidence;
+`0.35` retained cited answers for exact company/technology facts, paraphrased technology experience, and indexed
+education evidence, while genuinely absent restaurant and salary information still returned the fixed
+insufficient-evidence response without citations. This value is the accepted initial deployment default, not a quality
+guarantee for every model, language, CV corpus, or future embedding change.
 
 ### Production
 
@@ -167,8 +176,9 @@ Administrator-confirmed erasure of the disposable candidate then removed its can
 semantic chunks: each post-erasure count was zero. This validates the internal indexing lifecycle in production; it
 does not yet enable semantic retrieval in candidate chat.
 
-Semantic retrieval, multi-candidate result cards, conversation memory, and the formal AI evaluation suite remain
-separate implementation slices; acceptance of this bounded interface does not mark those capabilities complete.
+Production semantic-retrieval acceptance, multi-candidate result cards, conversation memory, and the formal AI
+evaluation suite remain separate implementation slices; acceptance of the bounded staging path does not mark those
+capabilities complete.
 
 ## Supported interactions
 

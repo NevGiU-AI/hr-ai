@@ -31,6 +31,10 @@ decisions.
   on 30 October 2026; the corrected policy boundary and its 21-case provider-backed evaluation passed staging the same
   day, then the same policy behavior passed production acceptance in release `v0.22.0`. Multi-candidate chat remains
   roadmap work.
+- Evaluate multilingual single-candidate retrieval and generated answers against a versioned synthetic EN/FR/PT
+  dataset. The opt-in provider gate checks expected documents, tenant/candidate filters, required evidence, citations,
+  response language, repeated-run stability, and Spring AI relevancy/fact-checking judgments. Its first environment
+  acceptance remains pending; the focused live-provider gate passed locally on 30 October 2026.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

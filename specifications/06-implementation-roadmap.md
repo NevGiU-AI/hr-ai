@@ -161,6 +161,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   gate covering English, French, Portuguese, sensitive/unrelated intent, professional boundary cases, adversarial
   wording, and the observed terse Java-engineer false refusal. The live `gpt-4o-mini` run passed all 21 cases before
   staging acceptance. Broader retrieval, multilingual consistency, and answer evaluation remain pending.
+- [x] Add the first synthetic multilingual retrieval/generated-answer dataset and opt-in Spring AI evaluation harness.
+  It checks EN/FR/PT expected-document recall at the accepted threshold, required evidence, tenant/candidate filtering,
+  citations, response language, repeated answers, relevancy, and fact checking. Live-provider and environment
+  acceptance were separated deliberately: the focused live-provider gate passed on 30 October 2026, while staging and
+  production environment acceptance remain required before this behavior can be promoted.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

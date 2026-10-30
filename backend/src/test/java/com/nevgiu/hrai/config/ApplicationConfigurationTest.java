@@ -22,5 +22,7 @@ class ApplicationConfigurationTest {
                 .isEqualTo("cv_semantic_chunks");
         // This was the incorrect nesting that made Spring AI fall back to its `vector_store` default in staging.
         assertThat(properties.getProperty("spring.ai.openai.vectorstore.pgvector.table-name")).isNull();
+        // Protect the environment-independent fallback selected through reviewed staging retrieval questions.
+        assertThat(properties.getProperty("app.cv-chat.semantic-min-similarity")).isEqualTo("0.35");
     }
 }

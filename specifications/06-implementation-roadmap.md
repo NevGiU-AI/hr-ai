@@ -145,7 +145,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Integrate the internal tenant-scoped similarity service into authorized single-candidate chat retrieval behind a
   separate dark-launch switch, with verified organization/candidate filters, current-source-version checks, bounded
   similarity policy, merged reviewer-visible citations, transaction suspension during vector I/O, and safe empty/failure
-  behavior. Staging and production acceptance remain required before the switch is enabled in each environment.
+  behavior.
+- [x] Validate tenant-scoped single-candidate semantic retrieval in staging. Exact facts, paraphrased experience, and
+  education evidence returned citations at the calibrated `0.35` threshold, while absent restaurant and salary facts
+  retained the controlled insufficient-evidence response on 30 October 2026. Production acceptance remains required.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

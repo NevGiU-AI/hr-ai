@@ -26,13 +26,14 @@ decisions.
   document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
   corresponding role-aware question, safe-response, error/retry, and linked-citation experience. An independently
   enabled retrieval path now supplies current, tenant/candidate-filtered pgvector chunks with bounded similarity and
-  stale-source rejection; environment acceptance remains required. Multi-candidate chat remains roadmap work.
+  stale-source rejection. Staging accepted its calibrated `0.35` minimum similarity on 30 October 2026; production
+  retrieval acceptance remains required. Multi-candidate chat remains roadmap work.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
   Flyway V6, immediate indexing, scheduled reconciliation, and deletion cleanup passed staging and production
-  acceptance on 29 October 2026. The separately switched single-candidate retrieval integration is implemented and
-  awaits staging and production acceptance.
+  acceptance on 29 October 2026. The separately switched single-candidate retrieval integration passed staging
+  acceptance on 30 October 2026 and awaits production acceptance.
 - Authenticate with email/password using bcrypt and Redis-backed server sessions.
 - Administer tenant users, roles, account state, password resets, and active-session revocation.
 - Throttle failed logins, temporarily lock accounts/IPs, and allow administrator account unlock.
@@ -49,8 +50,9 @@ evaluation history passed staging and production acceptance on 23 October 2026 i
 candidate-specific CV-chat backend foundation, including grounded citations and controlled safe refusals, passed
 staging and production acceptance on 27 October 2026. Its candidate-specific web UI passed staging acceptance on
 28 October 2026 after correcting citation navigation to preserve the candidate-workspace route, then passed focused
-production acceptance the same day. Broader semantic retrieval, speech input/playback, and the recruitment dashboard
-remain roadmap work. The paired backup tooling is implemented,
+production acceptance the same day. Tenant-scoped single-candidate semantic retrieval passed staging acceptance on
+30 October 2026 at a calibrated `0.35` similarity threshold; production acceptance, broader multi-candidate retrieval,
+speech input/playback, and the recruitment dashboard remain roadmap work. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before
 horizontal or multi-host backend scaling.

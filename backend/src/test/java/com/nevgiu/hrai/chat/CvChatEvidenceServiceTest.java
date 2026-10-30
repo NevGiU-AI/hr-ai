@@ -27,7 +27,7 @@ class CvChatEvidenceServiceTest {
     private final CvDocumentPageRepository pages = mock(CvDocumentPageRepository.class);
     private final CvSemanticSearchService semanticSearch = mock(CvSemanticSearchService.class);
     private final CvChatEvidenceService service = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-            new CvChatProperties(10, 1200, false, 6, 0.55));
+            new CvChatProperties(10, 1200, false, 6, 0.35));
 
     @Test
     void buildsBoundedNativeEvidenceForTheAuthorizedCandidate() {
@@ -93,13 +93,13 @@ class CvChatEvidenceServiceTest {
         when(semanticSearch.search("tenant-a", "Java experience", List.of(7L), 6)).thenReturn(List.of(
                 match(7L, 12L, 2, " Java   and Spring Boot ", 0.91),
                 match(7L, 12L, 2, "PostgreSQL", 0.88),
-                match(7L, 12L, 3, "weak result", 0.40),
+                match(7L, 12L, 3, "weak result", 0.30),
                 new CvSemanticMatch(7L, 12L, 4, "stale evidence", 0.99,
                         Instant.parse("2026-10-27T00:00:00Z")),
                 match(7L, 11L, 1, "obsolete document", 0.95),
                 match(8L, 12L, 1, "wrong candidate", 0.99)));
         CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-                new CvChatProperties(10, 1200, true, 6, 0.55));
+                new CvChatProperties(10, 1200, true, 6, 0.35));
 
         List<CvChatEvidence> evidence = semanticService.find(7L, "Java experience", "tenant-a");
 
@@ -121,7 +121,7 @@ class CvChatEvidenceServiceTest {
         when(semanticSearch.search("tenant-a", "Kubernetes", List.of(7L), 6))
                 .thenReturn(List.of(match(7L, 12L, null, "unrelated", 0.20)));
         CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-                new CvChatProperties(10, 1200, true, 6, 0.55));
+                new CvChatProperties(10, 1200, true, 6, 0.35));
 
         assertThat(semanticService.find(7L, "Kubernetes", "tenant-a")).isEmpty();
     }
@@ -137,7 +137,7 @@ class CvChatEvidenceServiceTest {
         when(semanticSearch.search("tenant-a", "Java", List.of(7L), 6))
                 .thenThrow(new IllegalStateException("sensitive provider or database detail"));
         CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-                new CvChatProperties(10, 1200, true, 6, 0.55));
+                new CvChatProperties(10, 1200, true, 6, 0.35));
 
         assertThatThrownBy(() -> semanticService.find(7L, "Java", "tenant-a"))
                 .isInstanceOf(CvChatException.class)

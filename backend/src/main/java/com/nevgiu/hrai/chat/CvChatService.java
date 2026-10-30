@@ -54,6 +54,9 @@ public class CvChatService {
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat question policy is unavailable");
         }
         if (policyResult != CvChatQuestionPolicyResult.JOB_RELEVANT) {
+            // Record only the decision stage and label. The untrusted question is intentionally excluded from logs.
+            LOGGER.info("CV chat question rejected for candidateId={} organizationId={} stage={} policyResult={}",
+                    candidateId, organizationId, "PRE_RETRIEVAL_POLICY", policyResult);
             return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
         }
         // Evidence is loaded in a short read transaction; no JDBC connection is held while OpenAI responds.
@@ -82,6 +85,9 @@ public class CvChatService {
             return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
         }
         if (CvChatModel.OUT_OF_SCOPE.equals(normalizedAnswer)) {
+            // This second policy boundary is defense in depth after authorized evidence retrieval.
+            LOGGER.info("CV chat question rejected for candidateId={} organizationId={} stage={}",
+                    candidateId, organizationId, "ANSWER_MODEL_POLICY");
             return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
         }
         return new CvChatResponse(answer, citedEvidence(answer, evidence));

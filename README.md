@@ -112,10 +112,10 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Integrate the staging- and production-accepted semantic index into tenant-scoped chat retrieval, then add
-   organization-scoped candidate-name resolution, conversation memory, multi-candidate result cards, cited comparison,
-   and formal CV-chat evaluation testing. Candidate names or UI selections must resolve to verified tenant-scoped IDs
-   before evidence retrieval; missing or ambiguous names are never guessed.
+1. Extend the staging- and production-accepted single-candidate semantic retrieval with organization-scoped
+   candidate-name resolution, conversation memory, multi-candidate result cards, cited comparison, and formal CV-chat
+   evaluation testing. Candidate names or UI selections must resolve to verified tenant-scoped IDs before evidence
+   retrieval; missing or ambiguous names are never guessed.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
@@ -171,10 +171,12 @@ APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD=<local-only password of at least 12 charac
 APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION=local
 ```
 
-Keep the remaining Redis, session, throttling, audit, and CV-storage retention defaults from `.env.example`. Never
-commit `.env`, reuse a staging/production credential, or expose secrets in logs, screenshots, or chat.
+Keep the remaining Redis, session, throttling, audit, CV-storage, OCR, chat, and semantic defaults from `.env.example`.
+Never commit `.env`, reuse a staging/production credential, or expose secrets in logs, screenshots, or chat.
 
-CV ingestion and text extraction do not use OpenAI. The key is required only for AI generation or evaluation.
+CV ingestion and text extraction do not use OpenAI. The key is required for AI generation, evaluation, CV chat, and
+semantic indexing/retrieval. Local semantic indexing and retrieval remain disabled by default because embedding calls
+can incur cost; enable both documented switches only when intentionally testing the pgvector path.
 
 ### 2. Build and start
 

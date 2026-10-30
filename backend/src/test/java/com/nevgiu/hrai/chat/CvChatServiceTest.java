@@ -1,18 +1,30 @@
 package com.nevgiu.hrai.chat;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class CvChatServiceTest {
     private final CvChatEvidenceService evidenceService = mock(CvChatEvidenceService.class);
+    private final CvChatQuestionPolicy questionPolicy = mock(CvChatQuestionPolicy.class);
     private final CvChatModel model = mock(CvChatModel.class);
-    private final CvChatService service = new CvChatService(evidenceService, model);
+    private final CvChatService service = new CvChatService(evidenceService, questionPolicy, model);
+
+    CvChatServiceTest() {
+        when(questionPolicy.classify(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+    }
 
     @Test
     void answersFromTenantScopedEvidenceAndReturnsOnlyCitedSources() {
@@ -25,6 +37,10 @@ class CvChatServiceTest {
 
         CvChatResponse response = service.ask(7L, " Does this candidate know Java? ", "tenant-a");
 
+        var order = inOrder(evidenceService, questionPolicy);
+        order.verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        order.verify(questionPolicy).classify("Does this candidate know Java?");
+        order.verify(evidenceService).find(7L, "Does this candidate know Java?", "tenant-a");
         assertThat(response.answer()).contains("[CV-CANDIDATE-7]");
         assertThat(response.citations()).singleElement().satisfies(citation -> {
             assertThat(citation.candidateId()).isEqualTo(7L);
@@ -74,6 +90,62 @@ class CvChatServiceTest {
     }
 
     @Test
+    void rejectsSensitiveQuestionsBeforeCandidateEvidenceRetrieval() {
+        when(questionPolicy.classify("What is his religion?"))
+                .thenReturn(CvChatQuestionPolicyResult.SENSITIVE);
+
+        CvChatResponse response = service.ask(7L, " What is his religion? ", "tenant-a");
+
+        assertThat(response.answer()).isEqualTo(
+                "I can only answer job-relevant questions supported by the authorized CV evidence. "
+                        + "I cannot provide or infer protected or sensitive personal characteristics.");
+        assertThat(response.citations()).isEmpty();
+        verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        verify(evidenceService, never()).find(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        verifyNoInteractions(model);
+    }
+
+    @Test
+    void rejectsUnrelatedQuestionsBeforeCandidateEvidenceRetrieval() {
+        when(questionPolicy.classify("What is the weather?"))
+                .thenReturn(CvChatQuestionPolicyResult.OUT_OF_SCOPE);
+
+        CvChatResponse response = service.ask(7L, "What is the weather?", "tenant-a");
+
+        assertThat(response.citations()).isEmpty();
+        verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        verify(evidenceService, never()).find(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        verifyNoInteractions(model);
+    }
+
+    @Test
+    void failsClosedWhenQuestionPolicyIsUnavailable() {
+        when(questionPolicy.classify("Summarize"))
+                .thenThrow(new IllegalStateException("sensitive provider detail"));
+
+        assertThatThrownBy(() -> service.ask(7L, "Summarize", "tenant-a"))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat question policy is unavailable")
+                .satisfies(error -> assertThat(((CvChatException) error).status().value()).isEqualTo(502));
+        verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        verify(evidenceService, never()).find(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        verifyNoInteractions(model);
+    }
+
+    @Test
+    void preservesTenantScopedNotFoundBeforeQuestionClassification() {
+        CvChatException notFound = new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found");
+        doThrow(notFound).when(evidenceService).authorizeCandidate(99L, "tenant-a");
+
+        assertThatThrownBy(() -> service.ask(99L, "What is his religion?", "tenant-a"))
+                .isSameAs(notFound);
+        verifyNoInteractions(questionPolicy, model);
+    }
+
+    @Test
     void stillRejectsArbitraryUncitedProviderText() {
         stubEvidence("Summarize");
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
@@ -107,7 +179,9 @@ class CvChatServiceTest {
         assertThat(response.answer())
                 .isEqualTo("The available CV evidence does not provide enough information to answer this question.");
         assertThat(response.citations()).isEmpty();
-        org.mockito.Mockito.verifyNoInteractions(model);
+        verifyNoInteractions(model);
+        verify(questionPolicy).classify("Kubernetes");
+        verify(evidenceService).find(7L, "Kubernetes", "tenant-a");
     }
 
     private void stubEvidence(String question) {

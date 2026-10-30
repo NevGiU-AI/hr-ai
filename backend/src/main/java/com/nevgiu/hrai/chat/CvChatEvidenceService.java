@@ -38,11 +38,18 @@ class CvChatEvidenceService {
         this.properties = properties;
     }
 
+    /**
+     * Verifies the selected candidate inside the authenticated organization before question classification.
+     * This lookup discloses no CV evidence and preserves the generic missing/cross-tenant {@code 404} contract.
+     */
+    @Transactional(readOnly = true)
+    void authorizeCandidate(Long candidateId, String organizationId) {
+        authorizedCandidate(candidateId, organizationId);
+    }
+
     @Transactional(readOnly = true)
     List<CvChatEvidence> find(Long candidateId, String question, String organizationId) {
-        // A tenant predicate deliberately makes missing and cross-tenant identifiers indistinguishable.
-        Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, organizationId)
-                .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
+        Candidate candidate = authorizedCandidate(candidateId, organizationId);
         List<CvDocument> history = documents.findAllByCandidateIdAndOrganizationId(candidate.getId(), organizationId);
         if (properties.semanticRetrievalEnabled() && !history.isEmpty()) {
             return semanticEvidence(candidate, history.getFirst(), question, organizationId);
@@ -68,6 +75,12 @@ class CvChatEvidenceService {
                     "Candidate has no usable CV evidence for chat");
         }
         return evidence;
+    }
+
+    private Candidate authorizedCandidate(Long candidateId, String organizationId) {
+        // A tenant predicate deliberately makes missing and cross-tenant identifiers indistinguishable.
+        return candidates.findByIdAndOrganizationId(candidateId, organizationId)
+                .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
     }
 
     private List<CvChatEvidence> semanticEvidence(Candidate candidate, CvDocument current, String question,

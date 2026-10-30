@@ -12,6 +12,9 @@ The first backend slice supports an imperative question about one explicitly sel
 - `ADMIN`, `RECRUITER`, and `REVIEWER` may call it; `READ_ONLY` may not.
 - The authenticated principal supplies the organization. The model cannot choose or override it, and missing and
   cross-organization candidate identifiers both return `404`.
+- A dedicated question-policy model classifies the untrusted recruiter question as `JOB_RELEVANT`, `OUT_OF_SCOPE`, or
+  `SENSITIVE` before any candidate evidence is retrieved. Only `JOB_RELEVANT` continues to semantic search; both other
+  decisions become the same fixed public refusal without citations.
 - The backend verifies the candidate and current document in a read-only transaction. Semantic search suspends that
   JPA transaction while it embeds the question and queries pgvector, and the later chat-model call runs after evidence
   loading has completed; slow provider calls therefore do not retain relational transactions or connections.
@@ -31,6 +34,33 @@ The first backend slice supports an imperative question about one explicitly sel
 The candidate-specific endpoint can now consume vector retrieval when its separate environment switch is enabled. It
 does not yet provide multi-candidate search/comparison, persisted conversation memory, streaming, or speech controls.
 Those remain explicit roadmap work and must not be inferred from this single-candidate retrieval slice.
+
+### Pre-retrieval question policy
+
+Question policy is intentionally separate from evidence availability. A religion, political-affiliation, health, or
+other sensitive-trait request is refused before vector search, while a legitimate question about professional political,
+public-policy, accessibility, or healthcare experience may proceed. A permitted job-relevant question with no matching
+CV evidence still receives the separate controlled insufficient-evidence response.
+
+The classifier sees only the normalized question and must return exactly one application-owned label. Blank, arbitrary,
+or failed provider output fails closed with a stable `502`; logs contain candidate/organization identifiers and failure
+type but never the question or provider message. The answer model retains its own `OUT_OF_SCOPE` handling as a
+defense-in-depth layer after retrieval. Authorization, tenant filtering, and citation enforcement remain deterministic
+application controls and never depend on either model.
+
+This placement follows OWASP's model-based guardrail guidance, which describes input screening before the primary model,
+warns that keyword filters miss paraphrases and other languages, and explicitly notes that every guardrail call adds
+latency and cost. OWASP also advises treating user and retrieved content as untrusted and keeping authorization outside
+the model. GDPR Article 5's purpose-limitation and data-minimisation principles support avoiding candidate-data retrieval
+for a question already classified as prohibited. The NIST Generative AI Profile supports the required recurring
+adversarial testing rather than treating one prompt or model as a permanent security boundary.
+
+Sources:
+
+- [OWASP LLM Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html)
+- [OWASP AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html)
+- [NIST AI RMF Generative AI Profile](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf)
+- [GDPR Article 5](https://eur-lex.europa.eu/eli/reg/2016/679/oj)
 
 ## Semantic-indexing foundation
 
@@ -87,8 +117,8 @@ while query-time behavior is tested. When enabled, the selected candidate is aut
 organization and verified candidate ID become mandatory vector filters; only the current document and matching source
 version are accepted; low-scoring matches are rejected; repeated chunks from one document/page are merged into one
 bounded citation; and an empty result returns the backend-controlled insufficient-evidence response without calling
-the chat model. Retrieval failures return a stable `502` without logging questions, excerpts, embeddings, or provider
-messages.
+the answer model. The earlier question-policy call still runs for every request. Retrieval failures return a stable
+`502` without logging questions, excerpts, embeddings, or provider messages.
 
 `CV_CHAT_SEMANTIC_MAX_MATCHES` defaults to `6` and is validated between `1` and `20`.
 `CV_CHAT_SEMANTIC_MIN_SIMILARITY` defaults to `0.35` and is validated between `0.0` and `1.0`; it is an initial reviewed

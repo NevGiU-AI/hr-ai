@@ -152,6 +152,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Promote the calibrated single-candidate retrieval path to production and repeat the focused configuration,
   grounded-answer, citation, insufficient-evidence, tenant-scope, and privacy-safe log checks successfully on
   30 October 2026 in release `v0.21.0`.
+- [x] Add a strict pre-retrieval question-policy boundary that separates prohibited/unrelated questions from permitted
+  questions lacking CV evidence, rejects malformed policy output, avoids candidate retrieval for refused questions,
+  and retains answer-model refusal as defense in depth. Staging and production acceptance remain required.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

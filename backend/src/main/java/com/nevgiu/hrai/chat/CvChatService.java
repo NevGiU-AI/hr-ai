@@ -24,10 +24,13 @@ public class CvChatService {
     private static final Pattern CITATION = Pattern.compile("\\[(CV-(?:\\d+(?:-P\\d+)?|CANDIDATE-\\d+))\\]");
 
     private final CvChatEvidenceService evidenceService;
+    private final CvChatQuestionPolicy questionPolicy;
     private final CvChatModel model;
 
-    public CvChatService(CvChatEvidenceService evidenceService, CvChatModel model) {
+    public CvChatService(CvChatEvidenceService evidenceService, CvChatQuestionPolicy questionPolicy,
+                         CvChatModel model) {
         this.evidenceService = evidenceService;
+        this.questionPolicy = questionPolicy;
         this.model = model;
     }
 
@@ -37,6 +40,22 @@ public class CvChatService {
      */
     public CvChatResponse ask(Long candidateId, String question, String organizationId) {
         String normalizedQuestion = question.trim();
+        // Preserve generic missing/cross-tenant 404 behavior before any model call, without loading CV content.
+        evidenceService.authorizeCandidate(candidateId, organizationId);
+        CvChatQuestionPolicyResult policyResult;
+        try {
+            // Classify before vector search so unrelated or sensitive questions cannot trigger candidate-data
+            // retrieval. The classifier sees only the question; authorization remains enforced in application code.
+            policyResult = questionPolicy.classify(normalizedQuestion);
+        } catch (RuntimeException policyFailure) {
+            // Do not log the question or provider detail: either may contain private or adversarial content.
+            LOGGER.warn("CV chat question policy failed for candidateId={} organizationId={} failureType={}",
+                    candidateId, organizationId, policyFailure.getClass().getSimpleName());
+            throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat question policy is unavailable");
+        }
+        if (policyResult != CvChatQuestionPolicyResult.JOB_RELEVANT) {
+            return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
+        }
         // Evidence is loaded in a short read transaction; no JDBC connection is held while OpenAI responds.
         List<CvChatEvidence> evidence = evidenceService.find(candidateId, normalizedQuestion, organizationId);
         // An empty semantic result is a normal evidence outcome, not a provider failure. Avoid sending unrelated

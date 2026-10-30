@@ -35,7 +35,8 @@ decisions.
   dataset. The opt-in provider gate checks expected documents, tenant/candidate filters, required evidence, citations,
   response language, repeated-run stability, and Spring AI relevancy/fact-checking judgments. Its first environment
   acceptance and the focused live-provider gate passed on 30 October 2026. One French real-CV paraphrase remains a
-  documented safe retrieval miss; controlled-response localization is deferred until immediately before the dashboard.
+  documented safe retrieval miss; the scoped behavior passed production acceptance in release `v0.23.0`, while
+  controlled-response localization is deferred until immediately before the dashboard.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -63,7 +64,8 @@ acceptance on 30 October 2026 at a calibrated `0.35` similarity threshold. The p
 staging acceptance on 30 October 2026 after correcting a terse professional-question false refusal and calibrating a
 versioned English/French/Portuguese policy dataset. Multilingual paraphrase recall and response-language consistency
 were evaluated next: generated EN/FR/PT answers passed scoped staging language/citation checks, while one French KLx
-paraphrase remained a safe retrieval miss. Broader multi-candidate retrieval, speech
+paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
+30 October 2026 in release `v0.23.0`. Broader multi-candidate retrieval, speech
 input/playback, and the recruitment dashboard remain roadmap work. Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

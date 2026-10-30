@@ -830,6 +830,14 @@ question or CV content. The earlier provider-backed evaluation had passed all 21
 Portuguese policy cases. Multilingual paraphrase recall and response-language stability remain separate retrieval and
 generated-answer evaluation work rather than a completed production capability.
 
+**Multilingual grounded-answer acceptance recorded 30 October 2026 for release `v0.23.0` at main revision
+`083b9c4`:** production repeated the staging-scoped PR #106 checks without environment, Flyway, database, Compose, or
+frontend configuration changes. English answers remained grounded; repeated grounded French and Portuguese responses
+preserved their question language and candidate-scoped citations; policy refusals, backend health, and privacy-safe logs
+remained correct. The real-CV French KLx paraphrase still represents a controlled insufficient-evidence retrieval miss,
+not a grounded success. Preserve it for the planned measured retrieval correction. Application-owned safe responses
+and Angular no-citation labels remain English until the pre-dashboard localization slice.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

@@ -230,7 +230,20 @@ expected document. This is an accepted safe failure for PR #106's language-prese
 multilingual retrieval is complete. Preserve the pair as a future expected-document recall fixture and measure
 similarity/query normalization or translation before changing the global threshold. Application-owned safe messages
 and their Angular explanatory text remain English; structured outcomes and deterministic EN/FR/PT localization are
-scheduled immediately before dashboard implementation. Production acceptance of PR #106 remains pending.
+scheduled immediately before dashboard implementation. Production acceptance followed later the same day.
+
+#### Multilingual production acceptance — 30 October 2026
+
+Release `v0.23.0` at main revision `083b9c4` passed the same scoped checks in production. English grounded answers
+remained correct, repeated grounded French and Portuguese responses preserved their question language, authorized
+citations remained candidate-scoped, policy refusals remained correct, and backend health plus privacy-safe logs showed
+no regression. The release required no new environment, Flyway, database, Compose, or frontend configuration.
+
+This acceptance does not reclassify the real-CV `Sur quoi a-t-il travaillé chez KLx ?` result as successful retrieval;
+it remains a safe controlled insufficient-evidence case and a required future expected-document recall fixture.
+Application-owned safe-message and Angular-label localization also remains deferred until immediately before the
+dashboard. Production acceptance therefore closes PR #106's language-preservation scope, not the broader multilingual
+retrieval or localization milestones.
 
 ### Spring AI tools
 

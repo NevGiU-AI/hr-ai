@@ -73,6 +73,11 @@ Recruiters, product owners, and appropriate risk reviewers must label representa
 - Measure retrieval recall at `k`, precision, ranking quality, answer relevance, groundedness, citation correctness, completeness, refusal quality, and latency.
 - Verify ambiguous requests trigger clarification and unsupported requests do not produce guessed answers.
 - Prove prompt injection cannot override policy, expose another organization, or invoke unavailable tools.
+- Evaluate the pre-retrieval question policy in English, French, and Portuguese with sensitive, unrelated, legitimate
+  recruitment, and near-boundary pairs. Include religion versus religious-sector work, political affiliation versus
+  professional public-policy experience, disability inference versus accessibility-engineering experience, paraphrases,
+  misspellings, and adversarial instructions. Track false refusals, missed refusals, latency, cost, and drift; never treat
+  the classifier as an authorization boundary.
 
 ### Spring AI tools
 

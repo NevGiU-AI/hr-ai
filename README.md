@@ -26,8 +26,10 @@ decisions.
   document/page citations and rejection of unsupported model references. The Angular candidate workspace provides the
   corresponding role-aware question, safe-response, error/retry, and linked-citation experience. An independently
   enabled retrieval path now supplies current, tenant/candidate-filtered pgvector chunks with bounded similarity and
-  stale-source rejection. Staging and production accepted its calibrated `0.35` minimum similarity on 30 October 2026.
-  Multi-candidate chat remains roadmap work.
+  stale-source rejection. A strict pre-retrieval question-policy decision prevents unrelated or sensitive questions
+  from initiating candidate-evidence search. Staging and production accepted the calibrated `0.35` retrieval threshold
+  on 30 October 2026; the new policy boundary still requires environment acceptance. Multi-candidate chat remains
+  roadmap work.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

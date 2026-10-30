@@ -127,6 +127,29 @@ bounded citation; and an empty result returns the backend-controlled insufficien
 the answer model. The earlier question-policy call still runs for every request. Retrieval failures return a stable
 `502` without logging questions, excerpts, embeddings, or provider messages.
 
+For policy-approved questions, the multilingual-recall correction now asks a dedicated constrained model to produce one
+bounded English retrieval query while preserving employer, project, certification, technology, and product names. The
+answer model still receives the recruiter's original question, so normalization cannot change the requested language or
+intent. Semantic search runs once with the original wording and once with the normalized query, deduplicates identical
+chunks by keeping their strongest score, reapplies candidate/current-document/source-version checks, sorts by score, and
+caps the combined evidence at the configured maximum. The normalizer never chooses organization, candidate, document,
+or authorization scope. If normalization fails, retrieval safely falls back to the already policy-approved original
+question. The additional model and embedding calls add latency and provider cost only when semantic retrieval is enabled
+and a current CV document exists.
+
+Operational diagnostics record candidate/document identifiers, query count, raw and accepted match counts, and the top
+numeric similarity score. They deliberately exclude recruiter wording, normalized queries, CV text, embeddings, and
+provider messages. This allows successful and failed paraphrases to be compared without placing candidate or recruiter
+content in logs. The global `0.35` threshold is unchanged.
+
+The focused synthetic live-provider gate passed on 30 October 2026. The direct French KLx formulation improved from an
+original-query top score of `0.4561` to `0.5451` after normalization, while the alternate French formulation improved
+from `0.4621` to `0.5887`. All seven EN/FR/PT cases retained the expected tenant/candidate-filtered document, required
+evidence, citations, answer-language checks, and evaluator passes. Normalization did not improve every case—for example,
+the English Angular query scored `0.4574` originally and `0.4239` after normalization—confirming why production merges
+both searches instead of replacing original wording. These synthetic results authorize staging validation; they do not
+claim that the real-CV KLx miss is corrected until the deployed path passes its environment checks.
+
 `CV_CHAT_SEMANTIC_MAX_MATCHES` defaults to `6` and is validated between `1` and `20`.
 `CV_CHAT_SEMANTIC_MIN_SIMILARITY` defaults to `0.35` and is validated between `0.0` and `1.0`; it is an initial reviewed
 staging value, not a universal quality claim. The existing excerpt limit still bounds every merged citation. No public

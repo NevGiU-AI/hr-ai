@@ -172,6 +172,37 @@ documents, expected references, required evidence terms, language markers, and t
 - deterministic response-language markers; and
 - Spring AI `RelevancyEvaluator` and `FactCheckingEvaluator` judgments for every repeated answer.
 
+The multilingual-recall correction makes the fixture's KLx evidence resemble a real bounded chunk by surrounding the
+target fact with unrelated but plausible professional material. For every case, the provider test obtains a constrained
+English retrieval query, searches both the original and normalized wording with the same tenant/candidate filter,
+deduplicates matches, retains the strongest score, reapplies the accepted `0.35` threshold, and limits the union to six
+documents. Its output exposes only the fixture case ID, original top score, normalized top score, and accepted-match
+count. It never prints the question or evidence. The generated answer still receives the original-language question.
+
+Production runtime diagnostics follow the same privacy boundary: identifiers, counts, and the top score are observable;
+questions, normalized queries, excerpts, embeddings, and provider messages are not. Deterministic tests cover bounded
+parsing, original-plus-normalized retrieval, tenant/current-version filtering, and fallback to the original query when
+the optional normalization call fails. Provider evaluation and environment acceptance remain mandatory because unit
+tests cannot establish multilingual embedding quality, latency, or cost.
+
+The authorized live-provider run passed on 30 October 2026 in 27.91 seconds of test time. Results were:
+
+| Case | Original top score | Normalized top score | Accepted matches |
+| --- | ---: | ---: | ---: |
+| `en-klx` | `0.4702` | `0.5185` | 1 |
+| `fr-klx-direct` | `0.4561` | `0.5451` | 1 |
+| `fr-klx-experience` | `0.4621` | `0.5887` | 1 |
+| `pt-klx` | `0.4619` | `0.4978` | 1 |
+| `en-angular` | `0.4574` | `0.4239` | 1 |
+| `fr-angular` | `0.4005` | `0.4239` | 1 |
+| `pt-angular` | `0.4247` | `0.4239` | 1 |
+
+All cases retained the expected tenant/candidate-filtered document and required evidence. Representative generated
+answers retained their expected language and citations and passed Spring AI relevancy and fact-checking evaluation.
+The score distribution proves that constrained English normalization materially improves the known French KLx cases
+but is not universally superior, so the runtime must preserve original retrieval and merge both result sets. The run
+authorizes staging evaluation; it does not by itself close the real-CV environment limitation.
+
 Run this focused provider gate from `backend`:
 
 PowerShell:

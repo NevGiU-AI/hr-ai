@@ -35,8 +35,12 @@ decisions.
   dataset. The opt-in provider gate checks expected documents, tenant/candidate filters, required evidence, citations,
   response language, repeated-run stability, and Spring AI relevancy/fact-checking judgments. Its first environment
   acceptance and the focused live-provider gate passed on 30 October 2026. One French real-CV paraphrase remains a
-  documented safe retrieval miss; the scoped behavior passed production acceptance in release `v0.23.0`, while
-  controlled-response localization is deferred until immediately before the dashboard.
+  documented safe retrieval miss; the scoped behavior passed production acceptance in release `v0.23.0`. The next
+  correction searches both the original wording and a constrained English retrieval query, preserves all tenant and
+  current-document filters, keeps the accepted `0.35` threshold, caps the merged result at six chunks, and exposes only
+  privacy-safe score/count diagnostics. Its synthetic live-provider gate passed on 30 October 2026; the known French
+  KLx formulation improved from `0.4561` to `0.5451` without discarding cases where the original query scored better.
+  Controlled-response localization remains deferred until immediately before the dashboard.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

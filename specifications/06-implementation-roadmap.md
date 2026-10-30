@@ -167,6 +167,17 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   acceptance are separated deliberately: the focused live-provider gate and scoped staging acceptance passed on
   30 October 2026, with staging running main revision `d46f435`; focused production acceptance followed in release
   `v0.23.0` at main revision `083b9c4`. The known French KLx paraphrase recall miss remains future correction work.
+- [x] Implement the measured multilingual-recall correction without lowering the global threshold: normalize each
+  policy-approved question into one constrained English retrieval query, search both original and normalized wording,
+  deduplicate and rank the union, retain mandatory tenant/candidate/current-document/source-version controls, cap final
+  evidence at six chunks, fall back to the original question on normalization failure, and emit privacy-safe score/count
+  diagnostics. The realistic noisy-chunk fixture and deterministic regressions are included in the same slice.
+- [x] Run the opt-in provider-backed multilingual suite for the dual-query path and record privacy-safe
+  original-versus-normalized measurements. All seven cases passed on 30 October 2026; direct French KLx improved from
+  `0.4561` to `0.5451`, alternate French KLx from `0.4621` to `0.5887`, and cases where original wording scored better
+  confirmed the need to merge rather than replace queries.
+- [ ] Validate the known French KLx case, unrelated questions, citations, tenant isolation, latency, cost, fallback
+  behavior, and privacy-safe logs in staging before production promotion.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "description": "Synthetic multilingual retrieval and generated-answer cases with no real candidate personal data.",
+  "documents": [
+    {
+      "id": "cv-61-work",
+      "reference": "CV-61",
+      "organizationId": "tenant-a",
+      "candidateId": 60,
+      "documentId": 61,
+      "text": "At KLx and LCL, the candidate implemented the European Union Instant Payments and Verification of Payee regulation to support regulatory compliance. The candidate also maintained legacy applications critical to customers' daily operations. In the NevGiU HR AI Recruitment Manager project, the candidate used Angular 19, TypeScript, Bootstrap, Spring Boot 3.5, Java 21, PostgreSQL, pgvector, Redis, Docker Compose, Caddy, and GitHub Actions."
+    },
+    {
+      "id": "cv-61-education",
+      "reference": "CV-61",
+      "organizationId": "tenant-a",
+      "candidateId": 60,
+      "documentId": 61,
+      "text": "The candidate holds the Spring Certified Professional 2023 certification and has professional Java and Spring Boot experience."
+    },
+    {
+      "id": "cv-99-cross-tenant-decoy",
+      "reference": "CV-99",
+      "organizationId": "tenant-b",
+      "candidateId": 99,
+      "documentId": 99,
+      "text": "Decoy record: at KLx the person used an unrelated technology and never worked on instant payments. This document belongs to another organization and must never be returned for tenant-a."
+    }
+  ],
+  "cases": [
+    {"id":"en-klx","language":"en","question":"What did he work on at KLx?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":true,"languageMarkers":[" the "," he "," candidate "]},
+    {"id":"fr-klx-direct","language":"fr","question":"Sur quoi a-t-il travaillé chez KLx ?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":true,"languageMarkers":[" il "," le "," la "," les "," des "," chez "]},
+    {"id":"fr-klx-experience","language":"fr","question":"Quelle était son expérience professionnelle chez KLx ?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":false,"languageMarkers":[" il "," le "," la "," les "," des "," chez "]},
+    {"id":"pt-klx","language":"pt","question":"Em que trabalhou na KLx?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":false,"languageMarkers":[" ele "," o "," a "," os "," as "," na "]},
+    {"id":"en-angular","language":"en","question":"On which project did he use Angular?","expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":false,"languageMarkers":[" the "," he "," candidate "]},
+    {"id":"fr-angular","language":"fr","question":"Dans quel projet a-t-il utilisé Angular ?","expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":false,"languageMarkers":[" il "," le "," la "," les "," dans "]},
+    {"id":"pt-angular","language":"pt","question":"Em que projeto ele usou Angular?","expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":true,"languageMarkers":[" ele "," o "," a "," no "," na "]}
+  ]
+}

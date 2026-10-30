@@ -24,6 +24,9 @@ The first backend slice supports an imperative question about one explicitly sel
   stable `502` response instead of returning an ungrounded answer. The only exceptions are exact, model-internal
   `INSUFFICIENT_EVIDENCE` and `OUT_OF_SCOPE` control results. Java replaces those markers with fixed safe wording and
   an empty citation list; arbitrary uncited model prose remains invalid.
+- Grounded answers are instructed to preserve the recruiter question's language even when the authorized CV evidence
+  uses another language. The answer call uses temperature `0` to reduce avoidable wording/language variation; provider
+  determinism is still measured through repeated evaluation rather than assumed.
 - Evidence/page and excerpt limits are configurable with `CV_CHAT_MAX_EVIDENCE_PAGES` and
   `CV_CHAT_MAX_EXCERPT_CHARACTERS`; deployment defaults are `10` and `1200`. Semantic retrieval adds an independent
   rollout switch plus result/relevance bounds described below.

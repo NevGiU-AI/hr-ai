@@ -153,6 +153,70 @@ Production policy acceptance does not close the broader evaluation milestone. Mu
 response-language consistency, repeated-run stability, expected-document recall, groundedness, fact-checking, and
 citation-quality gates remain the immediate next evaluation slice.
 
+#### Implemented multilingual retrieval and generated-answer harness
+
+The versioned synthetic dataset at
+`backend/src/test/resources/ai-evaluations/cv-chat-multilingual-retrieval-v1.json` contains tenant-scoped source
+documents plus English, French, and Portuguese paraphrases for KLx experience and the Angular project. It includes a
+cross-tenant decoy with deliberately overlapping vocabulary so metadata filtering is exercised rather than inferred
+from retrieval quality.
+
+`CvChatMultilingualEvaluationDatasetTest` runs on every normal build and validates version, identifiers, languages,
+documents, expected references, required evidence terms, language markers, and the bounded repeated-answer subset.
+`CvChatMultilingualProviderEvaluationTest` is opt-in and uses the actual Spring AI 1.1 APIs pinned by this repository:
+
+- OpenAI `text-embedding-3-small` with 1,536 dimensions and `SimpleVectorStore` for real multilingual similarity;
+- the accepted `0.35` threshold, six-result limit, and mandatory organization/candidate metadata filters;
+- deterministic expected-document, required-evidence, cross-tenant, and citation assertions;
+- two answer attempts for representative English, French, and Portuguese cases;
+- deterministic response-language markers; and
+- Spring AI `RelevancyEvaluator` and `FactCheckingEvaluator` judgments for every repeated answer.
+
+Run this focused provider gate from `backend`:
+
+PowerShell:
+
+```powershell
+$env:RUN_AI_EVALUATIONS = "true"
+$env:OPENAI_API_KEY = "replace-with-the-evaluation-key"
+$env:AI_EVALUATION_CHAT_MODEL = "gpt-4o-mini"
+$env:AI_EVALUATION_JUDGE_MODEL = "gpt-4o-mini"
+$env:AI_EVALUATION_EMBEDDING_MODEL = "text-embedding-3-small"
+$env:AI_EVALUATION_SIMILARITY_THRESHOLD = "0.35"
+mvn -B "-Dtest=CvChatMultilingualProviderEvaluationTest" test
+Remove-Item Env:RUN_AI_EVALUATIONS
+Remove-Item Env:OPENAI_API_KEY
+Remove-Item Env:AI_EVALUATION_CHAT_MODEL
+Remove-Item Env:AI_EVALUATION_JUDGE_MODEL
+Remove-Item Env:AI_EVALUATION_EMBEDDING_MODEL
+Remove-Item Env:AI_EVALUATION_SIMILARITY_THRESHOLD
+```
+
+Bash:
+
+```bash
+RUN_AI_EVALUATIONS=true \
+OPENAI_API_KEY='replace-with-the-evaluation-key' \
+AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
+AI_EVALUATION_JUDGE_MODEL='gpt-4o-mini' \
+AI_EVALUATION_EMBEDDING_MODEL='text-embedding-3-small' \
+AI_EVALUATION_SIMILARITY_THRESHOLD='0.35' \
+mvn -B -Dtest=CvChatMultilingualProviderEvaluationTest test
+```
+
+These test-process variables must not be added to deployment `.env` files. Evaluator passes are secondary semantic
+signals: authorization, metadata isolation, expected references, citations, and language checks remain deterministic.
+The same judge model is an economical initial default, but future calibration should compare an independently selected
+judge against human labels and record false passes/failures.
+
+The focused live-provider gate passed on 30 October 2026 with `gpt-4o-mini`, `text-embedding-3-small`, and the accepted
+`0.35` threshold. All seven multilingual retrieval cases found the expected tenant/candidate-filtered document and
+required evidence without returning the cross-tenant decoy. The representative English, French, and Portuguese answer
+cases each passed twice with the expected citation and language markers, and Spring AI relevancy and fact-checking
+judgments passed for every generated answer. The run completed in 28.43 seconds. Byte Buddy/JDK `Unsafe` deprecation
+warnings came from test instrumentation and did not indicate an evaluation failure. Staging and production environment
+acceptance remain pending.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

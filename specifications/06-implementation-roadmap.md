@@ -186,10 +186,15 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   at main revision `7576611`; production repeated the grounded EN/FR/PT, citation, tenant isolation, missing-evidence,
   refusal, and privacy-safe log checks successfully. A production latency percentile was not recorded and remains part
   of the later performance benchmark.
-- [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
-- [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
-  them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior
-  for missing or non-unique names.
+- [ ] Implement retrieval, filtering, candidate detail, and comparison tools. Deterministic tenant-scoped candidate
+  resolution is complete as the first independently reviewable foundation; model-facing tools remain pending.
+- [x] Add deterministic exact-name candidate resolution before multi-candidate retrieval. The
+  `POST /api/chat/candidates/resolve` endpoint takes only a validated name and obtains the organization from the
+  authenticated principal, performs case-insensitive exact matching without fuzzy or partial widening, and returns a
+  minimal projection of ID,
+  name, and current title. One match is `RESOLVED`; duplicate names are `AMBIGUOUS` and require explicit selection;
+  missing and cross-tenant names share the generic `404` contract. Results are capped at 20 with a `truncated` marker,
+  and email, CV text, and organization identifiers are never loaded into the resolution response.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.

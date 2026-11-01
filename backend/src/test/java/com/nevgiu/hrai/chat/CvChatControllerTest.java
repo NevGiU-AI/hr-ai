@@ -27,7 +27,46 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CvChatControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean CvChatService service;
+    @MockitoBean CvChatCandidateResolutionService candidateResolution;
     @MockitoBean SecurityAuditService securityAuditService;
+
+    @Test
+    void resolvesCandidateNamesInsideTheAuthenticatedOrganization() throws Exception {
+        AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
+                java.util.List.of());
+        var response = new CvChatCandidateResolutionResponse(CvChatCandidateResolutionResponse.Status.RESOLVED,
+                List.of(new CvChatCandidateResolutionResponse.CandidateOption(7L, "Ada Lovelace", "Engineer")), false);
+        when(candidateResolution.resolve("Ada Lovelace", "tenant-a")).thenReturn(response);
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/candidates/resolve")
+                            .contentType("application/json")
+                            .content("{\"name\":\"Ada Lovelace\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("RESOLVED"))
+                    .andExpect(jsonPath("$.candidates[0].id").value(7))
+                    .andExpect(jsonPath("$.candidates[0].name").value("Ada Lovelace"))
+                    .andExpect(jsonPath("$.candidates[0].currentTitle").value("Engineer"))
+                    .andExpect(jsonPath("$.truncated").value(false))
+                    .andExpect(jsonPath("$.candidates[0].email").doesNotExist())
+                    .andExpect(jsonPath("$.candidates[0].organizationId").doesNotExist());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+
+        verify(candidateResolution).resolve("Ada Lovelace", "tenant-a");
+    }
+
+    @Test
+    void validatesCandidateResolutionName() throws Exception {
+        mvc.perform(post("/api/chat/candidates/resolve")
+                        .contentType("application/json")
+                        .content("{\"name\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.name").exists());
+    }
 
     @Test
     void passesAuthenticatedOrganizationToTheChatService() throws Exception {

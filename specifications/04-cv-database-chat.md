@@ -344,6 +344,16 @@ The model never performs global name resolution, invents or silently expands the
 organization boundary. Comparison uses only authorized evidence for the resolved IDs, and every factual conclusion
 requires candidate/document citations.
 
+The first candidate-identification backend slice implements this boundary without yet exposing a model tool or
+multi-candidate retrieval. `POST /api/chat/candidates/resolve` accepts a validated exact name and obtains the
+organization exclusively from the authenticated principal. Matching is case-insensitive and ignores surrounding UI
+whitespace, but deliberately excludes fuzzy and partial matching. A unique record returns `RESOLVED`; duplicate exact
+names return `AMBIGUOUS` so the UI can require explicit selection; and missing or cross-tenant names produce the same
+generic `404`. The response projects only candidate ID, name, and current title instead of loading email or CV content.
+At most 20 options are returned with an explicit `truncated` marker. `ADMIN`, `RECRUITER`, and `REVIEWER` retain access
+under the existing CV-chat role policy, while `READ_ONLY` remains forbidden. This endpoint only resolves identities;
+it does not authorize evidence retrieval by itself, compare candidates, or permit the model to select an organization.
+
 ## Inputs and outputs
 
 Inputs:

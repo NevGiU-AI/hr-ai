@@ -45,6 +45,10 @@ decisions.
   confirmed two bounded searches, and observed end-to-end latency was approximately 3–4 seconds. Production acceptance
   followed on 1 November 2026 in release `v0.24.0`, with the same grounded retrieval, policy, citation, isolation, and
   privacy-safe logging behavior. Controlled-response localization remains deferred until immediately before the dashboard.
+- Resolve an exact candidate name through a deterministic tenant-scoped chat API before any future multi-candidate
+  retrieval. A unique match returns only its ID, name, and current title; duplicate names require explicit selection;
+  and missing or cross-tenant names share a generic not-found response. The model cannot supply the organization or
+  silently widen the candidate set.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

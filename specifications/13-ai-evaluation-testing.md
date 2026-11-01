@@ -276,6 +276,21 @@ Application-owned safe-message and Angular-label localization also remains defer
 dashboard. Production acceptance therefore closes PR #106's language-preservation scope, not the broader multilingual
 retrieval or localization milestones.
 
+#### Dual-query multilingual-recall staging acceptance — 1 November 2026
+
+Merged PR #109 at main revision `26d59e8` passed focused staging acceptance for the measured recall correction. The
+known real-CV KLx evidence and additional EN/FR/PT questions were retrieved through the union of the original and
+constrained-English queries without lowering the global `0.35` threshold. Grounded answers retained authorized
+candidate/document citations; missing information stayed within the controlled insufficient-evidence result; and
+sensitive or unrelated questions remained blocked by the pre-retrieval policy boundary.
+
+Privacy-safe operational diagnostics confirmed `queryCount=2`, 12 raw matches, 4–6 accepted matches, and strongest
+similarities between `0.4693` and `0.5535` for candidate `60` and current document `61`. No recruiter question,
+normalized query, CV excerpt, embedding, or provider payload was logged. Repeated end-to-end requests completed in
+approximately 3–4 seconds. Record that observation as the staging baseline rather than a release-wide latency target;
+the later performance gate must measure distributions and concurrency. The slice required no new environment variable,
+Flyway migration, database, Compose, or frontend configuration. Focused production acceptance remains pending.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

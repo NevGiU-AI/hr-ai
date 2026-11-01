@@ -1010,6 +1010,21 @@ recall limitation rather than lowering the global threshold from one case. Appli
 the Angular no-citation explanation remain English until the planned pre-dashboard localization slice. Production
 acceptance remains pending.
 
+### Validated dual-query multilingual recall
+
+**Accepted 1 November 2026 for main revision `26d59e8`:** merged PR #109 corrected the documented real-corpus recall
+limitation without changing the accepted `0.35` similarity threshold. The application searched the original question
+and one constrained English retrieval query, merged and deduplicated their matches, and retained the tenant, selected-
+candidate, current-document, and source-version boundaries. Focused EN/FR/PT questions returned grounded citations;
+missing evidence remained controlled; and sensitive/unrelated questions were rejected before retrieval.
+
+Privacy-safe logs for candidate `60` and document `61` showed `queryCount=2`, `rawMatches=12`, `acceptedMatches=4..6`,
+and `topSimilarity=0.4693..0.5535`. They contained no recruiter question, normalized query, CV text, embedding, or
+provider payload. Repeated responses completed in approximately 3–4 seconds, which is an accepted staging baseline
+pending later percentile and concurrency measurement. No staging `.env`, Flyway, database, Compose, or frontend change
+was required. Promote the same immutable implementation to production and repeat the focused functional, isolation,
+citation, refusal, latency, and privacy-safe log checks before recording production acceptance.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

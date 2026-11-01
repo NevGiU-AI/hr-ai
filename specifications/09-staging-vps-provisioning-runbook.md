@@ -1022,8 +1022,8 @@ Privacy-safe logs for candidate `60` and document `61` showed `queryCount=2`, `r
 and `topSimilarity=0.4693..0.5535`. They contained no recruiter question, normalized query, CV text, embedding, or
 provider payload. Repeated responses completed in approximately 3–4 seconds, which is an accepted staging baseline
 pending later percentile and concurrency measurement. No staging `.env`, Flyway, database, Compose, or frontend change
-was required. Promote the same immutable implementation to production and repeat the focused functional, isolation,
-citation, refusal, latency, and privacy-safe log checks before recording production acceptance.
+was required. The same immutable implementation subsequently passed focused production acceptance on 1 November 2026
+in release `v0.24.0`.
 
 ### Rollback boundary observed in staging
 

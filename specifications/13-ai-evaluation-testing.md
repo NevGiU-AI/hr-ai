@@ -289,7 +289,21 @@ similarities between `0.4693` and `0.5535` for candidate `60` and current docume
 normalized query, CV excerpt, embedding, or provider payload was logged. Repeated end-to-end requests completed in
 approximately 3–4 seconds. Record that observation as the staging baseline rather than a release-wide latency target;
 the later performance gate must measure distributions and concurrency. The slice required no new environment variable,
-Flyway migration, database, Compose, or frontend configuration. Focused production acceptance remains pending.
+Flyway migration, database, Compose, or frontend configuration. Focused production acceptance followed on 1 November
+2026 in release `v0.24.0`.
+
+#### Dual-query multilingual-recall production acceptance — 1 November 2026
+
+Release `v0.24.0` at main revision `7576611` passed the focused production checks for the same implementation accepted
+in staging. Grounded English, French, and Portuguese questions returned authorized candidate/document citations;
+missing information retained the controlled insufficient-evidence result; and sensitive or unrelated questions were
+rejected before retrieval. Tenant isolation remained intact, and the privacy-safe log review showed neither retrieval
+errors nor recruiter questions, normalized queries, CV excerpts, embeddings, or provider payloads.
+
+The release required no new environment variable, Flyway migration, database, Compose, or frontend configuration.
+Operators found response time functionally acceptable during smoke testing, but did not record a representative
+production duration or percentile distribution. Production p50/p95/p99 latency, provider cost, and concurrency remain
+explicit later performance measurements rather than inferred acceptance claims.
 
 ### Spring AI tools
 

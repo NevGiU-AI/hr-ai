@@ -838,6 +838,15 @@ remained correct. The real-CV French KLx paraphrase still represents a controlle
 not a grounded success. Preserve it for the planned measured retrieval correction. Application-owned safe responses
 and Angular no-citation labels remain English until the pre-dashboard localization slice.
 
+**Dual-query multilingual-recall acceptance recorded 1 November 2026 for release `v0.24.0` at main revision
+`7576611`:** production repeated the focused PR #109 checks after staging acceptance. Grounded English, French, and
+Portuguese questions returned authorized candidate/document citations; missing evidence remained controlled;
+sensitive/unrelated questions were rejected before retrieval; and tenant isolation remained intact. Privacy-safe log
+review found no retrieval errors and no recruiter question, normalized query, CV text, embedding, or provider payload.
+The release required no environment, Flyway, database, Compose, or frontend change. Response time was functionally
+acceptable during smoke testing, but no production percentile or representative numeric latency was recorded; retain
+p50/p95/p99 measurement for the later concurrency benchmark.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

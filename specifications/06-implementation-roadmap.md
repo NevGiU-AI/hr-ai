@@ -176,8 +176,13 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   original-versus-normalized measurements. All seven cases passed on 30 October 2026; direct French KLx improved from
   `0.4561` to `0.5451`, alternate French KLx from `0.4621` to `0.5887`, and cases where original wording scored better
   confirmed the need to merge rather than replace queries.
-- [ ] Validate the known French KLx case, unrelated questions, citations, tenant isolation, latency, cost, fallback
-  behavior, and privacy-safe logs in staging before production promotion.
+- [x] Validate the dual-query multilingual-recall correction in staging before production promotion. On 1 November
+  2026, merged PR #109 at main revision `26d59e8` preserved grounded EN/FR/PT answers, citations, tenant/candidate/current-
+  document isolation, missing-evidence behavior, and pre-retrieval sensitive/unrelated refusals. Privacy-safe logs
+  reported `queryCount=2`, 12 raw matches, 4–6 accepted matches, and top similarities from `0.4693` to `0.5535` without
+  recording questions or CV content. End-to-end responses took approximately 3–4 seconds, establishing a staging
+  baseline for later p50/p95 concurrency measurement. No environment, Flyway, database, Compose, or frontend change
+  was required. Promote the same immutable implementation to production and repeat the focused acceptance checks.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

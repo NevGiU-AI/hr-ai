@@ -40,7 +40,11 @@ decisions.
   current-document filters, keeps the accepted `0.35` threshold, caps the merged result at six chunks, and exposes only
   privacy-safe score/count diagnostics. Its synthetic live-provider gate passed on 30 October 2026; the known French
   KLx formulation improved from `0.4561` to `0.5451` without discarding cases where the original query scored better.
-  Controlled-response localization remains deferred until immediately before the dashboard.
+  The same dual-query path passed staging acceptance on 1 November 2026 after PR #109: real EN/FR/PT questions
+  returned authorized evidence, sensitive/unrelated and missing-evidence controls remained safe, privacy-safe logs
+  confirmed two bounded searches, and observed end-to-end latency was approximately 3–4 seconds. Production acceptance
+  remains the next promotion gate. Controlled-response localization remains deferred until immediately before the
+  dashboard.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -69,7 +73,8 @@ staging acceptance on 30 October 2026 after correcting a terse professional-ques
 versioned English/French/Portuguese policy dataset. Multilingual paraphrase recall and response-language consistency
 were evaluated next: generated EN/FR/PT answers passed scoped staging language/citation checks, while one French KLx
 paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
-30 October 2026 in release `v0.23.0`. Broader multi-candidate retrieval, speech
+30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
+1 November 2026 without lowering the `0.35` threshold. Broader multi-candidate retrieval, speech
 input/playback, and the recruitment dashboard remain roadmap work. Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

@@ -249,10 +249,11 @@ retrieval query while retaining the accepted `0.35` threshold and six-chunk cap.
 questions returned grounded, candidate-scoped citations; missing information remained controlled, and sensitive or
 unrelated questions were still rejected before evidence retrieval. Logs for staging candidate `60` and current document
 `61` reported `queryCount=2`, 12 raw matches, 4–6 accepted matches, and top similarity values from `0.4693` to `0.5535`.
-They contained identifiers and numeric diagnostics only—no question, normalized query, CV text, embedding, or provider
-payload. Repeated end-to-end requests completed in approximately 3–4 seconds. This is the current staging baseline,
-not a final performance threshold; later concurrency validation must measure p50/p95/p99 latency, provider cost, and
-throttling. No new environment variable, Flyway migration, database, Compose, or frontend change was required.
+The logs contained only identifiers and numeric diagnostics. They did not contain the original question, normalized
+query, CV text, embeddings, or provider payloads. Repeated end-to-end requests completed in approximately 3–4 seconds.
+This is the current staging baseline, not a final performance threshold; later concurrency validation must measure
+p50/p95/p99 latency, provider cost, and throttling. No new environment variable, Flyway migration, database, Compose,
+or frontend change was required.
 Production promotion and focused acceptance remain pending.
 
 ### Production

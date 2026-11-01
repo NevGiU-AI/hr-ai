@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class CvChatEvidenceServiceTest {
@@ -26,8 +27,9 @@ class CvChatEvidenceServiceTest {
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
     private final CvDocumentPageRepository pages = mock(CvDocumentPageRepository.class);
     private final CvSemanticSearchService semanticSearch = mock(CvSemanticSearchService.class);
+    private final CvChatRetrievalQueryNormalizer retrievalQueryNormalizer = mock(CvChatRetrievalQueryNormalizer.class);
     private final CvChatEvidenceService service = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-            new CvChatProperties(10, 1200, false, 6, 0.35));
+            retrievalQueryNormalizer, new CvChatProperties(10, 1200, false, 6, 0.35));
 
     @Test
     void buildsBoundedNativeEvidenceForTheAuthorizedCandidate() {
@@ -43,6 +45,7 @@ class CvChatEvidenceServiceTest {
             assertThat(item.reference()).isEqualTo("CV-CANDIDATE-7");
             assertThat(item.excerpt()).isEqualTo("Java and Spring Boot engineer");
         });
+        verifyNoInteractions(retrievalQueryNormalizer);
     }
 
     @Test
@@ -90,6 +93,7 @@ class CvChatEvidenceServiceTest {
         when(current.getImportedAt()).thenReturn(Instant.parse("2026-10-28T00:00:00Z"));
         when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
         when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(current));
+        when(retrievalQueryNormalizer.normalize("expérience Java")).thenReturn("Java experience");
         when(semanticSearch.search("tenant-a", "Java experience", List.of(7L), 6)).thenReturn(List.of(
                 match(7L, 12L, 2, " Java   and Spring Boot ", 0.91),
                 match(7L, 12L, 2, "PostgreSQL", 0.88),
@@ -99,12 +103,13 @@ class CvChatEvidenceServiceTest {
                 match(7L, 11L, 1, "obsolete document", 0.95),
                 match(8L, 12L, 1, "wrong candidate", 0.99)));
         CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-                new CvChatProperties(10, 1200, true, 6, 0.35));
+                retrievalQueryNormalizer, new CvChatProperties(10, 1200, true, 6, 0.35));
 
-        List<CvChatEvidence> evidence = semanticService.find(7L, "Java experience", "tenant-a");
+        List<CvChatEvidence> evidence = semanticService.find(7L, "expérience Java", "tenant-a");
 
         assertThat(evidence).containsExactly(new CvChatEvidence(
                 "CV-12-P2", 7L, 12L, 2, "Java and Spring Boot PostgreSQL"));
+        verify(semanticSearch).search("tenant-a", "expérience Java", List.of(7L), 6);
         verify(semanticSearch).search("tenant-a", "Java experience", List.of(7L), 6);
         verify(pages, never()).findAllByDocumentIdOrderByPageNumber(12L);
     }
@@ -118,12 +123,55 @@ class CvChatEvidenceServiceTest {
         when(current.getImportedAt()).thenReturn(Instant.parse("2026-10-28T00:00:00Z"));
         when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
         when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(current));
+        when(retrievalQueryNormalizer.normalize("Kubernetes")).thenReturn("Kubernetes");
         when(semanticSearch.search("tenant-a", "Kubernetes", List.of(7L), 6))
                 .thenReturn(List.of(match(7L, 12L, null, "unrelated", 0.20)));
         CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-                new CvChatProperties(10, 1200, true, 6, 0.35));
+                retrievalQueryNormalizer, new CvChatProperties(10, 1200, true, 6, 0.35));
 
         assertThat(semanticService.find(7L, "Kubernetes", "tenant-a")).isEmpty();
+    }
+
+    @Test
+    void fallsBackToThePolicyApprovedOriginalQuestionWhenOptionalNormalizationFails() {
+        Candidate candidate = new Candidate();
+        candidate.setId(7L);
+        CvDocument current = mock(CvDocument.class);
+        when(current.getId()).thenReturn(12L);
+        when(current.getImportedAt()).thenReturn(Instant.parse("2026-10-28T00:00:00Z"));
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(current));
+        when(retrievalQueryNormalizer.normalize("expérience Java"))
+                .thenThrow(new IllegalStateException("provider detail"));
+        when(semanticSearch.search("tenant-a", "expérience Java", List.of(7L), 6))
+                .thenReturn(List.of(match(7L, 12L, 2, "Java evidence", 0.82)));
+        CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
+                retrievalQueryNormalizer, new CvChatProperties(10, 1200, true, 6, 0.35));
+
+        assertThat(semanticService.find(7L, "expérience Java", "tenant-a"))
+                .singleElement().extracting(CvChatEvidence::excerpt).isEqualTo("Java evidence");
+        verify(semanticSearch).search("tenant-a", "expérience Java", List.of(7L), 6);
+    }
+
+    @Test
+    void retainsOriginalMatchesWhenOnlyTheAdditionalNormalizedSearchFails() {
+        Candidate candidate = new Candidate();
+        candidate.setId(7L);
+        CvDocument current = mock(CvDocument.class);
+        when(current.getId()).thenReturn(12L);
+        when(current.getImportedAt()).thenReturn(Instant.parse("2026-10-28T00:00:00Z"));
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(current));
+        when(retrievalQueryNormalizer.normalize("expérience Java")).thenReturn("Java experience");
+        when(semanticSearch.search("tenant-a", "expérience Java", List.of(7L), 6))
+                .thenReturn(List.of(match(7L, 12L, 2, "Java evidence", 0.82)));
+        when(semanticSearch.search("tenant-a", "Java experience", List.of(7L), 6))
+                .thenThrow(new IllegalStateException("provider detail"));
+        CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
+                retrievalQueryNormalizer, new CvChatProperties(10, 1200, true, 6, 0.35));
+
+        assertThat(semanticService.find(7L, "expérience Java", "tenant-a"))
+                .singleElement().extracting(CvChatEvidence::excerpt).isEqualTo("Java evidence");
     }
 
     @Test
@@ -134,10 +182,11 @@ class CvChatEvidenceServiceTest {
         when(current.getId()).thenReturn(12L);
         when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
         when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(current));
+        when(retrievalQueryNormalizer.normalize("Java")).thenReturn("Java");
         when(semanticSearch.search("tenant-a", "Java", List.of(7L), 6))
                 .thenThrow(new IllegalStateException("sensitive provider or database detail"));
         CvChatEvidenceService semanticService = new CvChatEvidenceService(candidates, documents, pages, semanticSearch,
-                new CvChatProperties(10, 1200, true, 6, 0.35));
+                retrievalQueryNormalizer, new CvChatProperties(10, 1200, true, 6, 0.35));
 
         assertThatThrownBy(() -> semanticService.find(7L, "Java", "tenant-a"))
                 .isInstanceOf(CvChatException.class)

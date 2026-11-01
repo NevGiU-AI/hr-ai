@@ -30,7 +30,8 @@ class CvChatServiceTest {
     void answersFromTenantScopedEvidenceAndReturnsOnlyCitedSources() {
         CvChatEvidence evidence = new CvChatEvidence("CV-CANDIDATE-7", 7L, null, null,
                 "Java and Spring Boot engineer with PostgreSQL experience.");
-        when(evidenceService.find(7L, "Does this candidate know Java?", "tenant-a")).thenReturn(List.of(evidence));
+        when(evidenceService.find(7L, "Does this candidate know Java?", "tenant-a"))
+                .thenReturn(List.of(evidence));
         when(model.answer(org.mockito.ArgumentMatchers.eq("Does this candidate know Java?"),
                 org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("The CV lists Java and Spring Boot experience [CV-CANDIDATE-7].");

@@ -18,7 +18,11 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,6 +54,8 @@ class CvChatMultilingualProviderEvaluationTest {
         OpenAiChatModel answerModel = chatModel(api, chatModelName);
         OpenAiChatModel judgeModel = chatModel(api, judgeModelName);
         SpringAiCvChatModel cvChatModel = new SpringAiCvChatModel(ChatClient.builder(answerModel).build());
+        SpringAiCvChatRetrievalQueryNormalizer queryNormalizer =
+                new SpringAiCvChatRetrievalQueryNormalizer(ChatClient.builder(answerModel).build());
         RelevancyEvaluator relevancy = new RelevancyEvaluator(ChatClient.builder(judgeModel));
         FactCheckingEvaluator factChecking = FactCheckingEvaluator.builder(ChatClient.builder(judgeModel)).build();
         var dataset = CvChatMultilingualEvaluationDataset.load();
@@ -57,12 +63,22 @@ class CvChatMultilingualProviderEvaluationTest {
         SoftAssertions results = new SoftAssertions();
 
         for (var testCase : dataset.cases()) {
-            List<Document> retrieved = vectorStore.similaritySearch(SearchRequest.builder()
-                    .query(testCase.question())
-                    .topK(6)
-                    .similarityThreshold(similarityThreshold)
-                    .filterExpression("organization_id == 'tenant-a' && candidate_id == 60")
-                    .build());
+            String normalizedQuery = queryNormalizer.normalize(testCase.question());
+            List<Document> originalMatches = search(vectorStore, testCase.question());
+            List<Document> normalizedMatches = search(vectorStore, normalizedQuery);
+            List<Document> retrieved = java.util.stream.Stream.concat(
+                            originalMatches.stream(), normalizedMatches.stream())
+                    .collect(Collectors.toMap(Document::getId, Function.identity(),
+                            (left, right) -> score(left) >= score(right) ? left : right, LinkedHashMap::new))
+                    .values().stream()
+                    .filter(document -> score(document) >= similarityThreshold)
+                    .sorted(Comparator.comparingDouble(this::score).reversed())
+                    .limit(6)
+                    .toList();
+            // Fixture IDs and numeric scores are deliberately safe diagnostics; questions and evidence stay private.
+            System.out.printf(Locale.ROOT,
+                    "case=%s originalTopScore=%.4f normalizedTopScore=%.4f acceptedMatches=%d%n",
+                    testCase.id(), topScore(originalMatches), topScore(normalizedMatches), retrieved.size());
             assertRetrievedEvidence(results, testCase, retrieved, embeddingModelName, similarityThreshold);
 
             if (!testCase.evaluateAnswer() || retrieved.isEmpty()) {
@@ -93,6 +109,23 @@ class CvChatMultilingualProviderEvaluationTest {
             }
         }
         results.assertAll();
+    }
+
+    private List<Document> search(SimpleVectorStore vectorStore, String query) {
+        return vectorStore.similaritySearch(SearchRequest.builder()
+                .query(query)
+                .topK(6)
+                .similarityThresholdAll()
+                .filterExpression("organization_id == 'tenant-a' && candidate_id == 60")
+                .build());
+    }
+
+    private double topScore(List<Document> matches) {
+        return matches.stream().mapToDouble(this::score).max().orElse(0.0);
+    }
+
+    private double score(Document document) {
+        return document.getScore() == null ? 0.0 : document.getScore();
     }
 
     private void assertRetrievedEvidence(SoftAssertions results,

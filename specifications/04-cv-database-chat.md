@@ -253,8 +253,7 @@ The logs contained only identifiers and numeric diagnostics. They did not contai
 query, CV text, embeddings, or provider payloads. Repeated end-to-end requests completed in approximately 3–4 seconds.
 This is the current staging baseline, not a final performance threshold; later concurrency validation must measure
 p50/p95/p99 latency, provider cost, and throttling. No new environment variable, Flyway migration, database, Compose,
-or frontend change was required.
-Production promotion and focused acceptance remain pending.
+or frontend change was required. Focused production acceptance followed on 1 November 2026 in release `v0.24.0`.
 
 ### Production
 
@@ -305,6 +304,14 @@ and privacy-safe logs did not regress. No new environment, Flyway, database, Com
 required. The real-CV French KLx paraphrase remains a documented controlled insufficient-evidence case rather than a
 resolved retrieval path. Application-owned safe messages and their Angular explanatory text remain English until the
 planned pre-dashboard localization slice.
+
+The dual-query multilingual-recall correction passed focused production acceptance on 1 November 2026 in release
+`v0.24.0` at main revision `7576611`. Production repeated the successful grounded English, French, and Portuguese
+questions, candidate-scoped citations, tenant isolation, missing-evidence result, and pre-retrieval sensitive/unrelated
+refusals. The privacy-safe log review showed no retrieval errors and no recruiter question, normalized query, CV text,
+embedding, or provider payload. No new environment variable, Flyway migration, database, Compose, or frontend change
+was required. Production response latency was functionally acceptable during the smoke tests, but no percentile or
+representative numeric baseline was captured; p50/p95/p99 measurement remains part of the later concurrency benchmark.
 
 Multi-candidate result cards, conversation memory, and the complete retrieval/generated-answer evaluation suite remain
 separate implementation slices. The first versioned question-policy dataset is operational, but acceptance of this

@@ -43,8 +43,8 @@ decisions.
   The same dual-query path passed staging acceptance on 1 November 2026 after PR #109: real EN/FR/PT questions
   returned authorized evidence, sensitive/unrelated and missing-evidence controls remained safe, privacy-safe logs
   confirmed two bounded searches, and observed end-to-end latency was approximately 3–4 seconds. Production acceptance
-  remains the next promotion gate. Controlled-response localization remains deferred until immediately before the
-  dashboard.
+  followed on 1 November 2026 in release `v0.24.0`, with the same grounded retrieval, policy, citation, isolation, and
+  privacy-safe logging behavior. Controlled-response localization remains deferred until immediately before the dashboard.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -74,7 +74,8 @@ versioned English/French/Portuguese policy dataset. Multilingual paraphrase reca
 were evaluated next: generated EN/FR/PT answers passed scoped staging language/citation checks, while one French KLx
 paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
 30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
-1 November 2026 without lowering the `0.35` threshold. Broader multi-candidate retrieval, speech
+1 November 2026 without lowering the `0.35` threshold, followed by focused production acceptance in release `v0.24.0`.
+Broader multi-candidate retrieval, speech
 input/playback, and the recruitment dashboard remain roadmap work. Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

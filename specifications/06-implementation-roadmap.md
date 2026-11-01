@@ -182,7 +182,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   reported `queryCount=2`, 12 raw matches, 4–6 accepted matches, and top similarities from `0.4693` to `0.5535` without
   recording questions or CV content. End-to-end responses took approximately 3–4 seconds, establishing a staging
   baseline for later p50/p95 concurrency measurement. No environment, Flyway, database, Compose, or frontend change
-  was required. Promote the same immutable implementation to production and repeat the focused acceptance checks.
+  was required. The same implementation passed focused production acceptance on 1 November 2026 in release `v0.24.0`
+  at main revision `7576611`; production repeated the grounded EN/FR/PT, citation, tenant isolation, missing-evidence,
+  refusal, and privacy-safe log checks successfully. A production latency percentile was not recorded and remains part
+  of the later performance benchmark.
 - [ ] Implement retrieval, filtering, tenant-scoped candidate-name resolution, candidate detail, and comparison tools.
 - [ ] Accept candidate identities from structured UI selection or unambiguous natural-language references, convert
   them to verified organization-scoped IDs before retrieval, and return generic not-found or disambiguation behavior

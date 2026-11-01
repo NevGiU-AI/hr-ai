@@ -9,6 +9,7 @@ import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 
@@ -53,6 +54,12 @@ class TenantIsolationRepositoryTest {
                 .extracting(Candidate::getName)
                 .containsExactly("Katherine", "Ada");
         assertThat(candidates.findByIdAndOrganizationId(candidateB.getId(), "tenant-a")).isEmpty();
+        assertThat(candidates.findAllByExactNameAndOrganizationId(
+                "  ADA  ", "tenant-a", PageRequest.of(0, 20)).getContent())
+                .extracting(com.nevgiu.hrai.candidate.CandidateIdentity::id)
+                .containsExactly(olderCandidateA.getId());
+        assertThat(candidates.findAllByExactNameAndOrganizationId(
+                "Grace", "tenant-a", PageRequest.of(0, 20))).isEmpty();
         assertThat(jobs.findAllByOrganizationId("tenant-a")).extracting(Job::getTitle)
                 .containsExactly("Backend Engineer");
         assertThat(jobs.findByIdAndOrganizationId(jobB.getId(), "tenant-a")).isEmpty();

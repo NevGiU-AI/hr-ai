@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CvChatSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean CvChatService chat;
+    @MockitoBean CvChatCandidateResolutionService candidateResolution;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService audit;
 
@@ -45,11 +46,32 @@ class CvChatSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
+    void permitsCandidateResolutionOnlyForCvChatRoles(String role) throws Exception {
+        when(candidateResolution.resolve("Ada Lovelace", "tenant-a")).thenReturn(
+                new CvChatCandidateResolutionResponse(CvChatCandidateResolutionResponse.Status.RESOLVED,
+                        List.of(new CvChatCandidateResolutionResponse.CandidateOption(
+                                7L, "Ada Lovelace", "Engineer")), false));
+
+        mvc.perform(post("/api/chat/candidates/resolve")
+                        .contentType("application/json")
+                        .content("{\"name\":\"Ada Lovelace\"}")
+                        .with(user(principal(role))).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void deniesReadOnlyUsers() throws Exception {
         mvc.perform(post("/api/chat/candidates/7")
                         .contentType("application/json")
                         .content("{\"message\":\"Summarize this CV\"}")
+                        .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/chat/candidates/resolve")
+                        .contentType("application/json")
+                        .content("{\"name\":\"Ada Lovelace\"}")
                         .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
                 .andExpect(status().isForbidden());
     }

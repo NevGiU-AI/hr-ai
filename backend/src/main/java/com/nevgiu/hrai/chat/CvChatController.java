@@ -13,9 +13,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/chat/candidates")
 public class CvChatController {
     private final CvChatService service;
+    private final CvChatCandidateResolutionService candidateResolution;
 
-    public CvChatController(CvChatService service) {
+    public CvChatController(CvChatService service, CvChatCandidateResolutionService candidateResolution) {
         this.service = service;
+        this.candidateResolution = candidateResolution;
+    }
+
+    /**
+     * Converts an exact human-readable candidate name into tenant-verified candidate IDs before later retrieval.
+     * The authenticated organization is server-owned and never accepted from the request or an AI-generated argument.
+     */
+    @PostMapping("/resolve")
+    public CvChatCandidateResolutionResponse resolve(@Valid @RequestBody CvChatCandidateResolutionRequest request,
+                                                     @AuthenticationPrincipal AppUserPrincipal actor) {
+        return candidateResolution.resolve(request.name(), actor.organizationId());
     }
 
     /**

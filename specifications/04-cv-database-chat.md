@@ -368,6 +368,12 @@ names shared the generic not-found response. Partial queries returned only organ
 reported bounded-result truncation, returned an empty list for missing and cross-tenant matches, and never selected a
 candidate automatically. The selected candidate ID remained the required input for subsequent CV-chat requests.
 
+Production accepted the same candidate-identification contracts on 2 November 2026 after PR #114 was merged at main
+revision `2831d2d`. The focused checks covered unique and ambiguous exact resolution, missing and tenant-isolated
+behavior, partial matching and minimum-length validation, bounded minimal responses, role authorization, and explicit
+selection. A returned candidate ID then completed a grounded candidate-specific chat request successfully. No new
+environment variable, Flyway migration, database operation, or infrastructure change was required.
+
 ## Inputs and outputs
 
 Inputs:

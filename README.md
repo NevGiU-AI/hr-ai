@@ -52,7 +52,8 @@ decisions.
 - Search by a partial candidate name within the authenticated organization and require explicit recruiter selection;
   partial matches are never silently promoted to a resolved candidate. Exact resolution and partial search passed
   focused staging acceptance on 2 November 2026, including role enforcement, tenant isolation, bounded minimal
-  responses, ambiguity handling, and explicit candidate selection.
+  responses, ambiguity handling, and explicit candidate selection. Production repeated the focused checks successfully
+  on 2 November 2026 after PR #114.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

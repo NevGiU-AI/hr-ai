@@ -221,8 +221,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   comparison request, candidate-labelled citations, citation navigation, stale-response protection, retry behavior,
   and role-aware UI. Focused staging acceptance completed on 2 November 2026. PR #125 then converted incomplete
   every-candidate citation coverage into the controlled insufficient-evidence response rather than a provider-facing
-  `502`; the full staging comparison checks passed without a schema or environment change. Production acceptance is
-  still required.
+  `502`; the full staging comparison checks passed without a schema or environment change. Production repeated the
+  focused scope, grounded-comparison, citation-navigation, controlled-response, incomplete-citation, and authorization
+  checks successfully on 2 November 2026 in release `v0.28.0`. The picker-first comparison flow is accepted in both
+  environments.
 - [ ] Add the language-first flow: identify candidate references in a natural-language message, resolve them only
   through tenant-scoped deterministic services, display bounded candidate cards, and require recruiter confirmation
   before any CV, evaluation, or job-fit evidence retrieval. Both entry paths must converge on the same verified-ID

@@ -469,7 +469,15 @@ sensitive/out-of-scope/insufficient-evidence responses, retry behavior, and auth
 found that a job-relevant question could produce provider output citing only part of the verified selection. PR #125
 kept the strict every-candidate citation rule but replaced that provider-validation `502` with the existing controlled
 insufficient-evidence response and no partial citations. The correction passed the full staging comparison checks.
-No schema, Flyway, or environment-variable change was required. Production acceptance remains pending.
+No schema, Flyway, or environment-variable change was required.
+
+Production repeated the focused Angular comparison and fallback checks successfully on 2 November 2026 in release
+`v0.28.0`. The immutable production deployment accepted the visible two-to-five-candidate scope, selection/removal and
+clear behavior, grounded comparison, candidate-labelled citations, correct candidate/document navigation, controlled
+sensitive/out-of-scope/insufficient-evidence responses, retry behavior, and role enforcement. A comparison without
+complete citation coverage returned controlled insufficient evidence rather than `502` or partial provider output.
+Privacy-safe logs contained no recruiter question, generated answer, or CV evidence. The picker-first comparison flow
+is therefore accepted in both staging and production.
 
 ## Inputs and outputs
 

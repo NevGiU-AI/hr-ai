@@ -40,6 +40,25 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
     Slice<CandidateIdentity> findAllByExactNameAndOrganizationId(
             String name, String organizationId, Pageable pageable);
 
+    /**
+     * Searches candidate names inside one organization using an already escaped, lower-case LIKE pattern. Exact names
+     * are ranked before partial matches, then stable name/ID ordering makes repeated UI searches deterministic. The
+     * caller supplies a page bound so partial discovery cannot return an unbounded personal-data result set.
+     */
+    @Transactional(readOnly = true)
+    @Query("""
+            select new com.nevgiu.hrai.candidate.CandidateIdentity(
+                candidate.id, candidate.name, candidate.currentTitle)
+            from Candidate candidate
+            where candidate.organizationId = :organizationId
+              and lower(candidate.name) like :pattern escape '!'
+            order by
+              case when lower(trim(candidate.name)) = :exactName then 0 else 1 end,
+              lower(candidate.name), candidate.id
+            """)
+    Slice<CandidateIdentity> searchByNameAndOrganizationId(
+            String pattern, String exactName, String organizationId, Pageable pageable);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select candidate from Candidate candidate where candidate.id = :id and candidate.organizationId = :organizationId")
     Optional<Candidate> findLockedByIdAndOrganizationId(Long id, String organizationId);

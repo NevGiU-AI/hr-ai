@@ -354,6 +354,13 @@ At most 20 options are returned with an explicit `truncated` marker. `ADMIN`, `R
 under the existing CV-chat role policy, while `READ_ONLY` remains forbidden. This endpoint only resolves identities;
 it does not authorize evidence retrieval by itself, compare candidates, or permit the model to select an organization.
 
+Recruiters may not know a candidate's complete name, so `POST /api/chat/candidates/search` provides a separate bounded
+discovery operation. It performs case-insensitive substring matching only inside the authenticated organization,
+treats SQL wildcard characters as literal user input, ranks an exact name first, and returns stable name/ID ordering.
+Queries require at least two characters and results use the same minimal identity projection, 20-item limit, and
+`truncated` marker. Missing and cross-tenant searches both return an empty list. Search results are choices only: even
+one partial match must be explicitly selected before evidence retrieval.
+
 ## Inputs and outputs
 
 Inputs:

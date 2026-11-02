@@ -82,6 +82,44 @@ class CvChatCandidateResolutionServiceTest {
                 });
     }
 
+    @Test
+    void returnsBoundedPartialMatchesForExplicitSelection() {
+        when(candidates.searchByNameAndOrganizationId(
+                "%fanon%", "fanon", "tenant-a", PageRequest.of(0, 20)))
+                .thenReturn(new SliceImpl<>(List.of(
+                        candidate(3L, "Fanon", "Engineer"),
+                        candidate(7L, "Fanon Jupkwo", "Java Engineer")),
+                        PageRequest.of(0, 20), true));
+
+        CvChatCandidateSearchResponse response = service.search("  Fanon  ", "tenant-a");
+
+        assertThat(response.candidates()).extracting(CvChatCandidateSearchResponse.CandidateOption::id)
+                .containsExactly(3L, 7L);
+        assertThat(response.truncated()).isTrue();
+        verify(candidates).searchByNameAndOrganizationId(
+                "%fanon%", "fanon", "tenant-a", PageRequest.of(0, 20));
+    }
+
+    @Test
+    void treatsLikeControlCharactersAsLiteralCandidateNameText() {
+        when(candidates.searchByNameAndOrganizationId(
+                "%a!%!_!!%", "a%_!", "tenant-a", PageRequest.of(0, 20)))
+                .thenReturn(new SliceImpl<>(List.of()));
+
+        CvChatCandidateSearchResponse response = service.search("A%_!", "tenant-a");
+
+        assertThat(response.candidates()).isEmpty();
+        assertThat(response.truncated()).isFalse();
+    }
+
+    @Test
+    void rejectsPartialQueriesShorterThanTwoCharacters() {
+        assertThatThrownBy(() -> service.search(" A ", "tenant-a"))
+                .isInstanceOf(CvChatException.class)
+                .satisfies(error -> assertThat(((CvChatException) error).status())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
     private CandidateIdentity candidate(Long id, String name, String currentTitle) {
         return new CandidateIdentity(id, name, currentTitle);
     }

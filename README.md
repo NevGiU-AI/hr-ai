@@ -49,6 +49,8 @@ decisions.
   retrieval. A unique match returns only its ID, name, and current title; duplicate names require explicit selection;
   and missing or cross-tenant names share a generic not-found response. The model cannot supply the organization or
   silently widen the candidate set.
+- Search by a partial candidate name within the authenticated organization and require explicit recruiter selection;
+  partial matches are never silently promoted to a resolved candidate.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

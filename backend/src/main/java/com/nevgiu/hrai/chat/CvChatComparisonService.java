@@ -92,8 +92,12 @@ public class CvChatComparisonService {
                 .map(CvChatResponse.Citation::candidateId)
                 .collect(java.util.stream.Collectors.toSet());
         if (!citedCandidateIds.containsAll(candidateIds)) {
-            throw new CvChatException(HttpStatus.BAD_GATEWAY,
-                    "CV chat provider returned a comparison without evidence for every candidate");
+            // Retrieval found evidence for every candidate, but the generated comparison did not cite every person.
+            // Treat that as insufficient evidence rather than exposing a partial or potentially unfair comparison.
+            // The log records only counts and tenant scope—never the question, answer, or CV evidence.
+            LOGGER.info("CV comparison rejected for organizationId={} candidateCount={} stage={} citedCandidateCount={}",
+                    organizationId, candidateIds.size(), "CITATION_COVERAGE", citedCandidateIds.size());
+            return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
         return response(answer, candidates, citations);
     }

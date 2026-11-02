@@ -126,7 +126,7 @@ class CvChatComparisonServiceTest {
     }
 
     @Test
-    void rejectsAComparisonThatDoesNotCiteEverySelectedCandidate() {
+    void returnsControlledResultWhenComparisonDoesNotCiteEverySelectedCandidate() {
         CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
         CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Systems experience");
         when(evidenceService.find(7L, "Compare backend experience", "tenant-a")).thenReturn(List.of(ada));
@@ -134,10 +134,13 @@ class CvChatComparisonServiceTest {
         when(model.compare(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList(),
                 org.mockito.ArgumentMatchers.anyList())).thenReturn("Only Ada [CV-10].");
 
-        assertThatThrownBy(() -> service.compare(
-                List.of(7L, 8L), "Compare backend experience", "tenant-a"))
-                .isInstanceOf(CvChatException.class)
-                .hasMessage("CV chat provider returned a comparison without evidence for every candidate");
+        CvChatComparisonResponse response = service.compare(
+                List.of(7L, 8L), "Compare backend experience", "tenant-a");
+
+        assertThat(response.answer()).contains("does not provide enough information");
+        assertThat(response.candidates()).extracting(CvChatComparisonResponse.CandidateOption::id)
+                .containsExactly(7L, 8L);
+        assertThat(response.citations()).isEmpty();
     }
 
     private CvChatEvidence evidence(String reference, Long candidateId, Long documentId, String excerpt) {

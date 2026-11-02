@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
-import { CvChatResponse } from '../models/cv-chat.models';
+import { CvChatCandidateSearchResponse, CvChatResponse } from '../models/cv-chat.models';
 
 @Injectable({ providedIn: 'root' })
 export class CvChatService {
@@ -12,5 +12,10 @@ export class CvChatService {
   /** The authenticated session supplies tenant and role context; neither is accepted from browser-controlled input. */
   ask(candidateId: number, message: string): Observable<CvChatResponse> {
     return this.http.post<CvChatResponse>(`${this.apiUrl}/chat/candidates/${candidateId}`, { message });
+  }
+
+  /** Finds bounded partial-name matches; the browser must still submit an explicit candidate ID for chat. */
+  searchCandidates(query: string): Observable<CvChatCandidateSearchResponse> {
+    return this.http.post<CvChatCandidateSearchResponse>(`${this.apiUrl}/chat/candidates/search`, { query });
   }
 }

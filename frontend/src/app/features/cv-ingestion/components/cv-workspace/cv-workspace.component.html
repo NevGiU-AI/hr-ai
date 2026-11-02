@@ -86,6 +86,44 @@
       <div><p class="step">Step 2</p><h2 id="evaluation-title">Evaluate against an approved job</h2></div>
       <p>Evaluation uses the extracted CV text and the approved job description.</p>
     </div>
+    <form class="border rounded bg-light p-3 mb-3" *ngIf="canUseCvChat" (ngSubmit)="searchCandidates()"
+          aria-labelledby="candidate-search-title">
+      <div>
+        <label id="candidate-search-title" for="candidate-search-query" class="form-label">Find candidate by name</label>
+        <div class="input-group">
+          <input id="candidate-search-query" name="candidateSearchQuery" class="form-control" type="search"
+                 minlength="2" maxlength="255" [(ngModel)]="candidateSearchQuery"
+                 [disabled]="candidateSearchBusy" aria-describedby="candidate-search-help"
+                 placeholder="Enter at least two characters" />
+          <button class="btn btn-outline-primary" type="submit"
+                  [disabled]="candidateSearchQuery.trim().length < 2 || candidateSearchBusy">
+            {{ candidateSearchBusy ? 'Searching…' : 'Search' }}
+          </button>
+        </div>
+        <small id="candidate-search-help" class="text-muted">
+          Results are limited to your organization. Select a result explicitly before evaluation or chat.
+        </small>
+      </div>
+      <div class="alert alert-danger mt-2 mb-0" role="alert" *ngIf="candidateSearchError">
+        {{ candidateSearchError }}
+      </div>
+      <div class="d-grid gap-2 mt-2" *ngIf="candidateSearchResults.length" aria-live="polite">
+        <button *ngFor="let candidate of candidateSearchResults"
+                class="btn btn-outline-secondary d-flex justify-content-between align-items-center text-start"
+                type="button"
+                (click)="chooseCandidate(candidate)">
+          <strong>{{ candidate.name }}</strong>
+          <span class="text-muted small">{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
+        </button>
+        <p class="text-muted small mb-0" *ngIf="candidateSearchTruncated">
+          More candidates match. Refine the name to narrow the results.
+        </p>
+      </div>
+      <p class="text-muted small mt-2 mb-0" *ngIf="!candidateSearchBusy && !candidateSearchResults.length &&
+          !candidateSearchError && candidateSearchResultQuery === candidateSearchQuery.trim() && candidateSearchResultQuery">
+        No candidates matched this name in your organization.
+      </p>
+    </form>
     <div class="evaluation-form">
       <label>Candidate
         <select class="form-select" [ngModel]="selectedCandidateId" (ngModelChange)="selectCandidate($event)"

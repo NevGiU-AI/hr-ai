@@ -374,6 +374,12 @@ behavior, partial matching and minimum-length validation, bounded minimal respon
 selection. A returned candidate ID then completed a grounded candidate-specific chat request successfully. No new
 environment variable, Flyway migration, database operation, or infrastructure change was required.
 
+The first frontend integration keeps discovery and authorization visibly separate. An authorized reviewer submits at
+least two name characters, sees bounded minimal matches from their organization, and explicitly chooses one result.
+Only that chosen ID updates the existing candidate details, evaluation, and single-candidate chat workflow. Empty,
+truncated, loading, and structured-error states are displayed without exposing another organization's existence. This
+picker does not yet create a multi-candidate comparison request or allow the model to choose a candidate.
+
 ## Inputs and outputs
 
 Inputs:

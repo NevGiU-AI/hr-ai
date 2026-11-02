@@ -57,6 +57,9 @@ decisions.
   picker before reusing the selected ID for details, evaluation, and single-candidate chat. The manual submit/Enter
   picker passed focused staging and production acceptance on 2 November 2026 after PR #116; it is intentionally not
   autocomplete.
+- Compare two to five explicitly selected, tenant-verified candidates through a bounded backend contract. Every factual
+  comparison must cite authorized evidence for every selected candidate; missing, cross-tenant, duplicate, uncited,
+  or model-introduced candidates fail safely.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

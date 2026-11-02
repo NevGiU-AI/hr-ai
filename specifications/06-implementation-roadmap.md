@@ -206,6 +206,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   The intentionally manual button/Enter flow passed focused staging acceptance on 2 November 2026 after PR #116 at
   main revision `cd075b3`, then passed the equivalent production checks. Autocomplete remains optional.
   Multi-candidate comparison is a separate backend/UI slice.
+- [x] Add the explicit multi-candidate comparison backend contract for two to five distinct IDs. Verify the entire set
+  in the authenticated organization before policy/evidence work, require bounded evidence and citations for every
+  selected candidate, and reject duplicate, missing, cross-tenant, unsupported-citation, and uncited outcomes safely.
+- [ ] Extend the Angular picker to maintain an explicit multi-candidate selection and render the cited comparison.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.

@@ -14,10 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class CvChatController {
     private final CvChatService service;
     private final CvChatCandidateResolutionService candidateResolution;
+    private final CvChatComparisonService comparisonService;
 
-    public CvChatController(CvChatService service, CvChatCandidateResolutionService candidateResolution) {
+    public CvChatController(CvChatService service, CvChatCandidateResolutionService candidateResolution,
+                            CvChatComparisonService comparisonService) {
         this.service = service;
         this.candidateResolution = candidateResolution;
+        this.comparisonService = comparisonService;
     }
 
     /**
@@ -35,6 +38,13 @@ public class CvChatController {
     public CvChatCandidateSearchResponse search(@Valid @RequestBody CvChatCandidateSearchRequest request,
                                                 @AuthenticationPrincipal AppUserPrincipal actor) {
         return candidateResolution.search(request.query(), actor.organizationId());
+    }
+
+    /** Compares only the explicit candidate IDs after the service verifies every ID in the authenticated tenant. */
+    @PostMapping("/compare")
+    public CvChatComparisonResponse compare(@Valid @RequestBody CvChatComparisonRequest request,
+                                            @AuthenticationPrincipal AppUserPrincipal actor) {
+        return comparisonService.compare(request.candidateIds(), request.message(), actor.organizationId());
     }
 
     /**

@@ -393,6 +393,21 @@ results, safe empty/truncated/error states, explicit selection, role visibility,
 accepted in staging. Candidate details, evaluation history, grounded chat, and the existing candidate dropdown also
 passed regression checks. Automatic autocomplete remains deferred rather than implied by this acceptance record.
 
+### Explicit multi-candidate comparison backend
+
+`POST /api/chat/candidates/compare` accepts one job-relevant question and between two and five distinct candidate IDs.
+The organization is taken only from the authenticated principal. Application code verifies the complete candidate set
+before classification or evidence retrieval; one missing or cross-tenant ID therefore produces the same generic `404`
+without disclosing which ID failed. Duplicate IDs are rejected, and the existing CV-chat role and CSRF policy applies.
+
+After pre-retrieval sensitive/out-of-scope classification, evidence is loaded independently and remains bounded for
+each verified candidate. If any candidate has no relevant evidence, the backend returns a controlled insufficient-
+evidence response rather than letting the model turn a retrieval miss into a negative comparison. The comparison model
+receives only the verified minimal identities and authorized evidence. Server-side validation rejects unknown
+citations, uncited prose, or a comparison that fails to cite every selected candidate. The response returns the answer,
+the verified minimal candidate identities, and only reconstructed authorized citations. The model cannot search for,
+add, or select candidates, and the Angular multi-selector remains a separate follow-up slice.
+
 ## Inputs and outputs
 
 Inputs:

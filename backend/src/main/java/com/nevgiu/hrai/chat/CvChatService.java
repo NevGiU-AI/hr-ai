@@ -5,11 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class CvChatService {
@@ -19,9 +15,6 @@ public class CvChatService {
     private static final String OUT_OF_SCOPE_MESSAGE =
             "I can only answer job-relevant questions supported by the authorized CV evidence. "
                     + "I cannot provide or infer protected or sensitive personal characteristics.";
-
-    // Only backend-issued document and OCR-page references are recognized; arbitrary model links are never trusted.
-    private static final Pattern CITATION = Pattern.compile("\\[(CV-(?:\\d+(?:-P\\d+)?|CANDIDATE-\\d+))\\]");
 
     private final CvChatEvidenceService evidenceService;
     private final CvChatQuestionPolicy questionPolicy;
@@ -90,29 +83,6 @@ public class CvChatService {
                     candidateId, organizationId, "ANSWER_MODEL_POLICY");
             return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
         }
-        return new CvChatResponse(answer, citedEvidence(answer, evidence));
-    }
-
-    private List<CvChatResponse.Citation> citedEvidence(String answer, List<CvChatEvidence> evidence) {
-        // Linked maps preserve evidence/citation order while collapsing a reference repeated throughout the answer.
-        Map<String, CvChatEvidence> allowed = new LinkedHashMap<>();
-        evidence.forEach(item -> allowed.put(item.reference(), item));
-        Map<String, CvChatEvidence> cited = new LinkedHashMap<>();
-        Matcher matcher = CITATION.matcher(answer);
-        while (matcher.find()) {
-            CvChatEvidence item = allowed.get(matcher.group(1));
-            if (item == null) {
-                // A syntactically valid but unknown reference is a hallucinated citation and invalidates the answer.
-                throw new CvChatException(HttpStatus.BAD_GATEWAY,
-                        "CV chat provider returned an unsupported citation");
-            }
-            cited.putIfAbsent(item.reference(), item);
-        }
-        if (cited.isEmpty()) {
-            throw new CvChatException(HttpStatus.BAD_GATEWAY,
-                    "CV chat provider returned an answer without evidence citations");
-        }
-        return cited.values().stream().map(item -> new CvChatResponse.Citation(item.reference(),
-                item.candidateId(), item.documentId(), item.pageNumber(), item.excerpt())).toList();
+        return new CvChatResponse(answer, CvChatCitations.fromAnswer(answer, evidence));
     }
 }

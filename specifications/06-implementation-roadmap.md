@@ -212,7 +212,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   Focused staging acceptance completed on 2 November 2026 after PR #120 corrected the provider prompt to supply the
   same bracketed citation syntax enforced by application validation. Grounded two-candidate comparison, citations for
   every selected candidate, validation boundaries, sensitive-question refusal, role enforcement, tenant isolation,
-  and privacy-safe logging all passed without a schema or environment change.
+  and privacy-safe logging all passed without a schema or environment change. Production repeated the focused checks
+  successfully on 2 November 2026 after PR #121 at main revision `ff6b283`; the backend contract is accepted in both
+  environments.
 - [ ] Extend the Angular picker to maintain an explicit multi-candidate selection and render the cited comparison.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.

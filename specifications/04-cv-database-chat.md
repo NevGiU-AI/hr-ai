@@ -418,6 +418,14 @@ documents and no unselected candidate. Staging also accepted the sensitive-quest
 duplicate-ID `400` responses, generic missing/cross-tenant `404`, `READ_ONLY` `403`, allowed-role behavior, and
 privacy-safe logs. No database migration or environment-variable change was required.
 
+Production repeated the focused comparison acceptance successfully on 2 November 2026 after PR #121 was merged at
+main revision `ff6b283`. The promoted immutable implementation returned a grounded two-candidate comparison with
+authorized citations for both selected candidates and introduced no unselected candidate. Production also confirmed
+the controlled sensitive-question response, candidate-count and duplicate validation, generic missing-ID behavior,
+role enforcement, and privacy-safe logging. No production database migration or environment-variable change was
+required. The backend comparison contract is therefore accepted in both environments; the Angular multi-selector and
+cited comparison presentation remain the next separate implementation slice.
+
 ## Inputs and outputs
 
 Inputs:

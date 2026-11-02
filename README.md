@@ -62,7 +62,8 @@ decisions.
   or model-introduced candidates fail safely. The contract passed focused staging acceptance on 2 November 2026 after
   PR #120 aligned the provider prompt's bracketed references with the server-side citation validator. Grounded
   comparison, full selected-candidate citation coverage, validation, sensitive-question refusal, role enforcement,
-  tenant isolation, and privacy-safe logging passed; production acceptance and the Angular multi-selector remain.
+  tenant isolation, and privacy-safe logging passed. Production repeated the focused checks successfully on
+  2 November 2026 after PR #121; the Angular multi-selector remains.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

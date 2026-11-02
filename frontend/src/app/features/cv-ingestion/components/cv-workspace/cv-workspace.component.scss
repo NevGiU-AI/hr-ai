@@ -27,6 +27,15 @@
 .evaluation-form { align-items: end; display: grid; gap: 1rem; grid-template-columns: 1fr 1fr auto auto; }
 .evaluation-form label { color: #35425b; font-size: .9rem; font-weight: 650; }
 .evaluation-form select { margin-top: .35rem; }
+.candidate-search-result { background: #fff; }
+.candidate-comparison { background: #f8faff; }
+.comparison-scope { display: flex; flex-wrap: wrap; gap: .6rem; }
+.comparison-chip { align-items: center; background: #e7efff; border: 1px solid #b9cff8; border-radius: .7rem; color: #17233c; display: inline-flex; gap: .75rem; padding: .5rem .55rem .5rem .7rem; }
+.comparison-chip span { display: flex; flex-direction: column; }
+.comparison-chip small { color: #526078; font-size: .72rem; }
+.comparison-chip button { align-items: center; background: transparent; border: 0; border-radius: 50%; color: #35425b; display: inline-flex; font-size: 1.2rem; height: 1.8rem; justify-content: center; line-height: 1; width: 1.8rem; }
+.comparison-chip button:hover:not(:disabled), .comparison-chip button:focus-visible { background: #cfddf7; }
+.comparison-chip button:disabled { opacity: .5; }
 .erasure-warning { color: #8a2530; font-size: .85rem; margin: 1rem 0 0; }
 .candidate-details { border-top: 1px solid #dfe5ef; margin-top: 1.5rem; padding-top: 1.5rem; }
 .details-heading { align-items: end; display: flex; justify-content: space-between; }

@@ -108,13 +108,24 @@
         {{ candidateSearchError }}
       </div>
       <div class="d-grid gap-2 mt-2" *ngIf="candidateSearchResults.length" aria-live="polite">
-        <button *ngFor="let candidate of candidateSearchResults"
-                class="btn btn-outline-secondary d-flex justify-content-between align-items-center text-start"
-                type="button"
-                (click)="chooseCandidate(candidate)">
-          <strong>{{ candidate.name }}</strong>
-          <span class="text-muted small">{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
-        </button>
+        <div *ngFor="let candidate of candidateSearchResults"
+             class="candidate-search-result border rounded p-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <strong>{{ candidate.name }}</strong>
+            <span class="text-muted small d-block">{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" (click)="chooseCandidate(candidate)">
+              Open candidate
+            </button>
+            <button class="btn btn-sm btn-outline-primary" type="button"
+                    [disabled]="!!busyAction || comparisonCandidates.length >= maximumComparisonCandidates ||
+                      isComparisonCandidateSelected(candidate.id)"
+                    (click)="addComparisonCandidate(candidate)">
+              {{ isComparisonCandidateSelected(candidate.id) ? 'Selected' : 'Add to comparison' }}
+            </button>
+          </div>
+        </div>
         <p class="text-muted small mb-0" *ngIf="candidateSearchTruncated">
           More candidates match. Refine the name to narrow the results.
         </p>
@@ -124,6 +135,97 @@
         No candidates matched this name in your organization.
       </p>
     </form>
+
+    <section class="candidate-comparison border rounded p-3 mb-3" *ngIf="canUseCvChat"
+             aria-labelledby="candidate-comparison-title">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <p class="step">Grounded comparison</p>
+          <h3 id="candidate-comparison-title" class="h5 mb-1">Compare selected candidates</h3>
+          <p class="text-muted small mb-0">Select 2–5 candidates. The assistant cannot add anyone outside this visible scope.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-outline-primary" type="button"
+                  [disabled]="!!busyAction || !selectedCandidateId ||
+                    comparisonCandidates.length >= maximumComparisonCandidates ||
+                    isComparisonCandidateSelected(selectedCandidateId)"
+                  (click)="addCurrentCandidateToComparison()">
+            Add current candidate
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" type="button"
+                  [disabled]="!comparisonCandidates.length || comparisonBusy || !!busyAction" (click)="clearComparison()">
+            Clear comparison
+          </button>
+        </div>
+      </div>
+
+      <div class="comparison-scope mt-3" aria-live="polite" aria-label="Selected candidates">
+        <span class="text-muted small" *ngIf="!comparisonCandidates.length">No candidates selected yet.</span>
+        <span class="comparison-chip" *ngFor="let candidate of comparisonCandidates">
+          <span>
+            <strong>{{ candidate.name }}</strong>
+            <small>{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</small>
+          </span>
+          <button type="button" [attr.aria-label]="'Remove ' + candidate.name + ' from comparison'"
+                  [disabled]="comparisonBusy || !!busyAction" (click)="removeComparisonCandidate(candidate.id)">×</button>
+        </span>
+      </div>
+      <p class="text-muted small mt-2 mb-3">
+        {{ comparisonCandidates.length }}/{{ maximumComparisonCandidates }} selected
+        <span *ngIf="comparisonCandidates.length < minimumComparisonCandidates">
+          · Add {{ minimumComparisonCandidates - comparisonCandidates.length }} more to compare
+        </span>
+      </p>
+
+      <form (ngSubmit)="compareCandidates()">
+        <label for="candidate-comparison-question" class="form-label">Comparison question</label>
+        <textarea id="candidate-comparison-question" name="candidateComparisonQuestion" class="form-control"
+                  rows="3" maxlength="2000" [(ngModel)]="comparisonQuestion" [disabled]="comparisonBusy"
+                  aria-describedby="candidate-comparison-help candidate-comparison-count"
+                  placeholder="For example: Compare their backend engineering experience."></textarea>
+        <div class="d-flex justify-content-between gap-3 text-muted small mt-1 mb-2">
+          <small id="candidate-comparison-help">Use job-relevant criteria supported by authorized CV evidence.</small>
+          <small id="candidate-comparison-count">{{ comparisonQuestion.length | number }}/2,000</small>
+        </div>
+        <button class="btn btn-primary" type="submit"
+                [disabled]="comparisonCandidates.length < minimumComparisonCandidates ||
+                  comparisonCandidates.length > maximumComparisonCandidates || !comparisonQuestion.trim() ||
+                  comparisonQuestion.length > 2000 || comparisonBusy || !!busyAction">
+          {{ comparisonBusy ? 'Comparing…' : 'Compare candidates' }}
+        </button>
+      </form>
+
+      <p class="text-muted mt-3 mb-0" role="status" aria-live="polite" *ngIf="comparisonBusy">
+        Comparing authorized evidence for the selected candidates…
+      </p>
+      <div class="alert alert-danger mt-3" role="alert" *ngIf="comparisonError">
+        <p class="mb-2">{{ comparisonError }}</p>
+        <button class="btn btn-sm btn-outline-danger" type="button" [disabled]="comparisonBusy"
+                (click)="compareCandidates()">Retry</button>
+      </div>
+
+      <article class="cv-chat-answer bg-white border-start border-4 border-primary rounded mt-3 p-3"
+               *ngIf="comparisonResponse as response" aria-live="polite">
+        <h4 class="h5">Comparison</h4>
+        <p>{{ response.answer }}</p>
+        <p class="bg-light rounded text-muted small p-2" *ngIf="!response.citations.length">
+          This controlled response makes no factual claim about the selected candidates, so no source citation is required.
+        </p>
+        <div *ngIf="response.citations.length">
+          <h5 class="h6">Sources</h5>
+          <ol class="citation-list d-grid gap-3 mb-0">
+            <li *ngFor="let citation of response.citations">
+              <a routerLink="/candidates/import" [fragment]="citationFragment(citation)"
+                 (click)="openComparisonCitation(citation, $event)">
+                {{ comparisonCandidateName(citation.candidateId) }} · {{ citationLabel(citation) }}
+              </a>
+              <blockquote class="border-start border-3 ps-3 mt-1 mb-0 text-muted small">{{ citation.excerpt }}</blockquote>
+            </li>
+          </ol>
+        </div>
+      </article>
+    </section>
+
     <div class="evaluation-form">
       <label>Candidate
         <select class="form-select" [ngModel]="selectedCandidateId" (ngModelChange)="selectCandidate($event)"

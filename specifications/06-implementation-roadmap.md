@@ -215,9 +215,14 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and privacy-safe logging all passed without a schema or environment change. Production repeated the focused checks
   successfully on 2 November 2026 after PR #121 at main revision `ff6b283`; the backend contract is accepted in both
   environments.
-- [ ] Extend the Angular picker to maintain an explicit two-to-five-candidate selection, show removable active-scope
+- [x] Extend the Angular picker to maintain an explicit two-to-five-candidate selection, show removable active-scope
   chips/cards, expose change/clear actions, and render the cited comparison. Build this state as a reusable component
-  for both picker-first and future language-first conversation flows.
+  for both picker-first and future language-first conversation flows. PR #124 implemented the reusable scope,
+  comparison request, candidate-labelled citations, citation navigation, stale-response protection, retry behavior,
+  and role-aware UI. Focused staging acceptance completed on 2 November 2026. PR #125 then converted incomplete
+  every-candidate citation coverage into the controlled insufficient-evidence response rather than a provider-facing
+  `502`; the full staging comparison checks passed without a schema or environment change. Production acceptance is
+  still required.
 - [ ] Add the language-first flow: identify candidate references in a natural-language message, resolve them only
   through tenant-scoped deterministic services, display bounded candidate cards, and require recruiter confirmation
   before any CV, evaluation, or job-fit evidence retrieval. Both entry paths must converge on the same verified-ID

@@ -34,9 +34,10 @@ The first backend slice supports an imperative question about one explicitly sel
   validates and submits one question for the selected candidate, displays progress and structured retryable failures,
   distinguishes fixed safe responses from evidence-backed answers, and links each citation to its document card.
 
-The candidate-specific endpoint can now consume vector retrieval when its separate environment switch is enabled. It
-does not yet provide multi-candidate search/comparison, persisted conversation memory, streaming, or speech controls.
-Those remain explicit roadmap work and must not be inferred from this single-candidate retrieval slice.
+The candidate-specific endpoint can consume vector retrieval when its separate environment switch is enabled. The
+application now also provides deterministic candidate discovery and an explicit picker-first multi-candidate
+comparison flow. Persisted conversation memory, language-first orchestration, streaming, and speech controls remain
+explicit roadmap work and must not be inferred from the current request-scoped chat interfaces.
 
 ### Pre-retrieval question policy
 
@@ -425,9 +426,10 @@ After pre-retrieval sensitive/out-of-scope classification, evidence is loaded in
 each verified candidate. If any candidate has no relevant evidence, the backend returns a controlled insufficient-
 evidence response rather than letting the model turn a retrieval miss into a negative comparison. The comparison model
 receives only the verified minimal identities and authorized evidence. Server-side validation rejects unknown
-citations, uncited prose, or a comparison that fails to cite every selected candidate. The response returns the answer,
+citations and uncited prose. A comparison that does not cite every selected candidate is replaced with the controlled
+insufficient-evidence response rather than exposing partial output. A grounded response returns the answer,
 the verified minimal candidate identities, and only reconstructed authorized citations. The model cannot search for,
-add, or select candidates, and the Angular multi-selector remains a separate follow-up slice.
+add, or select candidates; the Angular multi-selector supplies only the recruiter-visible verified scope.
 
 The backend comparison contract passed focused staging acceptance on 2 November 2026 after PR #120 was merged at main
 revision `bf1ebb8`. The first live-provider request correctly failed closed with `502` because the generated comparison
@@ -444,8 +446,30 @@ main revision `ff6b283`. The promoted immutable implementation returned a ground
 authorized citations for both selected candidates and introduced no unselected candidate. Production also confirmed
 the controlled sensitive-question response, candidate-count and duplicate validation, generic missing-ID behavior,
 role enforcement, and privacy-safe logging. No production database migration or environment-variable change was
-required. The backend comparison contract is therefore accepted in both environments; the Angular multi-selector and
-cited comparison presentation remain the next separate implementation slice.
+required. The backend comparison contract is therefore accepted in both environments.
+
+### Angular multi-candidate comparison
+
+PR #124 added the reusable picker-first Angular comparison interface. Candidate search results and the currently open
+candidate can be added to an explicit two-to-five-candidate scope. The interface keeps that scope visible as removable
+candidate chips, supports clearing the selection, preserves the written question across retryable errors, and sends
+only the displayed candidate IDs to `POST /api/chat/candidates/compare`. Successful responses render the verified
+minimal candidate identities, answer, and candidate-labelled citations. Selecting a citation opens its owning
+candidate before navigating to the cited document, so the UI does not leave a source attached to the wrong person.
+
+The client captures the submitted candidate-ID scope and ignores a delayed response if that scope changes before
+completion. Ordinary selection controls are disabled while a request is active, while the scope comparison remains a
+defense against future programmatic changes and asynchronous races. Removing, replacing, or erasing a candidate clears
+any answer that belonged to the previous scope. `READ_ONLY` users do not receive the comparison interface, and the
+backend remains the authoritative role and tenant boundary.
+
+Focused staging acceptance completed on 2 November 2026 after PR #124. Selection, deduplication, the two-to-five
+boundary, removal and clearing, grounded comparison, candidate-labelled citations, document navigation, controlled
+sensitive/out-of-scope/insufficient-evidence responses, retry behavior, and authorization checks passed. Testing also
+found that a job-relevant question could produce provider output citing only part of the verified selection. PR #125
+kept the strict every-candidate citation rule but replaced that provider-validation `502` with the existing controlled
+insufficient-evidence response and no partial citations. The correction passed the full staging comparison checks.
+No schema, Flyway, or environment-variable change was required. Production acceptance remains pending.
 
 ## Inputs and outputs
 

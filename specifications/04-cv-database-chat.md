@@ -380,6 +380,13 @@ Only that chosen ID updates the existing candidate details, evaluation, and sing
 truncated, loading, and structured-error states are displayed without exposing another organization's existence. This
 picker does not yet create a multi-candidate comparison request or allow the model to choose a candidate.
 
+The Angular picker passed focused staging acceptance on 2 November 2026 after PR #116 was merged at main revision
+`cd075b3`. Testing confirmed the two-character minimum, manual button/Enter submission, case-insensitive partial
+matching, safe empty state, bounded/truncated guidance, structured errors, explicit result selection, role visibility,
+and successful reuse of the chosen ID by candidate details, evaluation history, and grounded chat. The existing
+candidate dropdown and single-candidate workflow continued to work. No environment, Flyway, database, or
+infrastructure change was required. Automatic debounced autocomplete remains an optional usability refinement.
+
 ## Inputs and outputs
 
 Inputs:

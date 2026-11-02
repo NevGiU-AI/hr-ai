@@ -33,4 +33,16 @@ describe('CvChatService', () => {
     expect(request.request.body).toEqual({ query: 'Fanon' });
     request.flush({ candidates: [], truncated: false });
   });
+
+  it('compares only the explicit candidate IDs without sending tenant context', () => {
+    service.compare([7, 8], 'Compare backend experience').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/candidates/compare`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      candidateIds: [7, 8],
+      message: 'Compare backend experience',
+    });
+    request.flush({ answer: 'Comparison [CV-2] [CV-3]', candidates: [], citations: [] });
+  });
 });

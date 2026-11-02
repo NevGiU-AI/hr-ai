@@ -17,7 +17,12 @@ import {
   EvaluationResponse,
   Job,
 } from '../../models/cv-ingestion.models';
-import { CvChatCandidateOption, CvChatCitation, CvChatResponse } from '../../models/cv-chat.models';
+import {
+  CvChatCandidateOption,
+  CvChatCitation,
+  CvChatComparisonResponse,
+  CvChatResponse,
+} from '../../models/cv-chat.models';
 import { CvChatService } from '../../services/cv-chat.service';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 
@@ -32,6 +37,7 @@ export class CvWorkspaceComponent implements OnInit {
   private readonly service = inject(CvIngestionService);
   private readonly chatService = inject(CvChatService);
   private readonly auth = inject(AuthService);
+  private pendingComparisonCitationFragment: string | null = null;
 
   pdfFile: File | null = null;
   archiveFile: File | null = null;
@@ -54,12 +60,19 @@ export class CvWorkspaceComponent implements OnInit {
   candidateSearchResultQuery = '';
   candidateSearchBusy = false;
   candidateSearchError = '';
+  comparisonCandidates: CvChatCandidateOption[] = [];
+  comparisonQuestion = '';
+  comparisonResponse: CvChatComparisonResponse | null = null;
+  comparisonError = '';
+  comparisonBusy = false;
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
   notice = '';
 
   readonly maxPdfBytes = 20 * 1024 * 1024;
   readonly maxArchiveBytes = 100 * 1024 * 1024;
+  readonly minimumComparisonCandidates = 2;
+  readonly maximumComparisonCandidates = 5;
 
   get isAdministrator(): boolean {
     return this.auth.user?.roles.includes('ADMIN') ?? false;
@@ -178,6 +191,75 @@ export class CvWorkspaceComponent implements OnInit {
     this.selectCandidate(candidate.id);
   }
 
+  addComparisonCandidate(candidate: CvChatCandidateOption): void {
+    if (this.isComparisonCandidateSelected(candidate.id)) return;
+    if (this.comparisonCandidates.length >= this.maximumComparisonCandidates) {
+      this.comparisonError = `Select no more than ${this.maximumComparisonCandidates} candidates.`;
+      return;
+    }
+    this.comparisonCandidates = [...this.comparisonCandidates, candidate];
+    this.resetComparisonResult();
+  }
+
+  isComparisonCandidateSelected(candidateId: number | null): boolean {
+    return candidateId !== null && this.comparisonCandidates.some((candidate) => candidate.id === candidateId);
+  }
+
+  addCurrentCandidateToComparison(): void {
+    const candidate = this.candidates.find((item) => item.id === this.selectedCandidateId);
+    if (!candidate) return;
+    this.addComparisonCandidate({
+      id: candidate.id,
+      name: candidate.name,
+      currentTitle: candidate.currentTitle,
+    });
+  }
+
+  removeComparisonCandidate(candidateId: number): void {
+    const next = this.comparisonCandidates.filter((candidate) => candidate.id !== candidateId);
+    if (next.length === this.comparisonCandidates.length) return;
+    this.comparisonCandidates = next;
+    this.resetComparisonResult();
+  }
+
+  clearComparison(): void {
+    this.comparisonCandidates = [];
+    this.comparisonQuestion = '';
+    this.resetComparisonResult();
+  }
+
+  compareCandidates(): void {
+    const candidateIds = this.comparisonCandidates.map((candidate) => candidate.id);
+    const question = this.comparisonQuestion.trim();
+    if (!this.canUseCvChat
+      || candidateIds.length < this.minimumComparisonCandidates
+      || candidateIds.length > this.maximumComparisonCandidates
+      || !question
+      || question.length > 2000
+      || !!this.busyAction
+      || this.comparisonBusy) return;
+
+    // Capture the exact confirmed scope. A response arriving after the recruiter changes that scope is discarded.
+    const scopeKey = candidateIds.join(',');
+    this.comparisonBusy = true;
+    this.comparisonError = '';
+    this.comparisonResponse = null;
+    this.chatService.compare(candidateIds, question)
+      .pipe(finalize(() => this.comparisonBusy = false))
+      .subscribe({
+        next: (response) => {
+          if (this.comparisonScopeKey() !== scopeKey) return;
+          this.comparisonCandidates = response.candidates;
+          this.comparisonResponse = response;
+        },
+        error: (error: HttpErrorResponse) => {
+          if (this.comparisonScopeKey() !== scopeKey) return;
+          const apiError = error.error as Partial<ApiError> | undefined;
+          this.comparisonError = apiError?.message || error.message || 'Candidate comparison could not complete.';
+        },
+      });
+  }
+
   askCv(): void {
     const candidateId = this.selectedCandidateId;
     const question = this.chatQuestion.trim();
@@ -210,6 +292,23 @@ export class CvWorkspaceComponent implements OnInit {
     return citation.documentId === null ? 'candidate-details-title' : `cv-document-${citation.documentId}`;
   }
 
+  comparisonCandidateName(candidateId: number): string {
+    return this.comparisonCandidates.find((candidate) => candidate.id === candidateId)?.name
+      || `Candidate #${candidateId}`;
+  }
+
+  openComparisonCitation(citation: CvChatCitation, event: Event): void {
+    event.preventDefault();
+    this.pendingComparisonCitationFragment = this.citationFragment(citation);
+    if (this.selectedCandidateId === citation.candidateId) {
+      this.scrollToPendingComparisonCitation();
+      return;
+    }
+    // Comparison sources can belong to a candidate other than the currently open details panel. Load the owning
+    // candidate first so the target document fragment exists before attempting to scroll to it.
+    this.selectCandidate(citation.candidateId);
+  }
+
   loadCandidateDetails(): void {
     if (!this.selectedCandidateId) {
       this.candidateDetails = null;
@@ -227,6 +326,7 @@ export class CvWorkspaceComponent implements OnInit {
           this.candidateDetails = details;
           this.evaluationHistory = evaluations;
           this.metadataDraft = null;
+          this.scrollToPendingComparisonCitation();
         },
         error: (error) => this.handleError(error),
       });
@@ -345,6 +445,7 @@ export class CvWorkspaceComponent implements OnInit {
     this.start('erasure');
     this.service.eraseCandidate(erasedId).pipe(finalize(() => this.busyAction = null)).subscribe({
       next: () => {
+        this.removeComparisonCandidate(erasedId);
         this.selectedCandidateId = null;
         this.evaluation = null;
         this.evaluationHistory = [];
@@ -377,6 +478,14 @@ export class CvWorkspaceComponent implements OnInit {
     this.service.getCandidates().subscribe({
       next: (candidates) => {
         this.candidates = candidates;
+        const availableIds = new Set(candidates.map((candidate) => candidate.id));
+        const availableComparisonCandidates = this.comparisonCandidates.filter(
+          (candidate) => availableIds.has(candidate.id),
+        );
+        if (availableComparisonCandidates.length !== this.comparisonCandidates.length) {
+          this.comparisonCandidates = availableComparisonCandidates;
+          this.resetComparisonResult();
+        }
         const previousCandidateId = this.selectedCandidateId;
         if (preferredCandidateId && candidates.some((item) => item.id === preferredCandidateId)) {
           this.selectedCandidateId = preferredCandidateId;
@@ -402,6 +511,26 @@ export class CvWorkspaceComponent implements OnInit {
     this.chatQuestion = '';
     this.chatResponse = null;
     this.chatError = '';
+  }
+
+  private resetComparisonResult(): void {
+    this.comparisonResponse = null;
+    this.comparisonError = '';
+  }
+
+  private comparisonScopeKey(): string {
+    return this.comparisonCandidates.map((candidate) => candidate.id).join(',');
+  }
+
+  private scrollToPendingComparisonCitation(): void {
+    const fragment = this.pendingComparisonCitationFragment;
+    if (!fragment) return;
+    this.pendingComparisonCitationFragment = null;
+    // Angular must finish rendering the newly loaded candidate details before the fragment can be resolved.
+    setTimeout(() => {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${fragment}`);
+      document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
+    });
   }
 
   private selectedFile(event: Event, extension: string, limit: number): File | null {

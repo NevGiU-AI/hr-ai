@@ -22,3 +22,10 @@ export interface CvChatCandidateSearchResponse {
   candidates: CvChatCandidateOption[];
   truncated: boolean;
 }
+
+/** Grounded comparison returned only after the backend re-authorizes every explicitly selected candidate. */
+export interface CvChatComparisonResponse {
+  answer: string;
+  candidates: CvChatCandidateOption[];
+  citations: CvChatCitation[];
+}

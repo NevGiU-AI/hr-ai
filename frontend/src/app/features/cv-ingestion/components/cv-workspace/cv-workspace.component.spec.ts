@@ -31,7 +31,7 @@ describe('CvWorkspaceComponent', () => {
       'updateCandidateMetadata', 'reprocessDocument',
       'getEvaluationHistory',
     ]);
-    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', ['ask', 'searchCandidates']);
+    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', ['ask', 'searchCandidates', 'compare']);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
     service.getCandidateDetails.and.returnValue(of(candidateDetails()));
@@ -222,6 +222,88 @@ describe('CvWorkspaceComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Candidate search is temporarily unavailable');
   });
 
+  it('maintains a distinct explicit candidate comparison scope', () => {
+    component.addCurrentCandidateToComparison();
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    fixture.detectChanges();
+
+    expect(component.comparisonCandidates.map((item) => item.id)).toEqual([7, 8]);
+    expect(component.selectedCandidateId).toBe(7);
+    expect(fixture.nativeElement.textContent).toContain('2/5 selected');
+    expect(fixture.nativeElement.textContent).toContain('Grace Hopper');
+
+    component.removeComparisonCandidate(7);
+    expect(component.comparisonCandidates.map((item) => item.id)).toEqual([8]);
+  });
+
+  it('enforces the five-candidate comparison limit without changing the confirmed scope', () => {
+    [7, 8, 9, 10, 11].forEach((id) => component.addComparisonCandidate({
+      id, name: `Candidate ${id}`, currentTitle: null,
+    }));
+
+    component.addComparisonCandidate({ id: 12, name: 'Candidate 12', currentTitle: null });
+
+    expect(component.comparisonCandidates.length).toBe(5);
+    expect(component.comparisonCandidates.some((item) => item.id === 12)).toBeFalse();
+    expect(component.comparisonError).toBe('Select no more than 5 candidates.');
+  });
+
+  it('compares the confirmed candidates and renders candidate-labelled citations', () => {
+    component.addComparisonCandidate({ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' });
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    chatService.compare.and.returnValue(of({
+      answer: 'Ada lists Java [CV-2], while Grace lists distributed systems [CV-3].',
+      candidates: component.comparisonCandidates,
+      citations: [
+        { reference: 'CV-2', candidateId: 7, documentId: 2, pageNumber: null, excerpt: 'Java engineer' },
+        { reference: 'CV-3', candidateId: 8, documentId: 3, pageNumber: null, excerpt: 'Distributed systems' },
+      ],
+    }));
+    component.comparisonQuestion = '  Compare backend experience  ';
+
+    component.compareCandidates();
+    fixture.detectChanges();
+
+    expect(chatService.compare).toHaveBeenCalledOnceWith([7, 8], 'Compare backend experience');
+    expect(fixture.nativeElement.textContent).toContain('Ada lists Java');
+    expect(fixture.nativeElement.textContent).toContain('Ada Lovelace · CV document 2');
+    expect(fixture.nativeElement.textContent).toContain('Grace Hopper · CV document 3');
+  });
+
+  it('discards a late comparison response after the recruiter changes the candidate scope', () => {
+    const pending = new Subject<never>();
+    component.addComparisonCandidate({ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' });
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    component.comparisonQuestion = 'Compare backend experience';
+    chatService.compare.and.returnValue(pending);
+
+    component.compareCandidates();
+    component.removeComparisonCandidate(8);
+    pending.next({
+      answer: 'Stale answer', candidates: [], citations: [],
+    } as never);
+    pending.complete();
+
+    expect(component.comparisonResponse).toBeNull();
+  });
+
+  it('keeps comparison input available after a structured provider error', () => {
+    component.addComparisonCandidate({ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' });
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    component.comparisonQuestion = 'Compare backend experience';
+    chatService.compare.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 502, error: { message: 'CV chat provider is unavailable' },
+    })));
+
+    component.compareCandidates();
+    fixture.detectChanges();
+
+    expect(component.comparisonError).toBe('CV chat provider is unavailable');
+    expect(component.comparisonQuestion).toBe('Compare backend experience');
+    expect(fixture.nativeElement.textContent).toContain('Retry');
+  });
+
   it('renders a controlled safe response without requiring citations', () => {
     chatService.ask.and.returnValue(of({
       answer: 'The available CV evidence does not provide enough information to answer this question.',
@@ -269,6 +351,7 @@ describe('CvWorkspaceComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('.cv-chat'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.candidate-comparison'))).toBeNull();
   });
 
   it('does not submit or record an unchanged metadata correction', () => {

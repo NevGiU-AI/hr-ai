@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
-import { CvChatCandidateSearchResponse, CvChatResponse } from '../models/cv-chat.models';
+import { CvChatCandidateSearchResponse, CvChatComparisonResponse, CvChatResponse } from '../models/cv-chat.models';
 
 @Injectable({ providedIn: 'root' })
 export class CvChatService {
@@ -17,5 +17,13 @@ export class CvChatService {
   /** Finds bounded partial-name matches; the browser must still submit an explicit candidate ID for chat. */
   searchCandidates(query: string): Observable<CvChatCandidateSearchResponse> {
     return this.http.post<CvChatCandidateSearchResponse>(`${this.apiUrl}/chat/candidates/search`, { query });
+  }
+
+  /** Compares only browser-confirmed IDs; the server re-authorizes the entire set in the authenticated tenant. */
+  compare(candidateIds: number[], message: string): Observable<CvChatComparisonResponse> {
+    return this.http.post<CvChatComparisonResponse>(`${this.apiUrl}/chat/candidates/compare`, {
+      candidateIds,
+      message,
+    });
   }
 }

@@ -64,6 +64,9 @@ decisions.
   comparison, full selected-candidate citation coverage, validation, sensitive-question refusal, role enforcement,
   tenant isolation, and privacy-safe logging passed. Production repeated the focused checks successfully on
   2 November 2026 after PR #121; the Angular multi-selector remains.
+- Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
+  and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
+  keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -94,7 +97,8 @@ were evaluated next: generated EN/FR/PT answers passed scoped staging language/c
 paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
 30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
 1 November 2026 without lowering the `0.35` threshold, followed by focused production acceptance in release `v0.24.0`.
-The multi-candidate comparison UI, speech input/playback, and the recruitment dashboard remain roadmap work.
+The reusable picker-first comparison UI, language-first confirmation flow, speech input/playback, and the recruitment
+dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

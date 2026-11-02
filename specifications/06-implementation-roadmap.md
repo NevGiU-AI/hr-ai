@@ -197,7 +197,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and email, CV text, and organization identifiers are never loaded into the resolution response.
 - [x] Add bounded tenant-scoped partial-name discovery through `POST /api/chat/candidates/search`. It requires at least
   two characters, treats wildcard characters literally, ranks exact names first, returns stable minimal choices, and
-  never automatically resolves a partial match. Empty and cross-tenant searches share an empty-list response.
+  never automatically resolves a partial match. Empty and cross-tenant searches share an empty-list response. Exact
+  resolution and partial discovery passed focused staging role, isolation, ambiguity, boundary, and selection checks
+  on 2 November 2026 for revision `ddb6eaa`; production promotion remains pending.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.

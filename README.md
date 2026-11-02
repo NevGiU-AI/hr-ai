@@ -63,7 +63,10 @@ decisions.
   PR #120 aligned the provider prompt's bracketed references with the server-side citation validator. Grounded
   comparison, full selected-candidate citation coverage, validation, sensitive-question refusal, role enforcement,
   tenant isolation, and privacy-safe logging passed. Production repeated the focused checks successfully on
-  2 November 2026 after PR #121; the Angular multi-selector remains.
+  2 November 2026 after PR #121. The reusable Angular multi-selector then passed focused staging acceptance after
+  PRs #124 and #125: recruiters maintained an explicit two-to-five-candidate scope, rendered candidate-labelled
+  citations, navigated cited documents, and received controlled insufficient-evidence responses when generated
+  comparisons did not cite every selected candidate. Production acceptance remains pending.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.
@@ -97,8 +100,8 @@ were evaluated next: generated EN/FR/PT answers passed scoped staging language/c
 paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
 30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
 1 November 2026 without lowering the `0.35` threshold, followed by focused production acceptance in release `v0.24.0`.
-The reusable picker-first comparison UI, language-first confirmation flow, speech input/playback, and the recruitment
-dashboard remain roadmap work.
+The picker-first comparison UI is implemented and accepted in staging. The language-first confirmation flow,
+speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

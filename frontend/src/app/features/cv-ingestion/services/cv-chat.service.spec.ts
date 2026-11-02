@@ -24,4 +24,13 @@ describe('CvChatService', () => {
     expect(request.request.body).toEqual({ message: 'Which skills are stated?' });
     request.flush({ answer: 'Java [CV-2]', citations: [] });
   });
+
+  it('searches by partial name without sending tenant or role context', () => {
+    service.searchCandidates('Fanon').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/candidates/search`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ query: 'Fanon' });
+    request.flush({ candidates: [], truncated: false });
+  });
 });

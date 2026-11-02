@@ -31,7 +31,7 @@ describe('CvWorkspaceComponent', () => {
       'updateCandidateMetadata', 'reprocessDocument',
       'getEvaluationHistory',
     ]);
-    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', ['ask']);
+    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', ['ask', 'searchCandidates']);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
     service.getCandidateDetails.and.returnValue(of(candidateDetails()));
@@ -155,6 +155,71 @@ describe('CvWorkspaceComponent', () => {
     // The full candidate-workspace route prevents <base href="/"> from resolving the link through the default route.
     expect(citation.nativeElement.getAttribute('href')).toBe('/candidates/import#cv-document-2');
     expect(citation.nativeElement.textContent).toContain('CV document 2');
+  });
+
+  it('searches partial names and selects one explicit candidate ID', () => {
+    chatService.searchCandidates.and.returnValue(of({
+      candidates: [{ id: 8, name: 'Fanon Jupkwo', currentTitle: 'Java Engineer' }],
+      truncated: false,
+    }));
+    service.getCandidateDetails.and.returnValue(of({ ...candidateDetails(), id: 8, name: 'Fanon Jupkwo' }));
+    component.candidateSearchQuery = '  Fanon  ';
+
+    component.searchCandidates();
+    fixture.detectChanges();
+
+    expect(chatService.searchCandidates).toHaveBeenCalledOnceWith('Fanon');
+    expect(fixture.nativeElement.textContent).toContain('Fanon Jupkwo');
+    component.chooseCandidate(component.candidateSearchResults[0]);
+
+    expect(component.selectedCandidateId).toBe(8);
+    expect(component.candidateSearchQuery).toBe('Fanon Jupkwo');
+    expect(component.candidateSearchResults).toEqual([]);
+    expect(service.getCandidateDetails).toHaveBeenCalledWith(8);
+  });
+
+  it('shows when candidate search results were truncated', () => {
+    chatService.searchCandidates.and.returnValue(of({
+      candidates: [{ id: 8, name: 'Alex Smith', currentTitle: null }],
+      truncated: true,
+    }));
+    component.candidateSearchQuery = 'Alex';
+
+    component.searchCandidates();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('More candidates match');
+  });
+
+  it('shows a tenant-safe empty result after a completed search', () => {
+    chatService.searchCandidates.and.returnValue(of({ candidates: [], truncated: false }));
+    component.candidateSearchQuery = 'Missing';
+
+    component.searchCandidates();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('No candidates matched this name in your organization');
+  });
+
+  it('does not search names shorter than the backend minimum', () => {
+    component.candidateSearchQuery = 'A';
+
+    component.searchCandidates();
+
+    expect(chatService.searchCandidates).not.toHaveBeenCalled();
+  });
+
+  it('renders structured candidate-search errors', () => {
+    chatService.searchCandidates.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 503, error: { message: 'Candidate search is temporarily unavailable' },
+    })));
+    component.candidateSearchQuery = 'Fanon';
+
+    component.searchCandidates();
+    fixture.detectChanges();
+
+    expect(component.candidateSearchError).toBe('Candidate search is temporarily unavailable');
+    expect(fixture.nativeElement.textContent).toContain('Candidate search is temporarily unavailable');
   });
 
   it('renders a controlled safe response without requiring citations', () => {

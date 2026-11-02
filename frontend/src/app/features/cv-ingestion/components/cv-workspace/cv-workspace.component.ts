@@ -17,7 +17,7 @@ import {
   EvaluationResponse,
   Job,
 } from '../../models/cv-ingestion.models';
-import { CvChatCitation, CvChatResponse } from '../../models/cv-chat.models';
+import { CvChatCandidateOption, CvChatCitation, CvChatResponse } from '../../models/cv-chat.models';
 import { CvChatService } from '../../services/cv-chat.service';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 
@@ -48,6 +48,12 @@ export class CvWorkspaceComponent implements OnInit {
   chatResponse: CvChatResponse | null = null;
   chatError = '';
   chatBusy = false;
+  candidateSearchQuery = '';
+  candidateSearchResults: CvChatCandidateOption[] = [];
+  candidateSearchTruncated = false;
+  candidateSearchResultQuery = '';
+  candidateSearchBusy = false;
+  candidateSearchError = '';
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
   notice = '';
@@ -137,6 +143,39 @@ export class CvWorkspaceComponent implements OnInit {
     this.selectedCandidateId = candidateId;
     this.evaluation = null;
     this.loadCandidateDetails();
+  }
+
+  searchCandidates(): void {
+    const query = this.candidateSearchQuery.trim();
+    if (query.length < 2 || this.candidateSearchBusy) return;
+
+    this.candidateSearchBusy = true;
+    this.candidateSearchError = '';
+    this.candidateSearchResults = [];
+    this.candidateSearchTruncated = false;
+    this.candidateSearchResultQuery = '';
+    this.chatService.searchCandidates(query)
+      .pipe(finalize(() => this.candidateSearchBusy = false))
+      .subscribe({
+        next: (response) => {
+          this.candidateSearchResults = response.candidates;
+          this.candidateSearchTruncated = response.truncated;
+          this.candidateSearchResultQuery = query;
+        },
+        error: (error: HttpErrorResponse) => {
+          const apiError = error.error as Partial<ApiError> | undefined;
+          this.candidateSearchError = apiError?.message || error.message || 'Candidate search could not complete.';
+        },
+      });
+  }
+
+  chooseCandidate(candidate: CvChatCandidateOption): void {
+    // Search only discovers choices. This explicit action establishes the ID used by details, evaluation, and chat.
+    this.candidateSearchQuery = candidate.name;
+    this.candidateSearchResults = [];
+    this.candidateSearchTruncated = false;
+    this.candidateSearchResultQuery = '';
+    this.selectCandidate(candidate.id);
   }
 
   askCv(): void {

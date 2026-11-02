@@ -215,14 +215,21 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and privacy-safe logging all passed without a schema or environment change. Production repeated the focused checks
   successfully on 2 November 2026 after PR #121 at main revision `ff6b283`; the backend contract is accepted in both
   environments.
-- [ ] Extend the Angular picker to maintain an explicit multi-candidate selection and render the cited comparison.
+- [ ] Extend the Angular picker to maintain an explicit two-to-five-candidate selection, show removable active-scope
+  chips/cards, expose change/clear actions, and render the cited comparison. Build this state as a reusable component
+  for both picker-first and future language-first conversation flows.
+- [ ] Add the language-first flow: identify candidate references in a natural-language message, resolve them only
+  through tenant-scoped deterministic services, display bounded candidate cards, and require recruiter confirmation
+  before any CV, evaluation, or job-fit evidence retrieval. Both entry paths must converge on the same verified-ID
+  comparison contract.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.
 - [ ] Add prompt-injection tests proving CV text and chat input cannot expand tool access or cross organization boundaries.
 - [ ] Add preview-only command tools, then require explicit confirmation, idempotency, and audit records before any state change or external communication.
 - [ ] Pin tool implementation to the current Spring AI version and evaluate the 2.x `ToolCallingAdvisor` migration separately with regression tests.
-- [ ] Persist scoped conversation memory.
+- [ ] Persist scoped conversation memory. Store the explicitly confirmed candidate IDs and allow follow-up questions
+  to reuse only that visible scope; memory must never silently add, replace, remove, or widen candidates.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.
 - [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on

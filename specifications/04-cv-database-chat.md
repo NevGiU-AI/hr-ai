@@ -335,6 +335,27 @@ may select candidates in the UI or write an unambiguous request such as “Compa
 backend resolves each reference only inside the authenticated organization and converts every resolved name to a
 verified tenant-scoped candidate ID before retrieving CV, evaluation, or job-fit evidence.
 
+#### Final dual-entry conversation contract
+
+The final web chat supports two entry paths that converge on the same tenant-verified candidate-ID set:
+
+1. **Picker-first:** the recruiter searches for and explicitly selects candidates, then asks a question.
+2. **Language-first:** the recruiter asks naturally, such as “Compare Jane and Peter for this role.” The application
+   resolves candidate references deterministically inside the authenticated organization, displays minimal candidate
+   cards, and requires explicit confirmation before retrieving any CV, evaluation, or job-fit evidence.
+
+The existing Angular picker is therefore a reusable authorization and clarification component, not a disposable
+picker-only screen. The conversation displays the confirmed scope as removable candidate chips or cards and provides
+explicit **Change candidates** and **Clear conversation** actions. Adding, replacing, or removing a candidate updates
+the verified scope only through recruiter action. Follow-up questions may reuse the confirmed IDs, but conversation
+memory must never infer, add, replace, or silently widen that set.
+
+An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
+multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may
+help interpret the recruiter message, but it cannot supply the organization boundary or authorize a candidate. Both
+entry paths call the same tenant-authorized retrieval and comparison services after confirmation, so citations,
+refusals, role checks, privacy rules, and audit behavior remain identical.
+
 If a referenced name does not exist in that organization, the request follows the generic not-found contract. If a
 name matches more than one candidate, the application asks the recruiter to choose the intended record rather than
 guessing. The recruiter may then compare the verified candidate set using any authorized criterion, including skills,

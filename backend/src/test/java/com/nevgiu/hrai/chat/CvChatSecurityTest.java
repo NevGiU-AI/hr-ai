@@ -61,6 +61,19 @@ class CvChatSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
+    void permitsCandidateSearchOnlyForCvChatRoles(String role) throws Exception {
+        when(candidateResolution.search("Fanon", "tenant-a"))
+                .thenReturn(new CvChatCandidateSearchResponse(List.of(), false));
+
+        mvc.perform(post("/api/chat/candidates/search")
+                        .contentType("application/json")
+                        .content("{\"query\":\"Fanon\"}")
+                        .with(user(principal(role))).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void deniesReadOnlyUsers() throws Exception {
         mvc.perform(post("/api/chat/candidates/7")
@@ -72,6 +85,12 @@ class CvChatSecurityTest {
         mvc.perform(post("/api/chat/candidates/resolve")
                         .contentType("application/json")
                         .content("{\"name\":\"Ada Lovelace\"}")
+                        .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/chat/candidates/search")
+                        .contentType("application/json")
+                        .content("{\"query\":\"Fanon\"}")
                         .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
                 .andExpect(status().isForbidden());
     }

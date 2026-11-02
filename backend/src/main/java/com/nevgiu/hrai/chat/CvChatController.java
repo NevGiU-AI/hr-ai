@@ -30,6 +30,13 @@ public class CvChatController {
         return candidateResolution.resolve(request.name(), actor.organizationId());
     }
 
+    /** Returns tenant-scoped partial-name choices; the caller must explicitly select an ID before CV retrieval. */
+    @PostMapping("/search")
+    public CvChatCandidateSearchResponse search(@Valid @RequestBody CvChatCandidateSearchRequest request,
+                                                @AuthenticationPrincipal AppUserPrincipal actor) {
+        return candidateResolution.search(request.query(), actor.organizationId());
+    }
+
     /**
      * Answers one question about an explicitly selected candidate.
      *

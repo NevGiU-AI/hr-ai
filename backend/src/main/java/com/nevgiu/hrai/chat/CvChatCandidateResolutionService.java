@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Resolves candidate names only inside the authenticated organization before any evidence retrieval occurs.
@@ -45,11 +46,37 @@ public class CvChatCandidateResolutionService {
         return new CvChatCandidateResolutionResponse(status, List.copyOf(options), matches.hasNext());
     }
 
+    /**
+     * Returns bounded partial-name matches for explicit recruiter selection. A partial result is never automatically
+     * resolved, even when only one candidate currently matches, because later tenant data could make it ambiguous.
+     */
+    @Transactional(readOnly = true)
+    public CvChatCandidateSearchResponse search(String requestedQuery, String organizationId) {
+        String query = normalize(requestedQuery);
+        if (query.length() < 2) {
+            throw new CvChatException(HttpStatus.BAD_REQUEST, "Candidate search requires at least 2 characters");
+        }
+
+        String normalized = query.toLowerCase(Locale.ROOT);
+        Slice<CandidateIdentity> matches = candidates.searchByNameAndOrganizationId(
+                '%' + escapeLike(normalized) + '%', normalized, organizationId, PageRequest.of(0, MAX_OPTIONS));
+        List<CvChatCandidateSearchResponse.CandidateOption> options = matches.getContent().stream()
+                .map(candidate -> new CvChatCandidateSearchResponse.CandidateOption(
+                        candidate.id(), candidate.name(), candidate.currentTitle()))
+                .toList();
+        return new CvChatCandidateSearchResponse(List.copyOf(options), matches.hasNext());
+    }
+
     private String normalize(String requestedName) {
         if (requestedName == null || requestedName.isBlank()) {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "Candidate name is required");
         }
         // Collapse user-interface whitespace only; do not perform fuzzy matching or strip meaningful Unicode marks.
         return requestedName.strip().replaceAll("\\s+", " ");
+    }
+
+    private String escapeLike(String value) {
+        // '!' is the explicit JPQL escape character; escape it before treating SQL wildcard characters literally.
+        return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     }
 }

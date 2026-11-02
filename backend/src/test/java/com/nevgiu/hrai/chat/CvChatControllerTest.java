@@ -69,6 +69,39 @@ class CvChatControllerTest {
     }
 
     @Test
+    void searchesCandidateNamesInsideTheAuthenticatedOrganization() throws Exception {
+        AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
+                java.util.List.of());
+        var response = new CvChatCandidateSearchResponse(List.of(
+                new CvChatCandidateSearchResponse.CandidateOption(7L, "Fanon Jupkwo", "Engineer")), false);
+        when(candidateResolution.search("Fanon", "tenant-a")).thenReturn(response);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/candidates/search")
+                            .contentType("application/json")
+                            .content("{\"query\":\"Fanon\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.candidates[0].id").value(7))
+                    .andExpect(jsonPath("$.candidates[0].name").value("Fanon Jupkwo"))
+                    .andExpect(jsonPath("$.candidates[0].email").doesNotExist())
+                    .andExpect(jsonPath("$.truncated").value(false));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        verify(candidateResolution).search("Fanon", "tenant-a");
+    }
+
+    @Test
+    void validatesCandidateSearchQuery() throws Exception {
+        mvc.perform(post("/api/chat/candidates/search")
+                        .contentType("application/json")
+                        .content("{\"query\":\"A\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.query").exists());
+    }
+
+    @Test
     void passesAuthenticatedOrganizationToTheChatService() throws Exception {
         AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
                 java.util.List.of());

@@ -66,7 +66,9 @@ decisions.
   2 November 2026 after PR #121. The reusable Angular multi-selector then passed focused staging acceptance after
   PRs #124 and #125: recruiters maintained an explicit two-to-five-candidate scope, rendered candidate-labelled
   citations, navigated cited documents, and received controlled insufficient-evidence responses when generated
-  comparisons did not cite every selected candidate. Production acceptance remains pending.
+  comparisons did not cite every selected candidate. Production repeated the focused scope, grounded-comparison,
+  citation-navigation, authorization, controlled-response, and incomplete-citation checks successfully on 2 November
+  2026 in release `v0.28.0`; the picker-first comparison flow is accepted in both environments.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.

@@ -203,7 +203,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and selected-candidate chat checks successfully after PR #114 at main revision `2831d2d`.
 - [x] Consume partial discovery through an Angular candidate picker with explicit selection, loading/error/empty and
   truncation states, and reuse of the selected ID for the existing details, evaluation, and single-candidate chat flow.
-  Multi-candidate comparison remains a separate backend and UI slice.
+  The intentionally manual button/Enter flow passed focused staging acceptance on 2 November 2026 after PR #116 at
+  main revision `cd075b3`; autocomplete remains optional. Multi-candidate comparison is a separate backend/UI slice.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.

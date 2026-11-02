@@ -209,6 +209,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Add the explicit multi-candidate comparison backend contract for two to five distinct IDs. Verify the entire set
   in the authenticated organization before policy/evidence work, require bounded evidence and citations for every
   selected candidate, and reject duplicate, missing, cross-tenant, unsupported-citation, and uncited outcomes safely.
+  Focused staging acceptance completed on 2 November 2026 after PR #120 corrected the provider prompt to supply the
+  same bracketed citation syntax enforced by application validation. Grounded two-candidate comparison, citations for
+  every selected candidate, validation boundaries, sensitive-question refusal, role enforcement, tenant isolation,
+  and privacy-safe logging all passed without a schema or environment change.
 - [ ] Extend the Angular picker to maintain an explicit multi-candidate selection and render the cited comparison.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.

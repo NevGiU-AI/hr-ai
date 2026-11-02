@@ -408,6 +408,16 @@ citations, uncited prose, or a comparison that fails to cite every selected cand
 the verified minimal candidate identities, and only reconstructed authorized citations. The model cannot search for,
 add, or select candidates, and the Angular multi-selector remains a separate follow-up slice.
 
+The backend comparison contract passed focused staging acceptance on 2 November 2026 after PR #120 was merged at main
+revision `bf1ebb8`. The first live-provider request correctly failed closed with `502` because the generated comparison
+did not use the bracketed citation syntax required by application validation. PR #120 corrected the provider boundary
+without weakening validation: authorized references are now supplied as `[CV-<document>]` or
+`[CV-<document>-P<page>]`, with an explicit instruction and regression test requiring that exact syntax. The repeated
+request returned a grounded comparison of exactly the two selected candidates, with reconstructed citations for both
+documents and no unselected candidate. Staging also accepted the sensitive-question refusal, one-candidate and
+duplicate-ID `400` responses, generic missing/cross-tenant `404`, `READ_ONLY` `403`, allowed-role behavior, and
+privacy-safe logs. No database migration or environment-variable change was required.
+
 ## Inputs and outputs
 
 Inputs:

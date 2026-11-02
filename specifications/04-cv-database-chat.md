@@ -387,6 +387,12 @@ and successful reuse of the chosen ID by candidate details, evaluation history, 
 candidate dropdown and single-candidate workflow continued to work. No environment, Flyway, database, or
 infrastructure change was required. Automatic debounced autocomplete remains an optional usability refinement.
 
+Production repeated the focused Angular picker checks successfully on 2 November 2026 for the PR #116 implementation
+at main revision `cd075b3`. Manual button and Enter submission, minimum-length enforcement, tenant-scoped partial
+results, safe empty/truncated/error states, explicit selection, role visibility, and selected-ID reuse all behaved as
+accepted in staging. Candidate details, evaluation history, grounded chat, and the existing candidate dropdown also
+passed regression checks. Automatic autocomplete remains deferred rather than implied by this acceptance record.
+
 ## Inputs and outputs
 
 Inputs:

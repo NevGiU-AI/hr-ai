@@ -361,6 +361,13 @@ Queries require at least two characters and results use the same minimal identit
 `truncated` marker. Missing and cross-tenant searches both return an empty list. Search results are choices only: even
 one partial match must be explicitly selected before evidence retrieval.
 
+The exact-resolution and partial-search contracts passed focused staging acceptance on 2 November 2026 for revision
+`ddb6eaa`. `ADMIN`, `RECRUITER`, and `REVIEWER` could use both endpoints while `READ_ONLY` remained forbidden. Exact
+unique names resolved correctly, duplicate exact names required explicit selection, and missing or cross-tenant exact
+names shared the generic not-found response. Partial queries returned only organization-owned minimal identities,
+reported bounded-result truncation, returned an empty list for missing and cross-tenant matches, and never selected a
+candidate automatically. The selected candidate ID remained the required input for subsequent CV-chat requests.
+
 ## Inputs and outputs
 
 Inputs:

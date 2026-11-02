@@ -59,7 +59,10 @@ decisions.
   autocomplete.
 - Compare two to five explicitly selected, tenant-verified candidates through a bounded backend contract. Every factual
   comparison must cite authorized evidence for every selected candidate; missing, cross-tenant, duplicate, uncited,
-  or model-introduced candidates fail safely.
+  or model-introduced candidates fail safely. The contract passed focused staging acceptance on 2 November 2026 after
+  PR #120 aligned the provider prompt's bracketed references with the server-side citation validator. Grounded
+  comparison, full selected-candidate citation coverage, validation, sensitive-question refusal, role enforcement,
+  tenant isolation, and privacy-safe logging passed; production acceptance and the Angular multi-selector remain.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -90,8 +93,8 @@ were evaluated next: generated EN/FR/PT answers passed scoped staging language/c
 paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
 30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
 1 November 2026 without lowering the `0.35` threshold, followed by focused production acceptance in release `v0.24.0`.
-Broader multi-candidate retrieval, speech
-input/playback, and the recruitment dashboard remain roadmap work. Production repeated the focused question-policy
+The multi-candidate comparison UI, speech input/playback, and the recruitment dashboard remain roadmap work.
+Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
 dashboard, stable OpenAPI contracts, and the concurrency benchmark. Private object storage is required before

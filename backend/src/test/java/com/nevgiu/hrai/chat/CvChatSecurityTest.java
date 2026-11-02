@@ -30,6 +30,7 @@ class CvChatSecurityTest {
     @Autowired MockMvc mvc;
     @MockitoBean CvChatService chat;
     @MockitoBean CvChatCandidateResolutionService candidateResolution;
+    @MockitoBean CvChatComparisonService comparisonService;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService audit;
 
@@ -74,6 +75,19 @@ class CvChatSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
+    void permitsCandidateComparisonOnlyForCvChatRoles(String role) throws Exception {
+        when(comparisonService.compare(List.of(7L, 8L), "Compare", "tenant-a"))
+                .thenReturn(new CvChatComparisonResponse("Comparison", List.of(), List.of()));
+
+        mvc.perform(post("/api/chat/candidates/compare")
+                        .contentType("application/json")
+                        .content("{\"candidateIds\":[7,8],\"message\":\"Compare\"}")
+                        .with(user(principal(role))).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void deniesReadOnlyUsers() throws Exception {
         mvc.perform(post("/api/chat/candidates/7")
@@ -91,6 +105,12 @@ class CvChatSecurityTest {
         mvc.perform(post("/api/chat/candidates/search")
                         .contentType("application/json")
                         .content("{\"query\":\"Fanon\"}")
+                        .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/chat/candidates/compare")
+                        .contentType("application/json")
+                        .content("{\"candidateIds\":[7,8],\"message\":\"Compare\"}")
                         .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
                 .andExpect(status().isForbidden());
     }

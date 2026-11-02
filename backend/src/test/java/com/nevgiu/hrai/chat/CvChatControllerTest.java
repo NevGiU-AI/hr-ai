@@ -28,6 +28,7 @@ class CvChatControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean CvChatService service;
     @MockitoBean CvChatCandidateResolutionService candidateResolution;
+    @MockitoBean CvChatComparisonService comparisonService;
     @MockitoBean SecurityAuditService securityAuditService;
 
     @Test
@@ -99,6 +100,39 @@ class CvChatControllerTest {
                         .content("{\"query\":\"A\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.validationErrors.query").exists());
+    }
+
+    @Test
+    void comparesExplicitCandidatesInsideTheAuthenticatedOrganization() throws Exception {
+        AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
+                java.util.List.of());
+        var response = new CvChatComparisonResponse("Comparison [CV-10] [CV-11]", List.of(
+                new CvChatComparisonResponse.CandidateOption(7L, "Ada", "Engineer"),
+                new CvChatComparisonResponse.CandidateOption(8L, "Grace", "Architect")), List.of());
+        when(comparisonService.compare(List.of(7L, 8L), "Compare", "tenant-a")).thenReturn(response);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/candidates/compare")
+                            .contentType("application/json")
+                            .content("{\"candidateIds\":[7,8],\"message\":\"Compare\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.candidates[0].id").value(7))
+                    .andExpect(jsonPath("$.candidates[1].id").value(8))
+                    .andExpect(jsonPath("$.candidates[0].email").doesNotExist());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        verify(comparisonService).compare(List.of(7L, 8L), "Compare", "tenant-a");
+    }
+
+    @Test
+    void validatesCandidateComparisonBounds() throws Exception {
+        mvc.perform(post("/api/chat/candidates/compare")
+                        .contentType("application/json")
+                        .content("{\"candidateIds\":[7],\"message\":\"Compare\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.candidateIds").exists());
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
+import com.nevgiu.hrai.candidate.CandidateIdentity;
 import com.nevgiu.hrai.candidate.CvDocument;
 import com.nevgiu.hrai.candidate.CvDocumentPageRepository;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
@@ -46,8 +47,9 @@ class CvChatEvidenceService {
      * This lookup discloses no CV evidence and preserves the generic missing/cross-tenant {@code 404} contract.
      */
     @Transactional(readOnly = true)
-    void authorizeCandidate(Long candidateId, String organizationId) {
-        authorizedCandidate(candidateId, organizationId);
+    CandidateIdentity authorizeCandidate(Long candidateId, String organizationId) {
+        Candidate candidate = authorizedCandidate(candidateId, organizationId);
+        return new CandidateIdentity(candidate.getId(), candidate.getName(), candidate.getCurrentTitle());
     }
 
     @Transactional(readOnly = true)

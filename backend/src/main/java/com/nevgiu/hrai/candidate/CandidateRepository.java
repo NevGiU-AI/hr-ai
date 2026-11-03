@@ -41,9 +41,11 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
             String name, String organizationId, Pageable pageable);
 
     /**
-     * Searches candidate names inside one organization using an already escaped, lower-case LIKE pattern. Exact names
-     * are ranked before partial matches, then stable name/ID ordering makes repeated UI searches deterministic. The
-     * caller supplies a page bound so partial discovery cannot return an unbounded personal-data result set.
+     * Searches candidate names inside one organization using an already escaped, lower-case LIKE anchor. The service
+     * may choose one selective token and then require all requested tokens before returning a card, allowing safe
+     * order-independent references without constructing dynamic SQL. Exact names are ranked before partial matches,
+     * then stable name/ID ordering makes repeated UI searches deterministic. The caller supplies a page bound so
+     * partial discovery cannot return an unbounded personal-data result set.
      */
     @Transactional(readOnly = true)
     @Query("""

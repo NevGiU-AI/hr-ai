@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -58,9 +59,17 @@ public class CvChatCandidateResolutionService {
         }
 
         String normalized = query.toLowerCase(Locale.ROOT);
+        List<String> tokens = Arrays.stream(normalized.split("\\s+"))
+                .distinct()
+                .toList();
+        // Candidate names often contain prefixes or use a different token order than a recruiter's reference
+        // (for example, "Boris Zok" versus "Resume ZOK Boris"). Query by the longest literal token to keep the
+        // database search selective, then require every supplied token in memory before returning any minimal card.
+        String anchor = tokens.stream().max(java.util.Comparator.comparingInt(String::length)).orElse(normalized);
         Slice<CandidateIdentity> matches = candidates.searchByNameAndOrganizationId(
-                '%' + escapeLike(normalized) + '%', normalized, organizationId, PageRequest.of(0, MAX_OPTIONS));
+                '%' + escapeLike(anchor) + '%', normalized, organizationId, PageRequest.of(0, MAX_OPTIONS));
         List<CvChatCandidateSearchResponse.CandidateOption> options = matches.getContent().stream()
+                .filter(candidate -> containsEveryToken(candidate.name(), tokens))
                 .map(candidate -> new CvChatCandidateSearchResponse.CandidateOption(
                         candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
@@ -78,5 +87,10 @@ public class CvChatCandidateResolutionService {
     private String escapeLike(String value) {
         // '!' is the explicit JPQL escape character; escape it before treating SQL wildcard characters literally.
         return value.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    }
+
+    private boolean containsEveryToken(String candidateName, List<String> tokens) {
+        String normalizedName = candidateName.toLowerCase(Locale.ROOT);
+        return tokens.stream().allMatch(normalizedName::contains);
     }
 }

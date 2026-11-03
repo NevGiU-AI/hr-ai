@@ -113,6 +113,22 @@ class CvChatCandidateResolutionServiceTest {
     }
 
     @Test
+    void matchesMultiTokenNamesRegardlessOfStoredTokenOrder() {
+        when(candidates.searchByNameAndOrganizationId(
+                "%boris%", "boris zok", "tenant-a", PageRequest.of(0, 20)))
+                .thenReturn(new SliceImpl<>(List.of(
+                        candidate(52L, "Resume ZOK Boris", "AI / ML Engineer"),
+                        candidate(53L, "Boris Other", "Engineer"))));
+
+        CvChatCandidateSearchResponse response = service.search("Boris Zok", "tenant-a");
+
+        assertThat(response.candidates()).extracting(CvChatCandidateSearchResponse.CandidateOption::id)
+                .containsExactly(52L);
+        verify(candidates).searchByNameAndOrganizationId(
+                "%boris%", "boris zok", "tenant-a", PageRequest.of(0, 20));
+    }
+
+    @Test
     void rejectsPartialQueriesShorterThanTwoCharacters() {
         assertThatThrownBy(() -> service.search(" A ", "tenant-a"))
                 .isInstanceOf(CvChatException.class)

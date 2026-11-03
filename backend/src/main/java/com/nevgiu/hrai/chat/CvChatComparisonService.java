@@ -87,7 +87,15 @@ public class CvChatComparisonService {
             return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
 
-        List<CvChatResponse.Citation> citations = CvChatCitations.fromAnswer(answer, evidence);
+        // Some providers occasionally append the protocol token on its own final line after an otherwise grounded
+        // comparison. The token is an application/model control signal, not user-facing prose. Remove only that exact
+        // terminal line; never rewrite an occurrence embedded in ordinary answer text.
+        String displayAnswer = removeTrailingControlLine(normalizedAnswer, CvChatModel.INSUFFICIENT_EVIDENCE);
+        if (displayAnswer.isBlank()) {
+            return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
+        }
+
+        List<CvChatResponse.Citation> citations = CvChatCitations.fromAnswer(displayAnswer, evidence);
         Set<Long> citedCandidateIds = citations.stream()
                 .map(CvChatResponse.Citation::candidateId)
                 .collect(java.util.stream.Collectors.toSet());
@@ -99,7 +107,7 @@ public class CvChatComparisonService {
                     organizationId, candidateIds.size(), "CITATION_COVERAGE", citedCandidateIds.size());
             return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
-        return response(answer, candidates, citations);
+        return response(displayAnswer, candidates, citations);
     }
 
     private List<Long> distinctIds(List<Long> requestedCandidateIds) {
@@ -124,5 +132,13 @@ public class CvChatComparisonService {
                         candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
         return new CvChatComparisonResponse(answer, options, citations);
+    }
+
+    private String removeTrailingControlLine(String answer, String controlToken) {
+        int lastLineBreak = Math.max(answer.lastIndexOf('\n'), answer.lastIndexOf('\r'));
+        if (lastLineBreak < 0 || !answer.substring(lastLineBreak + 1).trim().equals(controlToken)) {
+            return answer;
+        }
+        return answer.substring(0, lastLineBreak).trim();
     }
 }

@@ -47,4 +47,25 @@ class CvChatLanguageScopeServiceTest {
         assertThat(response.references()).isEmpty();
         verifyNoInteractions(resolution);
     }
+
+    @Test
+    void resolvesPartialFirstNamesFromAComparisonRequest() {
+        String message = "Compare Ada and Grace backend engineering experiences";
+        when(extractor.extract(message)).thenReturn(List.of("Ada", "Grace"));
+        when(resolution.resolve("Ada", "tenant-a"))
+                .thenThrow(new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
+        when(resolution.resolve("Grace", "tenant-a"))
+                .thenThrow(new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
+        when(resolution.search("Ada", "tenant-a")).thenReturn(new CvChatCandidateSearchResponse(List.of(
+                new CvChatCandidateSearchResponse.CandidateOption(7L, "Ada Lovelace", "Engineer")), false));
+        when(resolution.search("Grace", "tenant-a")).thenReturn(new CvChatCandidateSearchResponse(List.of(
+                new CvChatCandidateSearchResponse.CandidateOption(8L, "Grace Hopper", "Architect")), false));
+
+        CvChatLanguageScopeResponse response = service.propose(message, "tenant-a");
+
+        assertThat(response.references()).extracting(CvChatLanguageScopeResponse.Reference::requestedName)
+                .containsExactly("Ada", "Grace");
+        assertThat(response.references()).extracting(reference -> reference.candidates().getFirst().id())
+                .containsExactly(7L, 8L);
+    }
 }

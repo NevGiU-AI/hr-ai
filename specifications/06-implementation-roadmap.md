@@ -225,10 +225,14 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   focused scope, grounded-comparison, citation-navigation, controlled-response, incomplete-citation, and authorization
   checks successfully on 2 November 2026 in release `v0.28.0`. The picker-first comparison flow is accepted in both
   environments.
-- [ ] Add the language-first flow: identify candidate references in a natural-language message, resolve them only
+- [x] Add the language-first flow: identify candidate references in a natural-language message, resolve them only
   through tenant-scoped deterministic services, display bounded candidate cards, and require recruiter confirmation
   before any CV, evaluation, or job-fit evidence retrieval. Both entry paths must converge on the same verified-ID
-  comparison contract.
+  comparison contract. PR #128 implemented explicit candidate-card confirmation, PR #129 made partial multi-token
+  name matching independent of stored token order and contained provider control tokens, and PR #130 reused one
+  criteria-focused retrieval-query set across every confirmed candidate. Repeated comparisons passed focused staging
+  and production acceptance on 3 November 2026 in release `v0.29.0`, with accepted evidence and citations for every
+  selected candidate and no citation-coverage, normalization, provider, or raw-control-token failure.
 - [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
 - [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.

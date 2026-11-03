@@ -68,7 +68,11 @@ decisions.
   citations, navigated cited documents, and received controlled insufficient-evidence responses when generated
   comparisons did not cite every selected candidate. Production repeated the focused scope, grounded-comparison,
   citation-navigation, authorization, controlled-response, and incomplete-citation checks successfully on 2 November
-  2026 in release `v0.28.0`; the picker-first comparison flow is accepted in both environments.
+  2026 in release `v0.28.0`; the picker-first comparison flow is accepted in both environments. PRs #128–#130 then
+  added language-first candidate-card confirmation, order-independent multi-token name resolution, control-token
+  containment, and one shared criteria-focused retrieval-query set per comparison. Repeated grounded comparisons with
+  evidence and citations for every confirmed candidate passed staging and production acceptance on 3 November 2026
+  in release `v0.29.0`, without schema or environment changes.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.

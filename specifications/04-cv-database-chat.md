@@ -479,6 +479,22 @@ complete citation coverage returned controlled insufficient evidence rather than
 Privacy-safe logs contained no recruiter question, generated answer, or CV evidence. The picker-first comparison flow
 is therefore accepted in both staging and production.
 
+PRs #128–#130 completed and stabilized the language-first confirmation path on 3 November 2026. A recruiter can name
+two to five candidates in a natural comparison request, review tenant-scoped candidate cards, resolve ambiguity
+explicitly, and confirm the visible IDs before any CV evidence is retrieved. PR #129 made multi-token candidate lookup
+independent of stored name order and prevented a trailing provider control token from appearing in a grounded answer.
+PR #130 then prepared the criteria-focused retrieval-query set once per comparison and reused that exact set for every
+confirmed candidate, rather than allowing separate normalization calls to introduce candidate-to-candidate retrieval
+drift.
+
+Focused staging acceptance repeated the same confirmed comparison and consistently returned grounded evidence and
+citations for every selected candidate. Retrieval summaries showed the same query-count structure with accepted
+matches for both candidates; no raw `INSUFFICIENT_EVIDENCE` token, `CITATION_COVERAGE` rejection, query-normalization
+failure, or comparison-provider error appeared. Production repeated those checks successfully in release `v0.29.0`.
+No schema, Flyway, environment-variable, or frontend configuration change was required. The picker-first and
+language-first entry paths are therefore accepted in staging and production through the same verified-ID comparison
+boundary.
+
 ## Inputs and outputs
 
 Inputs:

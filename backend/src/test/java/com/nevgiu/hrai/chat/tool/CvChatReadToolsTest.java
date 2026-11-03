@@ -38,8 +38,9 @@ class CvChatReadToolsTest {
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
     private final CvChatToolExecutionGuard executionGuard = mock(CvChatToolExecutionGuard.class);
+    private final CvChatToolScope scope = mock(CvChatToolScope.class);
     private final CvChatReadTools tools = new CvChatReadTools(
-            candidateResolution, candidates, documents, executionGuard);
+            candidateResolution, candidates, documents, executionGuard, scope);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
@@ -85,6 +86,7 @@ class CvChatReadToolsTest {
 
         CandidateSummary result = tools.getCandidateSummary(7L);
 
+        verify(scope).requireConfirmed(7L);
         assertThat(result).isEqualTo(new CandidateSummary(7L, "Ada Lovelace", "Engineer", 8,
                 new CurrentDocumentStatus(12L, CvIngestionStatus.IMPORTED, CvExtractionMethod.NATIVE,
                         Instant.parse("2026-11-03T00:00:00Z"), null)));
@@ -101,7 +103,21 @@ class CvChatReadToolsTest {
         assertThatThrownBy(() -> tools.getCandidateSummary(99L))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("Candidate not found");
+        verify(scope).requireConfirmed(99L);
         verifyNoInteractions(documents);
+    }
+
+    @Test
+    void rejectsCandidateOutsideTheHumanConfirmedScopeBeforeDataAccess() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        org.mockito.Mockito.doThrow(new CvChatException(org.springframework.http.HttpStatus.FORBIDDEN,
+                        "Candidate is outside the confirmed chat scope"))
+                .when(scope).requireConfirmed(7L);
+
+        assertThatThrownBy(() -> tools.getCandidateSummary(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate is outside the confirmed chat scope");
+        verifyNoInteractions(candidates, documents);
     }
 
     @Test

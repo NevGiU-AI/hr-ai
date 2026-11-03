@@ -8,6 +8,7 @@ import org.springframework.web.context.annotation.RequestScope;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Explicit allow list for future tool-enabled chat orchestration. Nothing registers these callbacks globally: a
@@ -41,5 +42,19 @@ public class CvChatReadToolRegistry {
     public List<ToolCallback> callbacks() {
         // The immutable list prevents an orchestrator from adding a callback after allow-list validation.
         return callbacks;
+    }
+
+    /** Discovery cannot read candidate details before explicit human confirmation. */
+    public List<ToolCallback> discoveryCallbacks() {
+        return matching(callback -> callback.getToolDefinition().name().equals("search_candidates"));
+    }
+
+    /** Confirmed-scope planning may search again and may summarize only IDs enforced by {@link CvChatToolScope}. */
+    public List<ToolCallback> confirmedScopeCallbacks() {
+        return callbacks;
+    }
+
+    private List<ToolCallback> matching(Predicate<ToolCallback> predicate) {
+        return callbacks.stream().filter(predicate).toList();
     }
 }

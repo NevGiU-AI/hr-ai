@@ -23,6 +23,10 @@ class CvChatReadToolRegistryTest {
 
         assertThat(callbacks).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary");
+        assertThat(registry.discoveryCallbacks()).extracting(callback -> callback.getToolDefinition().name())
+                .containsExactly("search_candidates");
+        assertThat(registry.confirmedScopeCallbacks()).extracting(callback -> callback.getToolDefinition().name())
+                .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary");
         assertThat(callbacks).allSatisfy(callback -> assertThat(callback.getToolDefinition().inputSchema())
                 .doesNotContainIgnoringCase("organization")
                 .doesNotContainIgnoringCase("tenant")
@@ -44,6 +48,6 @@ class CvChatReadToolRegistryTest {
     private CvChatReadTools tools() {
         return new CvChatReadTools(
                 mock(CvChatCandidateResolutionService.class), mock(CandidateRepository.class),
-                mock(CvDocumentRepository.class), mock(CvChatToolExecutionGuard.class));
+                mock(CvDocumentRepository.class), mock(CvChatToolExecutionGuard.class), mock(CvChatToolScope.class));
     }
 }

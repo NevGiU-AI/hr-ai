@@ -12,7 +12,8 @@ import org.springframework.http.HttpStatus;
 public class CvChatException extends RuntimeException {
     private final HttpStatus status;
 
-    CvChatException(HttpStatus status, String message) {
+    /** Allows reviewed CV-chat subpackages, including tool adapters, to preserve the shared safe error contract. */
+    public CvChatException(HttpStatus status, String message) {
         super(message);
         this.status = status;
     }

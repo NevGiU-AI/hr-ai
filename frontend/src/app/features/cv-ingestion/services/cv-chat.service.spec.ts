@@ -45,4 +45,13 @@ describe('CvChatService', () => {
     });
     request.flush({ answer: 'Comparison [CV-2] [CV-3]', candidates: [], citations: [] });
   });
+
+  it('proposes a language-first scope without requesting candidate evidence', () => {
+    service.proposeLanguageScope('Compare Ada and Grace').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/candidates/scope`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ message: 'Compare Ada and Grace' });
+    request.flush({ message: 'Compare Ada and Grace', references: [] });
+  });
 });

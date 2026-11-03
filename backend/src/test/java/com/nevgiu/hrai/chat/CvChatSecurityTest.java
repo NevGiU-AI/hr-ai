@@ -31,6 +31,7 @@ class CvChatSecurityTest {
     @MockitoBean CvChatService chat;
     @MockitoBean CvChatCandidateResolutionService candidateResolution;
     @MockitoBean CvChatComparisonService comparisonService;
+    @MockitoBean CvChatLanguageScopeService languageScopeService;
     @MockitoBean AppUserDetailsService userDetailsService;
     @MockitoBean SecurityAuditService audit;
 
@@ -88,6 +89,19 @@ class CvChatSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
+    void permitsLanguageScopeProposalOnlyForCvChatRoles(String role) throws Exception {
+        when(languageScopeService.propose("Compare Ada and Grace", "tenant-a"))
+                .thenReturn(new CvChatLanguageScopeResponse("Compare Ada and Grace", List.of()));
+
+        mvc.perform(post("/api/chat/candidates/scope")
+                        .contentType("application/json")
+                        .content("{\"message\":\"Compare Ada and Grace\"}")
+                        .with(user(principal(role))).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void deniesReadOnlyUsers() throws Exception {
         mvc.perform(post("/api/chat/candidates/7")
@@ -111,6 +125,12 @@ class CvChatSecurityTest {
         mvc.perform(post("/api/chat/candidates/compare")
                         .contentType("application/json")
                         .content("{\"candidateIds\":[7,8],\"message\":\"Compare\"}")
+                        .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/chat/candidates/scope")
+                        .contentType("application/json")
+                        .content("{\"message\":\"Compare Ada and Grace\"}")
                         .with(user(principal("ROLE_READ_ONLY"))).with(csrf()))
                 .andExpect(status().isForbidden());
     }

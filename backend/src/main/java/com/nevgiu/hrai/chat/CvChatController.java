@@ -15,12 +15,15 @@ public class CvChatController {
     private final CvChatService service;
     private final CvChatCandidateResolutionService candidateResolution;
     private final CvChatComparisonService comparisonService;
+    private final CvChatLanguageScopeService languageScopeService;
 
     public CvChatController(CvChatService service, CvChatCandidateResolutionService candidateResolution,
-                            CvChatComparisonService comparisonService) {
+                            CvChatComparisonService comparisonService,
+                            CvChatLanguageScopeService languageScopeService) {
         this.service = service;
         this.candidateResolution = candidateResolution;
         this.comparisonService = comparisonService;
+        this.languageScopeService = languageScopeService;
     }
 
     /**
@@ -38,6 +41,13 @@ public class CvChatController {
     public CvChatCandidateSearchResponse search(@Valid @RequestBody CvChatCandidateSearchRequest request,
                                                 @AuthenticationPrincipal AppUserPrincipal actor) {
         return candidateResolution.search(request.query(), actor.organizationId());
+    }
+
+    /** Proposes tenant-scoped candidate cards from natural language; no CV evidence is accessed before confirmation. */
+    @PostMapping("/scope")
+    public CvChatLanguageScopeResponse proposeScope(@Valid @RequestBody CvChatLanguageScopeRequest request,
+                                                    @AuthenticationPrincipal AppUserPrincipal actor) {
+        return languageScopeService.propose(request.message(), actor.organizationId());
     }
 
     /** Compares only the explicit candidate IDs after the service verifies every ID in the authenticated tenant. */

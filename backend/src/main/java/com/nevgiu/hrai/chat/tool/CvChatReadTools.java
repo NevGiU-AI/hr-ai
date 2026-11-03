@@ -38,13 +38,16 @@ public class CvChatReadTools {
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
     private final CvChatToolExecutionGuard executionGuard;
+    private final CvChatToolScope scope;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
-                           CvDocumentRepository documents, CvChatToolExecutionGuard executionGuard) {
+                           CvDocumentRepository documents, CvChatToolExecutionGuard executionGuard,
+                           CvChatToolScope scope) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
         this.executionGuard = executionGuard;
+        this.scope = scope;
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
@@ -72,6 +75,9 @@ public class CvChatReadTools {
         // Capture only the trusted tenant identifier before crossing the virtual-thread execution boundary. The model
         // supplies candidateId, but can never supply or replace actor.organizationId().
         AppUserPrincipal actor = currentChatActor();
+        // Prompt instructions are not an authorization boundary. Reject any model-supplied ID that was not explicitly
+        // authorized and installed into this request's confirmed scope by the orchestrator.
+        scope.requireConfirmed(candidateId);
         return executionGuard.execute(() -> {
             Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, actor.organizationId())
                     // Missing and cross-tenant IDs intentionally share one response to prevent tenant enumeration.

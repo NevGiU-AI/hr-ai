@@ -14,7 +14,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
-/** Runs read tools on virtual threads so a bounded timeout can interrupt a slow database operation. */
+/**
+ * Runs read tools on virtual threads so the caller can stop waiting after a reviewed timeout without occupying a
+ * platform thread. This singleton owns only the executor; tenant, authentication, and call-count state remain in
+ * request-scoped collaborators.
+ */
 @Component
 class CvChatToolExecutor {
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -29,6 +33,8 @@ class CvChatToolExecutor {
     }
 
     <T> T execute(Supplier<T> action) {
+        // Future.get provides a hard upper bound for the tool caller. Cancellation interrupts the virtual thread on a
+        // best-effort basis; repository/driver code must still honor interruption for the underlying work to stop.
         Future<T> future = executor.submit(action::get);
         try {
             return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -49,6 +55,7 @@ class CvChatToolExecutor {
 
     @PreDestroy
     void shutdown() {
+        // Do not leave virtual-thread tasks alive while Spring is stopping or replacing the application context.
         executor.shutdownNow();
     }
 }

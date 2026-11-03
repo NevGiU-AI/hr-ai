@@ -12,6 +12,9 @@ import java.util.Set;
 /**
  * Explicit allow list for future tool-enabled chat orchestration. Nothing registers these callbacks globally: a
  * reviewed model call must opt in with {@code .toolCallbacks(registry.callbacks())} for this request only.
+ *
+ * <p>The registry is request-scoped because each callback is bound to that request's {@link CvChatReadTools} proxy and
+ * execution guard. Retaining callbacks in a singleton could accidentally retain or resolve the wrong request scope.</p>
  */
 @Component
 @RequestScope
@@ -20,6 +23,8 @@ public class CvChatReadToolRegistry {
     private final List<ToolCallback> callbacks;
 
     public CvChatReadToolRegistry(CvChatReadTools tools) {
+        // Spring AI discovers @Tool methods and generates their JSON schemas. Compare the discovered names with a
+        // closed allow list so adding another annotated method cannot silently expose it to a future model call.
         List<ToolCallback> discovered = Arrays.asList(MethodToolCallbackProvider.builder()
                 .toolObjects(tools)
                 .build()
@@ -34,6 +39,7 @@ public class CvChatReadToolRegistry {
     }
 
     public List<ToolCallback> callbacks() {
+        // The immutable list prevents an orchestrator from adding a callback after allow-list validation.
         return callbacks;
     }
 }

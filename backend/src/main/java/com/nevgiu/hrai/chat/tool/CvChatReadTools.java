@@ -22,7 +22,11 @@ import java.util.Set;
 /**
  * Read-only Spring AI tools whose tenant boundary comes exclusively from the authenticated server-side principal.
  * Tool arguments deliberately contain no organization identifier, role, or authorization flag that a model could
- * invent or override. The request scope also prevents authenticated context from leaking between HTTP requests.
+ * invent or override.
+ *
+ * <p>{@link RequestScope} gives each HTTP request its own tool object. Spring injects a scoped proxy into longer-lived
+ * collaborators and resolves that proxy to the current request's instance only when a tool is used. Consequently no
+ * mutable tool lifecycle or authenticated context can be shared between concurrent users or organizations.</p>
  */
 @Component
 @RequestScope
@@ -48,6 +52,8 @@ public class CvChatReadTools {
             + "candidate automatically when multiple cards are returned.")
     public CandidateSearchResult searchCandidates(
             @ToolParam(description = "At least two characters from the candidate's name") String query) {
+        // Resolve and authorize the principal on the HTTP request thread. Spring Security context is thread-local and
+        // must not be looked up later inside the executor's virtual thread.
         AppUserPrincipal actor = currentChatActor();
         CvChatCandidateSearchResponse response = executionGuard.execute(
                 () -> candidateResolution.search(query, actor.organizationId()));
@@ -63,6 +69,8 @@ public class CvChatReadTools {
             + "storage identifiers, content hashes, or metadata revision history.")
     public CandidateSummary getCandidateSummary(
             @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
+        // Capture only the trusted tenant identifier before crossing the virtual-thread execution boundary. The model
+        // supplies candidateId, but can never supply or replace actor.organizationId().
         AppUserPrincipal actor = currentChatActor();
         return executionGuard.execute(() -> {
             Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, actor.organizationId())
@@ -80,6 +88,8 @@ public class CvChatReadTools {
     }
 
     private AppUserPrincipal currentChatActor() {
+        // Endpoint authorization remains the outer boundary; this independent check protects future non-controller
+        // callers and prevents a tool callback from becoming a role-policy bypass.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof AppUserPrincipal actor)) {
             throw new CvChatException(HttpStatus.UNAUTHORIZED, "Authentication required");

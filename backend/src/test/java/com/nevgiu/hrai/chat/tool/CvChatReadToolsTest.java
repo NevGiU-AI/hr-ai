@@ -11,6 +11,7 @@ import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,10 +22,12 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -34,7 +37,15 @@ class CvChatReadToolsTest {
             mock(CvChatCandidateResolutionService.class);
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
-    private final CvChatReadTools tools = new CvChatReadTools(candidateResolution, candidates, documents);
+    private final CvChatToolExecutionGuard executionGuard = mock(CvChatToolExecutionGuard.class);
+    private final CvChatReadTools tools = new CvChatReadTools(
+            candidateResolution, candidates, documents, executionGuard);
+
+    @BeforeEach
+    void executeGuardedActionsSynchronously() {
+        when(executionGuard.execute(any())).thenAnswer(invocation ->
+                ((Supplier<?>) invocation.getArgument(0)).get());
+    }
 
     @AfterEach
     void clearSecurityContext() {

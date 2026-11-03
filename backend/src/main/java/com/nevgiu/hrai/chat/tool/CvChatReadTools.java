@@ -28,16 +28,19 @@ import java.util.Set;
 @RequestScope
 public class CvChatReadTools {
     private static final Set<String> CHAT_ROLES = Set.of("ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER");
+    private static final int MAX_SEARCH_RESULTS = 10;
 
     private final CvChatCandidateResolutionService candidateResolution;
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
+    private final CvChatToolExecutionGuard executionGuard;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
-                           CvDocumentRepository documents) {
+                           CvDocumentRepository documents, CvChatToolExecutionGuard executionGuard) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
+        this.executionGuard = executionGuard;
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
@@ -46,11 +49,13 @@ public class CvChatReadTools {
     public CandidateSearchResult searchCandidates(
             @ToolParam(description = "At least two characters from the candidate's name") String query) {
         AppUserPrincipal actor = currentChatActor();
-        CvChatCandidateSearchResponse response = candidateResolution.search(query, actor.organizationId());
-        List<CandidateCard> cards = response.candidates().stream()
+        CvChatCandidateSearchResponse response = executionGuard.execute(
+                () -> candidateResolution.search(query, actor.organizationId()));
+        List<CandidateCard> cards = response.candidates().stream().limit(MAX_SEARCH_RESULTS)
                 .map(candidate -> new CandidateCard(candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
-        return new CandidateSearchResult(cards, response.truncated());
+        return new CandidateSearchResult(cards,
+                response.truncated() || response.candidates().size() > MAX_SEARCH_RESULTS);
     }
 
     @Tool(name = "get_candidate_summary", description = "Return a minimized, tenant-authorized summary for one "
@@ -59,17 +64,19 @@ public class CvChatReadTools {
     public CandidateSummary getCandidateSummary(
             @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
         AppUserPrincipal actor = currentChatActor();
-        Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, actor.organizationId())
-                // Missing and cross-tenant IDs intentionally share one response to prevent tenant enumeration.
-                .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
-        CvDocument currentDocument = documents
-                .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
-                .stream().findFirst().orElse(null);
-        CurrentDocumentStatus documentStatus = currentDocument == null ? null : new CurrentDocumentStatus(
-                currentDocument.getId(), currentDocument.getStatus(), currentDocument.getExtractionMethod(),
-                currentDocument.getImportedAt(), currentDocument.getReprocessedAt());
-        return new CandidateSummary(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),
-                candidate.getYearsExperience(), documentStatus);
+        return executionGuard.execute(() -> {
+            Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, actor.organizationId())
+                    // Missing and cross-tenant IDs intentionally share one response to prevent tenant enumeration.
+                    .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
+            CvDocument currentDocument = documents
+                    .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
+                    .stream().findFirst().orElse(null);
+            CurrentDocumentStatus documentStatus = currentDocument == null ? null : new CurrentDocumentStatus(
+                    currentDocument.getId(), currentDocument.getStatus(), currentDocument.getExtractionMethod(),
+                    currentDocument.getImportedAt(), currentDocument.getReprocessedAt());
+            return new CandidateSummary(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),
+                    candidate.getYearsExperience(), documentStatus);
+        });
     }
 
     private AppUserPrincipal currentChatActor() {

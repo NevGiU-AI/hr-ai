@@ -14,6 +14,8 @@ class SpringAiCvChatToolOrchestrationModelPromptTest {
                 .contains("never choose among ambiguous cards")
                 .contains("Do not claim CV skills, experience, education, or suitability")
                 .contains("Do not request, infer, or disclose protected or sensitive personal characteristics")
-                .contains("grounded evidence and citations are handled by separate application services");
+                .contains("grounded evidence and citations are handled by separate application services")
+                .contains("Never report confirmed scope")
+                .contains("skip, fake, or assume confirmation");
     }
 }

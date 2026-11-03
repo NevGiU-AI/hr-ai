@@ -314,6 +314,47 @@ explicit later performance measurements rather than inferred acceptance claims.
 - Verify query prompts cannot call command tools and command tools cannot execute without an exact preview and explicit confirmation.
 - Test loop, recursion, call-count, time, payload, result, concurrency, idempotency, and audit limits.
 
+#### Implemented read-tool orchestration security gate
+
+The versioned synthetic dataset at
+`backend/src/test/resources/ai-evaluations/cv-chat-tool-orchestration-v1.json` covers normal discovery and confirmed
+planning plus confirmation bypass, role/organization injection, malicious tool-result content, sensitive requests,
+scope expansion, and unsupported suitability claims. It contains no production candidate data.
+
+Normal pull-request tests validate dataset structure, the closed structured outcome schema, discovery-versus-confirmed
+callback separation, tenant authorization before scope installation, exact confirmed-ID enforcement, safe provider
+errors, and fail-closed workflow transitions. The only model-controlled fields are a reviewed workflow kind and display
+message. Candidate IDs, tenant, organization, role, and authorization state remain server-owned.
+
+`CvChatToolOrchestrationProviderEvaluationTest` is opt-in because it calls the configured provider and incurs cost. It
+uses synthetic local tools, including a candidate name containing an instruction-shaped payload, and checks the
+human-reviewed outcome for every dataset case. Failure output contains only synthetic case metadata and never prints
+the message or tool result.
+
+Run it from `backend` before promoting the orchestration prompt/model or exposing the orchestrator through an API:
+
+PowerShell:
+
+```powershell
+$env:RUN_AI_EVALUATIONS = "true"
+$env:OPENAI_API_KEY = "replace-with-the-evaluation-key"
+$env:AI_EVALUATION_CHAT_MODEL = "gpt-4o-mini"
+mvn -B "-Dtest=CvChatToolOrchestrationProviderEvaluationTest" test
+Remove-Item Env:RUN_AI_EVALUATIONS, Env:OPENAI_API_KEY, Env:AI_EVALUATION_CHAT_MODEL
+```
+
+Bash:
+
+```bash
+RUN_AI_EVALUATIONS=true \
+OPENAI_API_KEY='replace-with-the-evaluation-key' \
+AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
+mvn -B -Dtest=CvChatToolOrchestrationProviderEvaluationTest test
+```
+
+These are test-process variables, not staging or production configuration. The provider gate is pending; the internal
+orchestrator must remain unexposed until the reviewed cases pass and the Angular confirmation behavior is specified.
+
 ### Speech
 
 - Speech-to-text: measure word error rate, named-entity and technical-term accuracy, language coverage, correction rate, latency, and cost.

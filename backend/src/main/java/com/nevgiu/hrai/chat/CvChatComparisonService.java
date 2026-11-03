@@ -56,10 +56,13 @@ public class CvChatComparisonService {
             return response(OUT_OF_SCOPE_MESSAGE, candidates, List.of());
         }
 
+        // Normalize once and reuse the exact same search intent for every selected candidate. Normalizing separately
+        // would allow provider variation to give otherwise comparable candidates different retrieval queries.
+        List<String> retrievalQueries = evidenceService.prepareRetrievalQueries(normalizedQuestion, organizationId);
         List<CvChatEvidence> evidence = new ArrayList<>();
         for (Long candidateId : candidateIds) {
             List<CvChatEvidence> candidateEvidence = evidenceService.find(
-                    candidateId, normalizedQuestion, organizationId);
+                    candidateId, retrievalQueries, organizationId);
             // A fair comparison must have relevant evidence for every selected person; never let the model convert a
             // retrieval miss into a negative claim about that candidate.
             if (candidateEvidence.isEmpty()) {

@@ -57,9 +57,28 @@ class CvChatEvidenceService {
         Candidate candidate = authorizedCandidate(candidateId, organizationId);
         List<CvDocument> history = documents.findAllByCandidateIdAndOrganizationId(candidate.getId(), organizationId);
         if (properties.semanticRetrievalEnabled() && !history.isEmpty()) {
-            return semanticEvidence(candidate, history.getFirst(), retrievalQueries(candidate, question, organizationId),
+            return semanticEvidence(candidate, history.getFirst(), prepareRetrievalQueries(question, organizationId),
                     organizationId);
         }
+        return nonSemanticEvidence(candidate, history);
+    }
+
+    /**
+     * Uses one caller-prepared query set so a multi-candidate comparison searches every selected CV with identical
+     * semantic intent. This prevents separate provider normalization calls from introducing candidate-to-candidate
+     * retrieval drift inside one comparison request.
+     */
+    @Transactional(readOnly = true)
+    List<CvChatEvidence> find(Long candidateId, List<String> retrievalQueries, String organizationId) {
+        Candidate candidate = authorizedCandidate(candidateId, organizationId);
+        List<CvDocument> history = documents.findAllByCandidateIdAndOrganizationId(candidate.getId(), organizationId);
+        if (properties.semanticRetrievalEnabled() && !history.isEmpty()) {
+            return semanticEvidence(candidate, history.getFirst(), retrievalQueries, organizationId);
+        }
+        return nonSemanticEvidence(candidate, history);
+    }
+
+    private List<CvChatEvidence> nonSemanticEvidence(Candidate candidate, List<CvDocument> history) {
         List<CvChatEvidence> evidence;
         if (history.isEmpty()) {
             evidence = nativeEvidence(candidate, null);
@@ -155,7 +174,7 @@ class CvChatEvidenceService {
         return List.copyOf(evidenceByReference.values());
     }
 
-    private List<String> retrievalQueries(Candidate candidate, String question, String organizationId) {
+    List<String> prepareRetrievalQueries(String question, String organizationId) {
         String normalizedRetrievalQuery;
         try {
             // The original question remains the answer-model input. This separate English query improves multilingual
@@ -164,8 +183,8 @@ class CvChatEvidenceService {
         } catch (RuntimeException normalizationFailure) {
             // Normalization is an availability optimization, not an authorization boundary. The policy-approved
             // original question remains a safe fallback when the additional provider call is unavailable.
-            LOGGER.warn("CV chat retrieval query normalization failed for candidateId={} organizationId={} "
-                            + "failureType={}", candidate.getId(), organizationId,
+            LOGGER.warn("CV chat retrieval query normalization failed for organizationId={} failureType={}",
+                    organizationId,
                     normalizationFailure.getClass().getSimpleName());
             return List.of(question);
         }

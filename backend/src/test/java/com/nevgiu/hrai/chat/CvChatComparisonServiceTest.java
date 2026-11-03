@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class CvChatComparisonServiceTest {
+    private static final List<String> RETRIEVAL_QUERIES =
+            List.of("Compare backend experience", "backend engineering experience");
     private final CvChatEvidenceService evidenceService = mock(CvChatEvidenceService.class);
     private final CvChatQuestionPolicy questionPolicy = mock(CvChatQuestionPolicy.class);
     private final CvChatComparisonModel model = mock(CvChatComparisonModel.class);
@@ -31,14 +33,16 @@ class CvChatComparisonServiceTest {
                 .thenReturn(new CandidateIdentity(8L, "Grace Hopper", "Architect"));
         when(questionPolicy.classify("Compare backend experience"))
                 .thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        when(evidenceService.prepareRetrievalQueries("Compare backend experience", "tenant-a"))
+                .thenReturn(RETRIEVAL_QUERIES);
     }
 
     @Test
     void comparesOnlyExplicitTenantCandidatesAndRequiresCitationsForEach() {
         CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
         CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Distributed systems experience");
-        when(evidenceService.find(7L, "Compare backend experience", "tenant-a")).thenReturn(List.of(ada));
-        when(evidenceService.find(8L, "Compare backend experience", "tenant-a")).thenReturn(List.of(grace));
+        when(evidenceService.find(7L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(grace));
         when(model.compare("Compare backend experience", List.of(
                         new CandidateIdentity(7L, "Ada Lovelace", "Engineer"),
                         new CandidateIdentity(8L, "Grace Hopper", "Architect")), List.of(ada, grace)))
@@ -51,6 +55,9 @@ class CvChatComparisonServiceTest {
         order.verify(evidenceService).authorizeCandidate(7L, "tenant-a");
         order.verify(evidenceService).authorizeCandidate(8L, "tenant-a");
         order.verify(questionPolicy).classify("Compare backend experience");
+        verify(evidenceService).prepareRetrievalQueries("Compare backend experience", "tenant-a");
+        verify(evidenceService).find(7L, RETRIEVAL_QUERIES, "tenant-a");
+        verify(evidenceService).find(8L, RETRIEVAL_QUERIES, "tenant-a");
         assertThat(response.candidates()).extracting(CvChatComparisonResponse.CandidateOption::id)
                 .containsExactly(7L, 8L);
         assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
@@ -113,9 +120,9 @@ class CvChatComparisonServiceTest {
 
     @Test
     void returnsControlledResultWhenOneCandidateHasNoRelevantEvidence() {
-        when(evidenceService.find(7L, "Compare backend experience", "tenant-a"))
+        when(evidenceService.find(7L, RETRIEVAL_QUERIES, "tenant-a"))
                 .thenReturn(List.of(evidence("CV-10", 7L, 10L, "Java experience")));
-        when(evidenceService.find(8L, "Compare backend experience", "tenant-a")).thenReturn(List.of());
+        when(evidenceService.find(8L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of());
 
         CvChatComparisonResponse response = service.compare(
                 List.of(7L, 8L), "Compare backend experience", "tenant-a");
@@ -129,8 +136,8 @@ class CvChatComparisonServiceTest {
     void returnsControlledResultWhenComparisonDoesNotCiteEverySelectedCandidate() {
         CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
         CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Systems experience");
-        when(evidenceService.find(7L, "Compare backend experience", "tenant-a")).thenReturn(List.of(ada));
-        when(evidenceService.find(8L, "Compare backend experience", "tenant-a")).thenReturn(List.of(grace));
+        when(evidenceService.find(7L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(grace));
         when(model.compare(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList(),
                 org.mockito.ArgumentMatchers.anyList())).thenReturn("Only Ada [CV-10].");
 
@@ -147,8 +154,8 @@ class CvChatComparisonServiceTest {
     void removesTrailingInsufficientEvidenceControlTokenFromGroundedComparison() {
         CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
         CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Systems experience");
-        when(evidenceService.find(7L, "Compare backend experience", "tenant-a")).thenReturn(List.of(ada));
-        when(evidenceService.find(8L, "Compare backend experience", "tenant-a")).thenReturn(List.of(grace));
+        when(evidenceService.find(7L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(grace));
         when(model.compare(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList(),
                 org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("Ada lists Java [CV-10]. Grace lists systems [CV-11].\n\nINSUFFICIENT_EVIDENCE");

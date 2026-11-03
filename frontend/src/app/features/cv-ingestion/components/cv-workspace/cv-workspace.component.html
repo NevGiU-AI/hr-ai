@@ -159,6 +159,61 @@
         </div>
       </div>
 
+      <form class="language-scope border rounded bg-light p-3 mt-3" (ngSubmit)="proposeLanguageScope()"
+            aria-labelledby="language-scope-title">
+        <h4 id="language-scope-title" class="h6">Start with a natural request</h4>
+        <p class="text-muted small">
+          Name 2–5 candidates, for example “Compare Ada Lovelace and Grace Hopper for backend engineering.”
+          Candidate cards must be confirmed before any CV evidence is retrieved.
+        </p>
+        <label for="language-comparison-message" class="form-label">Comparison request</label>
+        <textarea id="language-comparison-message" name="languageComparisonMessage" class="form-control"
+                  rows="2" minlength="2" maxlength="2000" [(ngModel)]="languageComparisonMessage"
+                  [disabled]="languageScopeBusy || comparisonBusy"
+                  placeholder="Compare Jane Smith and Peter Jones for this role."></textarea>
+        <button class="btn btn-outline-primary mt-2" type="submit"
+                [disabled]="languageComparisonMessage.trim().length < 2 || languageScopeBusy || comparisonBusy">
+          {{ languageScopeBusy ? 'Finding candidates…' : 'Find candidate cards' }}
+        </button>
+      </form>
+
+      <div class="alert alert-danger mt-3 mb-0" role="alert" *ngIf="languageScopeError">
+        {{ languageScopeError }}
+      </div>
+
+      <section class="language-scope-results mt-3" *ngIf="languageScopeResponse as scope"
+               aria-label="Candidate references requiring confirmation">
+        <article class="border rounded p-3 mb-2" *ngFor="let reference of scope.references; let referenceIndex = index">
+          <div class="d-flex flex-wrap justify-content-between gap-2">
+            <strong>“{{ reference.requestedName }}”</strong>
+            <span class="text-muted small">{{ reference.status === 'RESOLVED' ? 'Exact match' :
+              reference.status === 'NOT_FOUND' ? 'No tenant match' : 'Choose a candidate' }}</span>
+          </div>
+          <div class="d-grid gap-2 mt-2" *ngIf="reference.candidates.length">
+            <button class="candidate-confirmation-card text-start border rounded p-2" type="button"
+                    *ngFor="let candidate of reference.candidates"
+                    [class.selected]="isLanguageCandidateSelected(referenceIndex, candidate.id)"
+                    [attr.aria-pressed]="isLanguageCandidateSelected(referenceIndex, candidate.id)"
+                    (click)="selectLanguageCandidate(referenceIndex, candidate)">
+              <strong>{{ candidate.name }}</strong>
+              <span class="text-muted small d-block">
+                {{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}
+              </span>
+            </button>
+          </div>
+          <p class="text-muted small mt-2 mb-0" *ngIf="reference.truncated">
+            More matches exist. Use a more complete candidate name.
+          </p>
+        </article>
+        <button class="btn btn-primary" type="button" [disabled]="!languageScopeReady() || comparisonBusy"
+                (click)="confirmLanguageScope()">
+          Confirm candidate scope
+        </button>
+        <p class="text-muted small mt-2 mb-0">
+          Confirmation fills the visible comparison scope. Review it, then submit the comparison separately.
+        </p>
+      </section>
+
       <div class="comparison-scope mt-3" aria-live="polite" aria-label="Selected candidates">
         <span class="text-muted small" *ngIf="!comparisonCandidates.length">No candidates selected yet.</span>
         <span class="comparison-chip" *ngFor="let candidate of comparisonCandidates">

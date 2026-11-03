@@ -29,7 +29,33 @@ class CvChatControllerTest {
     @MockitoBean CvChatService service;
     @MockitoBean CvChatCandidateResolutionService candidateResolution;
     @MockitoBean CvChatComparisonService comparisonService;
+    @MockitoBean CvChatLanguageScopeService languageScopeService;
     @MockitoBean SecurityAuditService securityAuditService;
+
+    @Test
+    void proposesCandidateScopeWithoutRetrievingEvidence() throws Exception {
+        AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
+                java.util.List.of());
+        var response = new CvChatLanguageScopeResponse("Compare Ada and Grace", List.of(
+                new CvChatLanguageScopeResponse.Reference("Ada", CvChatLanguageScopeResponse.Status.CHOICES,
+                        List.of(new CvChatLanguageScopeResponse.CandidateOption(7L, "Ada Lovelace", "Engineer")),
+                        false)));
+        when(languageScopeService.propose("Compare Ada and Grace", "tenant-a")).thenReturn(response);
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/candidates/scope")
+                            .contentType("application/json")
+                            .content("{\"message\":\"Compare Ada and Grace\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.references[0].requestedName").value("Ada"))
+                    .andExpect(jsonPath("$.references[0].candidates[0].id").value(7));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        verify(languageScopeService).propose("Compare Ada and Grace", "tenant-a");
+    }
 
     @Test
     void resolvesCandidateNamesInsideTheAuthenticatedOrganization() throws Exception {

@@ -29,6 +29,10 @@
 .evaluation-form select { margin-top: .35rem; }
 .candidate-search-result { background: #fff; }
 .candidate-comparison { background: #f8faff; }
+.language-scope { background: #fff; }
+.candidate-confirmation-card { background: #fff; color: #17233c; }
+.candidate-confirmation-card:hover, .candidate-confirmation-card:focus-visible { border-color: #6f9de8 !important; }
+.candidate-confirmation-card.selected { background: #e7efff; border-color: #2d67c4 !important; box-shadow: 0 0 0 2px rgba(45, 103, 196, .15); }
 .comparison-scope { display: flex; flex-wrap: wrap; gap: .6rem; }
 .comparison-chip { align-items: center; background: #e7efff; border: 1px solid #b9cff8; border-radius: .7rem; color: #17233c; display: inline-flex; gap: .75rem; padding: .5rem .55rem .5rem .7rem; }
 .comparison-chip span { display: flex; flex-direction: column; }

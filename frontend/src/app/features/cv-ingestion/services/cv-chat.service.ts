@@ -2,7 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
-import { CvChatCandidateSearchResponse, CvChatComparisonResponse, CvChatResponse } from '../models/cv-chat.models';
+import {
+  CvChatCandidateSearchResponse,
+  CvChatComparisonResponse,
+  CvChatLanguageScopeResponse,
+  CvChatResponse,
+} from '../models/cv-chat.models';
 
 @Injectable({ providedIn: 'root' })
 export class CvChatService {
@@ -25,5 +30,10 @@ export class CvChatService {
       candidateIds,
       message,
     });
+  }
+
+  /** Interprets candidate-name references, but returns only tenant-scoped cards that still require confirmation. */
+  proposeLanguageScope(message: string): Observable<CvChatLanguageScopeResponse> {
+    return this.http.post<CvChatLanguageScopeResponse>(`${this.apiUrl}/chat/candidates/scope`, { message });
   }
 }

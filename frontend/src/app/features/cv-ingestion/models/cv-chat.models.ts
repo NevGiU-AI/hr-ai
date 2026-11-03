@@ -29,3 +29,18 @@ export interface CvChatComparisonResponse {
   candidates: CvChatCandidateOption[];
   citations: CvChatCitation[];
 }
+
+export type CvChatLanguageReferenceStatus = 'RESOLVED' | 'CHOICES' | 'NOT_FOUND';
+
+/** Candidate cards proposed from natural language before the recruiter confirms any evidence scope. */
+export interface CvChatLanguageReference {
+  requestedName: string;
+  status: CvChatLanguageReferenceStatus;
+  candidates: CvChatCandidateOption[];
+  truncated: boolean;
+}
+
+export interface CvChatLanguageScopeResponse {
+  message: string;
+  references: CvChatLanguageReference[];
+}

@@ -31,7 +31,9 @@ describe('CvWorkspaceComponent', () => {
       'updateCandidateMetadata', 'reprocessDocument',
       'getEvaluationHistory',
     ]);
-    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', ['ask', 'searchCandidates', 'compare']);
+    chatService = jasmine.createSpyObj<CvChatService>('CvChatService', [
+      'ask', 'searchCandidates', 'compare', 'proposeLanguageScope',
+    ]);
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
     service.getCandidateDetails.and.returnValue(of(candidateDetails()));
@@ -235,6 +237,75 @@ describe('CvWorkspaceComponent', () => {
 
     component.removeComparisonCandidate(7);
     expect(component.comparisonCandidates.map((item) => item.id)).toEqual([8]);
+  });
+
+  it('proposes tenant-scoped cards from natural language without comparing before confirmation', () => {
+    chatService.proposeLanguageScope.and.returnValue(of({
+      message: 'Compare Ada Lovelace and Grace',
+      references: [
+        { requestedName: 'Ada Lovelace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'CHOICES', truncated: false, candidates: [
+          { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+          { id: 9, name: 'Grace Murray', currentTitle: 'Developer' },
+        ] },
+      ],
+    }));
+    component.languageComparisonMessage = '  Compare Ada Lovelace and Grace  ';
+
+    component.proposeLanguageScope();
+    fixture.detectChanges();
+
+    expect(chatService.proposeLanguageScope).toHaveBeenCalledOnceWith('Compare Ada Lovelace and Grace');
+    expect(chatService.compare).not.toHaveBeenCalled();
+    expect(component.languageScopeSelections[0]?.id).toBe(7);
+    expect(component.languageScopeSelections[1]).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Grace Hopper');
+    expect(fixture.nativeElement.textContent).toContain('Confirm candidate scope');
+  });
+
+  it('requires explicit confirmation before copying language-first cards into comparison scope', () => {
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace for backend engineering',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'CHOICES', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      null,
+    ];
+
+    component.confirmLanguageScope();
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.languageScopeError).toContain('Choose one candidate card');
+
+    component.selectLanguageCandidate(1, { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    component.confirmLanguageScope();
+
+    expect(component.comparisonCandidates.map((item) => item.id)).toEqual([7, 8]);
+    expect(component.comparisonQuestion).toBe('Compare Ada and Grace for backend engineering');
+    expect(chatService.compare).not.toHaveBeenCalled();
+  });
+
+  it('rejects the same candidate being confirmed for two language references', () => {
+    const ada = { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' };
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Lovelace',
+      references: [
+        { requestedName: 'Ada', status: 'CHOICES', candidates: [ada], truncated: false },
+        { requestedName: 'Lovelace', status: 'CHOICES', candidates: [ada], truncated: false },
+      ],
+    };
+    component.languageScopeSelections = [ada, ada];
+
+    component.confirmLanguageScope();
+
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.languageScopeError).toContain('different candidate');
   });
 
   it('enforces the five-candidate comparison limit without changing the confirmed scope', () => {

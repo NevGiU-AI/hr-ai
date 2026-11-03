@@ -21,6 +21,7 @@ import {
   CvChatCandidateOption,
   CvChatCitation,
   CvChatComparisonResponse,
+  CvChatLanguageScopeResponse,
   CvChatResponse,
 } from '../../models/cv-chat.models';
 import { CvChatService } from '../../services/cv-chat.service';
@@ -65,6 +66,11 @@ export class CvWorkspaceComponent implements OnInit {
   comparisonResponse: CvChatComparisonResponse | null = null;
   comparisonError = '';
   comparisonBusy = false;
+  languageComparisonMessage = '';
+  languageScopeResponse: CvChatLanguageScopeResponse | null = null;
+  languageScopeSelections: Array<CvChatCandidateOption | null> = [];
+  languageScopeBusy = false;
+  languageScopeError = '';
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
   notice = '';
@@ -226,6 +232,82 @@ export class CvWorkspaceComponent implements OnInit {
     this.comparisonCandidates = [];
     this.comparisonQuestion = '';
     this.resetComparisonResult();
+  }
+
+  proposeLanguageScope(): void {
+    const message = this.languageComparisonMessage.trim();
+    if (!this.canUseCvChat || message.length < 2 || message.length > 2000 || this.languageScopeBusy) return;
+
+    this.languageScopeBusy = true;
+    this.languageScopeError = '';
+    this.languageScopeResponse = null;
+    this.languageScopeSelections = [];
+    this.chatService.proposeLanguageScope(message)
+      .pipe(finalize(() => this.languageScopeBusy = false))
+      .subscribe({
+        next: (response) => {
+          this.languageScopeResponse = response;
+          // A unique exact match may be preselected for review, but it remains unconfirmed and triggers no evidence
+          // retrieval until the recruiter presses the separate confirmation button.
+          this.languageScopeSelections = response.references.map((reference) =>
+            reference.status === 'RESOLVED' && reference.candidates.length === 1
+              ? reference.candidates[0]
+              : null);
+          if (!response.references.length) {
+            this.languageScopeError = 'Name at least two candidates explicitly so the scope can be confirmed.';
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          const apiError = error.error as Partial<ApiError> | undefined;
+          this.languageScopeError = apiError?.message || error.message
+            || 'Candidate references could not be interpreted.';
+        },
+      });
+  }
+
+  selectLanguageCandidate(referenceIndex: number, candidate: CvChatCandidateOption): void {
+    this.languageScopeSelections[referenceIndex] = candidate;
+    this.languageScopeSelections = [...this.languageScopeSelections];
+    this.languageScopeError = '';
+  }
+
+  isLanguageCandidateSelected(referenceIndex: number, candidateId: number): boolean {
+    return this.languageScopeSelections[referenceIndex]?.id === candidateId;
+  }
+
+  confirmLanguageScope(): void {
+    const response = this.languageScopeResponse;
+    if (!response || response.references.length < this.minimumComparisonCandidates) return;
+    const selected = this.languageScopeSelections.filter(
+      (candidate): candidate is CvChatCandidateOption => candidate !== null);
+    if (selected.length !== response.references.length) {
+      this.languageScopeError = 'Choose one candidate card for every referenced name.';
+      return;
+    }
+    const unique = new Map(selected.map((candidate) => [candidate.id, candidate]));
+    if (unique.size !== selected.length) {
+      this.languageScopeError = 'Each referenced name must resolve to a different candidate.';
+      return;
+    }
+    if (unique.size > this.maximumComparisonCandidates) {
+      this.languageScopeError = `Select no more than ${this.maximumComparisonCandidates} candidates.`;
+      return;
+    }
+
+    // Confirmation establishes the same explicit verified-ID scope used by picker-first comparison. It deliberately
+    // does not call the comparison endpoint: the recruiter can still review/edit the scope and question first.
+    this.comparisonCandidates = [...unique.values()];
+    this.comparisonQuestion = response.message;
+    this.resetComparisonResult();
+    this.languageScopeError = '';
+  }
+
+  languageScopeReady(): boolean {
+    const references = this.languageScopeResponse?.references ?? [];
+    return references.length >= this.minimumComparisonCandidates
+      && references.length <= this.maximumComparisonCandidates
+      && this.languageScopeSelections.length === references.length
+      && this.languageScopeSelections.every((candidate) => candidate !== null);
   }
 
   compareCandidates(): void {

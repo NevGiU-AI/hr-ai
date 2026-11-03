@@ -166,7 +166,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   citations, response language, repeated answers, relevancy, and fact checking. Live-provider and environment
   acceptance are separated deliberately: the focused live-provider gate and scoped staging acceptance passed on
   30 October 2026, with staging running main revision `d46f435`; focused production acceptance followed in release
-  `v0.23.0` at main revision `083b9c4`. The known French KLx paraphrase recall miss remains future correction work.
+  `v0.23.0` at main revision `083b9c4`. At that revision the known French KLx paraphrase remained a safe recall miss;
+  the subsequent dual-query correction below resolved it in staging and production.
 - [x] Implement the measured multilingual-recall correction without lowering the global threshold: normalize each
   policy-approved question into one constrained English retrieval query, search both original and normalized wording,
   deduplicate and rank the union, retain mandatory tenant/candidate/current-document/source-version controls, cap final
@@ -256,7 +257,7 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
 - [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
   application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,
-  French, and Portuguese, and evaluate both localization and the documented French KLx paraphrase retrieval miss.
+  French, and Portuguese, and retain the corrected French KLx paraphrase as a multilingual regression case.
 - [ ] Add push-to-talk speech input with a visible, editable transcript before submission.
 - [ ] Delete raw voice input after transcription by default and document any approved retention exception.
 - [ ] Add optional text-to-speech playback with pause, speed, accessibility, and privacy controls.

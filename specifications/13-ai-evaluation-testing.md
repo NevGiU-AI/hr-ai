@@ -258,10 +258,12 @@ synthetic provider gate rather than replacing it.
 The real-CV French paraphrase `Sur quoi a-t-il travaillé chez KLx ?` remained below the accepted retrieval boundary and
 returned controlled insufficient evidence, while the English equivalent and another French formulation retrieved the
 expected document. This is an accepted safe failure for PR #106's language-preservation scope, not evidence that
-multilingual retrieval is complete. Preserve the pair as a future expected-document recall fixture and measure
-similarity/query normalization or translation before changing the global threshold. Application-owned safe messages
+multilingual retrieval is complete. The pair became the expected-document recall fixture for the subsequent measured
+correction, which had to measure query normalization or translation before changing the global threshold.
+Application-owned safe messages
 and their Angular explanatory text remain English; structured outcomes and deterministic EN/FR/PT localization are
-scheduled immediately before dashboard implementation. Production acceptance followed later the same day.
+scheduled immediately before dashboard implementation. Production acceptance followed later the same day. PR #109's
+dual-query implementation subsequently resolved this real-CV miss without lowering the threshold.
 
 #### Multilingual production acceptance — 30 October 2026
 
@@ -271,7 +273,8 @@ citations remained candidate-scoped, policy refusals remained correct, and backe
 no regression. The release required no new environment, Flyway, database, Compose, or frontend configuration.
 
 This acceptance does not reclassify the real-CV `Sur quoi a-t-il travaillé chez KLx ?` result as successful retrieval;
-it remains a safe controlled insufficient-evidence case and a required future expected-document recall fixture.
+at the PR #106 boundary it remained a safe controlled insufficient-evidence case and a required expected-document
+recall fixture. PR #109 subsequently made that fixture pass in staging and production, and it remains a regression case.
 Application-owned safe-message and Angular-label localization also remains deferred until immediately before the
 dashboard. Production acceptance therefore closes PR #106's language-preservation scope, not the broader multilingual
 retrieval or localization milestones.

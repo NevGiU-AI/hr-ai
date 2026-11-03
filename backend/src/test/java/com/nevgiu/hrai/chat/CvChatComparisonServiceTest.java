@@ -143,6 +143,26 @@ class CvChatComparisonServiceTest {
         assertThat(response.citations()).isEmpty();
     }
 
+    @Test
+    void removesTrailingInsufficientEvidenceControlTokenFromGroundedComparison() {
+        CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
+        CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Systems experience");
+        when(evidenceService.find(7L, "Compare backend experience", "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, "Compare backend experience", "tenant-a")).thenReturn(List.of(grace));
+        when(model.compare(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn("Ada lists Java [CV-10]. Grace lists systems [CV-11].\n\nINSUFFICIENT_EVIDENCE");
+
+        CvChatComparisonResponse response = service.compare(
+                List.of(7L, 8L), "Compare backend experience", "tenant-a");
+
+        assertThat(response.answer())
+                .isEqualTo("Ada lists Java [CV-10]. Grace lists systems [CV-11].")
+                .doesNotContain(CvChatModel.INSUFFICIENT_EVIDENCE);
+        assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
+                .containsExactly(7L, 8L);
+    }
+
     private CvChatEvidence evidence(String reference, Long candidateId, Long documentId, String excerpt) {
         return new CvChatEvidence(reference, candidateId, documentId, null, excerpt);
     }

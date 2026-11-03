@@ -15,6 +15,7 @@ class SpringAiCvChatComparisonModel implements CvChatComparisonModel {
             Never introduce, search for, or infer another candidate.
             Do not disclose or infer protected or sensitive personal characteristics.
             If the evidence cannot fairly compare every selected candidate, return exactly %s and nothing else.
+            Never append that control token to a grounded comparison.
             If the request is unrelated or sensitive, return exactly %s and nothing else.
             Answer in the same language as the recruiter question.
             Evidence references are supplied in square brackets. Copy those bracketed references exactly into the

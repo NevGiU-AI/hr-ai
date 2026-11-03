@@ -68,7 +68,11 @@ decisions.
   citations, navigated cited documents, and received controlled insufficient-evidence responses when generated
   comparisons did not cite every selected candidate. Production repeated the focused scope, grounded-comparison,
   citation-navigation, authorization, controlled-response, and incomplete-citation checks successfully on 2 November
-  2026 in release `v0.28.0`; the picker-first comparison flow is accepted in both environments.
+  2026 in release `v0.28.0`; the picker-first comparison flow is accepted in both environments. PRs #128–#130 then
+  added language-first candidate-card confirmation, order-independent multi-token name resolution, control-token
+  containment, and one shared criteria-focused retrieval-query set per comparison. Repeated grounded comparisons with
+  evidence and citations for every confirmed candidate passed staging and production acceptance on 3 November 2026
+  in release `v0.29.0`, without schema or environment changes.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.
@@ -101,7 +105,8 @@ versioned English/French/Portuguese policy dataset. Multilingual paraphrase reca
 were evaluated next: generated EN/FR/PT answers passed scoped staging language/citation checks, while one French KLx
 paraphrase remained a safe retrieval miss. The same scoped behavior passed focused production acceptance on
 30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
-1 November 2026 without lowering the `0.35` threshold, followed by focused production acceptance in release `v0.24.0`.
+1 November 2026 without lowering the `0.35` threshold and resolved that real-CV French KLx miss, followed by focused
+production acceptance in release `v0.24.0`.
 The picker-first comparison UI is implemented and accepted in staging. The language-first confirmation flow,
 speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy

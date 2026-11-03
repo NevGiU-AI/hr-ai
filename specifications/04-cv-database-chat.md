@@ -242,7 +242,8 @@ No unsupported claim or citation was produced. PR #106 intentionally changed ans
 chunking, embeddings, or threshold policy, so this safe multilingual recall miss requires a separate measured retrieval
 correction. Application-owned out-of-scope and insufficient-evidence messages plus the Angular explanatory note remain
 English; structured outcomes and EN/FR/PT controlled-message localization are deferred until immediately before the
-dashboard.
+dashboard. This paragraph records PR #106's historical boundary; PR #109 subsequently corrected the real-CV miss as
+recorded below.
 
 The measured multilingual-recall correction passed focused staging acceptance on 1 November 2026 after PR #109 was
 merged at main revision `26d59e8`. The deployed path searched both the original wording and its constrained English
@@ -302,9 +303,10 @@ The multilingual generated-answer behavior passed focused production acceptance 
 `v0.23.0` at main revision `083b9c4`. English grounded answers remained correct; repeated grounded French and Portuguese
 answers preserved their question language and authorized citations; policy refusals, tenant boundaries, backend health,
 and privacy-safe logs did not regress. No new environment, Flyway, database, Compose, or frontend configuration was
-required. The real-CV French KLx paraphrase remains a documented controlled insufficient-evidence case rather than a
-resolved retrieval path. Application-owned safe messages and their Angular explanatory text remain English until the
-planned pre-dashboard localization slice.
+required. At this release boundary, the real-CV French KLx paraphrase was a documented controlled
+insufficient-evidence case rather than a resolved retrieval path. PR #109 subsequently resolved that path in release
+`v0.24.0`. Application-owned safe messages and their Angular explanatory text remain English until the planned
+pre-dashboard localization slice.
 
 The dual-query multilingual-recall correction passed focused production acceptance on 1 November 2026 in release
 `v0.24.0` at main revision `7576611`. Production repeated the successful grounded English, French, and Portuguese
@@ -478,6 +480,22 @@ sensitive/out-of-scope/insufficient-evidence responses, retry behavior, and role
 complete citation coverage returned controlled insufficient evidence rather than `502` or partial provider output.
 Privacy-safe logs contained no recruiter question, generated answer, or CV evidence. The picker-first comparison flow
 is therefore accepted in both staging and production.
+
+PRs #128–#130 completed and stabilized the language-first confirmation path on 3 November 2026. A recruiter can name
+two to five candidates in a natural comparison request, review tenant-scoped candidate cards, resolve ambiguity
+explicitly, and confirm the visible IDs before any CV evidence is retrieved. PR #129 made multi-token candidate lookup
+independent of stored name order and prevented a trailing provider control token from appearing in a grounded answer.
+PR #130 then prepared the criteria-focused retrieval-query set once per comparison and reused that exact set for every
+confirmed candidate, rather than allowing separate normalization calls to introduce candidate-to-candidate retrieval
+drift.
+
+Focused staging acceptance repeated the same confirmed comparison and consistently returned grounded evidence and
+citations for every selected candidate. Retrieval summaries showed the same query-count structure with accepted
+matches for both candidates; no raw `INSUFFICIENT_EVIDENCE` token, `CITATION_COVERAGE` rejection, query-normalization
+failure, or comparison-provider error appeared. Production repeated those checks successfully in release `v0.29.0`.
+No schema, Flyway, environment-variable, or frontend configuration change was required. The picker-first and
+language-first entry paths are therefore accepted in staging and production through the same verified-ID comparison
+boundary.
 
 ## Inputs and outputs
 

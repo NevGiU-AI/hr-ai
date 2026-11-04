@@ -532,7 +532,7 @@ Outputs:
    missing/stale backfill in staging; evaluation-summary indexing remains future work.
 5. Implement organization- and role-based retrieval filters before semantic search.
 6. Build a retrieval service that returns relevant chunks plus structured candidate data.
-7. Build Spring AI tools for candidate search, tenant-scoped name resolution, candidate detail, filtering, comparison,
+7. [~] Build Spring AI tools for candidate search, tenant-scoped name resolution, candidate detail, filtering, comparison,
    evidence, document status, and governed dashboard aggregates. Resolve UI selections or unambiguous names to
    verified candidate IDs before retrieval; return not found or require disambiguation instead of allowing the model
    to guess the candidate set. Make tools request-scoped, inject authenticated user and organization context outside
@@ -550,6 +550,14 @@ Outputs:
 18. Add pause, resume, speed, language, accessibility, and sensitive-content playback controls.
 19. Measure transcription accuracy, voice latency, playback usage, and cost without profiling the speaker.
 20. Add the selected external messaging channel only after web-chat acceptance criteria pass.
+
+The first read-tool foundation now provides request-scoped `search_candidates` and `get_candidate_summary` callbacks,
+trusted server-side organization/role injection, bounded execution, and an internal opt-in orchestrator. Discovery can
+register only search; confirmed-scope planning may register both tools, but summary access is restricted to the exact
+tenant-authorized IDs installed after human confirmation. The model returns only an application-validated workflow
+kind plus presentation text—it cannot return candidate IDs, organization, role, or authorization state. Illegal phase
+transitions such as claiming `CONFIRMED_SCOPE_READY` during discovery fail closed. No controller or Angular consumer is
+exposed yet; API activation remains gated by the live-provider attack suite and UI confirmation contract.
 
 ## Acceptance criteria
 

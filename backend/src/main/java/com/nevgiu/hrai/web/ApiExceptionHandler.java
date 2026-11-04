@@ -5,6 +5,7 @@ import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.candidate.CvOriginalAccessException;
 import com.nevgiu.hrai.candidate.CandidateErasureException;
 import com.nevgiu.hrai.evaluation.EvaluationException;
+import com.nevgiu.hrai.job.JobGenerationException;
 import com.nevgiu.hrai.security.AccountAdministrationException;
 import com.nevgiu.hrai.security.PasswordManagementException;
 import com.nevgiu.hrai.security.AppUserPrincipal;
@@ -47,6 +48,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EvaluationException.class)
     public ResponseEntity<ApiError> handleEvaluation(EvaluationException exception, HttpServletRequest request) {
         return response(exception.getStatus(), exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(JobGenerationException.class)
+    public ResponseEntity<ApiError> handleJobGeneration(JobGenerationException exception, HttpServletRequest request) {
+        return response(exception.status(), exception.getMessage(), request, Map.of());
     }
 
     @ExceptionHandler(CvChatException.class)

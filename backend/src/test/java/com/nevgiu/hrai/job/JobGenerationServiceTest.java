@@ -11,10 +11,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -92,17 +94,35 @@ class JobGenerationServiceTest {
     }
 
     @Test
-    void parseModelResponse_handlesInvalidJsonGracefully() {
+    void parseModelResponse_rejectsInvalidProviderJson() {
         JobRepository dummyRepo = null;
         ChatClient chatClient = null;
 
         var service = new JobGenerationService(chatClient, new ObjectMapper(), dummyRepo);
 
-        JobGenerationResponse res = service.parseModelResponse("NOT JSON");
+        assertThatThrownBy(() -> service.parseModelResponse("NOT JSON"))
+                .isInstanceOf(JobGenerationException.class)
+                .hasMessage("AI job generation returned an invalid response")
+                .satisfies(error -> assertThat(((JobGenerationException) error).status())
+                        .isEqualTo(HttpStatus.BAD_GATEWAY));
+    }
 
-        assertThat(res.jobOffer().inferredTitle()).isEqualTo("Unknown Title");
-        assertThat(res.missingInfo()).contains("parseError");
-        assertThat(res.suggestions()).isNotEmpty();
+    @Test
+    void generateJobOffer_mapsProviderFailureToSafeBadGatewayResponse() {
+        ChatClient failingClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(failingClient.prompt().system(anyString()).user(anyString()).call().content())
+                .thenThrow(new IllegalStateException("provider credential rejected"));
+        var service = new JobGenerationService(failingClient, objectMapper, jobRepository);
+
+        JobGenerationRequest request = new JobGenerationRequest(
+                "Senior backend developer", null, null, null, null, null);
+
+        assertThatThrownBy(() -> service.generateJobOffer(request))
+                .isInstanceOf(JobGenerationException.class)
+                .hasMessage("AI job generation service is temporarily unavailable. "
+                        + "Please contact an administrator or try again later")
+                .satisfies(error -> assertThat(((JobGenerationException) error).status())
+                        .isEqualTo(HttpStatus.BAD_GATEWAY));
     }
 
     @Test

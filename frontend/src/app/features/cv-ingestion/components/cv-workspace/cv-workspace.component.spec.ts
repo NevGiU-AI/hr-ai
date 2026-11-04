@@ -417,6 +417,18 @@ describe('CvWorkspaceComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Retry');
   });
 
+  it('does not expose misleading browser status text for an unstructured chat failure', () => {
+    chatService.ask.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 500, statusText: 'OK',
+    })));
+    component.chatQuestion = 'Summarize the CV.';
+
+    component.askCv();
+
+    expect(component.chatError).toBe('The service is temporarily unavailable. Please try again later.');
+    expect(component.chatError).not.toContain('500 OK');
+  });
+
   it('does not offer CV chat to a read-only user', () => {
     auth.user.roles = ['READ_ONLY'];
     fixture.detectChanges();
@@ -475,6 +487,17 @@ describe('CvWorkspaceComponent', () => {
     fixture.detectChanges();
     expect(component.evaluation).toBeNull();
     expect(component.error).toBe('Evaluation provider returned invalid JSON');
+  });
+
+  it('does not expose misleading browser status text for unstructured server errors', () => {
+    service.evaluate.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 500, statusText: 'OK',
+    })));
+
+    component.evaluate();
+
+    expect(component.error).toBe('The service is temporarily unavailable. Please try again later.');
+    expect(component.error).not.toContain('500 OK');
   });
 
   it('confirms and erases a candidate as an administrator', () => {

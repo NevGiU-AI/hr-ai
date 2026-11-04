@@ -352,6 +352,8 @@ recovery set, with environment-isolated credentials and recorded evidence.
 - [ ] Add model, token, latency, error, retrieval-quality, transcription-quality, media, and cost monitoring.
 - [ ] Add privacy-safe Spring AI observations for chat, advisors, models, embeddings, tools, and vector stores with all content-bearing telemetry disabled.
 - [ ] Add custom OCR, speech, messaging, backup, evaluation-run, confirmation, and background-job observations.
+- [ ] Evaluate Prometheus plus Grafana as the initial open-source metrics/dashboard stack; keep Docker log inspection as
+  the current single-host practice and do not deploy the observability stack before this milestone.
 - [ ] Export metrics, traces, and logs through encrypted, authenticated, environment-separated off-server collection without exposing Actuator publicly.
 - [ ] Validate trace propagation across virtual threads, streaming, scheduled work, background jobs, and provider callbacks.
 - [ ] Build and test actionable dashboards, alerts, telemetry-pipeline monitoring, operator access, redaction, and incident-export procedures.

@@ -6,13 +6,17 @@ import com.nevgiu.hrai.job.dto.GeneratedJobOffer;
 import com.nevgiu.hrai.job.dto.JobGenerationRequest;
 import com.nevgiu.hrai.job.dto.JobGenerationResponse;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.List;
 
 @Service
 public class JobGenerationService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobGenerationService.class);
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
@@ -32,11 +36,21 @@ public class JobGenerationService {
         String systemPrompt = buildSystemPrompt();
         String userPrompt = buildUserPrompt(request);
 
-        String modelResponse = chatClient.prompt()
-                .system(systemPrompt)
-                .user(userPrompt)
-                .call()
-                .content();
+        String modelResponse;
+        try {
+            modelResponse = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(userPrompt)
+                    .call()
+                    .content();
+        } catch (RuntimeException providerFailure) {
+            // Provider exceptions can contain request or credential details; expose only a stable domain error.
+            LOGGER.warn("AI job generation provider call failed failureType={}",
+                    providerFailure.getClass().getSimpleName());
+            throw new JobGenerationException(HttpStatus.BAD_GATEWAY,
+                    "AI job generation service is temporarily unavailable. "
+                            + "Please contact an administrator or try again later");
+        }
 
         return parseModelResponse(modelResponse);
     }
@@ -98,21 +112,8 @@ public class JobGenerationService {
         try {
             return objectMapper.readValue(json, JobGenerationResponse.class);
         } catch (IOException e) {
-            GeneratedJobOffer emptyOffer = new GeneratedJobOffer(
-                    "Unknown Title",
-                    "",
-                    "",
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    "",
-                    "",
-                    "",
-                    "formal"
-            );
-            return new JobGenerationResponse(emptyOffer, List.of("parseError"), List.of(e.getMessage()));
+            throw new JobGenerationException(HttpStatus.BAD_GATEWAY,
+                    "AI job generation returned an invalid response");
         }
     }
 

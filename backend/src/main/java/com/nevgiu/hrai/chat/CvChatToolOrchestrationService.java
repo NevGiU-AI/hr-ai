@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashSet;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Internal orchestration boundary. It is intentionally not exposed by a controller until structured outcomes,
@@ -17,42 +19,88 @@ import java.util.List;
 @Service
 public class CvChatToolOrchestrationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CvChatToolOrchestrationService.class);
+    private static final String REFUSAL_MESSAGE =
+            "I can only help plan job-relevant candidate review within the authorized confirmed scope. "
+                    + "I cannot provide or infer protected or sensitive personal characteristics.";
 
     private final CvChatEvidenceService evidenceService;
     private final CvChatReadToolRegistry registry;
     private final CvChatToolScope scope;
+    private final CvChatQuestionPolicy questionPolicy;
     private final CvChatToolOrchestrationModel model;
 
     CvChatToolOrchestrationService(CvChatEvidenceService evidenceService, CvChatReadToolRegistry registry,
-                                   CvChatToolScope scope, CvChatToolOrchestrationModel model) {
+                                   CvChatToolScope scope, CvChatQuestionPolicy questionPolicy,
+                                   CvChatToolOrchestrationModel model) {
         this.evidenceService = evidenceService;
         this.registry = registry;
         this.scope = scope;
+        this.questionPolicy = questionPolicy;
         this.model = model;
     }
 
-    public String discover(String message) {
-        return call(message, registry.discoveryCallbacks(), 0);
+    private static final Set<CvChatToolOrchestrationOutcome.Kind> DISCOVERY_OUTCOMES = EnumSet.of(
+            CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
+            CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED,
+            CvChatToolOrchestrationOutcome.Kind.REFUSED);
+    private static final Set<CvChatToolOrchestrationOutcome.Kind> CONFIRMED_OUTCOMES = EnumSet.of(
+            CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
+            CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED,
+            CvChatToolOrchestrationOutcome.Kind.REFUSED);
+
+    public CvChatToolOrchestrationOutcome discover(String message) {
+        return call(message, CvChatToolOrchestrationMode.DISCOVERY, registry.discoveryCallbacks(),
+                DISCOVERY_OUTCOMES, 0);
     }
 
-    public String planConfirmedScope(String message, List<Long> requestedCandidateIds, String organizationId) {
+    public CvChatToolOrchestrationOutcome planConfirmedScope(String message, List<Long> requestedCandidateIds,
+                                                              String organizationId) {
         List<Long> candidateIds = validateIds(requestedCandidateIds);
         // Authorize the complete set before installing it. Missing and cross-tenant IDs retain the same generic 404.
         candidateIds.forEach(candidateId -> evidenceService.authorizeCandidate(candidateId, organizationId));
         scope.confirm(candidateIds);
-        return call(message, registry.confirmedScopeCallbacks(), candidateIds.size());
+        return call(message, CvChatToolOrchestrationMode.CONFIRMED_SCOPE, registry.confirmedScopeCallbacks(),
+                CONFIRMED_OUTCOMES, candidateIds.size());
     }
 
-    private String call(String message, List<org.springframework.ai.tool.ToolCallback> callbacks, int candidateCount) {
+    private CvChatToolOrchestrationOutcome call(String message,
+                                                 CvChatToolOrchestrationMode mode,
+                                                 List<org.springframework.ai.tool.ToolCallback> callbacks,
+                                                 Set<CvChatToolOrchestrationOutcome.Kind> allowedOutcomes,
+                                                 int candidateCount) {
         if (message == null || message.isBlank()) {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "Chat message is required");
         }
         try {
-            String response = model.respond(message.strip(), callbacks);
-            if (response == null || response.isBlank()) {
-                throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat provider returned an empty response");
+            String normalizedMessage = message.strip();
+            CvChatQuestionPolicyResult policyResult = questionPolicy.classify(normalizedMessage);
+            if (policyResult == CvChatQuestionPolicyResult.SENSITIVE) {
+                // The existing policy's OUT_OF_SCOPE label is evidence-question-specific: legitimate scope-planning
+                // requests may receive it because they ask to find or confirm candidates rather than inspect a CV.
+                // Its SENSITIVE decision is reusable as a hard pre-tool boundary and prevents any candidate lookup.
+                LOGGER.info("CV chat tool orchestration rejected at pre-tool policy for candidateCount={} policyResult={}",
+                        candidateCount, policyResult);
+                return new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+                        REFUSAL_MESSAGE);
             }
-            return response.trim();
+            CvChatToolOrchestrationOutcome outcome = model.respond(normalizedMessage, mode, callbacks);
+            if (outcome == null || outcome.kind() == null || outcome.message() == null
+                    || outcome.message().isBlank()) {
+                throw new CvChatException(HttpStatus.BAD_GATEWAY,
+                        "CV chat provider returned an invalid orchestration response");
+            }
+            if (!allowedOutcomes.contains(outcome.kind())) {
+                // A model cannot advance the workflow past an application-owned confirmation gate.
+                LOGGER.warn("CV chat tool orchestration rejected invalid transition for candidateCount={} outcome={}",
+                        candidateCount, outcome.kind());
+                throw new CvChatException(HttpStatus.BAD_GATEWAY,
+                        "CV chat provider returned an invalid orchestration response");
+            }
+            if (outcome.kind() == CvChatToolOrchestrationOutcome.Kind.REFUSED) {
+                // Provider wording is untrusted; refusals always use application-owned text.
+                return new CvChatToolOrchestrationOutcome(outcome.kind(), REFUSAL_MESSAGE);
+            }
+            return new CvChatToolOrchestrationOutcome(outcome.kind(), outcome.message().trim());
         } catch (CvChatException failure) {
             throw failure;
         } catch (RuntimeException failure) {

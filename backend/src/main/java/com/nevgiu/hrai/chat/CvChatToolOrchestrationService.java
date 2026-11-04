@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Internal orchestration boundary. It is intentionally not exposed by a controller until structured outcomes,
- * prompt-injection evaluation, and UI confirmation behavior are accepted.
+ * Policy-controlled orchestration boundary behind the reviewed discovery and confirmed-scope HTTP endpoints.
+ * Structured outcomes, prompt-injection evaluation, and explicit application-owned scope remain mandatory even though
+ * the Angular application has not yet activated this API.
  */
 @Service
 public class CvChatToolOrchestrationService {

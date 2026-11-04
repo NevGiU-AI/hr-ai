@@ -556,14 +556,20 @@ trusted server-side organization/role injection, bounded execution, and an inter
 register only search; confirmed-scope planning may register both tools, but summary access is restricted to the exact
 tenant-authorized IDs installed after human confirmation. The model returns only an application-validated workflow
 kind plus presentation text—it cannot return candidate IDs, organization, role, or authorization state. Illegal phase
-transitions such as claiming `CONFIRMED_SCOPE_READY` during discovery fail closed. No controller or Angular consumer is
-exposed yet; API activation remains gated by the live-provider attack suite and UI confirmation contract.
+transitions such as claiming `CONFIRMED_SCOPE_READY` during discovery fail closed.
 
 The next read-tool increment adds `get_job_requirements`. It is excluded from discovery and ordinary candidate-only
 planning. Application code must first tenant-authorize one recruiter-selected approved job and install its ID into the
 immutable request scope; only then does the registry expose the callback. Execution repeats both confirmed-scope and
 tenant checks and returns bounded evaluation criteria without organization, compensation, benefits, tone, or generation
 metadata. This prepares job-grounded planning without giving the model authority to select a job.
+
+The reviewed orchestration API now separates discovery from confirmed-scope planning at
+`POST /api/chat/tools/discover` and `POST /api/chat/tools/confirmed-scope`. Jakarta validation bounds messages and IDs;
+Spring Security enforces authentication, CSRF, and the existing chat roles. The controller obtains organization only
+from `AppUserPrincipal`, ignores injected organization/role fields, and returns only the validated workflow kind and
+presentation text. Controller and security tests cover role access, CSRF, authentication, validation, tenant-context
+injection attempts, minimized responses, and structured provider failures. No Angular caller is connected yet.
 
 ## Acceptance criteria
 

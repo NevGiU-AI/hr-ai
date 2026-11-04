@@ -466,6 +466,32 @@ describe('CvWorkspaceComponent', () => {
     expect(text).toContain('Strong backend alignment');
   });
 
+  it('renders the current evaluation and then persisted history immediately after its controls', () => {
+    service.evaluate.and.returnValue(of(evaluationResponse()));
+
+    component.evaluate();
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('.evaluation-form') as HTMLElement;
+    const result = fixture.nativeElement.querySelector('.evaluation-result') as HTMLElement;
+    const history = fixture.nativeElement.querySelector('.evaluation-history') as HTMLElement;
+    const details = fixture.nativeElement.querySelector('.candidate-details') as HTMLElement;
+    expect(form.nextElementSibling).toBe(result);
+    expect(result.nextElementSibling).toBe(history);
+    expect(history.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders persisted evaluation history immediately after the controls when no current result exists', () => {
+    component.evaluation = null;
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('.evaluation-form') as HTMLElement;
+    const history = fixture.nativeElement.querySelector('.evaluation-history') as HTMLElement;
+    const details = fixture.nativeElement.querySelector('.candidate-details') as HTMLElement;
+    expect(form.nextElementSibling).toBe(history);
+    expect(history.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('renders current and stale persisted evaluation history', () => {
     const stale = { ...historyItem(), id: 2, current: false, invalidatedAt: '2026-10-23T09:00:00Z' };
     component.evaluationHistory = [historyItem(), stale];

@@ -44,3 +44,18 @@ export interface CvChatLanguageScopeResponse {
   message: string;
   references: CvChatLanguageReference[];
 }
+
+export type CvChatToolWorkflowKind =
+  | 'CANDIDATE_CONFIRMATION_REQUIRED'
+  | 'CLARIFICATION_REQUIRED'
+  | 'CONFIRMED_SCOPE_READY'
+  | 'REFUSED';
+
+/**
+ * Application-validated workflow decision from the Spring AI read-tool orchestrator.
+ * Candidate IDs and authorization facts deliberately remain outside the model-owned response.
+ */
+export interface CvChatToolOrchestrationOutcome {
+  kind: CvChatToolWorkflowKind;
+  message: string;
+}

@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { finalize, forkJoin, switchMap } from 'rxjs';
+import { EMPTY, finalize, forkJoin, switchMap } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
   ApiError,
@@ -23,6 +23,7 @@ import {
   CvChatComparisonResponse,
   CvChatLanguageScopeResponse,
   CvChatResponse,
+  CvChatToolOrchestrationOutcome,
 } from '../../models/cv-chat.models';
 import { CvChatService } from '../../services/cv-chat.service';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
@@ -71,6 +72,8 @@ export class CvWorkspaceComponent implements OnInit {
   languageScopeSelections: Array<CvChatCandidateOption | null> = [];
   languageScopeBusy = false;
   languageScopeError = '';
+  languageWorkflowOutcome: CvChatToolOrchestrationOutcome | null = null;
+  private languageWorkflowRequest = 0;
   busyAction: 'pdf' | 'archive' | 'initial' | 'evaluation' | 'erasure' | 'details' | 'document' | 'metadata' | null = null;
   error = '';
   notice = '';
@@ -239,12 +242,28 @@ export class CvWorkspaceComponent implements OnInit {
 
     this.languageScopeBusy = true;
     this.languageScopeError = '';
+    this.languageWorkflowOutcome = null;
     this.languageScopeResponse = null;
     this.languageScopeSelections = [];
-    this.chatService.proposeLanguageScope(message)
-      .pipe(finalize(() => this.languageScopeBusy = false))
+    const request = ++this.languageWorkflowRequest;
+    this.chatService.discoverWithTools(message)
+      .pipe(
+        switchMap((outcome) => {
+          if (!this.isCurrentLanguageRequest(request, message)) return EMPTY;
+          this.languageWorkflowOutcome = outcome;
+          // Candidate cards remain deterministic application data. They are requested only when the reviewed
+          // orchestrator decision allows discovery to continue.
+          return outcome.kind === 'CANDIDATE_CONFIRMATION_REQUIRED'
+            ? this.chatService.proposeLanguageScope(message)
+            : EMPTY;
+        }),
+        finalize(() => {
+          if (request === this.languageWorkflowRequest) this.languageScopeBusy = false;
+        }),
+      )
       .subscribe({
         next: (response) => {
+          if (!this.isCurrentLanguageRequest(request, message)) return;
           this.languageScopeResponse = response;
           // A unique exact match may be preselected for review, but it remains unconfirmed and triggers no evidence
           // retrieval until the recruiter presses the separate confirmation button.
@@ -257,7 +276,9 @@ export class CvWorkspaceComponent implements OnInit {
           }
         },
         error: (error: HttpErrorResponse) => {
-          this.languageScopeError = this.apiErrorMessage(error, 'Candidate references could not be interpreted.');
+          if (this.isCurrentLanguageRequest(request, message)) {
+            this.languageScopeError = this.apiErrorMessage(error, 'Candidate references could not be interpreted.');
+          }
         },
       });
   }
@@ -265,7 +286,10 @@ export class CvWorkspaceComponent implements OnInit {
   selectLanguageCandidate(referenceIndex: number, candidate: CvChatCandidateOption): void {
     this.languageScopeSelections[referenceIndex] = candidate;
     this.languageScopeSelections = [...this.languageScopeSelections];
+    // Invalidates any confirmed-scope result already in flight for the previous card selection.
+    this.languageWorkflowRequest++;
     this.languageScopeError = '';
+    this.languageWorkflowOutcome = null;
   }
 
   isLanguageCandidateSelected(referenceIndex: number, candidateId: number): boolean {
@@ -291,12 +315,54 @@ export class CvWorkspaceComponent implements OnInit {
       return;
     }
 
-    // Confirmation establishes the same explicit verified-ID scope used by picker-first comparison. It deliberately
-    // does not call the comparison endpoint: the recruiter can still review/edit the scope and question first.
-    this.comparisonCandidates = [...unique.values()];
-    this.comparisonQuestion = response.message;
-    this.resetComparisonResult();
+    const candidates = [...unique.values()];
+    const candidateIds = candidates.map((candidate) => candidate.id);
+    const jobId = this.selectedJobId;
+    const request = ++this.languageWorkflowRequest;
+    this.languageScopeBusy = true;
     this.languageScopeError = '';
+    this.languageWorkflowOutcome = null;
+    this.chatService.planConfirmedScope(response.message, candidateIds, jobId)
+      .pipe(finalize(() => {
+        if (request === this.languageWorkflowRequest) this.languageScopeBusy = false;
+      }))
+      .subscribe({
+        next: (outcome) => {
+          if (!this.isCurrentConfirmedScope(request, response.message, candidateIds, jobId)) return;
+          this.languageWorkflowOutcome = outcome;
+          if (outcome.kind !== 'CONFIRMED_SCOPE_READY') return;
+
+          // A ready decision establishes the same explicit verified-ID scope used by picker-first comparison. It
+          // still does not retrieve CV evidence; the recruiter reviews the visible scope and submits separately.
+          this.comparisonCandidates = candidates;
+          this.comparisonQuestion = response.message;
+          this.resetComparisonResult();
+        },
+        error: (error: HttpErrorResponse) => {
+          if (this.isCurrentConfirmedScope(request, response.message, candidateIds, jobId)) {
+            this.languageScopeError = this.apiErrorMessage(error, 'Confirmed candidate scope could not be planned.');
+          }
+        },
+      });
+  }
+
+  private isCurrentLanguageRequest(request: number, message: string): boolean {
+    return request === this.languageWorkflowRequest && this.languageComparisonMessage.trim() === message;
+  }
+
+  private isCurrentConfirmedScope(
+    request: number,
+    message: string,
+    candidateIds: number[],
+    jobId: number | null,
+  ): boolean {
+    const currentIds = this.languageScopeSelections
+      .filter((candidate): candidate is CvChatCandidateOption => candidate !== null)
+      .map((candidate) => candidate.id);
+    return request === this.languageWorkflowRequest
+      && this.languageScopeResponse?.message === message
+      && currentIds.join(',') === candidateIds.join(',')
+      && this.selectedJobId === jobId;
   }
 
   languageScopeReady(): boolean {

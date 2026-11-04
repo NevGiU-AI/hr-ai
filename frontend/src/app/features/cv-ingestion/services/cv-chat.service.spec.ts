@@ -54,4 +54,34 @@ describe('CvChatService', () => {
     expect(request.request.body).toEqual({ message: 'Compare Ada and Grace' });
     request.flush({ message: 'Compare Ada and Grace', references: [] });
   });
+
+  it('runs tool discovery without sending browser-owned tenant or role context', () => {
+    service.discoverWithTools('Compare Ada and Grace').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/discover`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ message: 'Compare Ada and Grace' });
+    request.flush({ kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm candidate cards.' });
+  });
+
+  it('plans a confirmed scope and omits the optional job when none is selected', () => {
+    service.planConfirmedScope('Compare Ada and Grace', [7, 8], null).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/confirmed-scope`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ message: 'Compare Ada and Grace', candidateIds: [7, 8] });
+    request.flush({ kind: 'CONFIRMED_SCOPE_READY', message: 'Scope is ready.' });
+  });
+
+  it('includes an explicitly selected approved job in confirmed-scope planning', () => {
+    service.planConfirmedScope('Compare Ada and Grace', [7, 8], 12).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/confirmed-scope`);
+    expect(request.request.body).toEqual({
+      message: 'Compare Ada and Grace',
+      candidateIds: [7, 8],
+      jobId: 12,
+    });
+    request.flush({ kind: 'CONFIRMED_SCOPE_READY', message: 'Scope is ready.' });
+  });
 });

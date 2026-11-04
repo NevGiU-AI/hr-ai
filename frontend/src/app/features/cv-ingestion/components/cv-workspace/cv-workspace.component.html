@@ -189,6 +189,12 @@
         {{ languageScopeError }}
       </div>
 
+      <div class="alert mt-3 mb-0" role="status" *ngIf="languageWorkflowOutcome as outcome"
+           [class.alert-info]="outcome.kind === 'CANDIDATE_CONFIRMATION_REQUIRED' || outcome.kind === 'CONFIRMED_SCOPE_READY'"
+           [class.alert-warning]="outcome.kind === 'CLARIFICATION_REQUIRED' || outcome.kind === 'REFUSED'">
+        {{ outcome.message }}
+      </div>
+
       <section class="language-scope-results mt-3" *ngIf="languageScopeResponse as scope"
                aria-label="Candidate references requiring confirmation">
         <article class="border rounded p-3 mb-2" *ngFor="let reference of scope.references; let referenceIndex = index">
@@ -200,6 +206,7 @@
           <div class="d-grid gap-2 mt-2" *ngIf="reference.candidates.length">
             <button class="candidate-confirmation-card text-start border rounded p-2" type="button"
                     *ngFor="let candidate of reference.candidates"
+                    [disabled]="languageScopeBusy"
                     [class.selected]="isLanguageCandidateSelected(referenceIndex, candidate.id)"
                     [attr.aria-pressed]="isLanguageCandidateSelected(referenceIndex, candidate.id)"
                     (click)="selectLanguageCandidate(referenceIndex, candidate)">
@@ -213,9 +220,10 @@
             More matches exist. Use a more complete candidate name.
           </p>
         </article>
-        <button class="btn btn-primary" type="button" [disabled]="!languageScopeReady() || comparisonBusy"
+        <button class="btn btn-primary" type="button"
+                [disabled]="!languageScopeReady() || languageScopeBusy || comparisonBusy"
                 (click)="confirmLanguageScope()">
-          Confirm candidate scope
+          {{ languageScopeBusy ? 'Confirming scope…' : 'Confirm candidate scope' }}
         </button>
         <p class="text-muted small mt-2 mb-0">
           Confirmation fills the visible comparison scope. Review it, then submit the comparison separately.

@@ -27,6 +27,8 @@ export class JobOfferComponent {
   onGenerateOffer(request: JobGenerationRequest): void {
     this.isLoading = true;
     this.error = null;
+    // Do not leave an earlier draft visible while a replacement is loading or after its provider call fails.
+    this.generatedJobOffer = null;
     this.originalBrief = request;
 
     this.jobService.generateJobOffer(request).subscribe({

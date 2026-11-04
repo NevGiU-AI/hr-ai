@@ -17,6 +17,12 @@
       ></app-job-generator>
     </div>
 
+    @if (error) {
+      <div class="alert alert-danger my-3" role="alert">
+        {{ error }}
+      </div>
+    }
+
     <!-- Output Section -->
     <div class="output-section my-3">
       <app-job-preview

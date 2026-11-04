@@ -338,6 +338,14 @@ uses synthetic local tools, including a candidate name containing an instruction
 human-reviewed outcome for every dataset case. Failure output contains only synthetic case metadata and never prints
 the message or tool result.
 
+The normal GitHub pull-request workflow runs `mvn -B clean verify` without `RUN_AI_EVALUATIONS=true` or an OpenAI API
+key. JUnit therefore skips this provider-backed test while still running the deterministic dataset, schema, service,
+authorization, and prompt-contract tests. A green pull-request check proves those deterministic gates passed; it does
+**not** mean the configured live model passed this evaluation dataset. A local, scheduled, or manually dispatched run
+with `RUN_AI_EVALUATIONS=true` is a separate model-behavior gate and can legitimately find failures after ordinary CI
+is green. Keep provider outages, rate limits, cost, and model variability separate from deterministic CI failures, but
+require the live gate before promoting a changed orchestration prompt or model.
+
 Run it from `backend` before promoting the orchestration prompt/model or exposing the orchestrator through an API:
 
 PowerShell:

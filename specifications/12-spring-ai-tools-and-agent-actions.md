@@ -20,6 +20,23 @@ Implement a small, request-scoped tool set after the underlying domain services 
 
 Tools must expose domain services rather than arbitrary SQL, repository access, filesystem access, HTTP access, or generic code execution.
 
+### Implemented foundation
+
+The internal request-scoped foundation currently provides:
+
+- `search_candidates`, available during discovery and returning bounded tenant-scoped identity cards;
+- `get_candidate_summary`, available only after application code authorizes and confirms candidate IDs; and
+- `get_job_requirements`, available only when application code also authorizes and confirms one approved job ID.
+
+The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
+It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job
+is looked up inside the authenticated organization before its ID enters the immutable request scope. The callback is
+not registered at all when no job has been confirmed, and the tool independently repeats tenant authorization when
+executed. Candidate-only planning therefore cannot call the approved-job tool.
+
+These tools remain internal: no controller or Angular caller activates the orchestrator yet. The next slice must expose
+a reviewed API/confirmation contract before tool orchestration becomes part of the user-facing chat path.
+
 ## Trusted context and authorization
 
 - Resolve user identity, organization, roles, locale, and request correlation data from trusted application context, not model-generated tool arguments.

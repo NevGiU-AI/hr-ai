@@ -9,6 +9,8 @@ import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.job.Job;
+import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,10 +39,11 @@ class CvChatReadToolsTest {
             mock(CvChatCandidateResolutionService.class);
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
+    private final JobRepository jobs = mock(JobRepository.class);
     private final CvChatToolExecutionGuard executionGuard = mock(CvChatToolExecutionGuard.class);
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
     private final CvChatReadTools tools = new CvChatReadTools(
-            candidateResolution, candidates, documents, executionGuard, scope);
+            candidateResolution, candidates, documents, jobs, executionGuard, scope);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
@@ -121,6 +124,65 @@ class CvChatReadToolsTest {
     }
 
     @Test
+    void returnsOnlyBoundedRequirementsForTheTenantAuthorizedConfirmedJob() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        Job job = new Job();
+        job.setId(21L);
+        job.setOrganizationId("must-not-be-returned");
+        job.setTitle("Backend Engineer");
+        job.setLevel("Senior");
+        job.setSummary("Build reliable services");
+        job.setResponsibilities("Design APIs");
+        job.setRequiredQualifications("Java and Spring Boot");
+        job.setPreferredQualifications("PostgreSQL");
+        job.setSoftSkills("Clear communication");
+        job.setSalaryRange("must-not-be-returned");
+        job.setBenefits("must-not-be-returned");
+        when(jobs.findByIdAndOrganizationId(21L, "tenant-a")).thenReturn(Optional.of(job));
+
+        JobRequirements result = tools.getJobRequirements(21L);
+
+        verify(scope).requireConfirmedJob(21L);
+        assertThat(result).isEqualTo(new JobRequirements(21L, "Backend Engineer", "Senior",
+                "Build reliable services", "Design APIs", "Java and Spring Boot", "PostgreSQL",
+                "Clear communication"));
+        assertThat(JobRequirements.class.getRecordComponents())
+                .extracting(component -> component.getName())
+                .doesNotContain("organizationId", "salaryRange", "benefits", "tone");
+    }
+
+    @Test
+    void rejectsJobsOutsideTheHumanConfirmedScopeBeforeDataAccess() {
+        authenticate("tenant-a", "ROLE_REVIEWER");
+        org.mockito.Mockito.doThrow(new CvChatException(org.springframework.http.HttpStatus.FORBIDDEN,
+                        "Approved job is outside the confirmed chat scope"))
+                .when(scope).requireConfirmedJob(21L);
+
+        assertThatThrownBy(() -> tools.getJobRequirements(21L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Approved job is outside the confirmed chat scope");
+        verifyNoInteractions(jobs);
+    }
+
+    @Test
+    void boundsLongJobRequirementFieldsAndHidesCrossTenantExistence() {
+        authenticate("tenant-a", "ROLE_ADMIN");
+        Job job = new Job();
+        job.setId(21L);
+        job.setResponsibilities("x".repeat(2_100));
+        when(jobs.findByIdAndOrganizationId(21L, "tenant-a")).thenReturn(Optional.of(job));
+
+        assertThat(tools.getJobRequirements(21L).responsibilities()).hasSize(2_000);
+
+        when(jobs.findByIdAndOrganizationId(22L, "tenant-a")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> tools.getJobRequirements(22L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Approved job not found");
+        verify(scope).requireConfirmedJob(21L);
+        verify(scope).requireConfirmedJob(22L);
+    }
+
+    @Test
     void rejectsReadOnlyAndUnauthenticatedCallsBeforeDataAccess() {
         authenticate("tenant-a", "ROLE_READ_ONLY");
 
@@ -138,13 +200,15 @@ class CvChatReadToolsTest {
     void exposesOnlyReviewedReadToolNames() throws Exception {
         Method search = CvChatReadTools.class.getMethod("searchCandidates", String.class);
         Method summary = CvChatReadTools.class.getMethod("getCandidateSummary", Long.class);
+        Method requirements = CvChatReadTools.class.getMethod("getJobRequirements", Long.class);
 
         assertThat(search.getAnnotation(Tool.class).name()).isEqualTo("search_candidates");
         assertThat(summary.getAnnotation(Tool.class).name()).isEqualTo("get_candidate_summary");
+        assertThat(requirements.getAnnotation(Tool.class).name()).isEqualTo("get_job_requirements");
         assertThat(CvChatReadTools.class.getDeclaredMethods())
                 .filteredOn(method -> method.isAnnotationPresent(Tool.class))
                 .extracting(Method::getName)
-                .containsExactlyInAnyOrder("searchCandidates", "getCandidateSummary");
+                .containsExactlyInAnyOrder("searchCandidates", "getCandidateSummary", "getJobRequirements");
     }
 
     private void authenticate(String organizationId, String role) {

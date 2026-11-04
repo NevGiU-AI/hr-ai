@@ -2,6 +2,7 @@ package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
+import com.nevgiu.hrai.job.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -28,15 +29,17 @@ public class CvChatToolOrchestrationService {
     private final CvChatToolScope scope;
     private final CvChatQuestionPolicy questionPolicy;
     private final CvChatToolOrchestrationModel model;
+    private final JobRepository jobs;
 
     CvChatToolOrchestrationService(CvChatEvidenceService evidenceService, CvChatReadToolRegistry registry,
                                    CvChatToolScope scope, CvChatQuestionPolicy questionPolicy,
-                                   CvChatToolOrchestrationModel model) {
+                                   CvChatToolOrchestrationModel model, JobRepository jobs) {
         this.evidenceService = evidenceService;
         this.registry = registry;
         this.scope = scope;
         this.questionPolicy = questionPolicy;
         this.model = model;
+        this.jobs = jobs;
     }
 
     private static final Set<CvChatToolOrchestrationOutcome.Kind> DISCOVERY_OUTCOMES = EnumSet.of(
@@ -55,11 +58,33 @@ public class CvChatToolOrchestrationService {
 
     public CvChatToolOrchestrationOutcome planConfirmedScope(String message, List<Long> requestedCandidateIds,
                                                               String organizationId) {
+        return planConfirmedScope(message, requestedCandidateIds, null, organizationId);
+    }
+
+    /**
+     * Plans inside an application-confirmed candidate scope and, when supplied, one explicitly selected approved job.
+     * The approved-job tool is not registered at all when no job was confirmed.
+     */
+    public CvChatToolOrchestrationOutcome planConfirmedScope(String message, List<Long> requestedCandidateIds,
+                                                              Long requestedJobId, String organizationId) {
         List<Long> candidateIds = validateIds(requestedCandidateIds);
+        if (requestedJobId != null && requestedJobId <= 0) {
+            throw new CvChatException(HttpStatus.BAD_REQUEST, "A valid approved job must be confirmed");
+        }
         // Authorize the complete set before installing it. Missing and cross-tenant IDs retain the same generic 404.
         candidateIds.forEach(candidateId -> evidenceService.authorizeCandidate(candidateId, organizationId));
+        if (requestedJobId != null) {
+            jobs.findByIdAndOrganizationId(requestedJobId, organizationId)
+                    .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
+        }
         scope.confirm(candidateIds);
-        return call(message, CvChatToolOrchestrationMode.CONFIRMED_SCOPE, registry.confirmedScopeCallbacks(),
+        if (requestedJobId != null) {
+            scope.confirmJob(requestedJobId);
+        }
+        List<org.springframework.ai.tool.ToolCallback> callbacks = requestedJobId == null
+                ? registry.confirmedScopeCallbacks()
+                : registry.confirmedScopeCallbacksWithJob();
+        return call(message, CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks,
                 CONFIRMED_OUTCOMES, candidateIds.size());
     }
 

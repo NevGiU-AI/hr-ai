@@ -19,7 +19,9 @@ decisions.
 - Extract CV text and explicitly evaluate a candidate against an approved job.
 - Persist candidates, documents, jobs, and evaluation results behind organization boundaries.
 - Review tenant-scoped candidate details and document-ingestion history, then download or administer stored originals
-  according to the signed-in user's role.
+  according to the signed-in user's role. PRs #139 and #140 established and validated the final task-oriented Angular
+  order in staging and production on 4 November 2026: import, candidate search, details, ingestion history, grounded
+  single-CV chat, evaluation/current result, persisted evaluation history, then grounded candidate comparison.
 - Correct candidate metadata with immutable revision history and safely reprocess a rescanned stored original without
   changing the submitted PDF or creating duplicate candidates; prior evaluations are retained as stale.
 - Review tenant-scoped evaluation history with job context, complete scoring, and explicit current/stale status.

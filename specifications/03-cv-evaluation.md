@@ -452,6 +452,28 @@ Implemented behavior:
     routing/navigation, file validation, loading states, details/history rendering, selection gating, explicit evaluation,
     metric rendering, and provider failures.
 
+### Candidate-workspace ordering acceptance — 4 November 2026
+
+PRs #139 and #140 reorganized the existing Angular workspace without changing its backend contracts. Staging and
+production both accepted the final task-oriented order:
+
+1. Import CVs.
+2. Find a candidate by name.
+3. Review candidate details.
+4. Review ingestion history.
+5. Ask grounded questions about the selected CV.
+6. Select an approved job and explicitly evaluate the candidate.
+7. Review the current evaluation, when present.
+8. Review persisted evaluation history.
+9. Compare an explicitly confirmed scope of candidates.
+
+The focused checks confirmed that candidate search is immediately followed by the selected candidate workspace,
+ingestion history precedes CV chat, a newly generated evaluation remains beside its controls, persisted evaluation
+history follows that result or the controls when no current result exists, and grounded comparison follows evaluation
+history. Candidate selection, original-file actions, metadata correction, reprocessing, single-candidate chat,
+evaluation, persisted history, and multi-candidate comparison continued to work in both environments. No database
+migration or deployment-environment change was required. Angular regression tests enforce the significant DOM order.
+
 Remaining frontend improvements:
 
 - Add drag-and-drop and upload byte-progress/cancellation.
@@ -468,6 +490,7 @@ Remaining frontend improvements:
 - [x] `NEEDS_REVIEW`, `SKIPPED`, and `FAILED` states have distinct labels and explanations.
 - [x] Uploading never triggers evaluation; evaluation requires an explicit candidate/job action.
 - [x] Persisted candidate evaluation history distinguishes current results from results invalidated by reprocessing.
+- [x] Staging and production accepted the task-oriented candidate workspace order from PRs #139 and #140.
 - [x] Staging verified that OCR reprocessing makes prior evaluations stale and that a subsequent evaluation appears as
   current alongside the retained history.
 - [x] Backend errors and size restrictions are represented consistently.

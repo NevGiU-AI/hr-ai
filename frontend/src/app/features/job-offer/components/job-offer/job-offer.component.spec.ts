@@ -62,15 +62,20 @@ describe('JobOfferComponent', () => {
   });
 
   it('displays the structured job-generation provider error', () => {
+    component.generatedJobOffer = MOCK_JOB_GENERATION_RESPONSE;
     jobServiceSpy.generateJobOffer.and.returnValue(throwError(() => new HttpErrorResponse({
       status: 502,
       error: { message: 'AI job generation service is temporarily unavailable.' },
     })));
 
     component.onGenerateOffer(MOCK_JOB_GENERATION_REQUEST);
+    fixture.detectChanges();
 
     expect(component.error).toBe('AI job generation service is temporarily unavailable.');
+    expect(component.generatedJobOffer).toBeNull();
     expect(component.isLoading).toBeFalse();
+    const alert = fixture.nativeElement.querySelector('[role="alert"]') as HTMLElement;
+    expect(alert.textContent).toContain('AI job generation service is temporarily unavailable.');
   });
 });
 

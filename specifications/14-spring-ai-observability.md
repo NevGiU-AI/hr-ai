@@ -6,6 +6,84 @@ Provide privacy-safe metrics, traces, logs, dashboards, and alerts for AI and re
 
 Observability answers what happened in a running system. AI evaluation testing separately determines whether generated content is relevant, grounded, safe, and acceptable. Production observations may identify scenarios for controlled offline evaluation, but production candidate content must not be copied automatically into evaluation fixtures.
 
+## Current operational decision
+
+The current single-host Docker Compose deployments continue to use targeted `docker compose logs` inspection. This is
+appropriate while each environment has one backend host, service volume is manageable, and incidents can be diagnosed
+manually. Container logs are nevertheless node-local, affected by rotation and replacement, difficult to search over
+long periods, and insufficient for correlating work across future replicas.
+
+Do **not** deploy Prometheus, Grafana, an OpenTelemetry Collector, Elastic/Kibana, or Dynatrace during the current
+feature slice. Introduce centralized observability during the planned performance and observability milestone, before
+or alongside horizontal or multi-host scaling. Adoption becomes justified when logs span multiple hosts or replicas,
+manual incident investigation becomes ineffective, automatic alerting is required, or approved availability and
+latency objectives must be measured continuously.
+
+Prometheus plus Grafana is a reasonable open-source starting point for that future milestone. Expose only privacy-safe
+aggregate metrics: never place CV content, candidate names, email addresses, recruiter questions, prompts, model
+responses, filenames, API keys, session identifiers, or other personal or secret values in metric labels.
+
+## Terminology and signal roles
+
+**Telemetry** is the operational data emitted by a running application. The primary signals are:
+
+- **Metrics:** numerical measurements over time, such as request count, error rate, active work, memory use, and p50,
+  p95, or p99 latency.
+- **Logs:** timestamped records of individual events, such as a privacy-safe provider timeout or indexing failure.
+- **Traces:** the path and duration of one request across application stages and dependencies.
+
+For example, a future candidate-comparison trace could show:
+
+```text
+POST /api/chat/candidates/compare        6.2 s
+|- authorization                         8 ms
+|- candidate lookup                     32 ms
+|- semantic retrieval                  410 ms
+|- question-policy model call          1.1 s
+|- comparison model call               4.5 s
+`- response serialization               9 ms
+```
+
+This reveals where time was spent without recording the question, CV evidence, model answer, or candidate identity.
+OpenTelemetry defines vendor-neutral generation, collection, processing, and export of traces, metrics, and logs; it is
+not itself the long-term storage or dashboard backend. An optional OpenTelemetry Collector can receive signals, apply
+approved filtering or redaction, batch them, and export them to one or more approved systems. See the official
+[OpenTelemetry overview](https://opentelemetry.io/docs/what-is-opentelemetry/) and
+[signal definitions](https://opentelemetry.io/docs/concepts/signals/).
+
+## Tool responsibilities and future options
+
+| Component | Primary responsibility | Important boundary |
+|---|---|---|
+| Docker Compose logs | Direct inspection of recent logs on the current host | Manual, node-local, and unsuitable as the final multi-host history |
+| Micrometer / Spring observations | Application-facing metrics and observation API | Instrumentation, not the final storage or dashboard |
+| OpenTelemetry | Vendor-neutral instrumentation, context propagation, collection, processing, and export | Not an observability backend by itself |
+| Prometheus | Scrape and store numerical time-series metrics and evaluate monitoring rules | Not a detailed log or security-audit store |
+| Grafana | Query approved data sources and present dashboards, exploration, and alerts | Requires underlying data sources such as Prometheus, Loki, Tempo, or Elasticsearch |
+| Elastic / Kibana | Centralize, search, correlate, visualize, and alert on ingested logs and other signals | Requires an ingestion pipeline, storage, retention, access, and redaction controls |
+| Dynatrace | Integrated commercial application-performance monitoring, metrics, traces, logs, dependencies, dashboards, and alerts | Adds agent, licensing, governance, and vendor-dependency decisions |
+
+Prometheus stores labeled metric samples as time series and normally scrapes instrumented endpoints; Grafana can query
+Prometheus and other stores to visualize metrics, logs, and traces. See the official
+[Prometheus overview](https://prometheus.io/docs/introduction/overview/) and
+[Grafana data-source documentation](https://grafana.com/docs/grafana/latest/datasources/). If centralized log search is
+selected, Kibana is the Elastic visualization and investigation interface, while Elasticsearch and an approved agent,
+collector, or pipeline provide ingestion and storage. See the
+[Elastic logs documentation](https://www.elastic.co/docs/solutions/observability/logs).
+
+A possible open-source architecture is:
+
+```text
+Spring Boot
+  |- Micrometer metrics ------------------------> Prometheus --+
+  |- OpenTelemetry traces -> Collector -> Tempo/Jaeger --------+--> Grafana
+  `- structured logs ------> Collector -> Loki/Elasticsearch --+
+```
+
+The instrumentation should remain backend-neutral so a later decision can select this stack, Elastic, Dynatrace, or
+another approved platform without rewriting domain logic. Security audit events remain separate, access-controlled
+application records; observability logs do not replace the audit trail.
+
 ## Framework coverage
 
 Use version-matched Spring AI observations where supported for:

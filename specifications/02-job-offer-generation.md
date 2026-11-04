@@ -43,7 +43,9 @@ The main generation workflow is implemented across the Angular frontend and Spri
 - A reactive form collects the required brief description and optional department, location, employment type, salary range, and tone.
 - The brief description is required and must contain at least 10 characters.
 - Optional fields are grouped under an Advanced Options section.
-- The UI sends typed requests through `JobService` and displays loading, empty, and generation-error states.
+- The UI sends typed requests through `JobService` and displays loading, empty, and structured generation-error states.
+- A failed replacement generation clears any earlier unsaved preview and renders the backend's safe provider message in
+  an accessible `role="alert"` element instead of exposing Angular's raw HTTP text.
 - A generated offer is rendered as a structured preview with title, level, location, salary, responsibilities, qualifications, soft skills, benefits, summary, and missing-information warnings.
 - Users can regenerate an offer from the original request without saving the current draft.
 - Users can enter edit mode and change every generated job-offer field before approval.
@@ -67,7 +69,10 @@ The backend exposes:
 - Tone is adapted to the selected formal, friendly, or inclusive value.
 - The model is instructed not to invent salaries or benefits and to mark missing values instead.
 - The response contract is structured into `jobOffer`, `missingInfo`, and `suggestions`.
-- A malformed model response is converted into a fallback result containing `parseError` rather than causing an unhandled parsing exception.
+- Provider-call failures are mapped to a privacy-safe HTTP `502 Bad Gateway` response; credentials, provider payloads,
+  prompts, and exception details are not returned to the browser.
+- A malformed model response is rejected with a typed HTTP `502` response rather than being presented as an
+  `Unknown Title` draft that a recruiter could mistake for valid generated content.
 - Generation and approval are deliberately separate: an AI draft is not persisted until a user approves it.
 - Approved list values are stored as newline-separated text in PostgreSQL through Spring Data JPA.
 - Approved jobs receive a creation timestamp.
@@ -78,14 +83,15 @@ Backend tests cover:
 
 - Prompt construction and handling of absent optional values.
 - Parsing a valid structured model response.
-- Graceful handling of invalid model JSON.
+- Typed rejection of invalid model JSON and provider-call failures.
 - Mapping and saving an approved job.
 
 Frontend tests cover portions of:
 
 - Form validation, submission, reset behavior, and Advanced Options toggling.
 - Generation HTTP requests and error propagation.
-- Generation success and regeneration behavior.
+- Generation success, regeneration behavior, structured provider errors, stale-preview removal, and visible accessible
+  alert rendering.
 - Preview, loading, empty, and missing-information states.
 - Approved-job listing rendering.
 
@@ -113,6 +119,26 @@ Content-Type: application/json
 
 The response contains `jobOffer`, `missingInfo`, and `suggestions`. Generation does not write a job to the database.
 
+If the configured AI provider is unavailable or rejects its credential, the endpoint returns a controlled response:
+
+```http
+HTTP/1.1 502 Bad Gateway
+Content-Type: application/json
+```
+
+```json
+{
+  "status": 502,
+  "error": "Bad Gateway",
+  "message": "AI job generation service is temporarily unavailable. Please contact an administrator or try again later",
+  "path": "/api/jobs/generate",
+  "validationErrors": {}
+}
+```
+
+The Angular page displays `message` in an alert. It never displays browser-generated text such as `500 OK` and never
+retains a previous unsaved draft beside an error for a newer request.
+
 ### Approve and persist a reviewed draft
 
 ```http
@@ -124,20 +150,28 @@ The approval request contains the final generated or edited offer together with 
 
 OpenAI configuration is supplied through `OPENAI_API_KEY`. Generation errors or malformed model output must be treated as technical failures for human review; generated content should never be assumed correct solely because it is structurally valid.
 
+## Provider-error acceptance record
+
+On 4 November 2026, PR #135 mapped evaluation and job-generation provider failures to structured, privacy-safe HTTP
+`502` responses and prevented Angular from falling back to misleading browser-generated `500 OK` text. PR #136 then
+rendered the job-generation message visibly and accessibly and cleared stale previews before replacement generation.
+Focused staging and production validation confirmed backend health, successful existing workflows, the controlled
+evaluation and job-generation failure contracts, the visible job-generation alert, and the absence of unexpected
+provider or orchestration errors. No schema, Flyway, Compose, or deployment-environment change was required.
+
 ## Known limitations
 
 1. **Approved-list contract is transitional:** the backend `Job` response contains `title`; the Angular listing currently supports both `title` and `inferredTitle`. A dedicated response DTO should make the contract canonical.
 2. **Approval is hidden until editing:** the Approve button is only rendered in edit mode. A correct unchanged draft cannot be approved directly.
 3. **Suggestions are not displayed:** the API returns `suggestions`, but the preview only renders `missingInfo`.
 4. **Backend input validation is missing:** API records do not use Bean Validation, so clients can bypass the Angular form rules.
-5. **Structured model output is prompt-dependent:** extra prose or Markdown fences can cause JSON parsing to fail.
-6. **Parse failures return HTTP success:** an `Unknown Title` fallback can be mistaken for a valid draft instead of being represented as a typed API error.
-7. **Approval errors are console-only:** the UI does not show an actionable approval error or retry state.
-8. **No timeout or retry policy:** slow or transient model failures are not handled explicitly.
-9. **No generation audit trail:** the approved record does not retain the original request, generated draft, prompt version, model identifier, approval timestamp, or editor.
-10. **No authentication or authorization:** job endpoints are public, and development CORS permits every origin.
-11. **No update or delete API:** an approved job can be listed or retrieved but not maintained.
-12. **Limited automated coverage:** there are no controller integration tests, stubbed-model API tests, or complete browser-level tests for generate, edit, approve, and reopen.
+5. **Structured model output is prompt-dependent:** extra prose or Markdown fences cause a safe typed failure rather than
+   a draft, but schema-constrained generation remains preferable.
+6. **Approval errors are console-only:** the UI does not show an actionable approval error or retry state.
+7. **No timeout or retry policy:** slow or transient model failures are not handled explicitly.
+8. **No generation audit trail:** the approved record does not retain the original request, generated draft, prompt version, model identifier, approval timestamp, or editor.
+9. **No update or delete API:** an approved job can be listed or retrieved but not maintained.
+10. **Limited automated coverage:** there are no controller integration tests, stubbed-model API tests, or complete browser-level tests for generate, edit, approve, and reopen.
 
 ## Improvement plan
 
@@ -155,7 +189,7 @@ OpenAI configuration is supplied through `OPENAI_API_KEY`. Generation errors or 
 1. Add Bean Validation to generation and approval requests, including allowed employment types and tones.
 2. Use Spring AI structured-output/schema support instead of relying only on prompt-enforced JSON.
 3. Validate all returned fields, lists, score-free text lengths, and allowed enum values before sending a draft to the frontend.
-4. Return a typed non-2xx problem response when generation or parsing fails; never expose internal exception messages as user suggestions.
+4. Maintain the implemented typed non-2xx provider/parsing failures and extend their controller-level contract coverage.
 5. Add model call timeouts, bounded retries with backoff, and request correlation identifiers.
 6. Make prompt templates versioned and test them against a fixed regression dataset.
 7. Add a deterministic inclusivity and clarity validation step after generation rather than relying only on model instructions.
@@ -204,7 +238,8 @@ OpenAI configuration is supplied through `OPENAI_API_KEY`. Generation errors or 
 - [ ] Approved jobs display correctly and can be reopened in the UI.
 - [ ] Missing information and improvement suggestions are both visible.
 - [ ] Invalid requests and invalid model output cannot be approved or partially persisted.
-- [ ] Provider, timeout, parsing, and approval failures return actionable user-facing errors.
+- [x] Provider and parsing failures return actionable, privacy-safe user-facing errors.
+- [ ] Timeout and approval failures return actionable user-facing errors.
 - [ ] Regeneration and later edits cannot overwrite an approved version without an explicit versioned operation.
 - [ ] Generated language passes an agreed, testable inclusivity and clarity check.
 - [ ] Authentication, authorization, CORS restrictions, and audit history are enforced.

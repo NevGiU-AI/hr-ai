@@ -72,8 +72,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Implement generation, edit, regeneration, approval, persistence, and listing behavior.
 - [x] Add prompt-level missing-information and inclusive-language guidance.
 - [x] Add initial frontend and backend unit/component coverage.
+- [x] Map AI provider and malformed-response failures to privacy-safe typed responses, prevent raw `500 OK` browser
+  text, render the job-generation error accessibly, and validate the behavior in staging and production through PRs
+  #135 and #136 on 4 November 2026.
 - [ ] Version request, response, prompt, and persistence schemas.
-- [ ] Add direct approval, job details, lifecycle maintenance, and production-grade failure handling.
+- [ ] Add direct approval, job details, lifecycle maintenance, timeout/retry policy, and approval-error handling.
 - [ ] Add controller integration and full end-to-end coverage.
 - [ ] Create a privacy-safe, human-reviewed job-generation evaluation dataset and regression gates for grounding, constraints, inclusivity, and prohibited inventions.
 - [ ] Measure latency and draft acceptance/edit rates.

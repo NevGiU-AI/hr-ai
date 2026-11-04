@@ -6,7 +6,10 @@ decisions.
 
 ## What is implemented
 
-- Generate, edit, approve, persist, and list AI-assisted job offers.
+- Generate, edit, approve, persist, and list AI-assisted job offers. Provider and malformed-response failures use
+  privacy-safe typed API errors; the Angular page presents the message accessibly without stale drafts or misleading
+  browser-generated `500 OK` text. This behavior passed staging and production acceptance on 4 November 2026 through
+  PRs #135 and #136.
 - Import a PDF, a ZIP archive of PDFs, or the administrator-only demonstration CV dataset.
 - Detect duplicate CV files within an organization using SHA-256 content hashes.
 - Retain new original CVs in private tenant-scoped storage with explicit retention metadata.

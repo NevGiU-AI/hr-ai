@@ -117,6 +117,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Validate candidate details, ingestion history, sensitive-field exclusion, role-aware original-file controls, and
   tenant-safe not-found behavior in staging.
 - [x] Validate the candidate details and ingestion-history slice in production, including legal-hold erasure guidance.
+- [x] Reorder the Angular candidate workspace around recruiter tasks and validate the final import -> search -> details
+  -> ingestion history -> CV chat -> evaluation -> evaluation history -> grounded comparison flow in staging and
+  production on 4 November 2026 after PRs #139 and #140.
 - [x] Add tenant-scoped evaluation-history retrieval and presentation with candidate/job context and current/stale state;
   staging and production acceptance passed on 23 October 2026 in release `v0.17.0`.
 - [x] Validate native extraction, image-only OCR provenance, duplicate-safe reprocessing, stale/current evaluation

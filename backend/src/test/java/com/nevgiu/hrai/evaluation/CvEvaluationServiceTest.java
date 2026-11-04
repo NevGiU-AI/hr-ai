@@ -9,11 +9,14 @@ import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.client.ChatClient;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -146,5 +149,32 @@ class CvEvaluationServiceTest {
                 .isInstanceOf(EvaluationException.class)
                 .hasMessage("Candidate has no extracted CV text")
                 .satisfies(error -> assertThat(((EvaluationException) error).getStatus().value()).isEqualTo(422));
+    }
+
+    @Test
+    void evaluateCandidate_mapsProviderFailuresToSafeBadGatewayResponse() {
+        Candidate candidate = new Candidate();
+        candidate.setId(1L);
+        candidate.setCvText("Java and Spring Boot experience");
+        Job job = new Job();
+        job.setId(2L);
+        job.setSummary("Backend engineer");
+
+        CandidateRepository candidates = mock(CandidateRepository.class);
+        JobRepository jobs = mock(JobRepository.class);
+        ChatClient chatClient = mock(ChatClient.class, RETURNS_DEEP_STUBS);
+        when(candidates.findByIdAndOrganizationId(1L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(jobs.findByIdAndOrganizationId(2L, "tenant-a")).thenReturn(Optional.of(job));
+        when(chatClient.prompt().system(anyString()).user(anyString()).call().content())
+                .thenThrow(new IllegalStateException("provider credential rejected"));
+
+        CvEvaluationService service = new CvEvaluationService(
+                chatClient, new ObjectMapper(), candidates, jobs, mock(CandidateEvaluationRepository.class));
+
+        assertThatThrownBy(() -> service.evaluateCandidate(new EvaluationRequest(1L, 2L, null), "tenant-a"))
+                .isInstanceOf(EvaluationException.class)
+                .hasMessage("AI evaluation service is temporarily unavailable. "
+                        + "Please contact an administrator or try again later")
+                .satisfies(error -> assertThat(((EvaluationException) error).getStatus().value()).isEqualTo(502));
     }
 }

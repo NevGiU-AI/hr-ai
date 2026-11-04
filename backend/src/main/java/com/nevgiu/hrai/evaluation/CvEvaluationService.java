@@ -13,12 +13,16 @@ import com.nevgiu.hrai.job.JobRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Instant;
 
 @Service
 public class CvEvaluationService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CvEvaluationService.class);
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
@@ -53,12 +57,22 @@ public class CvEvaluationService {
         String systemPrompt = buildSystemPrompt();
         String userPrompt = buildUserPrompt(job, candidate);
 
-        String modelResponse = chatClient
-                .prompt()
-                .system(systemPrompt)
-                .user(userPrompt)
-                .call()
-                .content();
+        String modelResponse;
+        try {
+            modelResponse = chatClient
+                    .prompt()
+                    .system(systemPrompt)
+                    .user(userPrompt)
+                    .call()
+                    .content();
+        } catch (RuntimeException providerFailure) {
+            // Provider exceptions can contain request and credential details. Log only privacy-safe identifiers and the
+            // exception type, then expose a stable API error instead of allowing a generic HTTP 500 response.
+            LOGGER.warn("AI evaluation provider call failed for organizationId={} candidateId={} jobId={} failureType={}",
+                    organizationId, candidate.getId(), job.getId(), providerFailure.getClass().getSimpleName());
+            throw new EvaluationException(HttpStatus.BAD_GATEWAY,
+                    "AI evaluation service is temporarily unavailable. Please contact an administrator or try again later");
+        }
 
         AiEvaluationResult aiResult = parseModelResponse(modelResponse);
 

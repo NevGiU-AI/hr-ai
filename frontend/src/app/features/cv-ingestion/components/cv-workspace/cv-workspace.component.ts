@@ -182,8 +182,7 @@ export class CvWorkspaceComponent implements OnInit {
           this.candidateSearchResultQuery = query;
         },
         error: (error: HttpErrorResponse) => {
-          const apiError = error.error as Partial<ApiError> | undefined;
-          this.candidateSearchError = apiError?.message || error.message || 'Candidate search could not complete.';
+          this.candidateSearchError = this.apiErrorMessage(error, 'Candidate search could not complete.');
         },
       });
   }
@@ -258,9 +257,7 @@ export class CvWorkspaceComponent implements OnInit {
           }
         },
         error: (error: HttpErrorResponse) => {
-          const apiError = error.error as Partial<ApiError> | undefined;
-          this.languageScopeError = apiError?.message || error.message
-            || 'Candidate references could not be interpreted.';
+          this.languageScopeError = this.apiErrorMessage(error, 'Candidate references could not be interpreted.');
         },
       });
   }
@@ -336,8 +333,7 @@ export class CvWorkspaceComponent implements OnInit {
         },
         error: (error: HttpErrorResponse) => {
           if (this.comparisonScopeKey() !== scopeKey) return;
-          const apiError = error.error as Partial<ApiError> | undefined;
-          this.comparisonError = apiError?.message || error.message || 'Candidate comparison could not complete.';
+          this.comparisonError = this.apiErrorMessage(error, 'Candidate comparison could not complete.');
         },
       });
   }
@@ -357,8 +353,7 @@ export class CvWorkspaceComponent implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         if (this.selectedCandidateId !== candidateId) return;
-        const apiError = error.error as Partial<ApiError> | undefined;
-        this.chatError = apiError?.message || error.message || 'CV chat could not complete the request.';
+        this.chatError = this.apiErrorMessage(error, 'CV chat could not complete the request.');
       },
     });
   }
@@ -654,8 +649,22 @@ export class CvWorkspaceComponent implements OnInit {
 
   private handleError(error: HttpErrorResponse): void {
     this.notice = '';
+    this.error = this.apiErrorMessage(error, 'The request could not be completed.');
+  }
+
+  private apiErrorMessage(error: HttpErrorResponse, fallback: string): string {
     const apiError = error.error as Partial<ApiError> | undefined;
-    this.error = apiError?.message || error.message || 'The request could not be completed.';
+    if (apiError?.message) {
+      return apiError.message;
+    }
+    if (error.status === 0) {
+      return 'The service could not be reached. Check your connection and try again.';
+    }
+    if (error.status >= 500) {
+      // Browser-generated HttpErrorResponse messages can misleadingly combine an error code with status text "OK".
+      return 'The service is temporarily unavailable. Please try again later.';
+    }
+    return fallback;
   }
 
   private firstCandidateId(result: CvArchiveImportResult): number | null {

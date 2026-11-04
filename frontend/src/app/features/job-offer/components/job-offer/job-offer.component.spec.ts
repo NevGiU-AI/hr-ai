@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { JobOfferComponent } from './job-offer.component';
 import { JobService } from '../../services/job.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { MOCK_JOB_GENERATION_RESPONSE, MOCK_JOB_GENERATION_REQUEST } from '../../mocks/job-data';
+import { HttpErrorResponse } from '@angular/common/http';
 
 describe('JobOfferComponent', () => {
   let component: JobOfferComponent;
@@ -59,8 +60,17 @@ describe('JobOfferComponent', () => {
 
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('displays the structured job-generation provider error', () => {
+    jobServiceSpy.generateJobOffer.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 502,
+      error: { message: 'AI job generation service is temporarily unavailable.' },
+    })));
+
+    component.onGenerateOffer(MOCK_JOB_GENERATION_REQUEST);
+
+    expect(component.error).toBe('AI job generation service is temporarily unavailable.');
+    expect(component.isLoading).toBeFalse();
+  });
 });
-function throwError(arg0: () => Error): import("rxjs").Observable<import("../../models/job-generation-response.models").JobGenerationResponse> {
-  throw new Error('Function not implemented.');
-}
 

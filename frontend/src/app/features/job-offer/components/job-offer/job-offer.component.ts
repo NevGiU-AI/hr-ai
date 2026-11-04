@@ -5,6 +5,7 @@ import { JobService } from '../../services/job.service';
 import { JobGenerationRequest } from '../../models/job-generation.models';
 import { JobGenerationResponse } from '../../models/job-generation-response.models';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-job-offer',
@@ -34,10 +35,9 @@ export class JobOfferComponent {
         console.log('Generated Job Offer:', this.generatedJobOffer);
         this.isLoading = false;
       },
-      error: (error) => {
-        this.error = 'Failed to generate job offer. Please try again.';
+      error: (error: HttpErrorResponse) => {
+        this.error = error.error?.message || 'Failed to generate job offer. Please try again.';
         this.isLoading = false;
-        console.error('Error generating job offer:', error);
       }
     });
   }

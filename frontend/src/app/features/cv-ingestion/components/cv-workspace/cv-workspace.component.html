@@ -81,6 +81,10 @@
     </div>
   </section>
 
+  <!-- Keep the selected candidate's working context next to CV import. The template is declared below so this
+       high-level workflow order remains easy to see without duplicating the candidate actions and state bindings. -->
+  <ng-container *ngTemplateOutlet="candidateWorkspace"></ng-container>
+
   <section class="panel" aria-labelledby="evaluation-title">
     <div class="section-heading">
       <div><p class="step">Step 2</p><h2 id="evaluation-title">Evaluate against an approved job</h2></div>
@@ -366,7 +370,8 @@
       </div>
     </section>
 
-    <section class="candidate-details" *ngIf="candidateDetails as details" aria-labelledby="candidate-details-title">
+    <ng-template #candidateWorkspace>
+    <section class="panel candidate-details" *ngIf="candidateDetails as details" aria-labelledby="candidate-details-title">
       <div class="details-heading">
         <div>
           <p class="step">Candidate details</p>
@@ -399,6 +404,8 @@
         <div><dt>Experience</dt><dd>{{ details.yearsExperience == null ? 'Not provided' : details.yearsExperience + ' years' }}</dd></div>
       </dl>
 
+      <!-- Define chat once, then render it after ingestion history so document provenance is reviewed before questions. -->
+      <ng-template #candidateChat>
       <section class="cv-chat bg-light border rounded p-3 my-4" *ngIf="canUseCvChat" aria-labelledby="cv-chat-title">
         <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
           <div>
@@ -453,8 +460,10 @@
           </div>
         </article>
       </section>
+      </ng-template>
 
-      <h4>Ingestion history</h4>
+      <section class="ingestion-history" aria-labelledby="ingestion-history-title">
+      <h4 id="ingestion-history-title">Ingestion history</h4>
       <p *ngIf="!details.documents.length" class="text-muted">No CV document is associated with this candidate.</p>
       <div class="document-list" *ngIf="details.documents.length">
         <article class="document-card" *ngFor="let item of details.documents" [id]="'cv-document-' + item.id">
@@ -501,13 +510,17 @@
           </li>
         </ol>
       </details>
-    </section>
+      </section>
 
-    <p class="erasure-warning" *ngIf="isAdministrator">
-      Erasure permanently removes the selected candidate, CV documents, stored originals, and evaluations.
-      <strong *ngIf="candidateUnderLegalHold">This candidate cannot be erased until all legal holds are released.</strong>
-      <span *ngIf="!candidateUnderLegalHold">Legal holds must be released first.</span>
-    </p>
+      <ng-container *ngTemplateOutlet="candidateChat"></ng-container>
+
+      <p class="erasure-warning" *ngIf="isAdministrator">
+        Erasure permanently removes the selected candidate, CV documents, stored originals, and evaluations.
+        <strong *ngIf="candidateUnderLegalHold">This candidate cannot be erased until all legal holds are released.</strong>
+        <span *ngIf="!candidateUnderLegalHold">Legal holds must be released first.</span>
+      </p>
+    </section>
+    </ng-template>
 
   </section>
 </div>

@@ -34,8 +34,17 @@ is looked up inside the authenticated organization before its ID enters the immu
 not registered at all when no job has been confirmed, and the tool independently repeats tenant authorization when
 executed. Candidate-only planning therefore cannot call the approved-job tool.
 
-These tools remain internal: no controller or Angular caller activates the orchestrator yet. The next slice must expose
-a reviewed API/confirmation contract before tool orchestration becomes part of the user-facing chat path.
+The reviewed backend contract now exposes two authenticated, CSRF-protected phases:
+
+- `POST /api/chat/tools/discover` accepts only bounded recruiter text and registers candidate search;
+- `POST /api/chat/tools/confirmed-scope` accepts bounded text, one to five explicitly confirmed candidate IDs, and an
+  optional explicitly confirmed approved-job ID.
+
+Both endpoints are limited to `ADMIN`, `RECRUITER`, and `REVIEWER`. Organization and roles come exclusively from the
+authenticated session. Extra model/client fields cannot override them, and responses contain only the validated
+workflow kind and presentation message—never candidate IDs, job IDs, tenant context, roles, or authorization state.
+Provider failures retain structured safe HTTP errors. The Angular application does not call these endpoints yet; UI
+activation remains a separate reviewed slice.
 
 ## Trusted context and authorization
 

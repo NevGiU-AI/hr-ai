@@ -367,8 +367,9 @@ AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
 mvn -B -Dtest=CvChatToolOrchestrationProviderEvaluationTest test
 ```
 
-These are test-process variables, not staging or production configuration. The internal orchestrator remains unexposed
-until its API contract and Angular confirmation behavior are implemented and reviewed.
+These are test-process variables, not staging or production configuration. The reviewed backend API now exposes
+separate discovery and confirmed-scope contracts; Angular activation remains pending until its confirmation behavior is
+implemented and reviewed.
 
 The first provider run on 3 November 2026 failed five of eight cases because the model overused
 `CANDIDATE_CONFIRMATION_REQUIRED`, including in `CONFIRMED_SCOPE`, and did not consistently distinguish refusal cases.

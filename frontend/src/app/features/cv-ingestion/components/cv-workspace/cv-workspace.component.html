@@ -81,8 +81,9 @@
     </div>
   </section>
 
-  <!-- Keep the selected candidate's working context next to CV import. The template is declared below so this
-       high-level workflow order remains easy to see without duplicating the candidate actions and state bindings. -->
+  <!-- Candidate search comes first so the details rendered immediately below always have an explicit selection
+       context. Both templates are declared below to keep their existing behavior and state bindings in one place. -->
+  <ng-container *ngTemplateOutlet="candidateSearch"></ng-container>
   <ng-container *ngTemplateOutlet="candidateWorkspace"></ng-container>
 
   <section class="panel" aria-labelledby="evaluation-title">
@@ -90,7 +91,8 @@
       <div><p class="step">Step 2</p><h2 id="evaluation-title">Evaluate against an approved job</h2></div>
       <p>Evaluation uses the extracted CV text and the approved job description.</p>
     </div>
-    <form class="border rounded bg-light p-3 mb-3" *ngIf="canUseCvChat" (ngSubmit)="searchCandidates()"
+    <ng-template #candidateSearch>
+    <form class="panel candidate-search" *ngIf="canUseCvChat" (ngSubmit)="searchCandidates()"
           aria-labelledby="candidate-search-title">
       <div>
         <label id="candidate-search-title" for="candidate-search-query" class="form-label">Find candidate by name</label>
@@ -139,8 +141,10 @@
         No candidates matched this name in your organization.
       </p>
     </form>
+    </ng-template>
 
-    <section class="candidate-comparison border rounded p-3 mb-3" *ngIf="canUseCvChat"
+    <ng-template #candidateComparison>
+    <section class="candidate-comparison border rounded p-3 mt-4" *ngIf="canUseCvChat"
              aria-labelledby="candidate-comparison-title">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
@@ -284,6 +288,7 @@
         </div>
       </article>
     </section>
+    </ng-template>
 
     <div class="evaluation-form">
       <label>Candidate
@@ -369,6 +374,9 @@
         </details>
       </div>
     </section>
+
+    <!-- Comparison is a broader, optional workflow and therefore follows the selected candidate's evaluation record. -->
+    <ng-container *ngTemplateOutlet="candidateComparison"></ng-container>
 
     <ng-template #candidateWorkspace>
     <section class="panel candidate-details" *ngIf="candidateDetails as details" aria-labelledby="candidate-details-title">

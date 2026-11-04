@@ -475,8 +475,10 @@ describe('CvWorkspaceComponent', () => {
     const form = fixture.nativeElement.querySelector('.evaluation-form') as HTMLElement;
     const result = fixture.nativeElement.querySelector('.evaluation-result') as HTMLElement;
     const history = fixture.nativeElement.querySelector('.evaluation-history') as HTMLElement;
+    const comparison = fixture.nativeElement.querySelector('.candidate-comparison') as HTMLElement;
     expect(form.nextElementSibling).toBe(result);
     expect(result.nextElementSibling).toBe(history);
+    expect(history.nextElementSibling).toBe(comparison);
   });
 
   it('renders persisted evaluation history immediately after the controls when no current result exists', () => {
@@ -485,17 +487,21 @@ describe('CvWorkspaceComponent', () => {
 
     const form = fixture.nativeElement.querySelector('.evaluation-form') as HTMLElement;
     const history = fixture.nativeElement.querySelector('.evaluation-history') as HTMLElement;
+    const comparison = fixture.nativeElement.querySelector('.candidate-comparison') as HTMLElement;
     expect(form.nextElementSibling).toBe(history);
+    expect(history.nextElementSibling).toBe(comparison);
   });
 
-  it('keeps candidate details, ingestion history, and chat together between import and evaluation', () => {
+  it('renders candidate search immediately before the selected candidate workspace', () => {
     const importPanel = fixture.nativeElement.querySelector('#import-title').closest('.panel') as HTMLElement;
+    const search = fixture.nativeElement.querySelector('.candidate-search') as HTMLElement;
     const details = fixture.nativeElement.querySelector('.candidate-details') as HTMLElement;
     const ingestion = fixture.nativeElement.querySelector('.ingestion-history') as HTMLElement;
     const chat = fixture.nativeElement.querySelector('.cv-chat') as HTMLElement;
     const evaluationPanel = fixture.nativeElement.querySelector('#evaluation-title').closest('.panel') as HTMLElement;
 
-    expect(importPanel.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(importPanel.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(search.nextElementSibling).toBe(details);
     expect(details.contains(ingestion)).toBeTrue();
     expect(ingestion.compareDocumentPosition(chat) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(details.compareDocumentPosition(evaluationPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

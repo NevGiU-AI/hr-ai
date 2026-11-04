@@ -240,14 +240,22 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   criteria-focused retrieval-query set across every confirmed candidate. Repeated comparisons passed focused staging
   and production acceptance on 3 November 2026 in release `v0.29.0`, with accepted evidence and citations for every
   selected candidate and no citation-coverage, normalization, provider, or raw-control-token failure.
-- [ ] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped Spring AI query tools.
-- [ ] Inject authenticated user and organization context outside model-controlled tool arguments.
+- [~] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped
+  Spring AI query tools. Candidate discovery, confirmed candidate summaries, optional approved-job requirements, the
+  reviewed orchestration API, and Angular activation are implemented through PR #144; staging acceptance and the
+  remaining evidence/document/dashboard tools are pending.
+- [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
+  read-tool/orchestration slice; repeat this invariant for every future tool.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.
 - [ ] Add prompt-injection tests proving CV text and chat input cannot expand tool access or cross organization boundaries.
 - [ ] Add preview-only command tools, then require explicit confirmation, idempotency, and audit records before any state change or external communication.
 - [ ] Pin tool implementation to the current Spring AI version and evaluate the 2.x `ToolCallingAdvisor` migration separately with regression tests.
 - [ ] Persist scoped conversation memory. Store the explicitly confirmed candidate IDs and allow follow-up questions
   to reuse only that visible scope; memory must never silently add, replace, remove, or widen candidates.
+- [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after
+  orchestration and scoped memory are stable. Provide a message timeline, one natural-language composer, visible
+  candidate/job scope chips, ambiguity confirmation cards, citations, and conversation-history controls while
+  retaining both picker-first and language-first entry.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.
 - [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on

@@ -81,6 +81,10 @@ decisions.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.
+  PR #144 connects the existing workspace flow to the reviewed Spring AI discovery and confirmed-scope phases; focused
+  staging acceptance is pending. The workspace remains the contract-validation surface. After scoped conversation
+  memory is stable, a dedicated message-style CV-chat page will reuse these same authorization, confirmation,
+  retrieval, citation, and refusal boundaries.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -112,8 +116,10 @@ paraphrase remained a safe retrieval miss. The same scoped behavior passed focus
 30 October 2026 in release `v0.23.0`. The measured dual-query correction then passed focused staging acceptance on
 1 November 2026 without lowering the `0.35` threshold and resolved that real-CV French KLx miss, followed by focused
 production acceptance in release `v0.24.0`.
-The picker-first comparison UI is implemented and accepted in staging. The language-first confirmation flow,
-speech input/playback, and the recruitment dashboard remain roadmap work.
+The picker-first comparison UI and deterministic language-first confirmation flow are accepted in staging and
+production. Tool-orchestrated Angular activation is implemented through PR #144 and awaits focused staging acceptance.
+Scoped conversation memory, the dedicated conversational CV-chat page, speech input/playback, and the recruitment
+dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

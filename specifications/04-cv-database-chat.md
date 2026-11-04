@@ -35,9 +35,10 @@ The first backend slice supports an imperative question about one explicitly sel
   distinguishes fixed safe responses from evidence-backed answers, and links each citation to its document card.
 
 The candidate-specific endpoint can consume vector retrieval when its separate environment switch is enabled. The
-application now also provides deterministic candidate discovery and an explicit picker-first multi-candidate
-comparison flow. Persisted conversation memory, language-first orchestration, streaming, and speech controls remain
-explicit roadmap work and must not be inferred from the current request-scoped chat interfaces.
+application also provides deterministic candidate discovery, explicit picker-first comparison, and the Angular
+language-first orchestration boundary described below. Persisted conversation memory, the dedicated message-style
+chat page, streaming, and speech controls remain explicit roadmap work and must not be inferred from the current
+request-scoped chat interfaces.
 
 ### Pre-retrieval question policy
 
@@ -353,6 +354,12 @@ explicit **Change candidates** and **Clear conversation** actions. Adding, repla
 the verified scope only through recruiter action. Follow-up questions may reuse the confirmed IDs, but conversation
 memory must never infer, add, replace, or silently widen that set.
 
+The current candidate workspace is the integration and acceptance surface for these contracts, not the final chat
+layout. After tool orchestration and scoped conversation memory are stable, build a dedicated CV-chat page with a
+message timeline, one natural-language composer, visible candidate/job scope chips, confirmation cards only when
+resolution is ambiguous, cited answers, conversation-history controls, and later speech input/playback. Picker-first
+and language-first entry remain available and converge on the same application-owned confirmed scope.
+
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may
 help interpret the recruiter message, but it cannot supply the organization boundary or authorize a candidate. Both
@@ -564,12 +571,54 @@ immutable request scope; only then does the registry expose the callback. Execut
 tenant checks and returns bounded evaluation criteria without organization, compensation, benefits, tone, or generation
 metadata. This prepares job-grounded planning without giving the model authority to select a job.
 
-The reviewed orchestration API now separates discovery from confirmed-scope planning at
+The reviewed orchestration API separates discovery from confirmed-scope planning at
 `POST /api/chat/tools/discover` and `POST /api/chat/tools/confirmed-scope`. Jakarta validation bounds messages and IDs;
 Spring Security enforces authentication, CSRF, and the existing chat roles. The controller obtains organization only
 from `AppUserPrincipal`, ignores injected organization/role fields, and returns only the validated workflow kind and
 presentation text. Controller and security tests cover role access, CSRF, authentication, validation, tenant-context
-injection attempts, minimized responses, and structured provider failures. No Angular caller is connected yet.
+injection attempts, minimized responses, and structured provider failures.
+
+PR #144 connected the Angular language-first flow to these two phases. Discovery must return
+`CANDIDATE_CONFIRMATION_REQUIRED` before the browser calls the deterministic candidate-card endpoint. Clarification or
+refusal stops before card lookup. After the recruiter selects one card for every reference, confirmed-scope planning
+receives only the selected candidate IDs, bounded message, and optional currently selected approved-job ID. The visible
+comparison scope is populated only after `CONFIRMED_SCOPE_READY`; grounded comparison remains a separate recruiter
+action. Request-version, message, selection, and job checks discard stale asynchronous results. No schema, migration,
+or environment change is required.
+
+### PR #144 staging acceptance procedure
+
+Do not mark this slice accepted until all of the following pass on the deployed merged revision:
+
+1. Confirm the backend container is healthy and the frontend loads without browser-console startup errors.
+   On the staging VPS, use the deployment's two environment files consistently:
+
+   ```bash
+   cd /opt/nevgiu/deploy
+   compose=(docker compose --env-file .env --env-file .images.env)
+   "${compose[@]}" ps backend frontend
+   "${compose[@]}" logs --tail=100 backend frontend
+   ```
+
+2. Submit a valid natural request naming two tenant candidates. Verify discovery succeeds, bounded confirmation cards
+   appear, and no CV evidence or comparison answer is returned before confirmation.
+3. Submit an unclear request. Verify the validated clarification message appears and candidate-card lookup does not
+   continue.
+4. Submit a sensitive or unrelated request. Verify it is refused before candidate-card lookup and no evidence is
+   retrieved.
+5. For the valid request, select exactly one card per reference and confirm. Verify confirmed-scope planning succeeds,
+   includes the currently selected approved job when one is present, and fills the visible comparison scope only after
+   `CONFIRMED_SCOPE_READY`. Browser Network inspection should show `candidateIds` and the selected `jobId` in
+   `/api/chat/tools/confirmed-scope`, but no organization or role field.
+6. Review the visible candidates/question, submit the grounded comparison separately, and verify every factual claim
+   is supported by citations for the confirmed candidates only.
+7. Recheck picker-first comparison, single-candidate chat, and candidate evaluation to detect regressions outside the
+   new orchestration path.
+8. Inspect privacy-safe backend logs. There must be no unexpected provider/orchestration error, cross-tenant access,
+   confirmation bypass, raw prompt/CV content, or secret value.
+
+After these checks, record the staging date and immutable main revision in this document. Production promotion and its
+acceptance record remain a separate step.
 
 ## Acceptance criteria
 

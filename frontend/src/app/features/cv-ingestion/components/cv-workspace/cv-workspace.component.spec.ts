@@ -32,8 +32,14 @@ describe('CvWorkspaceComponent', () => {
       'getEvaluationHistory',
     ]);
     chatService = jasmine.createSpyObj<CvChatService>('CvChatService', [
-      'ask', 'searchCandidates', 'compare', 'proposeLanguageScope',
+      'ask', 'searchCandidates', 'compare', 'proposeLanguageScope', 'discoverWithTools', 'planConfirmedScope',
     ]);
+    chatService.discoverWithTools.and.returnValue(of({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the candidate cards.',
+    }));
+    chatService.planConfirmedScope.and.returnValue(of({
+      kind: 'CONFIRMED_SCOPE_READY', message: 'Confirmed scope is ready.',
+    }));
     service.getCandidates.and.returnValue(of([candidate]));
     service.getJobs.and.returnValue(of([job]));
     service.getCandidateDetails.and.returnValue(of(candidateDetails()));
@@ -256,6 +262,7 @@ describe('CvWorkspaceComponent', () => {
     component.proposeLanguageScope();
     fixture.detectChanges();
 
+    expect(chatService.discoverWithTools).toHaveBeenCalledOnceWith('Compare Ada Lovelace and Grace');
     expect(chatService.proposeLanguageScope).toHaveBeenCalledOnceWith('Compare Ada Lovelace and Grace');
     expect(chatService.compare).not.toHaveBeenCalled();
     expect(component.languageScopeSelections[0]?.id).toBe(7);
@@ -288,7 +295,73 @@ describe('CvWorkspaceComponent', () => {
 
     expect(component.comparisonCandidates.map((item) => item.id)).toEqual([7, 8]);
     expect(component.comparisonQuestion).toBe('Compare Ada and Grace for backend engineering');
+    expect(chatService.planConfirmedScope).toHaveBeenCalledOnceWith(
+      'Compare Ada and Grace for backend engineering', [7, 8], 12);
     expect(chatService.compare).not.toHaveBeenCalled();
+  });
+
+  it('stops before candidate-card lookup when tool discovery requests clarification', () => {
+    chatService.discoverWithTools.and.returnValue(of({
+      kind: 'CLARIFICATION_REQUIRED', message: 'Please name at least two candidates.',
+    }));
+    component.languageComparisonMessage = 'Compare suitable candidates';
+
+    component.proposeLanguageScope();
+    fixture.detectChanges();
+
+    expect(chatService.proposeLanguageScope).not.toHaveBeenCalled();
+    expect(component.languageScopeResponse).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Please name at least two candidates.');
+  });
+
+  it('does not copy confirmed cards when planning refuses the request', () => {
+    chatService.planConfirmedScope.and.returnValue(of({
+      kind: 'REFUSED', message: 'This request is outside the permitted workflow.',
+    }));
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace by religion',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+    ];
+
+    component.confirmLanguageScope();
+
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.languageWorkflowOutcome?.kind).toBe('REFUSED');
+  });
+
+  it('ignores confirmed-scope results after the selected job changes', () => {
+    const result = new Subject<{ kind: 'CONFIRMED_SCOPE_READY'; message: string }>();
+    chatService.planConfirmedScope.and.returnValue(result);
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+    ];
+
+    component.confirmLanguageScope();
+    component.selectedJobId = 99;
+    result.next({ kind: 'CONFIRMED_SCOPE_READY', message: 'Ready.' });
+    result.complete();
+
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.languageWorkflowOutcome).toBeNull();
   });
 
   it('rejects the same candidate being confirmed for two language references', () => {

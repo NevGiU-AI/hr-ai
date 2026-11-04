@@ -7,6 +7,7 @@ import {
   CvChatComparisonResponse,
   CvChatLanguageScopeResponse,
   CvChatResponse,
+  CvChatToolOrchestrationOutcome,
 } from '../models/cv-chat.models';
 
 @Injectable({ providedIn: 'root' })
@@ -35,5 +36,23 @@ export class CvChatService {
   /** Interprets candidate-name references, but returns only tenant-scoped cards that still require confirmation. */
   proposeLanguageScope(message: string): Observable<CvChatLanguageScopeResponse> {
     return this.http.post<CvChatLanguageScopeResponse>(`${this.apiUrl}/chat/candidates/scope`, { message });
+  }
+
+  /** Runs bounded candidate discovery before deterministic candidate cards are requested. */
+  discoverWithTools(message: string): Observable<CvChatToolOrchestrationOutcome> {
+    return this.http.post<CvChatToolOrchestrationOutcome>(`${this.apiUrl}/chat/tools/discover`, { message });
+  }
+
+  /**
+   * Plans only inside IDs explicitly confirmed in the UI. The optional approved job is omitted when no job is selected.
+   */
+  planConfirmedScope(
+    message: string,
+    candidateIds: number[],
+    jobId: number | null,
+  ): Observable<CvChatToolOrchestrationOutcome> {
+    const body: { message: string; candidateIds: number[]; jobId?: number } = { message, candidateIds };
+    if (jobId !== null) body.jobId = jobId;
+    return this.http.post<CvChatToolOrchestrationOutcome>(`${this.apiUrl}/chat/tools/confirmed-scope`, body);
   }
 }

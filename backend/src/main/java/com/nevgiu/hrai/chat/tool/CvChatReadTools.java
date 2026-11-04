@@ -7,6 +7,8 @@ import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.job.Job;
+import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -33,19 +35,22 @@ import java.util.Set;
 public class CvChatReadTools {
     private static final Set<String> CHAT_ROLES = Set.of("ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER");
     private static final int MAX_SEARCH_RESULTS = 10;
+    private static final int MAX_REQUIREMENT_FIELD_CHARACTERS = 2_000;
 
     private final CvChatCandidateResolutionService candidateResolution;
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
+    private final JobRepository jobs;
     private final CvChatToolExecutionGuard executionGuard;
     private final CvChatToolScope scope;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
-                           CvDocumentRepository documents, CvChatToolExecutionGuard executionGuard,
+                           CvDocumentRepository documents, JobRepository jobs, CvChatToolExecutionGuard executionGuard,
                            CvChatToolScope scope) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
+        this.jobs = jobs;
         this.executionGuard = executionGuard;
         this.scope = scope;
     }
@@ -91,6 +96,32 @@ public class CvChatReadTools {
             return new CandidateSummary(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),
                     candidate.getYearsExperience(), documentStatus);
         });
+    }
+
+    @Tool(name = "get_job_requirements", description = "Return bounded requirements for one approved job that the "
+            + "recruiter explicitly selected. Never returns tenant identifiers, salary, benefits, tone, or unrelated "
+            + "job-generation metadata.")
+    public JobRequirements getJobRequirements(
+            @ToolParam(description = "Explicitly selected approved job database ID") Long jobId) {
+        AppUserPrincipal actor = currentChatActor();
+        // Tenant authorization alone is insufficient: require the application-owned human-confirmed job scope before
+        // allowing a model-generated tool argument to reach the repository.
+        scope.requireConfirmedJob(jobId);
+        return executionGuard.execute(() -> {
+            Job job = jobs.findByIdAndOrganizationId(jobId, actor.organizationId())
+                    .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
+            return new JobRequirements(job.getId(), bounded(job.getTitle()), bounded(job.getLevel()),
+                    bounded(job.getSummary()), bounded(job.getResponsibilities()),
+                    bounded(job.getRequiredQualifications()), bounded(job.getPreferredQualifications()),
+                    bounded(job.getSoftSkills()));
+        });
+    }
+
+    private String bounded(String value) {
+        if (value == null || value.length() <= MAX_REQUIREMENT_FIELD_CHARACTERS) {
+            return value;
+        }
+        return value.substring(0, MAX_REQUIREMENT_FIELD_CHARACTERS);
     }
 
     private AppUserPrincipal currentChatActor() {

@@ -38,4 +38,22 @@ class CvChatToolScopeTest {
         assertThatThrownBy(() -> scope.confirm(List.of(1L, 2L, 3L, 4L, 5L, 6L)))
                 .isInstanceOf(CvChatException.class);
     }
+
+    @Test
+    void acceptsOnlyTheImmutableHumanConfirmedJob() {
+        scope.confirmJob(21L);
+
+        assertThatCode(() -> scope.requireConfirmedJob(21L)).doesNotThrowAnyException();
+        assertThatCode(() -> scope.confirmJob(21L)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> scope.requireConfirmedJob(22L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Approved job is outside the confirmed chat scope");
+        assertThatThrownBy(() -> scope.confirmJob(22L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Confirmed job scope cannot change during a request");
+        assertThatThrownBy(() -> new CvChatToolScope().confirmJob(null))
+                .isInstanceOf(CvChatException.class);
+        assertThatThrownBy(() -> new CvChatToolScope().confirmJob(0L))
+                .isInstanceOf(CvChatException.class);
+    }
 }

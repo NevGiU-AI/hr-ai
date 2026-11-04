@@ -20,7 +20,8 @@ import java.util.function.Predicate;
 @Component
 @RequestScope
 public class CvChatReadToolRegistry {
-    private static final Set<String> ALLOWED_TOOL_NAMES = Set.of("search_candidates", "get_candidate_summary");
+    private static final Set<String> ALLOWED_TOOL_NAMES = Set.of(
+            "search_candidates", "get_candidate_summary", "get_job_requirements");
     private final List<ToolCallback> callbacks;
 
     public CvChatReadToolRegistry(CvChatReadTools tools) {
@@ -51,6 +52,11 @@ public class CvChatReadToolRegistry {
 
     /** Confirmed-scope planning may search again and may summarize only IDs enforced by {@link CvChatToolScope}. */
     public List<ToolCallback> confirmedScopeCallbacks() {
+        return matching(callback -> !callback.getToolDefinition().name().equals("get_job_requirements"));
+    }
+
+    /** Adds approved-job requirements only after application code confirms and authorizes a selected job. */
+    public List<ToolCallback> confirmedScopeCallbacksWithJob() {
         return callbacks;
     }
 

@@ -559,6 +559,12 @@ kind plus presentation text—it cannot return candidate IDs, organization, role
 transitions such as claiming `CONFIRMED_SCOPE_READY` during discovery fail closed. No controller or Angular consumer is
 exposed yet; API activation remains gated by the live-provider attack suite and UI confirmation contract.
 
+The next read-tool increment adds `get_job_requirements`. It is excluded from discovery and ordinary candidate-only
+planning. Application code must first tenant-authorize one recruiter-selected approved job and install its ID into the
+immutable request scope; only then does the registry expose the callback. Execution repeats both confirmed-scope and
+tenant checks and returns bounded evaluation criteria without organization, compensation, benefits, tone, or generation
+metadata. This prepares job-grounded planning without giving the model authority to select a job.
+
 ## Acceptance criteria
 
 - Follow-up questions retain the correct conversation context.

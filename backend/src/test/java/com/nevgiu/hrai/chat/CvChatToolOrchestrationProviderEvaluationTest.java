@@ -30,7 +30,9 @@ class CvChatToolOrchestrationProviderEvaluationTest {
                 .openAiApi(api)
                 .defaultOptions(OpenAiChatOptions.builder().model(modelName).temperature(0.0).build())
                 .build();
-        var model = new SpringAiCvChatToolOrchestrationModel(ChatClient.builder(chatModel).build());
+        ChatClient chatClient = ChatClient.builder(chatModel).build();
+        var questionPolicy = new SpringAiCvChatQuestionPolicy(chatClient);
+        var model = new SpringAiCvChatToolOrchestrationModel(chatClient);
         List<ToolCallback> allCallbacks = Arrays.asList(MethodToolCallbackProvider.builder()
                 .toolObjects(new SyntheticReadTools())
                 .build()
@@ -43,7 +45,14 @@ class CvChatToolOrchestrationProviderEvaluationTest {
         for (var testCase : CvChatToolOrchestrationEvaluationDataset.load().cases()) {
             List<ToolCallback> callbacks = testCase.mode() == CvChatToolOrchestrationMode.DISCOVERY
                     ? discoveryCallbacks : allCallbacks;
-            CvChatToolOrchestrationOutcome outcome = model.respond(testCase.message(), testCase.mode(), callbacks);
+            CvChatToolOrchestrationOutcome outcome;
+            if (questionPolicy.classify(testCase.message()) == CvChatQuestionPolicyResult.SENSITIVE) {
+                // Mirrors the production pre-tool boundary without exposing application wording to this model test.
+                outcome = new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+                        "Application-owned refusal");
+            } else {
+                outcome = model.respond(testCase.message(), testCase.mode(), callbacks);
+            }
             // Failure output contains synthetic identifiers only; messages and tool results are deliberately omitted.
             results.assertThat(outcome.kind())
                     .as("case=%s mode=%s category=%s model=%s",

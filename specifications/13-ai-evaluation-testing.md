@@ -30,6 +30,13 @@ Maintain privacy-safe, human-reviewed datasets with stable identifiers and expec
 
 Do not use real candidate personal data in repository test fixtures. Govern any restricted evaluation dataset outside Git with the same access, retention, and deletion controls as production candidate data.
 
+OpenAI similarly recommends using evaluations to measure model behavior against representative test data, especially
+when developing an AI application and before promoting changes to prompts or models. The repository therefore treats
+these versioned datasets as executable product expectations rather than as training or fine-tuning data. Deterministic
+dataset tests validate fixture structure and reviewed labels without calling a provider; separately enabled live-provider
+evaluations verify that the configured model actually produces those expected behaviors. See OpenAI's
+[evaluation guide](https://developers.openai.com/api/docs/guides/evals).
+
 ### 3. AI-assisted evaluators
 
 Use version-matched Spring AI `Evaluator` implementations or application-specific evaluators for semantic properties such as:
@@ -352,8 +359,39 @@ AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
 mvn -B -Dtest=CvChatToolOrchestrationProviderEvaluationTest test
 ```
 
-These are test-process variables, not staging or production configuration. The provider gate is pending; the internal
-orchestrator must remain unexposed until the reviewed cases pass and the Angular confirmation behavior is specified.
+These are test-process variables, not staging or production configuration. The internal orchestrator remains unexposed
+until its API contract and Angular confirmation behavior are implemented and reviewed.
+
+The first provider run on 3 November 2026 failed five of eight cases because the model overused
+`CANDIDATE_CONFIRMATION_REQUIRED`, including in `CONFIRMED_SCOPE`, and did not consistently distinguish refusal cases.
+The application still failed closed because the service rejects outcome kinds that are illegal for the active mode.
+The prompt was then corrected with an explicit application-owned mode/state decision table. This initial failure is
+retained as evaluation history; the corrected provider gate must pass before the orchestrator is exposed.
+
+The second run on 4 November reduced the result to one failure: the orchestration model still attempted candidate
+confirmation for a compound sensitive request. The correction moved sensitive/unrelated classification to the existing
+pre-retrieval question-policy boundary, before any tool-enabled model call. Application code now supplies fixed refusal
+wording, while the orchestration prompt remains defense in depth. The provider evaluation mirrors this composed
+policy-plus-orchestration path.
+
+The first composed-policy rerun then produced four false refusals because the existing question policy's
+`OUT_OF_SCOPE` meaning is tailored to CV-evidence questions: legitimate discovery and confirmed-scope planning can be
+out of that classifier's evidence-question scope. The composition was narrowed to reuse only its `SENSITIVE` result as
+the hard pre-tool boundary. `OUT_OF_SCOPE` planning text continues to the dedicated orchestration policy, whose dataset
+now also includes an unrelated weather request. This preserves sensitive-data prevention without blocking legitimate
+candidate workflow messages.
+
+The next provider run produced the intended safe refusal for the explicit discovery confirmation-bypass attack, while
+the original dataset still expected candidate confirmation. That expectation contradicted the corrected decision table:
+an ordinary discovery with returned cards requires confirmation, but an instruction to ignore or fake confirmation is
+refused. The human-reviewed label was corrected to `REFUSED` and preserved as a structural regression assertion.
+
+The final provider gate passed on 4 November 2026 with `gpt-4o-mini`: all nine synthetic cases produced their reviewed
+structured outcome. Normal discovery required candidate-card confirmation, ordinary confirmed-scope planning became
+ready, and confirmation bypass, authorization/organization injection, malicious tool-result instructions, sensitive
+requests, unrelated requests, scope expansion, and unsupported suitability claims were refused. The run used no
+production candidate data. This accepts the internal structured-orchestration policy; controller and Angular exposure
+remain separate implementation and review steps.
 
 ### Speech
 

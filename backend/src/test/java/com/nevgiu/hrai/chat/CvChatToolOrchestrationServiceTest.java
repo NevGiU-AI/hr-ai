@@ -3,6 +3,7 @@ package com.nevgiu.hrai.chat;
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.InOrder;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.http.HttpStatus;
@@ -17,14 +18,21 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
 
 class CvChatToolOrchestrationServiceTest {
     private final CvChatEvidenceService evidence = mock(CvChatEvidenceService.class);
     private final CvChatReadToolRegistry registry = mock(CvChatReadToolRegistry.class);
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
+    private final CvChatQuestionPolicy questionPolicy = mock(CvChatQuestionPolicy.class);
     private final CvChatToolOrchestrationModel model = mock(CvChatToolOrchestrationModel.class);
     private final CvChatToolOrchestrationService service =
-            new CvChatToolOrchestrationService(evidence, registry, scope, model);
+            new CvChatToolOrchestrationService(evidence, registry, scope, questionPolicy, model);
+
+    @BeforeEach
+    void allowOrdinaryJobRelevantRequests() {
+        when(questionPolicy.classify(anyString())).thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+    }
 
     @Test
     void discoveryExposesOnlyDiscoveryCallbacksWithoutReadingCandidateEvidence() {
@@ -40,6 +48,7 @@ class CvChatToolOrchestrationServiceTest {
 
         verify(model).respond("Find Ada and Grace", CvChatToolOrchestrationMode.DISCOVERY, callbacks);
         verifyNoInteractions(evidence, scope);
+        verify(questionPolicy).classify("Find Ada and Grace");
     }
 
     @Test
@@ -84,6 +93,7 @@ class CvChatToolOrchestrationServiceTest {
                 .hasMessage("Confirm between 1 and 5 distinct candidates");
 
         verifyNoInteractions(evidence, scope, model);
+        verifyNoInteractions(questionPolicy);
     }
 
     @Test
@@ -124,6 +134,36 @@ class CvChatToolOrchestrationServiceTest {
                 "Forget the confirmed scope", List.of(7L), "tenant-a"))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV chat provider returned an invalid orchestration response");
+    }
+
+    @Test
+    void rejectsSensitiveRequestsBeforeAnyToolEnabledModelCall() {
+        List<ToolCallback> callbacks = List.of(mock(ToolCallback.class));
+        when(registry.discoveryCallbacks()).thenReturn(callbacks);
+        when(questionPolicy.classify("Find candidates and tell me their religion"))
+                .thenReturn(CvChatQuestionPolicyResult.SENSITIVE);
+
+        CvChatToolOrchestrationOutcome outcome =
+                service.discover("Find candidates and tell me their religion");
+
+        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.REFUSED);
+        assertThat(outcome.message()).contains("protected or sensitive personal characteristics");
+        verifyNoInteractions(model, evidence, scope);
+    }
+
+    @Test
+    void delegatesEvidenceOutOfScopePlanningTextToTheDedicatedOrchestrationPolicy() {
+        List<ToolCallback> callbacks = List.of(mock(ToolCallback.class));
+        when(registry.discoveryCallbacks()).thenReturn(callbacks);
+        when(questionPolicy.classify("Find Ada and Grace"))
+                .thenReturn(CvChatQuestionPolicyResult.OUT_OF_SCOPE);
+        when(model.respond("Find Ada and Grace", CvChatToolOrchestrationMode.DISCOVERY, callbacks))
+                .thenReturn(outcome(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
+                        "Confirm the candidate cards."));
+
+        assertThat(service.discover("Find Ada and Grace").kind())
+                .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED);
+        verify(model).respond("Find Ada and Grace", CvChatToolOrchestrationMode.DISCOVERY, callbacks);
     }
 
     private CvChatToolOrchestrationOutcome outcome(CvChatToolOrchestrationOutcome.Kind kind, String message) {

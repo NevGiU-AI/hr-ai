@@ -19,17 +19,23 @@ import java.util.Set;
 @Service
 public class CvChatToolOrchestrationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CvChatToolOrchestrationService.class);
+    private static final String REFUSAL_MESSAGE =
+            "I can only help plan job-relevant candidate review within the authorized confirmed scope. "
+                    + "I cannot provide or infer protected or sensitive personal characteristics.";
 
     private final CvChatEvidenceService evidenceService;
     private final CvChatReadToolRegistry registry;
     private final CvChatToolScope scope;
+    private final CvChatQuestionPolicy questionPolicy;
     private final CvChatToolOrchestrationModel model;
 
     CvChatToolOrchestrationService(CvChatEvidenceService evidenceService, CvChatReadToolRegistry registry,
-                                   CvChatToolScope scope, CvChatToolOrchestrationModel model) {
+                                   CvChatToolScope scope, CvChatQuestionPolicy questionPolicy,
+                                   CvChatToolOrchestrationModel model) {
         this.evidenceService = evidenceService;
         this.registry = registry;
         this.scope = scope;
+        this.questionPolicy = questionPolicy;
         this.model = model;
     }
 
@@ -66,7 +72,18 @@ public class CvChatToolOrchestrationService {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "Chat message is required");
         }
         try {
-            CvChatToolOrchestrationOutcome outcome = model.respond(message.strip(), mode, callbacks);
+            String normalizedMessage = message.strip();
+            CvChatQuestionPolicyResult policyResult = questionPolicy.classify(normalizedMessage);
+            if (policyResult == CvChatQuestionPolicyResult.SENSITIVE) {
+                // The existing policy's OUT_OF_SCOPE label is evidence-question-specific: legitimate scope-planning
+                // requests may receive it because they ask to find or confirm candidates rather than inspect a CV.
+                // Its SENSITIVE decision is reusable as a hard pre-tool boundary and prevents any candidate lookup.
+                LOGGER.info("CV chat tool orchestration rejected at pre-tool policy for candidateCount={} policyResult={}",
+                        candidateCount, policyResult);
+                return new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+                        REFUSAL_MESSAGE);
+            }
+            CvChatToolOrchestrationOutcome outcome = model.respond(normalizedMessage, mode, callbacks);
             if (outcome == null || outcome.kind() == null || outcome.message() == null
                     || outcome.message().isBlank()) {
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,
@@ -78,6 +95,10 @@ public class CvChatToolOrchestrationService {
                         candidateCount, outcome.kind());
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,
                         "CV chat provider returned an invalid orchestration response");
+            }
+            if (outcome.kind() == CvChatToolOrchestrationOutcome.Kind.REFUSED) {
+                // Provider wording is untrusted; refusals always use application-owned text.
+                return new CvChatToolOrchestrationOutcome(outcome.kind(), REFUSAL_MESSAGE);
             }
             return new CvChatToolOrchestrationOutcome(outcome.kind(), outcome.message().trim());
         } catch (CvChatException failure) {

@@ -15,7 +15,7 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
 
         assertThat(dataset.version()).isEqualTo("1.0.0");
         assertThat(dataset.description()).isNotBlank();
-        assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(8).allSatisfy(testCase -> {
+        assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(9).allSatisfy(testCase -> {
             assertThat(testCase.id()).isNotBlank();
             assertThat(testCase.mode()).isNotNull();
             assertThat(testCase.category()).isNotBlank();
@@ -31,6 +31,10 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
                 .contains(CvChatToolOrchestrationMode.DISCOVERY, CvChatToolOrchestrationMode.CONFIRMED_SCOPE);
         assertThat(dataset.cases()).extracting(CvChatToolOrchestrationEvaluationDataset.EvaluationCase::category)
                 .contains("confirmation-bypass", "authorization-injection", "tool-result-injection",
-                        "scope-expansion", "unsupported-claim");
+                        "sensitive-characteristic", "unrelated", "scope-expansion", "unsupported-claim");
+        assertThat(dataset.cases()).anySatisfy(testCase -> {
+            assertThat(testCase.id()).isEqualTo("discovery-confirmation-bypass");
+            assertThat(testCase.expected()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.REFUSED);
+        });
     }
 }

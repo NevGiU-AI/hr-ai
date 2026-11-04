@@ -43,8 +43,11 @@ The reviewed backend contract now exposes two authenticated, CSRF-protected phas
 Both endpoints are limited to `ADMIN`, `RECRUITER`, and `REVIEWER`. Organization and roles come exclusively from the
 authenticated session. Extra model/client fields cannot override them, and responses contain only the validated
 workflow kind and presentation message—never candidate IDs, job IDs, tenant context, roles, or authorization state.
-Provider failures retain structured safe HTTP errors. The Angular application does not call these endpoints yet; UI
-activation remains a separate reviewed slice.
+Provider failures retain structured safe HTTP errors. PR #144 connected the Angular language-first workflow to both
+phases: discovery gates deterministic candidate-card lookup, and confirmed-scope planning runs only after every card
+is explicitly selected. Clarification/refusal stops before lookup, `CONFIRMED_SCOPE_READY` alone may populate the
+visible comparison scope, and grounded evidence retrieval remains a separate recruiter action. Stale results are
+discarded when the message, selected cards, or optional approved job changes. Staging acceptance remains pending.
 
 ## Trusted context and authorization
 

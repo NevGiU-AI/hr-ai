@@ -6,6 +6,76 @@ Use Spring AI tool calling to let the CV-chat model retrieve current authorized 
 
 The model may select a tool and propose structured arguments. The application remains responsible for authorization, validation, execution, confirmation, auditing, rate limits, and result minimization.
 
+## Added value compared with existing APIs
+
+Spring AI tools do not replace the existing REST APIs or domain services. The APIs remain the deterministic
+application boundary and source of truth:
+
+```text
+Angular or another client
+-> REST API
+-> authorized domain service
+-> database
+```
+
+A tool is a narrow model-facing adapter around an existing authorized capability:
+
+```text
+Recruiter message
+-> application selects the tools allowed for this workflow phase
+-> model requests one specific tool
+-> application validates and authorizes the request
+-> existing domain service executes
+-> minimized structured result returns to the model
+-> model prepares a controlled or cited response
+```
+
+For a fixed form or known interaction, tools add little value. If the recruiter has already selected candidates and a
+job and pressed **Compare**, Angular can call the deterministic comparison API directly and should continue to do so.
+Routing that known operation through a model would add latency, provider cost, nondeterminism, testing complexity, and
+another failure boundary without improving the workflow.
+
+Tools become valuable for the planned dedicated conversational CV-chat page. A request such as:
+
+> Compare Fanon and Boris against the approved senior backend role, and tell me whose CV still needs review.
+
+may require the assistant to coordinate several existing capabilities:
+
+1. Search candidate names inside the authenticated organization.
+2. Ask the recruiter to resolve missing or ambiguous references.
+3. Retain only the explicitly confirmed candidate scope.
+4. Retrieve bounded requirements for the explicitly selected approved job.
+5. Inspect authorized document, malware-scan, OCR, or review status.
+6. Retrieve authorized current CV evidence.
+7. Produce a grounded comparison with citations.
+
+Without tools, the frontend or backend must predict each conversational sequence and implement a dedicated endpoint or
+workflow for every supported combination. A small reviewed tool set lets the assistant plan among reusable operations
+while application code still controls authorization and execution. This provides:
+
+- natural-language orchestration without one endpoint per recruiter phrasing;
+- reusable capabilities for the future web-chat page, speech input, Telegram, and WhatsApp;
+- contextual clarification when required names, scope, or criteria are missing;
+- composition across candidate, job, document-status, evaluation-evidence, and later dashboard queries;
+- smaller model context because only the required minimized records are retrieved; and
+- current application data at execution time instead of stale data copied into a long prompt.
+
+Those benefits do not justify making every API a tool. The project deliberately uses a hybrid architecture:
+
+- REST controllers and domain services remain the source of truth.
+- Angular calls APIs directly whenever the workflow and operation are already known.
+- Application code selects which tools are registered for each phase and role.
+- Authentication, tenant isolation, record authorization, validation, and limits remain deterministic server-side
+  checks rather than prompt instructions.
+- Candidate cards require explicit human confirmation, and the model cannot create or widen candidate scope.
+- Grounded comparison remains a separate evidence-and-citation service.
+- Future state-changing or externally communicating tools require a deterministic preview, explicit confirmation,
+  idempotency, and an audit record.
+
+Therefore, the practical value is not “another way to call the same API.” Tools provide controlled composition for a
+flexible conversational assistant. They are useful where the recruiter may express many valid multi-step workflows in
+natural language, but direct APIs remain preferable for simple deterministic UI actions.
+
 ## Initial read-only tools
 
 Implement a small, request-scoped tool set after the underlying domain services and authorization model exist:

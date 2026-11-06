@@ -119,6 +119,80 @@ is explicitly selected. Clarification/refusal stops before lookup, `CONFIRMED_SC
 visible comparison scope, and grounded evidence retrieval remains a separate recruiter action. Stale results are
 discarded when the message, selected cards, or optional approved job changes. Staging acceptance remains pending.
 
+### Tool-class relationship
+
+The following diagram separates the HTTP/orchestration layer, Spring AI callback layer, request-local security state,
+and existing deterministic data services. Solid arrows represent ordinary method calls or dependency delegation;
+dotted arrows represent callbacks that Spring AI may invoke after the application attaches them to one model request.
+
+```mermaid
+flowchart TD
+    Angular[Angular language-first workflow]
+    Controller[CvChatToolOrchestrationController]
+    Service[CvChatToolOrchestrationService]
+    Policy[CvChatQuestionPolicy]
+    Evidence[CvChatEvidenceService]
+    Model[SpringAiCvChatToolOrchestrationModel]
+    ChatClient[Spring AI ChatClient]
+
+    subgraph RequestScope[One isolated HTTP request]
+        Registry[CvChatReadToolRegistry]
+        Scope[CvChatToolScope]
+        Tools[CvChatReadTools]
+        Guard[CvChatToolExecutionGuard]
+    end
+
+    Executor[CvChatToolExecutor]
+    Search[CvChatCandidateResolutionService]
+    CandidateRepo[CandidateRepository]
+    DocumentRepo[CvDocumentRepository]
+    JobRepo[JobRepository]
+    Results[CandidateSearchResult / CandidateSummary / JobRequirements]
+
+    Angular -->|POST discover or confirmed-scope| Controller
+    Controller --> Service
+    Service -->|classify before tools| Policy
+    Service -->|authorize confirmed candidates| Evidence
+    Service -->|authorize optional job| JobRepo
+    Service -->|install confirmed IDs| Scope
+    Service -->|select callbacks for phase| Registry
+    Service -->|message, mode, selected callbacks| Model
+    Registry -->|discovers @Tool methods and enforces allow list| Tools
+    Model -->|toolCallbacks only for this call| ChatClient
+    ChatClient -.->|search_candidates / get_candidate_summary / get_job_requirements| Tools
+    Tools -->|require confirmed candidate/job| Scope
+    Tools -->|count and time-bound every call| Guard
+    Guard --> Executor
+    Tools --> Search
+    Tools --> CandidateRepo
+    Tools --> DocumentRepo
+    Tools --> JobRepo
+    Tools --> Results
+    Results -.->|minimized structured tool result| ChatClient
+    ChatClient -->|structured workflow outcome| Model
+    Model --> Service
+    Service --> Controller
+    Controller --> Angular
+```
+
+The main responsibilities are:
+
+- `CvChatToolOrchestrationController` exposes the two authenticated HTTP phases and obtains organization context from
+  the authenticated principal rather than the request body.
+- `CvChatToolOrchestrationService` owns deterministic phase transitions, pre-tool policy checks, candidate/job
+  authorization, request-scope installation, callback selection, and validation of the model's structured outcome.
+- `SpringAiCvChatToolOrchestrationModel` builds the reviewed prompt and attaches only the callbacks selected for that
+  invocation through `toolCallbacks(...)`; it does not make the tools global.
+- `CvChatReadToolRegistry` converts `@Tool` methods into Spring AI callbacks, verifies an exact closed allow list, and
+  returns different callback subsets for discovery, confirmed candidates, and confirmed candidates plus a job.
+- `CvChatReadTools` implements the three model-facing read operations. Each operation independently authenticates,
+  enforces tenant and confirmed-record scope, delegates to deterministic services/repositories, and minimizes output.
+- `CvChatToolScope` holds immutable human-confirmed candidate and optional job IDs for the current HTTP request.
+- `CvChatToolExecutionGuard` gives each request a separate call budget, while the singleton `CvChatToolExecutor` runs
+  approved work on virtual threads with a timeout. It contains no tenant or authorization state.
+- `CandidateCard`, `CandidateSearchResult`, `CandidateSummary`, `CurrentDocumentStatus`, and `JobRequirements` are
+  bounded transfer records. They define what may cross from deterministic application code into the model context.
+
 ## Trusted context and authorization
 
 - Resolve user identity, organization, roles, locale, and request correlation data from trusted application context, not model-generated tool arguments.
@@ -186,6 +260,74 @@ Before an upgrade:
 - Pin compatible model and Spring AI versions.
 - Run unit, integration, authorization, prompt-injection, and tool-loop regression tests.
 - Verify tool resolution, schema generation, result conversion, observability, and retry behavior.
+
+## Learning sources and project mapping
+
+The implementation was derived primarily from official Spring documentation. The versioned Spring AI links below
+describe the `1.1.x` API family used by this repository; the project remains pinned to Spring AI `1.1.0`, so examples
+must still be checked against the dependency actually compiled by Maven rather than copied blindly from a newer patch
+or from Spring AI 2.x.
+
+1. [Spring AI 1.1 Tool Calling](https://docs.spring.io/spring-ai/reference/1.1/api/tools.html) explains the complete
+   tool lifecycle: the application publishes a name, description, and input schema; the model may request a call; the
+   application executes the matching `ToolCallback`; and the result returns to the model. It also documents
+   declarative `@Tool` methods, `ToolCallback`, `ToolCallbacks.from(...)`, result conversion, exception handling, and
+   observability. This is the foundation for `CvChatReadTools`, `CvChatReadToolRegistry`, and the bounded callback
+   results used here. The guide explicitly states that the model never receives direct access to the underlying API;
+   that is why every callback delegates to an authorized application service instead of exposing repositories or SQL.
+2. [Spring AI 1.1 ChatClient API](https://docs.spring.io/spring-ai/reference/1.1/api/chatclient.html) explains the fluent
+   `prompt()`, `system(...)`, `user(...)`, `options(...)`, `call()`, and `content()` sequence used by
+   `SpringAiCvChatToolOrchestrationModel`. Its distinction between defaults and request-specific configuration supports
+   this project's choice to attach callbacks only to the reviewed orchestration call rather than make privileged or
+   context-specific tools globally available.
+3. [Spring Framework bean scopes](https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html)
+   explains that a request-scoped bean has one instance per HTTP request and how scoped proxies allow it to be injected
+   into longer-lived beans. That is the reason `CvChatReadTools`, `CvChatReadToolRegistry`, `CvChatToolScope`, and
+   `CvChatToolExecutionGuard` use `@RequestScope`: mutable authorization scope and execution state cannot leak from one
+   recruiter's HTTP request into another.
+4. [Spring AI Evaluation Testing](https://docs.spring.io/spring-ai/reference/api/testing.html) explains why generated
+   behavior requires evaluation in addition to deterministic unit tests, and why an evaluation model may differ from
+   the generation model. The opt-in orchestration provider evaluation applies that principle to representative normal,
+   ambiguous, sensitive, out-of-scope, injection, and confirmation-bypass cases. Normal CI remains deterministic and
+   provider-free; the live dataset test is an explicit release/review gate because it incurs cost and can vary with the
+   provider.
+
+These references explain the framework mechanics, not this application's authorization policy. Tenant isolation,
+confirmed candidate scope, approved-job scope, read-only exposure, bounded results, timeout handling, and refusal
+ordering are project security decisions enforced and tested by application code. A framework feature or model prompt
+must never be treated as a substitute for those deterministic controls.
+
+## Security and AI engineering sources
+
+The non-Spring design decisions are informed by the following primary or standards-oriented sources. They support the
+principles used here; they do not replace a project-specific threat model, legal review, or automated verification.
+
+1. [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) explains that direct
+   recruiter text and indirect content such as CVs, OCR output, websites, or files can attempt to change model
+   behavior. Its mitigations include separating untrusted content, constraining model behavior, validating outputs,
+   applying least privilege, requiring approval for high-risk actions, and adversarial testing. These principles map
+   to marked untrusted prompt blocks, application-owned workflow state, deterministic response validation, per-phase
+   callback registration, injection datasets, and the rule that CV evidence is data rather than policy.
+2. [OWASP LLM06:2025 Excessive Agency](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/) describes the risk
+   created by excessive tool functionality, permissions, or autonomy. It supports this project's small read-only tool
+   set, tenant- and record-level authorization inside every callback, absence of generic SQL/HTTP/filesystem tools, and
+   requirement for preview plus explicit confirmation before any future state-changing or external action.
+3. [OpenAI evaluation best practices](https://developers.openai.com/api/docs/guides/evaluation-best-practices) recommends
+   defining an evaluation objective, collecting representative datasets, selecting explicit metrics, comparing runs,
+   and continuously adding observed failures. This maps to versioned human-reviewed datasets, deterministic contract
+   tests, opt-in provider evaluations, multilingual/adversarial cases, and promotion gates after staging observations.
+   Provider-backed evaluation complements unit and integration tests; it does not make normal CI depend on a billable,
+   nondeterministic external service.
+4. [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) and the
+   [NIST Generative AI Profile](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf) organize AI risk work around
+   governance, mapping context and impact, measurement, and ongoing management. They support the broader roadmap of
+   documented human oversight, privacy and security controls, measurable quality and performance acceptance, incident
+   visibility, and revalidation when prompts, tools, providers, models, data, or deployment conditions change.
+
+Source-to-control mapping should remain explicit. For example, “least privilege” becomes a bounded callback list and
+server-side authorization tests; “human oversight” becomes confirmed candidate cards and approval gates; and
+“continuous evaluation” becomes a reviewed dataset that grows whenever staging or production exposes a new failure.
+Merely linking a standard without implementing and testing the corresponding control is not sufficient.
 
 ## Acceptance criteria
 

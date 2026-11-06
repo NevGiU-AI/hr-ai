@@ -326,7 +326,9 @@ explicit later performance measurements rather than inferred acceptance claims.
 The versioned synthetic dataset at
 `backend/src/test/resources/ai-evaluations/cv-chat-tool-orchestration-v1.json` covers normal discovery and confirmed
 planning plus confirmation bypass, role/organization injection, malicious tool-result content, sensitive requests,
-scope expansion, and unsupported suitability claims. It contains no production candidate data.
+scope expansion, and unsupported suitability claims. Version `1.1.0` also covers multiple legitimate cards for an
+ambiguous name and an explicit confirmed request to compare two candidates for backend engineering. It contains no
+production candidate data.
 
 Normal pull-request tests validate dataset structure, the closed structured outcome schema, discovery-versus-confirmed
 callback separation, tenant authorization before scope installation, exact confirmed-ID enforcement, safe provider
@@ -367,9 +369,9 @@ AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
 mvn -B -Dtest=CvChatToolOrchestrationProviderEvaluationTest test
 ```
 
-These are test-process variables, not staging or production configuration. The reviewed backend API now exposes
-separate discovery and confirmed-scope contracts; Angular activation remains pending until its confirmation behavior is
-implemented and reviewed.
+These are test-process variables, not staging or production configuration. The reviewed backend API exposes separate
+discovery and confirmed-scope contracts, and PR #144 connected them to Angular while preserving deterministic card
+selection and a separate grounded-comparison action.
 
 The first provider run on 3 November 2026 failed five of eight cases because the model overused
 `CANDIDATE_CONFIRMATION_REQUIRED`, including in `CONFIRMED_SCOPE`, and did not consistently distinguish refusal cases.
@@ -395,12 +397,21 @@ the original dataset still expected candidate confirmation. That expectation con
 an ordinary discovery with returned cards requires confirmation, but an instruction to ignore or fake confirmation is
 refused. The human-reviewed label was corrected to `REFUSED` and preserved as a structural regression assertion.
 
-The final provider gate passed on 4 November 2026 with `gpt-4o-mini`: all nine synthetic cases produced their reviewed
+The provider gate passed on 4 November 2026 with `gpt-4o-mini`: all nine version `1.0.0` synthetic cases produced their reviewed
 structured outcome. Normal discovery required candidate-card confirmation, ordinary confirmed-scope planning became
 ready, and confirmation bypass, authorization/organization injection, malicious tool-result instructions, sensitive
 requests, unrelated requests, scope expansion, and unsupported suitability claims were refused. The run used no
 production candidate data. This accepts the internal structured-orchestration policy; controller and Angular exposure
 remain separate implementation and review steps.
+
+Focused staging testing after PR #144 exposed two additional real-workflow cases on 5 November 2026. Discovery asked
+for clarification when one requested name had several legitimate tenant-scoped cards, preventing Angular from showing
+those cards for human disambiguation. Confirmed-scope planning also asked for clarification after the recruiter had
+explicitly selected both cards and submitted “Compare Zok Boris and Yogesh Patils for backend engineering.” Dataset
+version `1.1.0` preserves both cases: legitimate ambiguous cards require confirmation, while that explicit confirmed
+comparison is ready. The prompt now identifies card selection as the ambiguity boundary and carries explicit trusted
+confirmed-scope state outside recruiter-controlled text. Deterministic and full backend regression suites pass; the
+expanded live-provider gate and repeated staging checks remain required before acceptance.
 
 ### Speech
 

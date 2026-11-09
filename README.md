@@ -81,8 +81,10 @@ decisions.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.
-  PR #144 connects the existing workspace flow to the reviewed Spring AI discovery and confirmed-scope phases; focused
-  staging acceptance is pending. The workspace remains the contract-validation surface. After scoped conversation
+  PR #144 connects the existing workspace flow to the reviewed Spring AI discovery and confirmed-scope phases. The
+  current one-pass correction reuses the exact tenant-scoped discovery results as confirmation cards instead of
+  extracting the same names twice; focused staging acceptance is pending. The workspace remains the contract-validation
+  surface. After scoped conversation
   memory is stable, a dedicated message-style CV-chat page will reuse these same authorization, confirmation,
   retrieval, citation, and refusal boundaries.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's

@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { EMPTY, finalize, forkJoin, switchMap } from 'rxjs';
+import { finalize, forkJoin, switchMap } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
   ApiError,
@@ -251,15 +251,6 @@ export class CvWorkspaceComponent implements OnInit {
     const request = ++this.languageWorkflowRequest;
     this.chatService.discoverWithTools(message)
       .pipe(
-        switchMap((outcome) => {
-          if (!this.isCurrentLanguageRequest(request, message)) return EMPTY;
-          this.languageWorkflowOutcome = outcome;
-          // Candidate cards remain deterministic application data. They are requested only when the reviewed
-          // orchestrator decision allows discovery to continue.
-          return outcome.kind === 'CANDIDATE_CONFIRMATION_REQUIRED'
-            ? this.chatService.proposeLanguageScope(message)
-            : EMPTY;
-        }),
         finalize(() => {
           if (request === this.languageWorkflowRequest) this.languageScopeBusy = false;
         }),
@@ -267,16 +258,23 @@ export class CvWorkspaceComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (!this.isCurrentLanguageRequest(request, message)) return;
-          this.languageScopeResponse = response;
-          // A unique exact match may be preselected for review, but it remains unconfirmed and triggers no evidence
-          // retrieval until the recruiter presses the separate confirmation button.
-          this.languageScopeSelections = response.references.map((reference) =>
+          this.languageWorkflowOutcome = { kind: response.kind, message: response.message };
+          if (response.kind !== 'CANDIDATE_CONFIRMATION_REQUIRED') return;
+
+          const candidateScope = response.candidateScope;
+          // Fail closed when an old or malformed backend confirms discovery without the cards from that exact request.
+          // Never recover by making the old second extraction call: it could resolve a different candidate scope.
+          if (!candidateScope || candidateScope.message !== message || candidateScope.references.length < 2) {
+            this.languageScopeError = 'Candidate cards were not returned for this request. Please try again.';
+            return;
+          }
+          this.languageScopeResponse = candidateScope;
+          // Partial-name tool results remain explicit choices, even when only one card currently matches. No evidence
+          // is retrieved until the recruiter selects every card and presses the separate confirmation button.
+          this.languageScopeSelections = candidateScope.references.map((reference) =>
             reference.status === 'RESOLVED' && reference.candidates.length === 1
               ? reference.candidates[0]
               : null);
-          if (!response.references.length) {
-            this.languageScopeError = 'Name at least two candidates explicitly so the scope can be confirmed.';
-          }
         },
         error: (error: HttpErrorResponse) => {
           if (this.isCurrentLanguageRequest(request, message)) {

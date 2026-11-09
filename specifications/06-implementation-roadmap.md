@@ -242,8 +242,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   selected candidate and no citation-coverage, normalization, provider, or raw-control-token failure.
 - [~] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped
   Spring AI query tools. Candidate discovery, confirmed candidate summaries, optional approved-job requirements, the
-  reviewed orchestration API, and Angular activation are implemented through PR #144; staging acceptance and the
-  remaining evidence/document/dashboard tools are pending.
+  reviewed orchestration API, and Angular activation are implemented through PR #144. The current correction makes
+  discovery one-pass: the same extracted references and tenant-authorized search results decide the workflow and
+  populate confirmation cards, while the former candidate-scope endpoint remains temporarily for cached clients.
+  Staging acceptance and the remaining evidence/document/dashboard tools are pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.

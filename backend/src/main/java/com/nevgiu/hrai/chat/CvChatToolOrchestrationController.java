@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Reviewed HTTP boundary for the internal read-tool orchestrator.
  *
- * <p>The response contains only an application-validated workflow kind and presentation text. Candidate/job scope is
- * never returned by the model, and the organization always comes from the authenticated session.</p>
+ * <p>The response contains an application-validated workflow kind and presentation text. Successful discovery also
+ * carries the minimal tenant-authorized cards returned by the exact searches that produced that decision. Those cards
+ * are application data, never model output. The organization always comes from the authenticated session.</p>
  */
 @RestController
 @RequestMapping("/api/chat/tools")
@@ -25,7 +26,7 @@ public class CvChatToolOrchestrationController {
 
     /** Candidate discovery can register only the bounded tenant-scoped search callback. */
     @PostMapping("/discover")
-    public CvChatToolOrchestrationOutcome discover(@Valid @RequestBody CvChatToolDiscoveryRequest request) {
+    public CvChatToolDiscoveryResponse discover(@Valid @RequestBody CvChatToolDiscoveryRequest request) {
         return orchestration.discover(request.message());
     }
 

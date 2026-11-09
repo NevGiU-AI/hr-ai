@@ -1,5 +1,7 @@
 package com.nevgiu.hrai.chat;
 
+import com.nevgiu.hrai.chat.tool.CandidateCard;
+import com.nevgiu.hrai.chat.tool.CandidateSearchResult;
 import com.nevgiu.hrai.chat.tool.CvChatReadTools;
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
@@ -18,7 +20,8 @@ import java.util.Set;
 /**
  * Policy-controlled orchestration boundary behind the reviewed discovery and confirmed-scope HTTP endpoints.
  * Structured outcomes, prompt-injection evaluation, and explicit application-owned scope remain mandatory. The
- * Angular language-first flow calls this boundary before deterministic card lookup and again after card confirmation.
+ * Angular language-first flow receives the deterministic cards from this boundary and calls it again after card
+ * confirmation. Discovery deliberately performs only one provider extraction and one authorized search per reference.
  */
 @Service
 public class CvChatToolOrchestrationService {
@@ -60,10 +63,11 @@ public class CvChatToolOrchestrationService {
         this.model = model;
     }
 
-    public CvChatToolOrchestrationOutcome discover(String message) {
+    public CvChatToolDiscoveryResponse discover(String message) {
         String normalizedMessage = requireMessage(message);
         CvChatToolOrchestrationOutcome blocked = blockedOutcome(normalizedMessage, 0);
-        return blocked != null ? blocked : discoverCandidates(normalizedMessage);
+        return blocked != null ? CvChatToolDiscoveryResponse.from(blocked, null)
+                : discoverCandidates(normalizedMessage);
     }
 
     public CvChatToolOrchestrationOutcome planConfirmedScope(String message, List<Long> requestedCandidateIds,
@@ -194,7 +198,7 @@ public class CvChatToolOrchestrationService {
      * cannot return {@code REFUSED} before the required searches execute. Sensitive and workflow-bypass requests have
      * already returned above, before either extraction or search.</p>
      */
-    private CvChatToolOrchestrationOutcome discoverCandidates(String message) {
+    private CvChatToolDiscoveryResponse discoverCandidates(String message) {
         List<String> references;
         try {
             references = referenceExtractor.extract(message);
@@ -204,17 +208,45 @@ public class CvChatToolOrchestrationService {
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "Candidate reference interpretation is unavailable");
         }
         if (references.size() < 2) {
-            return CvChatToolDiscoveryDecision.decide(discoveryState.snapshot());
+            return CvChatToolDiscoveryResponse.from(
+                    CvChatToolDiscoveryDecision.decide(discoveryState.snapshot()), null);
         }
         // Invoke the same reviewed tool exposed to Spring AI, but do so deterministically. The tool still derives the
-        // tenant and roles from the authenticated SecurityContext and records privacy-safe result counts.
-        references.forEach(readTools::searchCandidates);
+        // tenant and roles from the authenticated SecurityContext and records privacy-safe result counts. Retain these
+        // exact minimized results so Angular does not trigger a second provider extraction and potentially receive a
+        // different set of candidate references.
+        List<CvChatLanguageScopeResponse.Reference> candidateReferences = references.stream()
+                .map(reference -> candidateReference(reference, readTools.searchCandidates(reference)))
+                .toList();
         CvChatToolDiscoveryState.Snapshot searches = discoveryState.snapshot();
         CvChatToolOrchestrationOutcome outcome = CvChatToolDiscoveryDecision.decide(searches);
         LOGGER.info("CV chat deterministic discovery completed searchCalls={} distinctSuccessfulSearches={} "
                         + "emptySearches={} outcome={}", searches.searchCalls(), searches.distinctSuccessfulSearches(),
                 searches.emptySearches(), outcome.kind());
-        return outcome;
+        CvChatLanguageScopeResponse candidateScope =
+                outcome.kind() == CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED
+                        ? new CvChatLanguageScopeResponse(message, List.copyOf(candidateReferences))
+                        : null;
+        return CvChatToolDiscoveryResponse.from(outcome, candidateScope);
+    }
+
+    private CvChatLanguageScopeResponse.Reference candidateReference(String requestedName,
+                                                                      CandidateSearchResult searchResult) {
+        List<CvChatLanguageScopeResponse.CandidateOption> candidates = searchResult.candidates().stream()
+                .map(this::candidateOption)
+                .toList();
+        CvChatLanguageScopeResponse.Status status = candidates.isEmpty()
+                ? CvChatLanguageScopeResponse.Status.NOT_FOUND
+                : CvChatLanguageScopeResponse.Status.CHOICES;
+        // search_candidates is deliberately a partial-name operation. Even one returned card remains a choice until
+        // the recruiter explicitly selects and confirms it; current or future tenant data must not change that rule.
+        return new CvChatLanguageScopeResponse.Reference(
+                requestedName, status, List.copyOf(candidates), searchResult.truncated());
+    }
+
+    private CvChatLanguageScopeResponse.CandidateOption candidateOption(CandidateCard candidate) {
+        return new CvChatLanguageScopeResponse.CandidateOption(
+                candidate.id(), candidate.name(), candidate.currentTitle());
     }
 
     private List<Long> validateIds(List<Long> candidateIds) {

@@ -112,13 +112,19 @@ The reviewed backend contract now exposes two authenticated, CSRF-protected phas
   optional explicitly confirmed approved-job ID.
 
 Both endpoints are limited to `ADMIN`, `RECRUITER`, and `REVIEWER`. Organization and roles come exclusively from the
-authenticated session. Extra model/client fields cannot override them, and responses contain only the validated
-workflow kind and presentation message—never candidate IDs, job IDs, tenant context, roles, or authorization state.
+authenticated session. Extra model/client fields cannot override them. Confirmed-scope responses contain only the
+validated workflow kind and presentation message. The additive discovery response keeps those top-level fields and
+may also contain `candidateScope`, but only after Java has performed every required authenticated candidate search.
+Its minimal candidate IDs, names, and titles are application-owned tenant-scoped cards for human confirmation, never
+model-proposed scope or authorization state. It never contains job IDs, tenant context, roles, or authorization facts.
 Discovery/reference and pre-tool policy failures retain structured safe HTTP errors. The non-authoritative
 confirmed-scope tool preflight instead degrades to the application-owned ready state and emits a privacy-safe warning.
-PR #144 connected the Angular language-first workflow to both
-phases: discovery gates deterministic candidate-card lookup, and confirmed-scope validation runs only after every card
-is explicitly selected. Clarification/refusal stops before lookup. After deterministic policy checks and tenant
+PR #144 connected the Angular language-first workflow to both phases. The one-pass discovery correction now collects
+the exact `search_candidates` results already used to make the application-owned discovery decision and returns them
+in `candidateScope`; Angular no longer repeats name extraction through `/api/chat/candidates/scope`. The legacy endpoint
+remains temporarily available for cached-client compatibility. A confirmation without candidate cards fails closed,
+and clarification/refusal returns a null scope. Confirmed-scope validation runs only after every card is explicitly
+selected. After deterministic policy checks and tenant
 authorization of every confirmed candidate and optional approved job, Java returns `CONFIRMED_SCOPE_READY`; a model
 cannot reinterpret or randomly refuse that trusted state. After authorization, Spring AI receives only the minimum
 confirmed-scope callbacks for a bounded tool-orchestration preflight. It must read every confirmed candidate summary
@@ -136,7 +142,8 @@ is a deliberately narrow deterministic boundary rather than a general natural-la
 continue to `CvChatQuestionPolicy`. During discovery, `CvChatCandidateReferenceExtractor` interprets only the bounded
 human-readable references; Java then calls `search_candidates` separately for every extracted person. The provider is
 not allowed to refuse before those mandatory searches run. One or several legitimate cards for every requested person
-produces `CANDIDATE_CONFIRMATION_REQUIRED`; a missing result produces `CLARIFICATION_REQUIRED`, and Angular resolves
+produces `CANDIDATE_CONFIRMATION_REQUIRED`; the same authorized card results are included in that response rather than
+being re-created by a second provider call. A missing result produces `CLARIFICATION_REQUIRED`, and Angular resolves
 ambiguity through explicit card selection. `CvChatToolDiscoveryState` records request-local search counts, and
 `CvChatToolDiscoveryDecision` makes the transition from those authorized facts. Four Fanon cards still represent one
 successful reference, for example; a second successful Yogish search is enough to show both card groups for human
@@ -178,6 +185,7 @@ flowchart TD
     DocumentRepo[CvDocumentRepository]
     JobRepo[JobRepository]
     Results[CandidateSearchResult / CandidateSummary / JobRequirements]
+    DiscoveryResponse[CvChatToolDiscoveryResponse with application-owned candidateScope]
 
     Angular -->|POST discover or confirmed-scope| Controller
     Controller --> Service
@@ -205,6 +213,9 @@ flowchart TD
     Tools --> JobRepo
     Tools --> Results
     Results -.->|minimized structured tool result| ChatClient
+    Results -->|reuse authorized discovery cards| DiscoveryResponse
+    Service -->|validated kind and optional scope| DiscoveryResponse
+    DiscoveryResponse -->|one-pass confirmation response| Angular
     DiscoveryState -->|aggregate search snapshot| Service
     PlanningState -->|verify every expected tool call occurred| Service
     Service -->|apply CvChatToolDiscoveryDecision| Service

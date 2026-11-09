@@ -5,8 +5,8 @@ import { environment } from '../../../../environments/environments';
 import {
   CvChatCandidateSearchResponse,
   CvChatComparisonResponse,
-  CvChatLanguageScopeResponse,
   CvChatResponse,
+  CvChatToolDiscoveryResponse,
   CvChatToolOrchestrationOutcome,
 } from '../models/cv-chat.models';
 
@@ -33,14 +33,9 @@ export class CvChatService {
     });
   }
 
-  /** Interprets candidate-name references, but returns only tenant-scoped cards that still require confirmation. */
-  proposeLanguageScope(message: string): Observable<CvChatLanguageScopeResponse> {
-    return this.http.post<CvChatLanguageScopeResponse>(`${this.apiUrl}/chat/candidates/scope`, { message });
-  }
-
-  /** Runs bounded candidate discovery before deterministic candidate cards are requested. */
-  discoverWithTools(message: string): Observable<CvChatToolOrchestrationOutcome> {
-    return this.http.post<CvChatToolOrchestrationOutcome>(`${this.apiUrl}/chat/tools/discover`, { message });
+  /** Extracts references once and returns the cards from those exact tenant-scoped searches for confirmation. */
+  discoverWithTools(message: string): Observable<CvChatToolDiscoveryResponse> {
+    return this.http.post<CvChatToolDiscoveryResponse>(`${this.apiUrl}/chat/tools/discover`, { message });
   }
 
   /**

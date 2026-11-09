@@ -7,5 +7,5 @@ import java.util.List;
 /** Provider boundary for one explicitly allow-listed, read-only tool-planning call. */
 interface CvChatToolOrchestrationModel {
     CvChatToolOrchestrationOutcome respond(String message, CvChatToolOrchestrationMode mode,
-                                            List<ToolCallback> callbacks);
+                                            List<ToolCallback> callbacks, boolean approvedJobConfirmed);
 }

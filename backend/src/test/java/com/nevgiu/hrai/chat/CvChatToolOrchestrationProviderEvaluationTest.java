@@ -55,7 +55,7 @@ class CvChatToolOrchestrationProviderEvaluationTest {
                 outcome = new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
                         "Application-owned refusal");
             } else {
-                outcome = model.respond(testCase.message(), testCase.mode(), callbacks);
+                outcome = model.respond(testCase.message(), testCase.mode(), callbacks, false);
             }
             // Failure output contains synthetic identifiers only; messages and tool results are deliberately omitted.
             results.assertThat(outcome.kind())

@@ -66,7 +66,7 @@ public class CvChatToolOrchestrationService {
     public CvChatToolOrchestrationOutcome discover(String message) {
         // Discovery is application-driven: no model callback set is needed before candidate cards are confirmed.
         return call(message, CvChatToolOrchestrationMode.DISCOVERY, List.of(),
-                DISCOVERY_OUTCOMES, 0);
+                DISCOVERY_OUTCOMES, 0, false);
     }
 
     public CvChatToolOrchestrationOutcome planConfirmedScope(String message, List<Long> requestedCandidateIds,
@@ -98,14 +98,15 @@ public class CvChatToolOrchestrationService {
                 ? registry.confirmedScopeCallbacks()
                 : registry.confirmedScopeCallbacksWithJob();
         return call(message, CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks,
-                CONFIRMED_OUTCOMES, candidateIds.size());
+                CONFIRMED_OUTCOMES, candidateIds.size(), requestedJobId != null);
     }
 
     private CvChatToolOrchestrationOutcome call(String message,
                                                  CvChatToolOrchestrationMode mode,
                                                  List<org.springframework.ai.tool.ToolCallback> callbacks,
                                                  Set<CvChatToolOrchestrationOutcome.Kind> allowedOutcomes,
-                                                 int candidateCount) {
+                                                 int candidateCount,
+                                                 boolean approvedJobConfirmed) {
         if (message == null || message.isBlank()) {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "Chat message is required");
         }
@@ -132,7 +133,8 @@ public class CvChatToolOrchestrationService {
             if (mode == CvChatToolOrchestrationMode.DISCOVERY) {
                 return discoverCandidates(normalizedMessage);
             }
-            CvChatToolOrchestrationOutcome outcome = model.respond(normalizedMessage, mode, callbacks);
+            CvChatToolOrchestrationOutcome outcome = model.respond(
+                    normalizedMessage, mode, callbacks, approvedJobConfirmed);
             if (outcome == null || outcome.kind() == null || outcome.message() == null
                     || outcome.message().isBlank()) {
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,

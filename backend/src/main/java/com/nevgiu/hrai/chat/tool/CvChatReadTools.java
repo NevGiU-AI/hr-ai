@@ -71,6 +71,9 @@ public class CvChatReadTools {
         List<CandidateCard> cards = response.candidates().stream().limit(MAX_SEARCH_RESULTS)
                 .map(candidate -> new CandidateCard(candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
+        // The system prompt asks the model to search once per named person, but the tool result is the authoritative
+        // fact. Record this authorized outcome so Java can prevent a later provider REFUSED result from hiding valid
+        // cards—or prevent confirmation when one requested person was not found. This does not select any candidate.
         // Record counts only for deterministic postconditions; do not log or persist the query or returned cards.
         discoveryState.record(query, cards.size());
         return new CandidateSearchResult(cards,

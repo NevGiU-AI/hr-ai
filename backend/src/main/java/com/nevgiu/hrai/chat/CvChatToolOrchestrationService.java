@@ -127,6 +127,9 @@ public class CvChatToolOrchestrationService {
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,
                         "CV chat provider returned an invalid orchestration response");
             }
+            // The model has now interpreted the natural-language request and may have called search_candidates.
+            // Its structured outcome is still only a proposal. Read the facts recorded by our tenant-authorized
+            // search tool, then enforce the application-owned discovery transition independently of prompt adherence.
             CvChatToolDiscoveryState.Snapshot searches = discoveryState.snapshot();
             CvChatToolOrchestrationOutcome stabilized =
                     CvChatToolDiscoveryDecision.stabilize(mode, outcome, searches);

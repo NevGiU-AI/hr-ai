@@ -45,7 +45,7 @@ class CvChatToolOrchestrationServiceTest {
         when(toolRegistry.confirmedScopeCallbacksWithJob()).thenReturn(List.of());
         when(planningState.covers(org.mockito.ArgumentMatchers.anySet(), org.mockito.ArgumentMatchers.nullable(Long.class)))
                 .thenReturn(true);
-        when(planningState.snapshot()).thenReturn(new CvChatToolPlanningState.Snapshot(2, 1));
+        when(planningState.snapshot()).thenReturn(new CvChatToolPlanningState.Snapshot(2, 0));
         when(model.respond(org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.eq(CvChatToolOrchestrationMode.CONFIRMED_SCOPE),
                 org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.anyList(),
@@ -82,6 +82,7 @@ class CvChatToolOrchestrationServiceTest {
         verify(toolScope).confirm(candidateIds);
         verify(model).respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE,
                 List.of(), candidateIds, null);
+        verify(planningState).covers(java.util.Set.of(7L, 9L), null);
     }
 
     @Test
@@ -93,6 +94,7 @@ class CvChatToolOrchestrationServiceTest {
                 .isSameAs(notFound);
 
         verifyNoInteractions(jobs);
+        verifyNoInteractions(toolScope, toolRegistry, model, planningState);
     }
 
     @Test
@@ -100,6 +102,7 @@ class CvChatToolOrchestrationServiceTest {
         List<Long> candidateIds = List.of(7L, 9L);
         Job job = new Job();
         job.setId(21L);
+        when(planningState.snapshot()).thenReturn(new CvChatToolPlanningState.Snapshot(2, 1));
         when(jobs.findByIdAndOrganizationId(21L, "tenant-a")).thenReturn(java.util.Optional.of(job));
         assertThat(service.planConfirmedScope(
                 "Compare against the selected job", candidateIds, 21L, "tenant-a").kind())
@@ -118,6 +121,7 @@ class CvChatToolOrchestrationServiceTest {
         assertThatThrownBy(() -> service.planConfirmedScope("Compare", List.of(7L), 21L, "tenant-a"))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("Approved job not found");
+        verifyNoInteractions(toolScope, toolRegistry, model, planningState);
     }
 
     @Test
@@ -163,6 +167,7 @@ class CvChatToolOrchestrationServiceTest {
     void acceptsOrdinaryThreeCandidateComparisonWithExplicitApprovedJobDeterministically() {
         Job job = new Job();
         job.setId(12L);
+        when(planningState.snapshot()).thenReturn(new CvChatToolPlanningState.Snapshot(3, 1));
         when(jobs.findByIdAndOrganizationId(12L, "tenant-a")).thenReturn(java.util.Optional.of(job));
 
         CvChatToolOrchestrationOutcome outcome = service.planConfirmedScope(
@@ -174,6 +179,7 @@ class CvChatToolOrchestrationServiceTest {
         verify(evidence).authorizeCandidate(52L, "tenant-a");
         verify(evidence).authorizeCandidate(36L, "tenant-a");
         verify(jobs).findByIdAndOrganizationId(12L, "tenant-a");
+        verify(planningState).covers(java.util.Set.of(54L, 52L, 36L), 12L);
     }
 
     @Test
@@ -204,15 +210,16 @@ class CvChatToolOrchestrationServiceTest {
     }
 
     @Test
-    void rejectsOutOfScopeTextBeforeAuthorizingConfirmedRecords() {
+    void leavesOutOfScopeHandlingToTheGroundedComparisonBoundary() {
         when(questionPolicy.classify("Tell me tomorrow's weather"))
                 .thenReturn(CvChatQuestionPolicyResult.OUT_OF_SCOPE);
 
         CvChatToolOrchestrationOutcome outcome = service.planConfirmedScope(
                 "Tell me tomorrow's weather", List.of(7L, 9L), "tenant-a");
 
-        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.REFUSED);
-        verifyNoInteractions(evidence, jobs);
+        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
+        verify(evidence).authorizeCandidate(7L, "tenant-a");
+        verify(evidence).authorizeCandidate(9L, "tenant-a");
     }
 
     @Test

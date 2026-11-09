@@ -114,7 +114,9 @@ The reviewed backend contract now exposes two authenticated, CSRF-protected phas
 Both endpoints are limited to `ADMIN`, `RECRUITER`, and `REVIEWER`. Organization and roles come exclusively from the
 authenticated session. Extra model/client fields cannot override them, and responses contain only the validated
 workflow kind and presentation message—never candidate IDs, job IDs, tenant context, roles, or authorization state.
-Provider failures retain structured safe HTTP errors. PR #144 connected the Angular language-first workflow to both
+Discovery/reference and pre-tool policy failures retain structured safe HTTP errors. The non-authoritative
+confirmed-scope tool preflight instead degrades to the application-owned ready state and emits a privacy-safe warning.
+PR #144 connected the Angular language-first workflow to both
 phases: discovery gates deterministic candidate-card lookup, and confirmed-scope validation runs only after every card
 is explicitly selected. Clarification/refusal stops before lookup. After deterministic policy checks and tenant
 authorization of every confirmed candidate and optional approved job, Java returns `CONFIRMED_SCOPE_READY`; a model
@@ -123,7 +125,9 @@ confirmed-scope callbacks for a bounded tool-orchestration preflight. It must re
 and, when selected, the approved job. Request-scoped postconditions verify those calls. Provider-written presentation
 text is discarded. Missing calls, malformed output, provider refusal, or provider failure returns the same
 application-owned ready message instead of revoking scope, injecting unsupported claims, or returning a
-provider-dependent workflow error. Grounded evidence retrieval remains a separate recruiter action. Stale results are
+provider-dependent workflow error. Success and degraded fallback have distinct privacy-safe log events so staging can
+prove whether the tool path actually completed; a READY HTTP result alone is not tool-preflight acceptance evidence.
+Grounded evidence retrieval remains a separate recruiter action. Stale results are
 discarded when the message, selected cards, or optional approved job changes. Staging acceptance remains pending.
 
 Explicit instructions to ignore, bypass, skip, fake, assume, override, or disable confirmation, authorization,
@@ -218,9 +222,9 @@ The main responsibilities are:
 - `CvChatToolRequestPolicy` detects explicit attempts to weaken protected workflow controls. A matching request is
   refused before semantic classification, provider access, or callback execution. It is intentionally narrow and
   complements rather than replaces multilingual semantic policy evaluation and adversarial tests.
-- `CvChatQuestionPolicy` performs the existing semantic sensitive-question classification. Its evidence-oriented
-  `OUT_OF_SCOPE` result is not automatically a tool-orchestration refusal because legitimate candidate discovery is
-  outside the narrower evidence-question vocabulary.
+- `CvChatQuestionPolicy` supplies the sensitive-question boundary before any tool reads. Its evidence-oriented
+  `OUT_OF_SCOPE` result is handled by the later grounded chat/comparison service rather than this scope-management
+  phase, preventing a second provider classification from randomly refusing an otherwise authorized transition.
 - `SpringAiCvChatToolOrchestrationModel` performs the production tool-orchestration preflight after deterministic
   authorization. It receives trusted IDs separately from untrusted recruiter text, must call the minimized tools for
   every trusted ID, and cannot authorize, refuse, change the confirmed workflow state, or supply UI text.
@@ -343,8 +347,9 @@ or from Spring AI 2.x.
    ambiguous, sensitive, out-of-scope, injection, and confirmation-bypass cases. Normal CI remains deterministic and
    provider-free; the live dataset test is an explicit release/review gate because it incurs cost and can vary with the
    provider. The evaluation mirrors production application gates: explicit confirmation-bypass input is refused by
-   `CvChatToolRequestPolicy` without asking the provider to enforce application authorization, while ordinary and
-   ambiguous discovery cases still exercise the live question-policy, tool-calling, and orchestration behavior.
+   `CvChatToolRequestPolicy` without asking the provider to enforce application authorization. Confirmed-scope cases
+   use the same callback subsets as production and assert that each synthetic confirmed candidate—and the optional
+   selected job—was actually read exactly once; a READY label without those calls fails the evaluation.
 
 These references explain the framework mechanics, not this application's authorization policy. Tenant isolation,
 confirmed candidate scope, approved-job scope, read-only exposure, bounded results, timeout handling, and refusal

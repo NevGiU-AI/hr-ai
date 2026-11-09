@@ -13,7 +13,7 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
     void keepsTheVersionedPromptInjectionDatasetCompleteAndUnambiguous() {
         var dataset = CvChatToolOrchestrationEvaluationDataset.load();
 
-        assertThat(dataset.version()).isEqualTo("1.1.0");
+        assertThat(dataset.version()).isEqualTo("1.2.0");
         assertThat(dataset.description()).isNotBlank();
         assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(9).allSatisfy(testCase -> {
             assertThat(testCase.id()).isNotBlank();
@@ -43,6 +43,12 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
         });
         assertThat(dataset.cases()).anySatisfy(testCase -> {
             assertThat(testCase.id()).isEqualTo("confirmed-explicit-comparison");
+            assertThat(testCase.expected())
+                    .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
+        });
+        assertThat(dataset.cases()).anySatisfy(testCase -> {
+            assertThat(testCase.id()).isEqualTo("confirmed-job-comparison");
+            assertThat(testCase.jobId()).isEqualTo(12L);
             assertThat(testCase.expected())
                     .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
         });

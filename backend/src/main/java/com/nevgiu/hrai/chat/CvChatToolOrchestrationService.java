@@ -62,7 +62,7 @@ public class CvChatToolOrchestrationService {
 
     public CvChatToolOrchestrationOutcome discover(String message) {
         String normalizedMessage = requireMessage(message);
-        CvChatToolOrchestrationOutcome blocked = blockedOutcome(normalizedMessage, 0, false);
+        CvChatToolOrchestrationOutcome blocked = blockedOutcome(normalizedMessage, 0);
         return blocked != null ? blocked : discoverCandidates(normalizedMessage);
     }
 
@@ -82,7 +82,7 @@ public class CvChatToolOrchestrationService {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "A valid approved job must be confirmed");
         }
         String normalizedMessage = requireMessage(message);
-        CvChatToolOrchestrationOutcome blocked = blockedOutcome(normalizedMessage, candidateIds.size(), true);
+        CvChatToolOrchestrationOutcome blocked = blockedOutcome(normalizedMessage, candidateIds.size());
         if (blocked != null) {
             return blocked;
         }
@@ -126,8 +126,9 @@ public class CvChatToolOrchestrationService {
                         snapshot.loadedJobCount());
                 return readyOutcome();
             }
-            LOGGER.info("CV chat advisory tool plan used application fallback candidateCount={} jobPresent={} "
-                            + "summarizedCandidateCount={} loadedJobCount={} providerOutcome={}",
+            LOGGER.warn("CV chat advisory tool preflight incomplete; using application fallback candidateCount={} "
+                            + "jobPresent={} summarizedCandidateCount={} loadedJobCount={} providerOutcome={} "
+                            + "stage=TOOL_PREFLIGHT_INCOMPLETE",
                     candidateIds.size(), jobId != null, snapshot.summarizedCandidateCount(), snapshot.loadedJobCount(),
                     proposed == null ? "NONE" : proposed.kind());
         } catch (RuntimeException failure) {
@@ -155,8 +156,7 @@ public class CvChatToolOrchestrationService {
     }
 
     /** Returns an application-owned refusal or {@code null} when deterministic processing may continue. */
-    private CvChatToolOrchestrationOutcome blockedOutcome(String normalizedMessage, int candidateCount,
-                                                           boolean rejectOutOfScope) {
+    private CvChatToolOrchestrationOutcome blockedOutcome(String normalizedMessage, int candidateCount) {
         try {
             if (CvChatToolRequestPolicy.requestsWorkflowOverride(normalizedMessage)) {
                 // Confirmation, authorization, tenant, role, and tool boundaries are application policy. Explicit
@@ -167,10 +167,9 @@ public class CvChatToolOrchestrationService {
                         REFUSAL_MESSAGE);
             }
             CvChatQuestionPolicyResult policyResult = questionPolicy.classify(normalizedMessage);
-            if (policyResult == CvChatQuestionPolicyResult.SENSITIVE
-                    || (rejectOutOfScope && policyResult == CvChatQuestionPolicyResult.OUT_OF_SCOPE)) {
-                // Discovery tolerates evidence-oriented OUT_OF_SCOPE because name resolution is not a CV question.
-                // Once IDs are confirmed, however, unrelated or sensitive text must not advance to comparison.
+            if (policyResult == CvChatQuestionPolicyResult.SENSITIVE) {
+                // This phase resolves or validates scope; it does not answer the recruiter. OUT_OF_SCOPE is therefore
+                // handled later by the grounded chat/comparison boundary. Only sensitive intent blocks all reads here.
                 LOGGER.info("CV chat tool orchestration rejected at pre-tool policy for candidateCount={} policyResult={}",
                         candidateCount, policyResult);
                 return new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,

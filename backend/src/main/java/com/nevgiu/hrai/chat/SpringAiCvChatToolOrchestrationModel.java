@@ -70,11 +70,11 @@ class SpringAiCvChatToolOrchestrationModel implements CvChatToolOrchestrationMod
                         : "No approved job was selected. This is valid: do not request a job when the recruiter "
                                 + "provided a clear job-relevant comparison criterion.");
         String response = chatClient.prompt()
-                .system(SYSTEM_PROMPT)
-                // The phase is trusted application state and is kept outside the marked untrusted recruiter block.
-                .user("APPLICATION-SELECTED WORKFLOW MODE: " + mode
-                        + "\n" + trustedWorkflowState
-                        + "\nUNTRUSTED RECRUITER SCOPE REQUEST:\n" + message
+                // Keep trusted workflow state in the higher-priority system message. The recruiter cannot alter the
+                // confirmed IDs by writing text that visually resembles application context in the user message.
+                .system(SYSTEM_PROMPT + "\n\nAPPLICATION-SELECTED WORKFLOW MODE: " + mode
+                        + "\n" + trustedWorkflowState)
+                .user("UNTRUSTED RECRUITER SCOPE REQUEST:\n" + message
                         + "\n\nREQUIRED RESPONSE FORMAT:\n" + outputConverter.getFormat())
                 // Registration is local to this model request; no other ChatClient call receives these callbacks.
                 .toolCallbacks(callbacks)

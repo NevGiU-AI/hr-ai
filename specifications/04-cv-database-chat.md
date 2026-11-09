@@ -576,7 +576,8 @@ The reviewed orchestration API separates discovery from confirmed-scope planning
 Spring Security enforces authentication, CSRF, and the existing chat roles. The controller obtains organization only
 from `AppUserPrincipal`, ignores injected organization/role fields, and returns only the validated workflow kind and
 presentation text. Controller and security tests cover role access, CSRF, authentication, validation, tenant-context
-injection attempts, minimized responses, and structured provider failures.
+injection attempts, minimized responses, structured discovery/policy provider failures, and privacy-safe fallback when
+the non-authoritative confirmed-scope tool preflight is unavailable.
 
 PR #144 connected the Angular language-first flow to these two phases. Discovery must return
 `CANDIDATE_CONFIRMATION_REQUIRED` before the browser calls the deterministic candidate-card endpoint. Clarification or

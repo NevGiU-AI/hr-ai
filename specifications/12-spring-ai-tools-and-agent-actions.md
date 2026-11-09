@@ -125,7 +125,11 @@ is a deliberately narrow deterministic boundary rather than a general natural-la
 continue to `CvChatQuestionPolicy` and the tool-enabled orchestration model. During discovery, the model must call
 `search_candidates` separately for each referenced person using only that person's partial name. One or several
 legitimate cards for every requested person produces `CANDIDATE_CONFIRMATION_REQUIRED`; a missing result produces
-`CLARIFICATION_REQUIRED`, and Angular resolves ambiguity through explicit card selection.
+`CLARIFICATION_REQUIRED`, and Angular resolves ambiguity through explicit card selection. These final discovery
+transitions do not depend on the model interpreting its own tool results consistently: `CvChatToolDiscoveryState`
+records request-local search counts, and `CvChatToolDiscoveryDecision` applies deterministic postconditions after the
+provider returns. The state never logs or persists search text, candidate names, or cards; only privacy-safe aggregate
+counts are exposed to orchestration diagnostics.
 
 ### Tool-class relationship
 
@@ -147,6 +151,7 @@ flowchart TD
     subgraph RequestScope[One isolated HTTP request]
         Registry[CvChatReadToolRegistry]
         Scope[CvChatToolScope]
+        DiscoveryState[CvChatToolDiscoveryState]
         Tools[CvChatReadTools]
         Guard[CvChatToolExecutionGuard]
     end
@@ -171,6 +176,7 @@ flowchart TD
     Registry -->|discovers @Tool methods and enforces allow list| Tools
     Model -->|toolCallbacks only for this call| ChatClient
     ChatClient -.->|search_candidates / get_candidate_summary / get_job_requirements| Tools
+    Tools -->|record privacy-safe search outcome| DiscoveryState
     Tools -->|require confirmed candidate/job| Scope
     Tools -->|count and time-bound every call| Guard
     Guard --> Executor
@@ -182,6 +188,8 @@ flowchart TD
     Results -.->|minimized structured tool result| ChatClient
     ChatClient -->|structured workflow outcome| Model
     Model --> Service
+    DiscoveryState -->|aggregate search snapshot| Service
+    Service -->|apply CvChatToolDiscoveryDecision| Service
     Service --> Controller
     Controller --> Angular
 ```
@@ -204,6 +212,11 @@ The main responsibilities are:
   returns different callback subsets for discovery, confirmed candidates, and confirmed candidates plus a job.
 - `CvChatReadTools` implements the three model-facing read operations. Each operation independently authenticates,
   enforces tenant and confirmed-record scope, delegates to deterministic services/repositories, and minimizes output.
+- `CvChatToolDiscoveryState` records request-local search-call, distinct-success, and empty-result counts without
+  exposing queries or candidate data. It is new for every HTTP request and cannot leak discovery state between users.
+- `CvChatToolDiscoveryDecision` converts authorized discovery facts into application-owned postconditions: at least
+  two distinct successful searches with no missing person require candidate confirmation, while any empty search
+  requires clarification. Sensitive and workflow-override requests are rejected before this state can be populated.
 - `CvChatToolScope` holds immutable human-confirmed candidate and optional job IDs for the current HTTP request.
 - `CvChatToolExecutionGuard` gives each request a separate call budget, while the singleton `CvChatToolExecutor` runs
   approved work on virtual threads with a timeout. It contains no tenant or authorization state.

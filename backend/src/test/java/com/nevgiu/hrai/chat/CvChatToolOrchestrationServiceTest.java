@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
+import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
@@ -29,12 +30,15 @@ class CvChatToolOrchestrationServiceTest {
     private final CvChatQuestionPolicy questionPolicy = mock(CvChatQuestionPolicy.class);
     private final CvChatToolOrchestrationModel model = mock(CvChatToolOrchestrationModel.class);
     private final JobRepository jobs = mock(JobRepository.class);
+    private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
     private final CvChatToolOrchestrationService service =
-            new CvChatToolOrchestrationService(evidence, registry, scope, questionPolicy, model, jobs);
+            new CvChatToolOrchestrationService(
+                    evidence, registry, scope, questionPolicy, model, jobs, discoveryState);
 
     @BeforeEach
     void allowOrdinaryJobRelevantRequests() {
         when(questionPolicy.classify(anyString())).thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(0, 0, 0));
     }
 
     @Test
@@ -210,6 +214,36 @@ class CvChatToolOrchestrationServiceTest {
         assertThat(service.discover("Find Ada and Grace").kind())
                 .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED);
         verify(model).respond("Find Ada and Grace", CvChatToolOrchestrationMode.DISCOVERY, callbacks);
+    }
+
+    @Test
+    void convertsProviderRefusalToConfirmationWhenTwoAuthorizedSearchesFoundCards() {
+        List<ToolCallback> callbacks = List.of(mock(ToolCallback.class));
+        when(registry.discoveryCallbacks()).thenReturn(callbacks);
+        when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(2, 2, 0));
+        when(model.respond("Compare Ada and Grace", CvChatToolOrchestrationMode.DISCOVERY, callbacks))
+                .thenReturn(outcome(CvChatToolOrchestrationOutcome.Kind.REFUSED, "Provider refusal"));
+
+        CvChatToolOrchestrationOutcome outcome = service.discover("Compare Ada and Grace");
+
+        assertThat(outcome.kind())
+                .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED);
+        assertThat(outcome.message()).contains("confirm the candidate cards");
+    }
+
+    @Test
+    void requiresClarificationWhenAnyAuthorizedCandidateSearchReturnedNoCards() {
+        List<ToolCallback> callbacks = List.of(mock(ToolCallback.class));
+        when(registry.discoveryCallbacks()).thenReturn(callbacks);
+        when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(2, 1, 1));
+        when(model.respond("Compare Ada and Missing", CvChatToolOrchestrationMode.DISCOVERY, callbacks))
+                .thenReturn(outcome(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
+                        "Confirm cards"));
+
+        CvChatToolOrchestrationOutcome outcome = service.discover("Compare Ada and Missing");
+
+        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED);
+        assertThat(outcome.message()).contains("clarify the candidate names");
     }
 
     private CvChatToolOrchestrationOutcome outcome(CvChatToolOrchestrationOutcome.Kind kind, String message) {

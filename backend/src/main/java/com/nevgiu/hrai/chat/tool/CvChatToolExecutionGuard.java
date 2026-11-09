@@ -11,9 +11,10 @@ import java.util.function.Supplier;
 /**
  * Per-request guard that prevents a model from repeatedly or recursively exhausting read-tool resources.
  *
- * <p>The request scope is essential: a singleton counter would combine unrelated users' calls and could let one busy
- * tenant throttle another. Every HTTP request instead starts with a new counter at zero, while all tool callbacks made
- * during that request share the same guard through Spring's scoped proxy.</p>
+ * <p>Spring components are singleton-scoped by default, but a singleton counter would combine unrelated users' calls
+ * and could let one busy tenant throttle another. {@link RequestScope} creates a new guard with a zero counter for
+ * every HTTP request and discards it after the response. All tool callbacks made during one request resolve and share
+ * that request's guard through Spring's scoped proxy.</p>
  */
 @Component
 @RequestScope
@@ -23,6 +24,8 @@ public class CvChatToolExecutionGuard {
     private final CvChatToolExecutor executor;
 
     CvChatToolExecutionGuard(CvChatToolExecutor executor) {
+        // The guard is request-scoped, but the stateless executor is intentionally a singleton. Each request receives
+        // its own call budget while all requests safely reuse the common timeout/virtual-thread execution mechanism.
         this.executor = executor;
     }
 

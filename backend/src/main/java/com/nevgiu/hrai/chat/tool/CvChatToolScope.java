@@ -9,7 +9,17 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Request-local candidate/job scope that application code authorized after explicit human confirmation. */
+/**
+ * Request-local candidate/job scope that application code authorized after explicit human confirmation.
+ *
+ * <p>A Spring component normally has singleton scope. Keeping confirmed IDs in a singleton would let concurrent users
+ * overwrite or observe one another's chat authorization state. {@link RequestScope} instead creates a new scope for
+ * each HTTP request and discards it after the response. The singleton orchestration service and request-scoped tools
+ * receive scoped proxies that resolve to this same request-specific instance.</p>
+ *
+ * <p>This scope lasts for only one API call; it is not an HTTP session, conversation memory, or persistent permission.
+ * Every later request must independently authenticate, authorize, and confirm its candidate and optional job IDs.</p>
+ */
 @Component
 @RequestScope
 public class CvChatToolScope {
@@ -19,6 +29,8 @@ public class CvChatToolScope {
     private boolean jobConfigured;
 
     public void confirm(List<Long> candidateIds) {
+        // Only trusted application code calls this after loading every ID inside the authenticated organization. The
+        // model cannot install scope through a tool argument or reuse confirmation from another HTTP request.
         if (candidateIds == null) {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "Confirm between 1 and 5 distinct candidates");
         }
@@ -37,6 +49,7 @@ public class CvChatToolScope {
     }
 
     public void requireConfirmed(Long candidateId) {
+        // Every detail-reading tool performs this check; merely knowing a database ID does not authorize model access.
         if (!candidatesConfigured || !confirmedCandidateIds.contains(candidateId)) {
             throw new CvChatException(HttpStatus.FORBIDDEN, "Candidate is outside the confirmed chat scope");
         }

@@ -26,9 +26,10 @@ import java.util.Set;
  * Tool arguments deliberately contain no organization identifier, role, or authorization flag that a model could
  * invent or override.
  *
- * <p>{@link RequestScope} gives each HTTP request its own tool object. Spring injects a scoped proxy into longer-lived
- * collaborators and resolves that proxy to the current request's instance only when a tool is used. Consequently no
- * mutable tool lifecycle or authenticated context can be shared between concurrent users or organizations.</p>
+ * <p>Spring components are singleton-scoped by default. {@link RequestScope} instead gives each HTTP request its own
+ * tool object and discards it after the response. Spring injects a scoped proxy into longer-lived collaborators and
+ * resolves that proxy to the current request's instance only when a tool is used. Consequently no mutable tool
+ * lifecycle or authenticated context can be shared between concurrent users or organizations.</p>
  */
 @Component
 @RequestScope
@@ -43,16 +44,18 @@ public class CvChatReadTools {
     private final JobRepository jobs;
     private final CvChatToolExecutionGuard executionGuard;
     private final CvChatToolScope scope;
+    private final CvChatToolDiscoveryState discoveryState;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
                            CvDocumentRepository documents, JobRepository jobs, CvChatToolExecutionGuard executionGuard,
-                           CvChatToolScope scope) {
+                           CvChatToolScope scope, CvChatToolDiscoveryState discoveryState) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
         this.jobs = jobs;
         this.executionGuard = executionGuard;
         this.scope = scope;
+        this.discoveryState = discoveryState;
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
@@ -69,6 +72,11 @@ public class CvChatReadTools {
         List<CandidateCard> cards = response.candidates().stream().limit(MAX_SEARCH_RESULTS)
                 .map(candidate -> new CandidateCard(candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
+        // The system prompt asks the model to search once per named person, but the tool result is the authoritative
+        // fact. Record this authorized outcome so Java can prevent a later provider REFUSED result from hiding valid
+        // cards—or prevent confirmation when one requested person was not found. This does not select any candidate.
+        // Record counts only for deterministic postconditions; do not log or persist the query or returned cards.
+        discoveryState.record(query, cards.size());
         return new CandidateSearchResult(cards,
                 response.truncated() || response.candidates().size() > MAX_SEARCH_RESULTS);
     }

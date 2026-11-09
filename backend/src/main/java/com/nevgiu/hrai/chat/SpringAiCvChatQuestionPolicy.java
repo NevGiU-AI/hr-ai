@@ -73,11 +73,6 @@ class SpringAiCvChatQuestionPolicy implements CvChatQuestionPolicy {
     }
 
     @Override
-    public CvChatQuestionPolicyResult classifySelectedCandidateComparison(String question) {
-        return classifySelectedCandidateComparison(question, false);
-    }
-
-    @Override
     public CvChatQuestionPolicyResult classifySelectedCandidateComparison(String question,
                                                                            boolean approvedJobSelected) {
         // Comparison state is application-owned. Keep it in the system role so candidate names and recruiter wording

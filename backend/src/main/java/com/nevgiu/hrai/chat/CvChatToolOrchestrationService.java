@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
+import com.nevgiu.hrai.chat.tool.CvChatReadTools;
 import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import com.nevgiu.hrai.job.JobRepository;
@@ -30,6 +31,8 @@ public class CvChatToolOrchestrationService {
     private final CvChatReadToolRegistry registry;
     private final CvChatToolScope scope;
     private final CvChatQuestionPolicy questionPolicy;
+    private final CvChatCandidateReferenceExtractor referenceExtractor;
+    private final CvChatReadTools readTools;
     private final CvChatToolOrchestrationModel model;
     private final JobRepository jobs;
     private final CvChatToolDiscoveryState discoveryState;
@@ -37,11 +40,15 @@ public class CvChatToolOrchestrationService {
     CvChatToolOrchestrationService(CvChatEvidenceService evidenceService, CvChatReadToolRegistry registry,
                                    CvChatToolScope scope, CvChatQuestionPolicy questionPolicy,
                                    CvChatToolOrchestrationModel model, JobRepository jobs,
-                                   CvChatToolDiscoveryState discoveryState) {
+                                   CvChatToolDiscoveryState discoveryState,
+                                   CvChatCandidateReferenceExtractor referenceExtractor,
+                                   CvChatReadTools readTools) {
         this.evidenceService = evidenceService;
         this.registry = registry;
         this.scope = scope;
         this.questionPolicy = questionPolicy;
+        this.referenceExtractor = referenceExtractor;
+        this.readTools = readTools;
         this.model = model;
         this.jobs = jobs;
         this.discoveryState = discoveryState;
@@ -57,7 +64,8 @@ public class CvChatToolOrchestrationService {
             CvChatToolOrchestrationOutcome.Kind.REFUSED);
 
     public CvChatToolOrchestrationOutcome discover(String message) {
-        return call(message, CvChatToolOrchestrationMode.DISCOVERY, registry.discoveryCallbacks(),
+        // Discovery is application-driven: no model callback set is needed before candidate cards are confirmed.
+        return call(message, CvChatToolOrchestrationMode.DISCOVERY, List.of(),
                 DISCOVERY_OUTCOMES, 0);
     }
 
@@ -121,25 +129,15 @@ public class CvChatToolOrchestrationService {
                 return new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
                         REFUSAL_MESSAGE);
             }
+            if (mode == CvChatToolOrchestrationMode.DISCOVERY) {
+                return discoverCandidates(normalizedMessage);
+            }
             CvChatToolOrchestrationOutcome outcome = model.respond(normalizedMessage, mode, callbacks);
             if (outcome == null || outcome.kind() == null || outcome.message() == null
                     || outcome.message().isBlank()) {
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,
                         "CV chat provider returned an invalid orchestration response");
             }
-            // The model has now interpreted the natural-language request and may have called search_candidates.
-            // Its structured outcome is still only a proposal. Read the facts recorded by our tenant-authorized
-            // search tool, then enforce the application-owned discovery transition independently of prompt adherence.
-            CvChatToolDiscoveryState.Snapshot searches = discoveryState.snapshot();
-            CvChatToolOrchestrationOutcome stabilized =
-                    CvChatToolDiscoveryDecision.stabilize(mode, outcome, searches);
-            if (stabilized.kind() != outcome.kind()) {
-                LOGGER.info("CV chat discovery outcome stabilized from={} to={} searchCalls={} "
-                                + "distinctSuccessfulSearches={} emptySearches={}",
-                        outcome.kind(), stabilized.kind(), searches.searchCalls(),
-                        searches.distinctSuccessfulSearches(), searches.emptySearches());
-            }
-            outcome = stabilized;
             if (!allowedOutcomes.contains(outcome.kind())) {
                 // A model cannot advance the workflow past an application-owned confirmation gate.
                 LOGGER.warn("CV chat tool orchestration rejected invalid transition for candidateCount={} outcome={}",
@@ -160,6 +158,37 @@ public class CvChatToolOrchestrationService {
                     candidateCount, failure.getClass().getSimpleName());
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat tool orchestration is unavailable");
         }
+    }
+
+    /**
+     * Runs mandatory candidate discovery under application control.
+     *
+     * <p>The provider extracts only bounded human-readable references. Java then invokes the authenticated,
+     * tenant-scoped search tool once for each reference. Unlike the previous model-directed tool path, a provider
+     * cannot return {@code REFUSED} before the required searches execute. Sensitive and workflow-bypass requests have
+     * already returned above, before either extraction or search.</p>
+     */
+    private CvChatToolOrchestrationOutcome discoverCandidates(String message) {
+        List<String> references;
+        try {
+            references = referenceExtractor.extract(message);
+        } catch (RuntimeException failure) {
+            LOGGER.warn("CV chat discovery reference extraction failed failureType={}",
+                    failure.getClass().getSimpleName());
+            throw new CvChatException(HttpStatus.BAD_GATEWAY, "Candidate reference interpretation is unavailable");
+        }
+        if (references.size() < 2) {
+            return CvChatToolDiscoveryDecision.decide(discoveryState.snapshot());
+        }
+        // Invoke the same reviewed tool exposed to Spring AI, but do so deterministically. The tool still derives the
+        // tenant and roles from the authenticated SecurityContext and records privacy-safe result counts.
+        references.forEach(readTools::searchCandidates);
+        CvChatToolDiscoveryState.Snapshot searches = discoveryState.snapshot();
+        CvChatToolOrchestrationOutcome outcome = CvChatToolDiscoveryDecision.decide(searches);
+        LOGGER.info("CV chat deterministic discovery completed searchCalls={} distinctSuccessfulSearches={} "
+                        + "emptySearches={} outcome={}", searches.searchCalls(), searches.distinctSuccessfulSearches(),
+                searches.emptySearches(), outcome.kind());
+        return outcome;
     }
 
     private List<Long> validateIds(List<Long> candidateIds) {

@@ -24,8 +24,6 @@ class CvChatReadToolRegistryTest {
 
         assertThat(callbacks).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements");
-        assertThat(registry.discoveryCallbacks()).extracting(callback -> callback.getToolDefinition().name())
-                .containsExactly("search_candidates");
         assertThat(registry.confirmedScopeCallbacks()).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary");
         assertThat(registry.confirmedScopeCallbacksWithJob())

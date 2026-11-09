@@ -23,7 +23,8 @@ class CvChatToolExecutionGuardTest {
         assertThat(guard.execute(() -> 2)).isEqualTo(2);
         assertThat(guard.execute(() -> 3)).isEqualTo(3);
         assertThat(guard.execute(() -> 4)).isEqualTo(4);
-        assertThatThrownBy(() -> guard.execute(() -> 5))
+        assertThat(guard.execute(() -> 5)).isEqualTo(5);
+        assertThatThrownBy(() -> guard.execute(() -> 6))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV chat tool call limit exceeded");
     }

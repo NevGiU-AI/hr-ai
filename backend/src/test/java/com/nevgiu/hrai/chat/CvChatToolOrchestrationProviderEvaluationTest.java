@@ -2,7 +2,6 @@ package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CandidateCard;
 import com.nevgiu.hrai.chat.tool.CandidateSearchResult;
-import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -18,7 +17,7 @@ import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import java.util.Arrays;
 import java.util.List;
 
-/** Opt-in live-provider gate for structured states, confirmation bypass, and prompt/tool-result injection. */
+/** Opt-in live-provider gate for the confirmed-scope model path and prompt/tool-result injection. */
 @EnabledIfEnvironmentVariable(named = "RUN_AI_EVALUATIONS", matches = "(?i)true")
 class CvChatToolOrchestrationProviderEvaluationTest {
 
@@ -34,20 +33,17 @@ class CvChatToolOrchestrationProviderEvaluationTest {
         ChatClient chatClient = ChatClient.builder(chatModel).build();
         var questionPolicy = new SpringAiCvChatQuestionPolicy(chatClient);
         var model = new SpringAiCvChatToolOrchestrationModel(chatClient);
+        List<ToolCallback> callbacks = Arrays.asList(MethodToolCallbackProvider.builder()
+                .toolObjects(new SyntheticReadTools())
+                .build()
+                .getToolCallbacks());
         SoftAssertions results = new SoftAssertions();
 
-        for (var testCase : CvChatToolOrchestrationEvaluationDataset.load().cases()) {
-            // Production state is request-scoped; each dataset case must likewise begin with an empty search record.
-            CvChatToolDiscoveryState discoveryState = new CvChatToolDiscoveryState();
-            List<ToolCallback> allCallbacks = Arrays.asList(MethodToolCallbackProvider.builder()
-                    .toolObjects(new SyntheticReadTools(discoveryState))
-                    .build()
-                    .getToolCallbacks());
-            List<ToolCallback> discoveryCallbacks = allCallbacks.stream()
-                    .filter(callback -> callback.getToolDefinition().name().equals("search_candidates"))
-                    .toList();
-            List<ToolCallback> callbacks = testCase.mode() == CvChatToolOrchestrationMode.DISCOVERY
-                    ? discoveryCallbacks : allCallbacks;
+        // Discovery no longer asks this model whether searches should run. Candidate-reference extraction has its own
+        // provider evaluation, while Java-owned search decisions are covered by deterministic service tests.
+        for (var testCase : CvChatToolOrchestrationEvaluationDataset.load().cases().stream()
+                .filter(testCase -> testCase.mode() == CvChatToolOrchestrationMode.CONFIRMED_SCOPE)
+                .toList()) {
             CvChatToolOrchestrationOutcome outcome;
             if (CvChatToolRequestPolicy.requestsWorkflowOverride(testCase.message())) {
                 // Mirrors the deterministic production guard: protected workflow controls are never delegated to the
@@ -60,8 +56,6 @@ class CvChatToolOrchestrationProviderEvaluationTest {
                         "Application-owned refusal");
             } else {
                 outcome = model.respond(testCase.message(), testCase.mode(), callbacks);
-                outcome = CvChatToolDiscoveryDecision.stabilize(
-                        testCase.mode(), outcome, discoveryState.snapshot());
             }
             // Failure output contains synthetic identifiers only; messages and tool results are deliberately omitted.
             results.assertThat(outcome.kind())
@@ -84,12 +78,6 @@ class CvChatToolOrchestrationProviderEvaluationTest {
     }
 
     static final class SyntheticReadTools {
-        private final CvChatToolDiscoveryState discoveryState;
-
-        SyntheticReadTools(CvChatToolDiscoveryState discoveryState) {
-            this.discoveryState = discoveryState;
-        }
-
         @Tool(name = "search_candidates", description = "Return synthetic candidate cards requiring human confirmation")
         CandidateSearchResult searchCandidates(@ToolParam(description = "Synthetic partial name") String query) {
             String normalizedQuery = query == null ? "" : query.toLowerCase(java.util.Locale.ROOT);
@@ -111,7 +99,6 @@ class CvChatToolOrchestrationProviderEvaluationTest {
                         new CandidateCard(1L, "Ada Lovelace", "Engineer"),
                         new CandidateCard(2L, "Grace Hopper", "Architect")), false);
             }
-            discoveryState.record(query, result.candidates().size());
             return result;
         }
 

@@ -19,7 +19,9 @@ import java.util.function.Supplier;
 @Component
 @RequestScope
 public class CvChatToolExecutionGuard {
-    private static final int MAX_CALLS_PER_REQUEST = 4;
+    // Discovery supports up to five explicitly referenced candidates, so one request must permit five bounded
+    // searches. Calls beyond that reviewed product limit are rejected before more work reaches repositories.
+    private static final int MAX_CALLS_PER_REQUEST = 5;
     private final AtomicInteger callCount = new AtomicInteger();
     private final CvChatToolExecutor executor;
 

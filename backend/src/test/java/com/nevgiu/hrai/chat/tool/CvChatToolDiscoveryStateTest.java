@@ -18,4 +18,15 @@ class CvChatToolDiscoveryStateTest {
                 .extracting(component -> component.getName())
                 .containsExactly("searchCalls", "distinctSuccessfulSearches", "emptySearches");
     }
+
+    @Test
+    void treatsSeveralCardsForOneAmbiguousNameAsOneSuccessfulReference() {
+        CvChatToolDiscoveryState state = new CvChatToolDiscoveryState();
+
+        state.record("Fanon Jupkwo", 4);
+        state.record("Yogish", 1);
+
+        assertThat(state.snapshot()).isEqualTo(new CvChatToolDiscoveryState.Snapshot(2, 2, 0));
+        assertThat(state.snapshot().hasConfirmedMultiCandidateMatches()).isTrue();
+    }
 }

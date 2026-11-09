@@ -53,11 +53,6 @@ public class CvChatReadToolRegistry {
         return callbacks;
     }
 
-    /** Discovery cannot read candidate details before explicit human confirmation. */
-    public List<ToolCallback> discoveryCallbacks() {
-        return matching(callback -> callback.getToolDefinition().name().equals("search_candidates"));
-    }
-
     /** Confirmed-scope planning may search again and may summarize only IDs enforced by {@link CvChatToolScope}. */
     public List<ToolCallback> confirmedScopeCallbacks() {
         return matching(callback -> !callback.getToolDefinition().name().equals("get_job_requirements"));

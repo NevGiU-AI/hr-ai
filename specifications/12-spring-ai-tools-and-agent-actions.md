@@ -119,6 +119,14 @@ is explicitly selected. Clarification/refusal stops before lookup, `CONFIRMED_SC
 visible comparison scope, and grounded evidence retrieval remains a separate recruiter action. Stale results are
 discarded when the message, selected cards, or optional approved job changes. Staging acceptance remains pending.
 
+Explicit instructions to ignore, bypass, skip, fake, assume, override, or disable confirmation, authorization,
+tenant, role, tool, or scope controls are rejected by `CvChatToolRequestPolicy` before any provider or tool call. This
+is a deliberately narrow deterministic boundary rather than a general natural-language classifier. Ordinary requests
+continue to `CvChatQuestionPolicy` and the tool-enabled orchestration model. During discovery, the model must call
+`search_candidates` separately for each referenced person using only that person's partial name. One or several
+legitimate cards for every requested person produces `CANDIDATE_CONFIRMATION_REQUIRED`; a missing result produces
+`CLARIFICATION_REQUIRED`, and Angular resolves ambiguity through explicit card selection.
+
 ### Tool-class relationship
 
 The following diagram separates the HTTP/orchestration layer, Spring AI callback layer, request-local security state,
@@ -130,7 +138,8 @@ flowchart TD
     Angular[Angular language-first workflow]
     Controller[CvChatToolOrchestrationController]
     Service[CvChatToolOrchestrationService]
-    Policy[CvChatQuestionPolicy]
+    RequestPolicy[CvChatToolRequestPolicy]
+    SemanticPolicy[CvChatQuestionPolicy]
     Evidence[CvChatEvidenceService]
     Model[SpringAiCvChatToolOrchestrationModel]
     ChatClient[Spring AI ChatClient]
@@ -151,7 +160,9 @@ flowchart TD
 
     Angular -->|POST discover or confirmed-scope| Controller
     Controller --> Service
-    Service -->|classify before tools| Policy
+    Service -->|reject explicit workflow override| RequestPolicy
+    RequestPolicy -->|ordinary request continues| SemanticPolicy
+    SemanticPolicy -->|job-relevant or out-of-scope planning| Service
     Service -->|authorize confirmed candidates| Evidence
     Service -->|authorize optional job| JobRepo
     Service -->|install confirmed IDs| Scope
@@ -181,6 +192,12 @@ The main responsibilities are:
   the authenticated principal rather than the request body.
 - `CvChatToolOrchestrationService` owns deterministic phase transitions, pre-tool policy checks, candidate/job
   authorization, request-scope installation, callback selection, and validation of the model's structured outcome.
+- `CvChatToolRequestPolicy` detects explicit attempts to weaken protected workflow controls. A matching request is
+  refused before semantic classification, provider access, or callback execution. It is intentionally narrow and
+  complements rather than replaces multilingual semantic policy evaluation and adversarial tests.
+- `CvChatQuestionPolicy` performs the existing semantic sensitive-question classification. Its evidence-oriented
+  `OUT_OF_SCOPE` result is not automatically a tool-orchestration refusal because legitimate candidate discovery is
+  outside the narrower evidence-question vocabulary.
 - `SpringAiCvChatToolOrchestrationModel` builds the reviewed prompt and attaches only the callbacks selected for that
   invocation through `toolCallbacks(...)`; it does not make the tools global.
 - `CvChatReadToolRegistry` converts `@Tool` methods into Spring AI callbacks, verifies an exact closed allow list, and
@@ -228,6 +245,10 @@ CVs, chat messages, OCR text, transcripts, and external messages are untrusted i
 
 - Keep command tools unavailable during untrusted document-analysis prompts unless the workflow explicitly requires one.
 - Enforce authorization and business invariants in deterministic services, not prompts or tool descriptions.
+- Reject explicit workflow-override language through `CvChatToolRequestPolicy` before provider or callback access;
+  keep the model prompt and provider evaluation as additional defenses rather than the primary boundary.
+- Search each named candidate separately. Never pass a complete multi-candidate recruiter sentence as one partial-name
+  tool argument, and let the deterministic Angular card picker resolve one-to-many identity matches.
 - Limit tool-call count, recursion depth, result count, execution time, payload size, and returned fields.
 - Apply timeouts, circuit breakers, provider rate limits, bulkheads or semaphores, cancellation, and safe retry policies.
 - Prevent arbitrary queries, unrestricted exports, generic URLs, shell commands, code execution, and filesystem paths.
@@ -290,7 +311,9 @@ or from Spring AI 2.x.
    the generation model. The opt-in orchestration provider evaluation applies that principle to representative normal,
    ambiguous, sensitive, out-of-scope, injection, and confirmation-bypass cases. Normal CI remains deterministic and
    provider-free; the live dataset test is an explicit release/review gate because it incurs cost and can vary with the
-   provider.
+   provider. The evaluation mirrors production application gates: explicit confirmation-bypass input is refused by
+   `CvChatToolRequestPolicy` without asking the provider to enforce application authorization, while ordinary and
+   ambiguous discovery cases still exercise the live question-policy, tool-calling, and orchestration behavior.
 
 These references explain the framework mechanics, not this application's authorization policy. Tenant isolation,
 confirmed candidate scope, approved-job scope, read-only exposure, bounded results, timeout handling, and refusal

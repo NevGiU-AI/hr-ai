@@ -43,16 +43,18 @@ public class CvChatReadTools {
     private final JobRepository jobs;
     private final CvChatToolExecutionGuard executionGuard;
     private final CvChatToolScope scope;
+    private final CvChatToolDiscoveryState discoveryState;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
                            CvDocumentRepository documents, JobRepository jobs, CvChatToolExecutionGuard executionGuard,
-                           CvChatToolScope scope) {
+                           CvChatToolScope scope, CvChatToolDiscoveryState discoveryState) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
         this.jobs = jobs;
         this.executionGuard = executionGuard;
         this.scope = scope;
+        this.discoveryState = discoveryState;
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
@@ -69,6 +71,8 @@ public class CvChatReadTools {
         List<CandidateCard> cards = response.candidates().stream().limit(MAX_SEARCH_RESULTS)
                 .map(candidate -> new CandidateCard(candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
+        // Record counts only for deterministic postconditions; do not log or persist the query or returned cards.
+        discoveryState.record(query, cards.size());
         return new CandidateSearchResult(cards,
                 response.truncated() || response.candidates().size() > MAX_SEARCH_RESULTS);
     }

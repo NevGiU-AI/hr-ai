@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
+import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import com.nevgiu.hrai.job.JobRepository;
 import org.slf4j.Logger;
@@ -31,16 +32,19 @@ public class CvChatToolOrchestrationService {
     private final CvChatQuestionPolicy questionPolicy;
     private final CvChatToolOrchestrationModel model;
     private final JobRepository jobs;
+    private final CvChatToolDiscoveryState discoveryState;
 
     CvChatToolOrchestrationService(CvChatEvidenceService evidenceService, CvChatReadToolRegistry registry,
                                    CvChatToolScope scope, CvChatQuestionPolicy questionPolicy,
-                                   CvChatToolOrchestrationModel model, JobRepository jobs) {
+                                   CvChatToolOrchestrationModel model, JobRepository jobs,
+                                   CvChatToolDiscoveryState discoveryState) {
         this.evidenceService = evidenceService;
         this.registry = registry;
         this.scope = scope;
         this.questionPolicy = questionPolicy;
         this.model = model;
         this.jobs = jobs;
+        this.discoveryState = discoveryState;
     }
 
     private static final Set<CvChatToolOrchestrationOutcome.Kind> DISCOVERY_OUTCOMES = EnumSet.of(
@@ -123,6 +127,16 @@ public class CvChatToolOrchestrationService {
                 throw new CvChatException(HttpStatus.BAD_GATEWAY,
                         "CV chat provider returned an invalid orchestration response");
             }
+            CvChatToolDiscoveryState.Snapshot searches = discoveryState.snapshot();
+            CvChatToolOrchestrationOutcome stabilized =
+                    CvChatToolDiscoveryDecision.stabilize(mode, outcome, searches);
+            if (stabilized.kind() != outcome.kind()) {
+                LOGGER.info("CV chat discovery outcome stabilized from={} to={} searchCalls={} "
+                                + "distinctSuccessfulSearches={} emptySearches={}",
+                        outcome.kind(), stabilized.kind(), searches.searchCalls(),
+                        searches.distinctSuccessfulSearches(), searches.emptySearches());
+            }
+            outcome = stabilized;
             if (!allowedOutcomes.contains(outcome.kind())) {
                 // A model cannot advance the workflow past an application-owned confirmation gate.
                 LOGGER.warn("CV chat tool orchestration rejected invalid transition for candidateCount={} outcome={}",

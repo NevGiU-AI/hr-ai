@@ -42,8 +42,9 @@ class CvChatReadToolsTest {
     private final JobRepository jobs = mock(JobRepository.class);
     private final CvChatToolExecutionGuard executionGuard = mock(CvChatToolExecutionGuard.class);
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
+    private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
     private final CvChatReadTools tools = new CvChatReadTools(
-            candidateResolution, candidates, documents, jobs, executionGuard, scope);
+            candidateResolution, candidates, documents, jobs, executionGuard, scope, discoveryState);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
@@ -67,6 +68,7 @@ class CvChatReadToolsTest {
         assertThat(result).isEqualTo(new CandidateSearchResult(
                 List.of(new CandidateCard(7L, "Ada Lovelace", "Engineer")), false));
         verify(candidateResolution).search("Ada", "tenant-a");
+        verify(discoveryState).record("Ada", 1);
     }
 
     @Test

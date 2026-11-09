@@ -1,7 +1,10 @@
 package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CvChatReadTools;
+import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
+import com.nevgiu.hrai.chat.tool.CvChatToolPlanningState;
+import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.Test;
@@ -25,15 +28,30 @@ class CvChatToolOrchestrationServiceTest {
     private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
     private final CvChatCandidateReferenceExtractor referenceExtractor = mock(CvChatCandidateReferenceExtractor.class);
     private final CvChatReadTools readTools = mock(CvChatReadTools.class);
+    private final CvChatReadToolRegistry toolRegistry = mock(CvChatReadToolRegistry.class);
+    private final CvChatToolScope toolScope = mock(CvChatToolScope.class);
+    private final CvChatToolPlanningState planningState = mock(CvChatToolPlanningState.class);
+    private final CvChatToolOrchestrationModel model = mock(CvChatToolOrchestrationModel.class);
     private final CvChatToolOrchestrationService service =
             new CvChatToolOrchestrationService(
                     evidence, questionPolicy, jobs, discoveryState,
-                    referenceExtractor, readTools);
+                    referenceExtractor, readTools, toolRegistry, toolScope, planningState, model);
 
     @BeforeEach
     void allowOrdinaryJobRelevantRequests() {
         when(questionPolicy.classify(anyString())).thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
         when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(0, 0, 0));
+        when(toolRegistry.confirmedScopeCallbacks()).thenReturn(List.of());
+        when(toolRegistry.confirmedScopeCallbacksWithJob()).thenReturn(List.of());
+        when(planningState.covers(org.mockito.ArgumentMatchers.anySet(), org.mockito.ArgumentMatchers.nullable(Long.class)))
+                .thenReturn(true);
+        when(planningState.snapshot()).thenReturn(new CvChatToolPlanningState.Snapshot(2, 1));
+        when(model.respond(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.eq(CvChatToolOrchestrationMode.CONFIRMED_SCOPE),
+                org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.nullable(Long.class)))
+                .thenReturn(outcome(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
+                        "Review the confirmed summaries before grounded comparison."));
     }
 
     @Test
@@ -61,6 +79,9 @@ class CvChatToolOrchestrationServiceTest {
 
         verify(evidence).authorizeCandidate(7L, "tenant-a");
         verify(evidence).authorizeCandidate(9L, "tenant-a");
+        verify(toolScope).confirm(candidateIds);
+        verify(model).respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE,
+                List.of(), candidateIds, null);
     }
 
     @Test
@@ -87,6 +108,7 @@ class CvChatToolOrchestrationServiceTest {
         verify(evidence).authorizeCandidate(7L, "tenant-a");
         verify(evidence).authorizeCandidate(9L, "tenant-a");
         verify(jobs).findByIdAndOrganizationId(21L, "tenant-a");
+        verify(toolScope).confirmJob(21L);
     }
 
     @Test
@@ -147,12 +169,38 @@ class CvChatToolOrchestrationServiceTest {
                 "Compare Fanon Jupkwo and Zok Boris and Yogesh Patils on Backend Experience for Natixis Job",
                 List.of(54L, 52L, 36L), 12L, "tenant-a");
 
-        assertThat(outcome).isEqualTo(outcome(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
-                "Confirmed candidate scope is ready for grounded comparison."));
+        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
         verify(evidence).authorizeCandidate(54L, "tenant-a");
         verify(evidence).authorizeCandidate(52L, "tenant-a");
         verify(evidence).authorizeCandidate(36L, "tenant-a");
         verify(jobs).findByIdAndOrganizationId(12L, "tenant-a");
+    }
+
+    @Test
+    void keepsAuthorizedScopeReadyWhenAdvisoryProviderRefuses() {
+        when(model.respond(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.nullable(Long.class)))
+                .thenReturn(outcome(CvChatToolOrchestrationOutcome.Kind.REFUSED, "Provider refusal"));
+
+        assertThat(service.planConfirmedScope("Compare", List.of(7L, 9L), "tenant-a"))
+                .isEqualTo(outcome(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
+                        "Confirmed candidate scope is ready for grounded comparison."));
+    }
+
+    @Test
+    void keepsAuthorizedScopeReadyWhenAdvisoryToolsAreIncompleteOrProviderFails() {
+        when(planningState.covers(org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.nullable(Long.class))).thenReturn(false);
+
+        assertThat(service.planConfirmedScope("Compare", List.of(7L, 9L), "tenant-a").kind())
+                .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
+
+        when(model.respond(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.nullable(Long.class))).thenThrow(new IllegalStateException("secret"));
+        assertThat(service.planConfirmedScope("Compare", List.of(7L, 9L), "tenant-a").kind())
+                .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
     }
 
     @Test

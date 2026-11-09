@@ -55,12 +55,14 @@ public class CvChatReadToolRegistry {
 
     /** Confirmed-scope planning may search again and may summarize only IDs enforced by {@link CvChatToolScope}. */
     public List<ToolCallback> confirmedScopeCallbacks() {
-        return matching(callback -> !callback.getToolDefinition().name().equals("get_job_requirements"));
+        // Candidate discovery is already complete. Expose only the minimum tool needed for the confirmed plan.
+        return matching(callback -> callback.getToolDefinition().name().equals("get_candidate_summary"));
     }
 
     /** Adds approved-job requirements only after application code confirms and authorizes a selected job. */
     public List<ToolCallback> confirmedScopeCallbacksWithJob() {
-        return callbacks;
+        // Search remains unavailable after confirmation; the model cannot widen the human-selected candidate scope.
+        return matching(callback -> !callback.getToolDefinition().name().equals("search_candidates"));
     }
 
     private List<ToolCallback> matching(Predicate<ToolCallback> predicate) {

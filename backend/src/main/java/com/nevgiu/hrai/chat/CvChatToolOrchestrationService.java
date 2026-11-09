@@ -1,7 +1,10 @@
 package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.chat.tool.CvChatReadTools;
+import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
+import com.nevgiu.hrai.chat.tool.CvChatToolPlanningState;
+import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import com.nevgiu.hrai.job.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Policy-controlled orchestration boundary behind the reviewed discovery and confirmed-scope HTTP endpoints.
@@ -32,18 +36,28 @@ public class CvChatToolOrchestrationService {
     private final CvChatReadTools readTools;
     private final JobRepository jobs;
     private final CvChatToolDiscoveryState discoveryState;
+    private final CvChatReadToolRegistry toolRegistry;
+    private final CvChatToolScope toolScope;
+    private final CvChatToolPlanningState planningState;
+    private final CvChatToolOrchestrationModel model;
 
     CvChatToolOrchestrationService(CvChatEvidenceService evidenceService,
                                    CvChatQuestionPolicy questionPolicy, JobRepository jobs,
                                    CvChatToolDiscoveryState discoveryState,
                                    CvChatCandidateReferenceExtractor referenceExtractor,
-                                   CvChatReadTools readTools) {
+                                   CvChatReadTools readTools, CvChatReadToolRegistry toolRegistry,
+                                   CvChatToolScope toolScope, CvChatToolPlanningState planningState,
+                                   CvChatToolOrchestrationModel model) {
         this.evidenceService = evidenceService;
         this.questionPolicy = questionPolicy;
         this.referenceExtractor = referenceExtractor;
         this.readTools = readTools;
         this.jobs = jobs;
         this.discoveryState = discoveryState;
+        this.toolRegistry = toolRegistry;
+        this.toolScope = toolScope;
+        this.planningState = planningState;
+        this.model = model;
     }
 
     public CvChatToolOrchestrationOutcome discover(String message) {
@@ -78,8 +92,57 @@ public class CvChatToolOrchestrationService {
             jobs.findByIdAndOrganizationId(requestedJobId, organizationId)
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
         }
-        // Candidate and optional job IDs are now fully application-authorized. A provider must not reinterpret this
-        // trusted state or randomly refuse it. Actual CV evidence retrieval and citations remain a separate action.
+        // Install only IDs already authorized above. Every model-generated tool argument must pass this scope again.
+        toolScope.confirm(candidateIds);
+        if (requestedJobId != null) {
+            toolScope.confirmJob(requestedJobId);
+        }
+        return advisoryToolPlan(normalizedMessage, candidateIds, requestedJobId);
+    }
+
+    /**
+     * Runs a real Spring AI tool-planning call without delegating workflow authority to the provider.
+     *
+     * <p>The application has already authenticated, authorized, and confirmed every ID. The model may now call the
+     * minimized read tools as a bounded orchestration preflight. Request-scoped postconditions prove that every
+     * expected summary (and optional job) was actually read. Provider-written presentation text is deliberately
+     * discarded. Any refusal, malformed outcome, missing call, or provider failure falls back to the same
+     * application-owned ready response; it cannot revoke an authorized scope or inject unsupported claims.</p>
+     */
+    private CvChatToolOrchestrationOutcome advisoryToolPlan(String message, List<Long> candidateIds, Long jobId) {
+        try {
+            CvChatToolOrchestrationOutcome proposed = model.respond(message,
+                    CvChatToolOrchestrationMode.CONFIRMED_SCOPE,
+                    jobId == null ? toolRegistry.confirmedScopeCallbacks()
+                            : toolRegistry.confirmedScopeCallbacksWithJob(),
+                    candidateIds, jobId);
+            CvChatToolPlanningState.Snapshot snapshot = planningState.snapshot();
+            boolean complete = planningState.covers(Set.copyOf(candidateIds), jobId);
+            if (complete && proposed != null
+                    && proposed.kind() == CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY) {
+                LOGGER.info("CV chat advisory tool preflight completed candidateCount={} jobPresent={} "
+                                + "summarizedCandidateCount={} loadedJobCount={}",
+                        candidateIds.size(), jobId != null, snapshot.summarizedCandidateCount(),
+                        snapshot.loadedJobCount());
+                return readyOutcome();
+            }
+            LOGGER.info("CV chat advisory tool plan used application fallback candidateCount={} jobPresent={} "
+                            + "summarizedCandidateCount={} loadedJobCount={} providerOutcome={}",
+                    candidateIds.size(), jobId != null, snapshot.summarizedCandidateCount(), snapshot.loadedJobCount(),
+                    proposed == null ? "NONE" : proposed.kind());
+        } catch (RuntimeException failure) {
+            // This plan improves presentation only. Never expose provider/tool details or turn an authorized scope
+            // into a 5xx response because the optional advisory step was unavailable.
+            CvChatToolPlanningState.Snapshot snapshot = planningState.snapshot();
+            LOGGER.warn("CV chat advisory tool plan failed; using application fallback candidateCount={} "
+                            + "jobPresent={} summarizedCandidateCount={} loadedJobCount={} failureType={}",
+                    candidateIds.size(), jobId != null, snapshot.summarizedCandidateCount(), snapshot.loadedJobCount(),
+                    failure.getClass().getSimpleName());
+        }
+        return readyOutcome();
+    }
+
+    private CvChatToolOrchestrationOutcome readyOutcome() {
         return new CvChatToolOrchestrationOutcome(
                 CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY, CONFIRMED_SCOPE_READY_MESSAGE);
     }

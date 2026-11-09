@@ -118,8 +118,12 @@ Provider failures retain structured safe HTTP errors. PR #144 connected the Angu
 phases: discovery gates deterministic candidate-card lookup, and confirmed-scope validation runs only after every card
 is explicitly selected. Clarification/refusal stops before lookup. After deterministic policy checks and tenant
 authorization of every confirmed candidate and optional approved job, Java returns `CONFIRMED_SCOPE_READY`; a model
-cannot reinterpret or randomly refuse that trusted state. Grounded evidence retrieval remains a separate recruiter
-action. Stale results are
+cannot reinterpret or randomly refuse that trusted state. After authorization, Spring AI receives only the minimum
+confirmed-scope callbacks for a bounded tool-orchestration preflight. It must read every confirmed candidate summary
+and, when selected, the approved job. Request-scoped postconditions verify those calls. Provider-written presentation
+text is discarded. Missing calls, malformed output, provider refusal, or provider failure returns the same
+application-owned ready message instead of revoking scope, injecting unsupported claims, or returning a
+provider-dependent workflow error. Grounded evidence retrieval remains a separate recruiter action. Stale results are
 discarded when the message, selected cards, or optional approved job changes. Staging acceptance remains pending.
 
 Explicit instructions to ignore, bypass, skip, fake, assume, override, or disable confirmation, authorization,
@@ -134,8 +138,8 @@ ambiguity through explicit card selection. `CvChatToolDiscoveryState` records re
 successful reference, for example; a second successful Yogish search is enough to show both card groups for human
 selection. The state never logs or persists search text, candidate names, or cards; only privacy-safe aggregate counts
 are exposed to orchestration diagnostics. The earlier provider-owned confirmed-scope transition was removed after a
-valid three-candidate, explicitly selected-job request was incorrectly refused. Tool callbacks remain available as
-reviewed building blocks for later bounded read operations, but they do not decide whether confirmed scope is ready.
+valid three-candidate, explicitly selected-job request was incorrectly refused. Tool callbacks now provide a bounded
+tool-orchestration preflight after authorization, but they do not decide whether confirmed scope is ready.
 
 ### Tool-class relationship
 
@@ -159,6 +163,7 @@ flowchart TD
         Registry[CvChatReadToolRegistry]
         Scope[CvChatToolScope]
         DiscoveryState[CvChatToolDiscoveryState]
+        PlanningState[CvChatToolPlanningState]
         Tools[CvChatReadTools]
         Guard[CvChatToolExecutionGuard]
     end
@@ -180,11 +185,13 @@ flowchart TD
     Service -->|install confirmed IDs| Scope
     Service -->|extract bounded names during discovery| ReferenceExtractor
     Service -->|invoke mandatory discovery searches| Tools
-    Service -->|future bounded callback subsets| Registry
+    Service -->|minimum confirmed-scope callback subset| Registry
     Registry -->|discovers @Tool methods and enforces allow list| Tools
-    Model -->|toolCallbacks only for a reviewed future call| ChatClient
+    Service -->|authorized advisory planning request| Model
+    Model -->|request-local toolCallbacks| ChatClient
     ChatClient -.->|bounded read callbacks| Tools
     Tools -->|record privacy-safe search outcome| DiscoveryState
+    Tools -->|record authorized summary/job IDs read| PlanningState
     Tools -->|require confirmed candidate/job| Scope
     Tools -->|count and time-bound every call| Guard
     Guard --> Executor
@@ -195,6 +202,7 @@ flowchart TD
     Tools --> Results
     Results -.->|minimized structured tool result| ChatClient
     DiscoveryState -->|aggregate search snapshot| Service
+    PlanningState -->|verify every expected tool call occurred| Service
     Service -->|apply CvChatToolDiscoveryDecision| Service
     Service --> Controller
     Controller --> Angular
@@ -205,17 +213,17 @@ The main responsibilities are:
 - `CvChatToolOrchestrationController` exposes the two authenticated HTTP phases and obtains organization context from
   the authenticated principal rather than the request body.
 - `CvChatToolOrchestrationService` owns deterministic phase transitions, pre-tool policy checks, candidate/job
-  authorization, and mandatory discovery searches. Once confirmed IDs pass those checks, it returns the
-  application-owned ready state without a provider workflow decision.
+  authorization, and mandatory discovery searches. Once confirmed IDs pass those checks, it owns the ready state and
+  runs a provider/tool preflight while always returning application-owned workflow text.
 - `CvChatToolRequestPolicy` detects explicit attempts to weaken protected workflow controls. A matching request is
   refused before semantic classification, provider access, or callback execution. It is intentionally narrow and
   complements rather than replaces multilingual semantic policy evaluation and adversarial tests.
 - `CvChatQuestionPolicy` performs the existing semantic sensitive-question classification. Its evidence-oriented
   `OUT_OF_SCOPE` result is not automatically a tool-orchestration refusal because legitimate candidate discovery is
   outside the narrower evidence-question vocabulary.
-- `SpringAiCvChatToolOrchestrationModel` and its provider evaluation preserve the reviewed experimental callback
-  boundary, but the production confirmed-scope transition no longer depends on it. If reused for a later read task,
-  callbacks must remain request-local through `toolCallbacks(...)` and must never become global.
+- `SpringAiCvChatToolOrchestrationModel` performs the production tool-orchestration preflight after deterministic
+  authorization. It receives trusted IDs separately from untrusted recruiter text, must call the minimized tools for
+  every trusted ID, and cannot authorize, refuse, change the confirmed workflow state, or supply UI text.
 - `CvChatReadToolRegistry` converts `@Tool` methods into Spring AI callbacks, verifies an exact closed allow list, and
   returns callback subsets for confirmed candidates and confirmed candidates plus a job.
 - `CvChatReadTools` implements the three model-facing read operations. Each operation independently authenticates,
@@ -225,6 +233,8 @@ The main responsibilities are:
 - `CvChatToolDiscoveryDecision` converts authorized discovery facts into application-owned postconditions: at least
   two distinct successful searches with no missing person require candidate confirmation, while any empty search
   requires clarification. Sensitive and workflow-override requests are rejected before this state can be populated.
+- `CvChatToolPlanningState` records only the authorized candidate/job IDs whose minimized tools completed during this
+  HTTP request. The service uses it as a postcondition; it stores no names, CV text, job text, prompts, or tool results.
 - `CvChatToolScope` holds immutable human-confirmed candidate and optional job IDs for the current HTTP request.
 - `CvChatToolExecutionGuard` gives each request a separate call budget, while the singleton `CvChatToolExecutor` runs
   approved work on virtual threads with a timeout. It contains no tenant or authorization state.
@@ -325,8 +335,8 @@ or from Spring AI 2.x.
 3. [Spring Framework bean scopes](https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html)
    explains that a request-scoped bean has one instance per HTTP request and how scoped proxies allow it to be injected
    into longer-lived beans. That is the reason `CvChatReadTools`, `CvChatReadToolRegistry`, `CvChatToolScope`, and
-   `CvChatToolExecutionGuard` use `@RequestScope`: mutable authorization scope and execution state cannot leak from one
-   recruiter's HTTP request into another.
+   `CvChatToolExecutionGuard`, and `CvChatToolPlanningState` use `@RequestScope`: mutable authorization scope and
+   execution/postcondition state cannot leak from one recruiter's HTTP request into another.
 4. [Spring AI Evaluation Testing](https://docs.spring.io/spring-ai/reference/api/testing.html) explains why generated
    behavior requires evaluation in addition to deterministic unit tests, and why an evaluation model may differ from
    the generation model. The opt-in orchestration provider evaluation applies that principle to representative normal,

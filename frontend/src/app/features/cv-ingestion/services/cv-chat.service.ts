@@ -25,12 +25,11 @@ export class CvChatService {
     return this.http.post<CvChatCandidateSearchResponse>(`${this.apiUrl}/chat/candidates/search`, { query });
   }
 
-  /** Compares only browser-confirmed IDs; the server re-authorizes the entire set in the authenticated tenant. */
-  compare(candidateIds: number[], message: string): Observable<CvChatComparisonResponse> {
-    return this.http.post<CvChatComparisonResponse>(`${this.apiUrl}/chat/candidates/compare`, {
-      candidateIds,
-      message,
-    });
+  /** Compares confirmed IDs and, when selected, one approved job; the server re-authorizes the complete scope. */
+  compare(candidateIds: number[], message: string, jobId: number | null = null): Observable<CvChatComparisonResponse> {
+    const body: { candidateIds: number[]; message: string; jobId?: number } = { candidateIds, message };
+    if (jobId !== null) body.jobId = jobId;
+    return this.http.post<CvChatComparisonResponse>(`${this.apiUrl}/chat/candidates/compare`, body);
   }
 
   /** Extracts references once and returns the cards from those exact tenant-scoped searches for confirmation. */

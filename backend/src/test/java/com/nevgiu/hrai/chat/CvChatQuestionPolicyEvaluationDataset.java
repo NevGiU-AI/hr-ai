@@ -28,6 +28,7 @@ final class CvChatQuestionPolicyEvaluationDataset {
     }
 
     record EvaluationCase(String id, String language, String category, String question,
+                          boolean selectedCandidateComparison, boolean approvedJobSelected,
                           CvChatQuestionPolicyResult expected) {
     }
 }

@@ -54,7 +54,8 @@ public class CvChatController {
     @PostMapping("/compare")
     public CvChatComparisonResponse compare(@Valid @RequestBody CvChatComparisonRequest request,
                                             @AuthenticationPrincipal AppUserPrincipal actor) {
-        return comparisonService.compare(request.candidateIds(), request.message(), actor.organizationId());
+        return comparisonService.compare(
+                request.candidateIds(), request.message(), request.jobId(), actor.organizationId());
     }
 
     /**

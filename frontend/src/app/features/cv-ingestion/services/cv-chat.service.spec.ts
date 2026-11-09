@@ -46,6 +46,18 @@ describe('CvChatService', () => {
     request.flush({ answer: 'Comparison [CV-2] [CV-3]', candidates: [], citations: [] });
   });
 
+  it('includes the explicitly confirmed approved job in the final comparison', () => {
+    service.compare([7, 8], 'Compare for this approved job', 12).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/candidates/compare`);
+    expect(request.request.body).toEqual({
+      candidateIds: [7, 8],
+      message: 'Compare for this approved job',
+      jobId: 12,
+    });
+    request.flush({ answer: 'Comparison [CV-2] [CV-3]', candidates: [], citations: [] });
+  });
+
   it('runs one-pass tool discovery without sending browser-owned tenant or role context', () => {
     service.discoverWithTools('Compare Ada and Grace').subscribe();
 

@@ -32,7 +32,11 @@ class CvChatQuestionPolicyProviderEvaluationTest {
 
         for (var testCase : dataset.cases()) {
             // Failure output uses the synthetic case ID, not the question, keeping future CI logs content-safe.
-            results.assertThat(policy.classify(testCase.question()))
+            CvChatQuestionPolicyResult actual = testCase.selectedCandidateComparison()
+                    ? policy.classifySelectedCandidateComparison(
+                            testCase.question(), testCase.approvedJobSelected())
+                    : policy.classify(testCase.question());
+            results.assertThat(actual)
                     .as("case=%s language=%s category=%s model=%s",
                             testCase.id(), testCase.language(), testCase.category(), modelName)
                     .isEqualTo(testCase.expected());

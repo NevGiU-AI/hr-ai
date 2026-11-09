@@ -13,7 +13,7 @@ class CvChatQuestionPolicyEvaluationDatasetTest {
     void keepsTheVersionedHumanReviewedDatasetCompleteAndUnambiguous() {
         var dataset = CvChatQuestionPolicyEvaluationDataset.load();
 
-        assertThat(dataset.version()).isEqualTo("1.0.0");
+        assertThat(dataset.version()).isEqualTo("1.1.0");
         assertThat(dataset.description()).isNotBlank();
         assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(20)
                 .allSatisfy(testCase -> {
@@ -34,6 +34,13 @@ class CvChatQuestionPolicyEvaluationDatasetTest {
                         CvChatQuestionPolicyResult.OUT_OF_SCOPE);
         assertThat(dataset.cases()).anySatisfy(testCase -> {
             assertThat(testCase.question()).isEqualTo("Is it a Java engineer ?");
+            assertThat(testCase.expected()).isEqualTo(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        });
+        assertThat(dataset.cases()).anySatisfy(testCase -> {
+            assertThat(testCase.question()).isEqualTo(
+                    "Compare Ada Lovelace and Grace Hopper and Alan Turing for this approved job.");
+            assertThat(testCase.selectedCandidateComparison()).isTrue();
+            assertThat(testCase.approvedJobSelected()).isTrue();
             assertThat(testCase.expected()).isEqualTo(CvChatQuestionPolicyResult.JOB_RELEVANT);
         });
     }

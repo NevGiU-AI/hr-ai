@@ -454,10 +454,86 @@ describe('CvWorkspaceComponent', () => {
     component.compareCandidates();
     fixture.detectChanges();
 
-    expect(chatService.compare).toHaveBeenCalledOnceWith([7, 8], 'Compare backend experience');
+    expect(chatService.compare).toHaveBeenCalledOnceWith([7, 8], 'Compare backend experience', null);
     expect(fixture.nativeElement.textContent).toContain('Ada lists Java');
     expect(fixture.nativeElement.textContent).toContain('Ada Lovelace · CV document 2');
     expect(fixture.nativeElement.textContent).toContain('Grace Hopper · CV document 3');
+  });
+
+  it('carries the confirmed approved job into the final comparison request', () => {
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace for this approved job',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+    ];
+    component.languageComparisonJobId = 12;
+    chatService.compare.and.returnValue(of({ answer: 'Grounded', candidates: [], citations: [] }));
+
+    component.confirmLanguageScope();
+    component.compareCandidates();
+
+    expect(component.comparisonJobId).toBe(12);
+    expect(chatService.compare).toHaveBeenCalledOnceWith(
+      [7, 8], 'Compare Ada and Grace for this approved job', 12);
+    expect(component.comparisonResponse?.answer).toBe('Grounded');
+  });
+
+  it('clears a confirmed no-job language scope when the recruiter selects a job', () => {
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace for backend experience',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+    ];
+    component.confirmLanguageScope();
+    expect(component.comparisonCandidates.length).toBe(2);
+
+    component.selectLanguageComparisonJob(12);
+
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.comparisonQuestion).toBe('');
+    expect(component.comparisonJobId).toBeNull();
+    expect(component.languageComparisonJobId).toBe(12);
+  });
+
+  it('invalidates a language-confirmed job after the recruiter edits candidates and selects another job', () => {
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace for this approved job',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+    ];
+    component.languageComparisonJobId = 12;
+    component.confirmLanguageScope();
+    component.addComparisonCandidate({ id: 9, name: 'Katherine Johnson', currentTitle: 'Engineer' });
+
+    component.selectLanguageComparisonJob(13);
+
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.comparisonJobId).toBeNull();
+    expect(component.languageComparisonJobId).toBe(13);
   });
 
   it('discards a late comparison response after the recruiter changes the candidate scope', () => {
@@ -469,6 +545,24 @@ describe('CvWorkspaceComponent', () => {
 
     component.compareCandidates();
     component.removeComparisonCandidate(8);
+    pending.next({
+      answer: 'Stale answer', candidates: [], citations: [],
+    } as never);
+    pending.complete();
+
+    expect(component.comparisonResponse).toBeNull();
+  });
+
+  it('discards a late comparison response after the confirmed job changes', () => {
+    const pending = new Subject<never>();
+    component.addComparisonCandidate({ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' });
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    component.comparisonQuestion = 'Compare for this approved job';
+    component.comparisonJobId = 12;
+    chatService.compare.and.returnValue(pending);
+
+    component.compareCandidates();
+    component.comparisonJobId = 13;
     pending.next({
       answer: 'Stale answer', candidates: [], citations: [],
     } as never);

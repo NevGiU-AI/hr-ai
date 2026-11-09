@@ -135,13 +135,13 @@ class CvChatControllerTest {
         var response = new CvChatComparisonResponse("Comparison [CV-10] [CV-11]", List.of(
                 new CvChatComparisonResponse.CandidateOption(7L, "Ada", "Engineer"),
                 new CvChatComparisonResponse.CandidateOption(8L, "Grace", "Architect")), List.of());
-        when(comparisonService.compare(List.of(7L, 8L), "Compare", "tenant-a")).thenReturn(response);
+        when(comparisonService.compare(List.of(7L, 8L), "Compare", 12L, "tenant-a")).thenReturn(response);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
         try {
             mvc.perform(post("/api/chat/candidates/compare")
                             .contentType("application/json")
-                            .content("{\"candidateIds\":[7,8],\"message\":\"Compare\"}"))
+                            .content("{\"candidateIds\":[7,8],\"message\":\"Compare\",\"jobId\":12}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.candidates[0].id").value(7))
                     .andExpect(jsonPath("$.candidates[1].id").value(8))
@@ -149,7 +149,7 @@ class CvChatControllerTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
-        verify(comparisonService).compare(List.of(7L, 8L), "Compare", "tenant-a");
+        verify(comparisonService).compare(List.of(7L, 8L), "Compare", 12L, "tenant-a");
     }
 
     @Test
@@ -159,6 +159,15 @@ class CvChatControllerTest {
                         .content("{\"candidateIds\":[7],\"message\":\"Compare\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.validationErrors.candidateIds").exists());
+    }
+
+    @Test
+    void validatesOptionalApprovedJobId() throws Exception {
+        mvc.perform(post("/api/chat/candidates/compare")
+                        .contentType("application/json")
+                        .content("{\"candidateIds\":[7,8],\"message\":\"Compare\",\"jobId\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.jobId").exists());
     }
 
     @Test

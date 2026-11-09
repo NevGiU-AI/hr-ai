@@ -40,11 +40,6 @@ class SpringAiCvChatComparisonModel implements CvChatComparisonModel {
     }
 
     @Override
-    public String compare(String question, List<CandidateIdentity> candidates, List<CvChatEvidence> evidence) {
-        return compare(question, candidates, evidence, null);
-    }
-
-    @Override
     public String compare(String question, List<CandidateIdentity> candidates, List<CvChatEvidence> evidence,
                           CvChatComparisonJobContext jobContext) {
         String prompt = buildUserPrompt(question, candidates, evidence, jobContext);

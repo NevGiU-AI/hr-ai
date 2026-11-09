@@ -580,9 +580,11 @@ injection attempts, minimized responses, and structured provider failures.
 
 PR #144 connected the Angular language-first flow to these two phases. Discovery must return
 `CANDIDATE_CONFIRMATION_REQUIRED` before the browser calls the deterministic candidate-card endpoint. Clarification or
-refusal stops before card lookup. After the recruiter selects one card for every reference, confirmed-scope planning
+refusal stops before card lookup. After the recruiter selects one card for every reference, confirmed-scope validation
 receives only the selected candidate IDs, bounded message, and optional currently selected approved-job ID. The visible
-comparison scope is populated only after `CONFIRMED_SCOPE_READY`; grounded comparison remains a separate recruiter
+Java tenant-authorizes every selected candidate and optional approved job before returning the application-owned
+`CONFIRMED_SCOPE_READY` state. A provider cannot refuse or advance this trusted workflow transition. The comparison
+scope is populated only after that state; grounded comparison remains a separate recruiter
 action. Request-version, message, selection, and job checks discard stale asynchronous results. No schema, migration,
 or environment change is required.
 

@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.candidate.CandidateIdentity;
+import com.nevgiu.hrai.job.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -25,15 +26,18 @@ public class CvChatComparisonService {
     private final CvChatEvidenceService evidenceService;
     private final CvChatQuestionPolicy questionPolicy;
     private final CvChatComparisonModel model;
+    private final JobRepository jobs;
 
     public CvChatComparisonService(CvChatEvidenceService evidenceService, CvChatQuestionPolicy questionPolicy,
-                                   CvChatComparisonModel model) {
+                                   CvChatComparisonModel model, JobRepository jobs) {
         this.evidenceService = evidenceService;
         this.questionPolicy = questionPolicy;
         this.model = model;
+        this.jobs = jobs;
     }
 
-    public CvChatComparisonResponse compare(List<Long> requestedCandidateIds, String question, String organizationId) {
+    public CvChatComparisonResponse compare(List<Long> requestedCandidateIds, String question, Long requestedJobId,
+                                            String organizationId) {
         List<Long> candidateIds = distinctIds(requestedCandidateIds);
         String normalizedQuestion = question.trim();
 
@@ -42,9 +46,11 @@ public class CvChatComparisonService {
         List<CandidateIdentity> candidates = candidateIds.stream()
                 .map(id -> evidenceService.authorizeCandidate(id, organizationId))
                 .toList();
+        CvChatComparisonJobContext jobContext = authorizeJob(requestedJobId, organizationId);
         CvChatQuestionPolicyResult policyResult;
         try {
-            policyResult = questionPolicy.classify(normalizedQuestion);
+            policyResult = questionPolicy.classifySelectedCandidateComparison(
+                    normalizedQuestion, jobContext != null);
         } catch (RuntimeException failure) {
             LOGGER.warn("CV comparison question policy failed for organizationId={} candidateCount={} failureType={}",
                     organizationId, candidateIds.size(), failure.getClass().getSimpleName());
@@ -58,7 +64,10 @@ public class CvChatComparisonService {
 
         // Normalize once and reuse the exact same search intent for every selected candidate. Normalizing separately
         // would allow provider variation to give otherwise comparable candidates different retrieval queries.
-        List<String> retrievalQueries = evidenceService.prepareRetrievalQueries(normalizedQuestion, organizationId);
+        String retrievalIntent = jobContext == null
+                ? normalizedQuestion
+                : normalizedQuestion + "\n\nAUTHORIZED APPROVED JOB REQUIREMENTS:\n" + jobContext.promptText();
+        List<String> retrievalQueries = evidenceService.prepareRetrievalQueries(retrievalIntent, organizationId);
         List<CvChatEvidence> evidence = new ArrayList<>();
         for (Long candidateId : candidateIds) {
             List<CvChatEvidence> candidateEvidence = evidenceService.find(
@@ -73,7 +82,7 @@ public class CvChatComparisonService {
 
         String answer;
         try {
-            answer = model.compare(normalizedQuestion, candidates, List.copyOf(evidence));
+            answer = model.compare(normalizedQuestion, candidates, List.copyOf(evidence), jobContext);
         } catch (RuntimeException failure) {
             LOGGER.warn("CV comparison provider failed for organizationId={} candidateCount={} failureType={}",
                     organizationId, candidateIds.size(), failure.getClass().getSimpleName());
@@ -84,6 +93,10 @@ public class CvChatComparisonService {
         }
         String normalizedAnswer = answer.trim();
         if (CvChatModel.OUT_OF_SCOPE.equals(normalizedAnswer)) {
+            // Distinguish an answer-model control result from the earlier question-policy decision without logging the
+            // recruiter question, generated answer, candidate names, or CV evidence.
+            LOGGER.info("CV comparison rejected for organizationId={} candidateCount={} stage={} policyResult={}",
+                    organizationId, candidateIds.size(), "ANSWER_MODEL_POLICY", CvChatModel.OUT_OF_SCOPE);
             return response(OUT_OF_SCOPE_MESSAGE, candidates, List.of());
         }
         if (CvChatModel.INSUFFICIENT_EVIDENCE.equals(normalizedAnswer)) {
@@ -111,6 +124,17 @@ public class CvChatComparisonService {
             return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
         return response(displayAnswer, candidates, citations);
+    }
+
+    private CvChatComparisonJobContext authorizeJob(Long requestedJobId, String organizationId) {
+        if (requestedJobId == null) {
+            return null;
+        }
+        // Missing and cross-tenant IDs intentionally share one result so callers cannot enumerate another tenant's
+        // approved jobs. Only bounded comparison-relevant fields leave this authorization boundary.
+        return jobs.findByIdAndOrganizationId(requestedJobId, organizationId)
+                .map(CvChatComparisonJobContext::from)
+                .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
     }
 
     private List<Long> distinctIds(List<Long> requestedCandidateIds) {

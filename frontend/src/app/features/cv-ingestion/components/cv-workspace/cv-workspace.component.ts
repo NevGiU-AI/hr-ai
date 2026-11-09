@@ -64,6 +64,10 @@ export class CvWorkspaceComponent implements OnInit {
   candidateSearchError = '';
   comparisonCandidates: CvChatCandidateOption[] = [];
   comparisonQuestion = '';
+  // Captured only after confirmed-scope planning succeeds; the backend independently tenant-authorizes it again.
+  comparisonJobId: number | null = null;
+  // Distinguishes a scope produced by language-first confirmation from a separately assembled picker-first scope.
+  private comparisonEstablishedByLanguageWorkflow = false;
   comparisonResponse: CvChatComparisonResponse | null = null;
   comparisonError = '';
   comparisonBusy = false;
@@ -230,12 +234,19 @@ export class CvWorkspaceComponent implements OnInit {
     const next = this.comparisonCandidates.filter((candidate) => candidate.id !== candidateId);
     if (next.length === this.comparisonCandidates.length) return;
     this.comparisonCandidates = next;
+    if (next.length === 0) {
+      // An empty scope no longer has a confirmed language-first job association.
+      this.comparisonJobId = null;
+      this.comparisonEstablishedByLanguageWorkflow = false;
+    }
     this.resetComparisonResult();
   }
 
   clearComparison(): void {
     this.comparisonCandidates = [];
     this.comparisonQuestion = '';
+    this.comparisonJobId = null;
+    this.comparisonEstablishedByLanguageWorkflow = false;
     this.resetComparisonResult();
   }
 
@@ -295,6 +306,11 @@ export class CvWorkspaceComponent implements OnInit {
 
   selectLanguageComparisonJob(jobId: number | null): void {
     if (this.languageComparisonJobId === jobId) return;
+    if (this.comparisonEstablishedByLanguageWorkflow && this.comparisonJobId !== jobId) {
+      // A previously confirmed language-first comparison must not remain visible after its approved-job selection
+      // changes. This also covers a no-job scope (null) becoming a job-specific scope.
+      this.clearComparison();
+    }
     this.languageComparisonJobId = jobId;
     // A late response planned against the previous job choice must not populate the visible comparison scope.
     this.languageWorkflowRequest++;
@@ -346,6 +362,8 @@ export class CvWorkspaceComponent implements OnInit {
           // still does not retrieve CV evidence; the recruiter reviews the visible scope and submits separately.
           this.comparisonCandidates = candidates;
           this.comparisonQuestion = response.message;
+          this.comparisonJobId = jobId;
+          this.comparisonEstablishedByLanguageWorkflow = true;
           this.resetComparisonResult();
         },
         error: (error: HttpErrorResponse) => {
@@ -395,11 +413,12 @@ export class CvWorkspaceComponent implements OnInit {
       || this.comparisonBusy) return;
 
     // Capture the exact confirmed scope. A response arriving after the recruiter changes that scope is discarded.
-    const scopeKey = candidateIds.join(',');
+    const scopeKey = this.comparisonScopeKey();
     this.comparisonBusy = true;
     this.comparisonError = '';
     this.comparisonResponse = null;
-    this.chatService.compare(candidateIds, question)
+    const jobId = this.comparisonJobId;
+    this.chatService.compare(candidateIds, question, jobId)
       .pipe(finalize(() => this.comparisonBusy = false))
       .subscribe({
         next: (response) => {
@@ -672,7 +691,7 @@ export class CvWorkspaceComponent implements OnInit {
   }
 
   private comparisonScopeKey(): string {
-    return this.comparisonCandidates.map((candidate) => candidate.id).join(',');
+    return `${this.comparisonCandidates.map((candidate) => candidate.id).join(',')}|job:${this.comparisonJobId ?? 'none'}`;
   }
 
   private scrollToPendingComparisonCitation(): void {

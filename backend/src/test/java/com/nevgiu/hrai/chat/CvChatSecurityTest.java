@@ -79,7 +79,7 @@ class CvChatSecurityTest {
     @ParameterizedTest
     @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
     void permitsCandidateComparisonOnlyForCvChatRoles(String role) throws Exception {
-        when(comparisonService.compare(List.of(7L, 8L), "Compare", "tenant-a"))
+        when(comparisonService.compare(List.of(7L, 8L), "Compare", null, "tenant-a"))
                 .thenReturn(new CvChatComparisonResponse("Comparison", List.of(), List.of()));
 
         mvc.perform(post("/api/chat/candidates/compare")

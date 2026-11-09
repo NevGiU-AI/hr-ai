@@ -46,7 +46,12 @@ class CvChatToolOrchestrationProviderEvaluationTest {
             List<ToolCallback> callbacks = testCase.mode() == CvChatToolOrchestrationMode.DISCOVERY
                     ? discoveryCallbacks : allCallbacks;
             CvChatToolOrchestrationOutcome outcome;
-            if (questionPolicy.classify(testCase.message()) == CvChatQuestionPolicyResult.SENSITIVE) {
+            if (CvChatToolRequestPolicy.requestsWorkflowOverride(testCase.message())) {
+                // Mirrors the deterministic production guard: protected workflow controls are never delegated to the
+                // provider, even in a provider-backed evaluation.
+                outcome = new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+                        "Application-owned refusal");
+            } else if (questionPolicy.classify(testCase.message()) == CvChatQuestionPolicyResult.SENSITIVE) {
                 // Mirrors the production pre-tool boundary without exposing application wording to this model test.
                 outcome = new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
                         "Application-owned refusal");

@@ -99,6 +99,14 @@ public class CvChatToolOrchestrationService {
         }
         try {
             String normalizedMessage = message.strip();
+            if (CvChatToolRequestPolicy.requestsWorkflowOverride(normalizedMessage)) {
+                // Confirmation, authorization, tenant, role, and tool boundaries are application policy. Explicit
+                // attempts to weaken them stop before any provider call or tool execution.
+                LOGGER.info("CV chat tool orchestration rejected application workflow override for candidateCount={}",
+                        candidateCount);
+                return new CvChatToolOrchestrationOutcome(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+                        REFUSAL_MESSAGE);
+            }
             CvChatQuestionPolicyResult policyResult = questionPolicy.classify(normalizedMessage);
             if (policyResult == CvChatQuestionPolicyResult.SENSITIVE) {
                 // The existing policy's OUT_OF_SCOPE label is evidence-question-specific: legitimate scope-planning

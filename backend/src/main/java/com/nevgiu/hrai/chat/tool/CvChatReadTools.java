@@ -56,8 +56,9 @@ public class CvChatReadTools {
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
-            + "partial person name. Returns bounded minimal cards for explicit recruiter selection; never select a "
-            + "candidate automatically when multiple cards are returned.")
+            + "partial name for exactly one person. Call separately for each person in a multi-candidate request; "
+            + "never pass the full recruiter sentence or combine multiple names. Returns bounded minimal cards for "
+            + "explicit recruiter selection; never select a candidate automatically when multiple cards are returned.")
     public CandidateSearchResult searchCandidates(
             @ToolParam(description = "At least two characters from the candidate's name") String query) {
         // Resolve and authorize the principal on the HTTP request thread. Spring Security context is thread-local and

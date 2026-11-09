@@ -179,6 +179,14 @@
                   rows="2" minlength="2" maxlength="2000" [(ngModel)]="languageComparisonMessage"
                   [disabled]="languageScopeBusy || comparisonBusy"
                   placeholder="Compare Jane Smith and Peter Jones for this role."></textarea>
+        <label for="language-comparison-job" class="form-label mt-2">Approved job context (optional)</label>
+        <select id="language-comparison-job" name="languageComparisonJob" class="form-select"
+                [ngModel]="languageComparisonJobId"
+                (ngModelChange)="selectLanguageComparisonJob($event)"
+                [disabled]="languageScopeBusy || comparisonBusy">
+          <option [ngValue]="null">No approved job — use the comparison criterion above</option>
+          <option *ngFor="let job of jobs" [ngValue]="job.id">{{ job.title }} · {{ job.level }}</option>
+        </select>
         <button class="btn btn-outline-primary mt-2" type="submit"
                 [disabled]="languageComparisonMessage.trim().length < 2 || languageScopeBusy || comparisonBusy">
           {{ languageScopeBusy ? 'Finding candidates…' : 'Find candidate cards' }}

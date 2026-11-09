@@ -65,6 +65,7 @@ describe('CvWorkspaceComponent', () => {
     expect(service.getJobs).toHaveBeenCalled();
     expect(component.selectedCandidateId).toBe(7);
     expect(component.selectedJobId).toBe(12);
+    expect(component.languageComparisonJobId).toBeNull();
     expect(service.getCandidateDetails).toHaveBeenCalledOnceWith(7);
     expect(service.getEvaluationHistory).toHaveBeenCalledOnceWith(7);
   });
@@ -296,7 +297,7 @@ describe('CvWorkspaceComponent', () => {
     expect(component.comparisonCandidates.map((item) => item.id)).toEqual([7, 8]);
     expect(component.comparisonQuestion).toBe('Compare Ada and Grace for backend engineering');
     expect(chatService.planConfirmedScope).toHaveBeenCalledOnceWith(
-      'Compare Ada and Grace for backend engineering', [7, 8], 12);
+      'Compare Ada and Grace for backend engineering', [7, 8], null);
     expect(chatService.compare).not.toHaveBeenCalled();
   });
 
@@ -338,7 +339,7 @@ describe('CvWorkspaceComponent', () => {
     expect(component.languageWorkflowOutcome?.kind).toBe('REFUSED');
   });
 
-  it('ignores confirmed-scope results after the selected job changes', () => {
+  it('includes only an explicitly selected comparison job and ignores stale planning results', () => {
     const result = new Subject<{ kind: 'CONFIRMED_SCOPE_READY'; message: string }>();
     chatService.planConfirmedScope.and.returnValue(result);
     component.languageScopeResponse = {
@@ -355,8 +356,11 @@ describe('CvWorkspaceComponent', () => {
       { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
     ];
 
+    component.languageComparisonJobId = 12;
     component.confirmLanguageScope();
-    component.selectedJobId = 99;
+    expect(chatService.planConfirmedScope).toHaveBeenCalledOnceWith('Compare Ada and Grace', [7, 8], 12);
+
+    component.selectLanguageComparisonJob(null);
     result.next({ kind: 'CONFIRMED_SCOPE_READY', message: 'Ready.' });
     result.complete();
 

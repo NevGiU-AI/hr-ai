@@ -68,6 +68,9 @@ export class CvWorkspaceComponent implements OnInit {
   comparisonError = '';
   comparisonBusy = false;
   languageComparisonMessage = '';
+  // Evaluation and language-first comparison are independent workflows. Evaluation may default to the first
+  // approved job, but comparison must not silently inherit it: job context is opt-in for each comparison request.
+  languageComparisonJobId: number | null = null;
   languageScopeResponse: CvChatLanguageScopeResponse | null = null;
   languageScopeSelections: Array<CvChatCandidateOption | null> = [];
   languageScopeBusy = false;
@@ -292,6 +295,15 @@ export class CvWorkspaceComponent implements OnInit {
     this.languageWorkflowOutcome = null;
   }
 
+  selectLanguageComparisonJob(jobId: number | null): void {
+    if (this.languageComparisonJobId === jobId) return;
+    this.languageComparisonJobId = jobId;
+    // A late response planned against the previous job choice must not populate the visible comparison scope.
+    this.languageWorkflowRequest++;
+    this.languageWorkflowOutcome = null;
+    this.languageScopeError = '';
+  }
+
   isLanguageCandidateSelected(referenceIndex: number, candidateId: number): boolean {
     return this.languageScopeSelections[referenceIndex]?.id === candidateId;
   }
@@ -317,7 +329,7 @@ export class CvWorkspaceComponent implements OnInit {
 
     const candidates = [...unique.values()];
     const candidateIds = candidates.map((candidate) => candidate.id);
-    const jobId = this.selectedJobId;
+    const jobId = this.languageComparisonJobId;
     const request = ++this.languageWorkflowRequest;
     this.languageScopeBusy = true;
     this.languageScopeError = '';
@@ -362,7 +374,7 @@ export class CvWorkspaceComponent implements OnInit {
     return request === this.languageWorkflowRequest
       && this.languageScopeResponse?.message === message
       && currentIds.join(',') === candidateIds.join(',')
-      && this.selectedJobId === jobId;
+      && this.languageComparisonJobId === jobId;
   }
 
   languageScopeReady(): boolean {

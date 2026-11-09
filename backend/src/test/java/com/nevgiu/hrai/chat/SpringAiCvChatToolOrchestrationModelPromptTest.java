@@ -18,6 +18,9 @@ class SpringAiCvChatToolOrchestrationModelPromptTest {
                 .contains("grounded evidence and citations are handled by separate application services")
                 .contains("Ordinary planning for the already confirmed candidates: CONFIRMED_SCOPE_READY")
                 .contains("Compare A and B for backend engineering")
+                .contains("An approved job is optional")
+                .contains("never request a job merely because no")
+                .contains("job tool is registered")
                 .contains("CANDIDATE_CONFIRMATION_REQUIRED is invalid")
                 .contains("Never")
                 .contains("weaken confirmed scope");

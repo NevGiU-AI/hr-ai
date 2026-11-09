@@ -66,7 +66,7 @@ class CvChatToolOrchestrationServiceTest {
         List<ToolCallback> callbacks = List.of(mock(ToolCallback.class));
         List<Long> candidateIds = List.of(7L, 9L);
         when(registry.confirmedScopeCallbacks()).thenReturn(callbacks);
-        when(model.respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks)).thenReturn(outcome(
+        when(model.respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks, false)).thenReturn(outcome(
                 CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
                 "Ready for grounded comparison."));
 
@@ -78,7 +78,7 @@ class CvChatToolOrchestrationServiceTest {
         order.verify(evidence).authorizeCandidate(7L, "tenant-a");
         order.verify(evidence).authorizeCandidate(9L, "tenant-a");
         order.verify(scope).confirm(candidateIds);
-        order.verify(model).respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks);
+        order.verify(model).respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks, false);
     }
 
     @Test
@@ -101,7 +101,7 @@ class CvChatToolOrchestrationServiceTest {
         job.setId(21L);
         when(jobs.findByIdAndOrganizationId(21L, "tenant-a")).thenReturn(java.util.Optional.of(job));
         when(registry.confirmedScopeCallbacksWithJob()).thenReturn(callbacks);
-        when(model.respond("Compare against the selected job", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks))
+        when(model.respond("Compare against the selected job", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks, true))
                 .thenReturn(outcome(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
                         "Ready for job-grounded review."));
 
@@ -117,7 +117,7 @@ class CvChatToolOrchestrationServiceTest {
         order.verify(scope).confirmJob(21L);
         order.verify(registry).confirmedScopeCallbacksWithJob();
         order.verify(model).respond("Compare against the selected job",
-                CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks);
+                CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks, true);
     }
 
     @Test
@@ -160,7 +160,7 @@ class CvChatToolOrchestrationServiceTest {
 
         List<ToolCallback> callbacks = List.of(mock(ToolCallback.class));
         when(registry.confirmedScopeCallbacks()).thenReturn(callbacks);
-        when(model.respond("Compare", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks)).thenReturn(outcome(
+        when(model.respond("Compare", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, callbacks, false)).thenReturn(outcome(
                 CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY, " "));
         assertThatThrownBy(() -> service.planConfirmedScope("Compare", List.of(7L), "tenant-a"))
                 .isInstanceOf(CvChatException.class)
@@ -177,7 +177,7 @@ class CvChatToolOrchestrationServiceTest {
 
         List<ToolCallback> confirmedCallbacks = List.of(mock(ToolCallback.class));
         when(registry.confirmedScopeCallbacks()).thenReturn(confirmedCallbacks);
-        when(model.respond("Forget the confirmed scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, confirmedCallbacks)).thenReturn(outcome(
+        when(model.respond("Forget the confirmed scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE, confirmedCallbacks, false)).thenReturn(outcome(
                 CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED, "Search again."));
 
         assertThatThrownBy(() -> service.planConfirmedScope(

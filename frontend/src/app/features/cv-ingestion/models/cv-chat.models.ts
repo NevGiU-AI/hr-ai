@@ -59,3 +59,11 @@ export interface CvChatToolOrchestrationOutcome {
   kind: CvChatToolWorkflowKind;
   message: string;
 }
+
+/**
+ * One-pass discovery result. Candidate cards are Java-owned results from the same tenant-scoped searches that
+ * produced the workflow decision; they are never model-generated scope.
+ */
+export interface CvChatToolDiscoveryResponse extends CvChatToolOrchestrationOutcome {
+  candidateScope: CvChatLanguageScopeResponse | null;
+}

@@ -562,8 +562,10 @@ The first read-tool foundation now provides request-scoped `search_candidates` a
 trusted server-side organization/role injection, bounded execution, and an internal opt-in orchestrator. Discovery can
 register only search; confirmed-scope planning may register both tools, but summary access is restricted to the exact
 tenant-authorized IDs installed after human confirmation. The model returns only an application-validated workflow
-kind plus presentation text—it cannot return candidate IDs, organization, role, or authorization state. Illegal phase
-transitions such as claiming `CONFIRMED_SCOPE_READY` during discovery fail closed.
+kind plus presentation text—it cannot return candidate IDs, organization, role, or authorization state. Java may add
+minimal tenant-authorized candidate cards to a discovery response for human confirmation; those IDs come from the
+authenticated search results, never from model output. Illegal phase transitions such as claiming
+`CONFIRMED_SCOPE_READY` during discovery fail closed.
 
 The next read-tool increment adds `get_job_requirements`. It is excluded from discovery and ordinary candidate-only
 planning. Application code must first tenant-authorize one recruiter-selected approved job and install its ID into the
@@ -574,15 +576,27 @@ metadata. This prepares job-grounded planning without giving the model authority
 The reviewed orchestration API separates discovery from confirmed-scope planning at
 `POST /api/chat/tools/discover` and `POST /api/chat/tools/confirmed-scope`. Jakarta validation bounds messages and IDs;
 Spring Security enforces authentication, CSRF, and the existing chat roles. The controller obtains organization only
-from `AppUserPrincipal`, ignores injected organization/role fields, and returns only the validated workflow kind and
-presentation text. Controller and security tests cover role access, CSRF, authentication, validation, tenant-context
-injection attempts, minimized responses, and structured provider failures.
+from `AppUserPrincipal` and ignores injected organization/role fields. Confirmed-scope responses contain only the
+validated workflow kind and presentation text. Discovery keeps those top-level fields and may add `candidateScope`
+only for `CANDIDATE_CONFIRMATION_REQUIRED`; that scope contains the trimmed request plus the same extracted references
+and minimal cards returned by the deterministic tenant-scoped searches. Refusal and clarification return a null
+`candidateScope`. Controller and security tests cover role access, CSRF, authentication, validation, tenant-context
+injection attempts, minimized responses, structured discovery/policy provider failures, and privacy-safe fallback when
+the non-authoritative confirmed-scope tool preflight is unavailable.
 
-PR #144 connected the Angular language-first flow to these two phases. Discovery must return
-`CANDIDATE_CONFIRMATION_REQUIRED` before the browser calls the deterministic candidate-card endpoint. Clarification or
-refusal stops before card lookup. After the recruiter selects one card for every reference, confirmed-scope planning
-receives only the selected candidate IDs, bounded message, and optional currently selected approved-job ID. The visible
-comparison scope is populated only after `CONFIRMED_SCOPE_READY`; grounded comparison remains a separate recruiter
+PR #144 connected the Angular language-first flow to these two phases. The subsequent one-pass discovery correction
+uses one provider reference-extraction call and one deterministic tenant-scoped search per extracted person, then
+returns those exact cards in `candidateScope`. Angular consumes that scope directly instead of asking
+`POST /api/chat/candidates/scope` to extract and resolve the same names a second time. This removes the possibility that
+two provider calls disagree about an otherwise identical recruiter request. The older candidate-scope endpoint remains
+temporarily available for cached-client compatibility, but it is not part of the current Angular sequence.
+Clarification or refusal stops before any cards are returned. A confirmation outcome without `candidateScope` fails
+closed in the browser rather than falling back to a second extraction. After the recruiter selects one card for every
+reference, confirmed-scope validation receives only the selected candidate IDs, bounded message, and optional currently
+selected approved-job ID. The visible
+Java tenant-authorizes every selected candidate and optional approved job before returning the application-owned
+`CONFIRMED_SCOPE_READY` state. A provider cannot refuse or advance this trusted workflow transition. The comparison
+scope is populated only after that state; grounded comparison remains a separate recruiter
 action. Request-version, message, selection, and job checks discard stale asynchronous results. No schema, migration,
 or environment change is required.
 

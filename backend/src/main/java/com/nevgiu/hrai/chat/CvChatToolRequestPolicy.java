@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /** Application-owned pre-model guard for explicit attempts to override protected chat workflow boundaries. */
 final class CvChatToolRequestPolicy {
     private static final Pattern OVERRIDE_ACTION = Pattern.compile(
-            "\\b(ignore|bypass|skip|fake|assume|override|disable)\\b");
+            "\\b(ignore|bypass|skip|fake|assume|override|disable|forget)\\b");
     private static final Pattern PROTECTED_BOUNDARY = Pattern.compile(
             "\\b(confirm(?:ation|ed)?|authori[sz](?:ation|ed)?|tenant|organization|role|tool|scope)\\b");
 

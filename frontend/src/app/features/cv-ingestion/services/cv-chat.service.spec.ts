@@ -46,22 +46,23 @@ describe('CvChatService', () => {
     request.flush({ answer: 'Comparison [CV-2] [CV-3]', candidates: [], citations: [] });
   });
 
-  it('proposes a language-first scope without requesting candidate evidence', () => {
-    service.proposeLanguageScope('Compare Ada and Grace').subscribe();
-
-    const request = http.expectOne(`${environment.apiUrl}/chat/candidates/scope`);
-    expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ message: 'Compare Ada and Grace' });
-    request.flush({ message: 'Compare Ada and Grace', references: [] });
-  });
-
-  it('runs tool discovery without sending browser-owned tenant or role context', () => {
+  it('runs one-pass tool discovery without sending browser-owned tenant or role context', () => {
     service.discoverWithTools('Compare Ada and Grace').subscribe();
 
     const request = http.expectOne(`${environment.apiUrl}/chat/tools/discover`);
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ message: 'Compare Ada and Grace' });
-    request.flush({ kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm candidate cards.' });
+    request.flush({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED',
+      message: 'Confirm candidate cards.',
+      candidateScope: {
+        message: 'Compare Ada and Grace',
+        references: [
+          { requestedName: 'Ada', status: 'CHOICES', candidates: [], truncated: false },
+          { requestedName: 'Grace', status: 'CHOICES', candidates: [], truncated: false },
+        ],
+      },
+    });
   });
 
   it('plans a confirmed scope and omits the optional job when none is selected', () => {

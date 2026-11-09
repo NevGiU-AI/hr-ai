@@ -21,7 +21,8 @@ import java.util.function.Supplier;
 public class CvChatToolExecutionGuard {
     // Discovery supports up to five explicitly referenced candidates, so one request must permit five bounded
     // searches. Calls beyond that reviewed product limit are rejected before more work reaches repositories.
-    private static final int MAX_CALLS_PER_REQUEST = 5;
+    // Confirmed planning may read five candidate summaries plus one explicitly selected approved job.
+    private static final int MAX_CALLS_PER_REQUEST = 6;
     private final AtomicInteger callCount = new AtomicInteger();
     private final CvChatToolExecutor executor;
 

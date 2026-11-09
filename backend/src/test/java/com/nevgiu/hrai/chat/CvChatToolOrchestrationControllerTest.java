@@ -31,10 +31,18 @@ class CvChatToolOrchestrationControllerTest {
     @MockitoBean SecurityAuditService securityAuditService;
 
     @Test
-    void exposesOnlyValidatedDiscoveryOutcomeFields() throws Exception {
-        when(orchestration.discover("Find Ada and Grace")).thenReturn(new CvChatToolOrchestrationOutcome(
+    void exposesOnlyValidatedDiscoveryOutcomeAndTenantScopedCards() throws Exception {
+        CvChatLanguageScopeResponse candidateScope = new CvChatLanguageScopeResponse(
+                "Find Ada and Grace", List.of(
+                new CvChatLanguageScopeResponse.Reference("Ada", CvChatLanguageScopeResponse.Status.CHOICES,
+                        List.of(new CvChatLanguageScopeResponse.CandidateOption(7L, "Ada Lovelace", "Engineer")),
+                        false),
+                new CvChatLanguageScopeResponse.Reference("Grace", CvChatLanguageScopeResponse.Status.CHOICES,
+                        List.of(new CvChatLanguageScopeResponse.CandidateOption(8L, "Grace Hopper", null)),
+                        false)));
+        when(orchestration.discover("Find Ada and Grace")).thenReturn(new CvChatToolDiscoveryResponse(
                 CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
-                "Confirm the candidate cards."));
+                "Confirm the candidate cards.", candidateScope));
 
         mvc.perform(post("/api/chat/tools/discover")
                         .contentType("application/json")
@@ -42,11 +50,31 @@ class CvChatToolOrchestrationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.kind").value("CANDIDATE_CONFIRMATION_REQUIRED"))
                 .andExpect(jsonPath("$.message").value("Confirm the candidate cards."))
+                .andExpect(jsonPath("$.candidateScope.message").value("Find Ada and Grace"))
+                .andExpect(jsonPath("$.candidateScope.references[0].requestedName").value("Ada"))
+                .andExpect(jsonPath("$.candidateScope.references[0].status").value("CHOICES"))
+                .andExpect(jsonPath("$.candidateScope.references[0].candidates[0].id").value(7))
+                .andExpect(jsonPath("$.candidateScope.references[0].candidates[0].name").value("Ada Lovelace"))
                 .andExpect(jsonPath("$.candidateIds").doesNotExist())
                 .andExpect(jsonPath("$.organizationId").doesNotExist())
-                .andExpect(jsonPath("$.roles").doesNotExist());
+                .andExpect(jsonPath("$.roles").doesNotExist())
+                .andExpect(jsonPath("$.candidateScope.references[0].candidates[0].email").doesNotExist())
+                .andExpect(jsonPath("$.candidateScope.references[0].candidates[0].cvText").doesNotExist());
 
         verify(orchestration).discover("Find Ada and Grace");
+    }
+
+    @Test
+    void returnsNoCandidateScopeWhenDiscoveryDoesNotPermitConfirmation() throws Exception {
+        when(orchestration.discover("Find Ada")).thenReturn(new CvChatToolDiscoveryResponse(
+                CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED,
+                "Please clarify the candidate names before continuing.", null));
+
+        mvc.perform(post("/api/chat/tools/discover")
+                        .contentType("application/json").content("{\"message\":\"Find Ada\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("CLARIFICATION_REQUIRED"))
+                .andExpect(jsonPath("$.candidateScope").doesNotExist());
     }
 
     @Test

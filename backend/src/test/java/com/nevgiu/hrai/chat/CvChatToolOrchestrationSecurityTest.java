@@ -36,7 +36,7 @@ class CvChatToolOrchestrationSecurityTest {
     @ParameterizedTest
     @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
     void permitsOnlyCvChatRolesForBothPhases(String role) throws Exception {
-        when(orchestration.discover(anyString())).thenReturn(outcome());
+        when(orchestration.discover(anyString())).thenReturn(discoveryResponse());
         when(orchestration.planConfirmedScope(anyString(), anyList(), eq(21L), eq("tenant-a")))
                 .thenReturn(outcome());
 
@@ -74,6 +74,11 @@ class CvChatToolOrchestrationSecurityTest {
     private CvChatToolOrchestrationOutcome outcome() {
         return new CvChatToolOrchestrationOutcome(
                 CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY, "Ready");
+    }
+
+    private CvChatToolDiscoveryResponse discoveryResponse() {
+        return new CvChatToolDiscoveryResponse(
+                CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED, "Clarify", null);
     }
 
     private AppUserPrincipal principal(String role) {

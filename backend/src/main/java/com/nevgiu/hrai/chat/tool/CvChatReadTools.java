@@ -45,10 +45,12 @@ public class CvChatReadTools {
     private final CvChatToolExecutionGuard executionGuard;
     private final CvChatToolScope scope;
     private final CvChatToolDiscoveryState discoveryState;
+    private final CvChatToolPlanningState planningState;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
                            CvDocumentRepository documents, JobRepository jobs, CvChatToolExecutionGuard executionGuard,
-                           CvChatToolScope scope, CvChatToolDiscoveryState discoveryState) {
+                           CvChatToolScope scope, CvChatToolDiscoveryState discoveryState,
+                           CvChatToolPlanningState planningState) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
@@ -56,6 +58,7 @@ public class CvChatReadTools {
         this.executionGuard = executionGuard;
         this.scope = scope;
         this.discoveryState = discoveryState;
+        this.planningState = planningState;
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
@@ -92,7 +95,7 @@ public class CvChatReadTools {
         // Prompt instructions are not an authorization boundary. Reject any model-supplied ID that was not explicitly
         // authorized and installed into this request's confirmed scope by the orchestrator.
         scope.requireConfirmed(candidateId);
-        return executionGuard.execute(() -> {
+        CandidateSummary summary = executionGuard.execute(() -> {
             Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, actor.organizationId())
                     // Missing and cross-tenant IDs intentionally share one response to prevent tenant enumeration.
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
@@ -105,6 +108,8 @@ public class CvChatReadTools {
             return new CandidateSummary(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),
                     candidate.getYearsExperience(), documentStatus);
         });
+        planningState.recordCandidateSummary(candidateId);
+        return summary;
     }
 
     @Tool(name = "get_job_requirements", description = "Return bounded requirements for one approved job that the "
@@ -116,7 +121,7 @@ public class CvChatReadTools {
         // Tenant authorization alone is insufficient: require the application-owned human-confirmed job scope before
         // allowing a model-generated tool argument to reach the repository.
         scope.requireConfirmedJob(jobId);
-        return executionGuard.execute(() -> {
+        JobRequirements requirements = executionGuard.execute(() -> {
             Job job = jobs.findByIdAndOrganizationId(jobId, actor.organizationId())
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
             return new JobRequirements(job.getId(), bounded(job.getTitle()), bounded(job.getLevel()),
@@ -124,6 +129,8 @@ public class CvChatReadTools {
                     bounded(job.getRequiredQualifications()), bounded(job.getPreferredQualifications()),
                     bounded(job.getSoftSkills()));
         });
+        planningState.recordJobRequirements(jobId);
+        return requirements;
     }
 
     private String bounded(String value) {

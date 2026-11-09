@@ -7,6 +7,7 @@ import { Candidate, CandidateDetails, CvArchiveImportResult, CvImportResult, Eva
   EvaluationResponse, Job } from '../../models/cv-ingestion.models';
 import { CvIngestionService } from '../../services/cv-ingestion.service';
 import { CvChatService } from '../../services/cv-chat.service';
+import { CvChatToolDiscoveryResponse } from '../../models/cv-chat.models';
 import { CvWorkspaceComponent } from './cv-workspace.component';
 import { AuthService } from '../../../../core/auth/auth.service';
 
@@ -32,10 +33,11 @@ describe('CvWorkspaceComponent', () => {
       'getEvaluationHistory',
     ]);
     chatService = jasmine.createSpyObj<CvChatService>('CvChatService', [
-      'ask', 'searchCandidates', 'compare', 'proposeLanguageScope', 'discoverWithTools', 'planConfirmedScope',
+      'ask', 'searchCandidates', 'compare', 'discoverWithTools', 'planConfirmedScope',
     ]);
     chatService.discoverWithTools.and.returnValue(of({
       kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the candidate cards.',
+      candidateScope: { message: 'Compare Ada and Grace', references: [] },
     }));
     chatService.planConfirmedScope.and.returnValue(of({
       kind: 'CONFIRMED_SCOPE_READY', message: 'Confirmed scope is ready.',
@@ -247,16 +249,19 @@ describe('CvWorkspaceComponent', () => {
   });
 
   it('proposes tenant-scoped cards from natural language without comparing before confirmation', () => {
-    chatService.proposeLanguageScope.and.returnValue(of({
-      message: 'Compare Ada Lovelace and Grace',
-      references: [
-        { requestedName: 'Ada Lovelace', status: 'RESOLVED', truncated: false,
-          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
-        { requestedName: 'Grace', status: 'CHOICES', truncated: false, candidates: [
-          { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
-          { id: 9, name: 'Grace Murray', currentTitle: 'Developer' },
-        ] },
-      ],
+    chatService.discoverWithTools.and.returnValue(of({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the candidate cards.',
+      candidateScope: {
+        message: 'Compare Ada Lovelace and Grace',
+        references: [
+          { requestedName: 'Ada Lovelace', status: 'CHOICES', truncated: false,
+            candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+          { requestedName: 'Grace', status: 'CHOICES', truncated: false, candidates: [
+            { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+            { id: 9, name: 'Grace Murray', currentTitle: 'Developer' },
+          ] },
+        ],
+      },
     }));
     component.languageComparisonMessage = '  Compare Ada Lovelace and Grace  ';
 
@@ -264,9 +269,8 @@ describe('CvWorkspaceComponent', () => {
     fixture.detectChanges();
 
     expect(chatService.discoverWithTools).toHaveBeenCalledOnceWith('Compare Ada Lovelace and Grace');
-    expect(chatService.proposeLanguageScope).toHaveBeenCalledOnceWith('Compare Ada Lovelace and Grace');
     expect(chatService.compare).not.toHaveBeenCalled();
-    expect(component.languageScopeSelections[0]?.id).toBe(7);
+    expect(component.languageScopeSelections[0]).toBeNull();
     expect(component.languageScopeSelections[1]).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Grace Hopper');
     expect(fixture.nativeElement.textContent).toContain('Confirm candidate scope');
@@ -304,15 +308,52 @@ describe('CvWorkspaceComponent', () => {
   it('stops before candidate-card lookup when tool discovery requests clarification', () => {
     chatService.discoverWithTools.and.returnValue(of({
       kind: 'CLARIFICATION_REQUIRED', message: 'Please name at least two candidates.',
+      candidateScope: null,
     }));
     component.languageComparisonMessage = 'Compare suitable candidates';
 
     component.proposeLanguageScope();
     fixture.detectChanges();
 
-    expect(chatService.proposeLanguageScope).not.toHaveBeenCalled();
     expect(component.languageScopeResponse).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Please name at least two candidates.');
+  });
+
+  it('fails closed when confirmation does not include cards from the same discovery request', () => {
+    chatService.discoverWithTools.and.returnValue(of({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the candidate cards.', candidateScope: null,
+    }));
+    component.languageComparisonMessage = 'Compare Ada and Grace';
+
+    component.proposeLanguageScope();
+
+    expect(component.languageScopeResponse).toBeNull();
+    expect(component.languageScopeSelections).toEqual([]);
+    expect(component.languageScopeError).toContain('Candidate cards were not returned');
+  });
+
+  it('ignores a stale discovery response and keeps the latest candidate-card request authoritative', () => {
+    const first = new Subject<CvChatToolDiscoveryResponse>();
+    const second = new Subject<CvChatToolDiscoveryResponse>();
+    chatService.discoverWithTools.and.returnValues(first, second);
+
+    component.languageComparisonMessage = 'Compare Ada and Grace';
+    component.proposeLanguageScope();
+    // Simulate a future caller that permits replacing an in-flight discovery request; the request token must still
+    // prevent its late response from replacing the newer scope.
+    component.languageScopeBusy = false;
+    component.languageComparisonMessage = 'Compare Linus and Margaret';
+    component.proposeLanguageScope();
+
+    first.next(discoveryResponse('Compare Ada and Grace', 7, 8));
+    first.complete();
+    expect(component.languageScopeResponse).toBeNull();
+
+    second.next(discoveryResponse('Compare Linus and Margaret', 10, 11));
+    second.complete();
+    expect(component.languageScopeResponse?.message).toBe('Compare Linus and Margaret');
+    expect(component.languageScopeResponse?.references.flatMap((reference) => reference.candidates.map((item) => item.id)))
+      .toEqual([10, 11]);
   });
 
   it('does not copy confirmed cards when planning refuses the request', () => {
@@ -687,6 +728,22 @@ describe('CvWorkspaceComponent', () => {
       ...evaluationResponse().evaluation,
       candidateName: 'Ada Lovelace', jobTitle: 'Backend Engineer', aiExplanation: 'Strong backend alignment',
       invalidatedAt: null, current: true,
+    };
+  }
+
+  function discoveryResponse(message: string, firstId: number, secondId: number): CvChatToolDiscoveryResponse {
+    return {
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED',
+      message: 'Confirm the candidate cards.',
+      candidateScope: {
+        message,
+        references: [
+          { requestedName: 'First', status: 'CHOICES', truncated: false,
+            candidates: [{ id: firstId, name: `Candidate ${firstId}`, currentTitle: null }] },
+          { requestedName: 'Second', status: 'CHOICES', truncated: false,
+            candidates: [{ id: secondId, name: `Candidate ${secondId}`, currentTitle: null }] },
+        ],
+      },
     };
   }
 

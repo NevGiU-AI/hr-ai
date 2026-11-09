@@ -43,8 +43,9 @@ class CvChatReadToolsTest {
     private final CvChatToolExecutionGuard executionGuard = mock(CvChatToolExecutionGuard.class);
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
     private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
+    private final CvChatToolPlanningState planningState = mock(CvChatToolPlanningState.class);
     private final CvChatReadTools tools = new CvChatReadTools(
-            candidateResolution, candidates, documents, jobs, executionGuard, scope, discoveryState);
+            candidateResolution, candidates, documents, jobs, executionGuard, scope, discoveryState, planningState);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
@@ -92,6 +93,7 @@ class CvChatReadToolsTest {
         CandidateSummary result = tools.getCandidateSummary(7L);
 
         verify(scope).requireConfirmed(7L);
+        verify(planningState).recordCandidateSummary(7L);
         assertThat(result).isEqualTo(new CandidateSummary(7L, "Ada Lovelace", "Engineer", 8,
                 new CurrentDocumentStatus(12L, CvIngestionStatus.IMPORTED, CvExtractionMethod.NATIVE,
                         Instant.parse("2026-11-03T00:00:00Z"), null)));
@@ -145,6 +147,7 @@ class CvChatReadToolsTest {
         JobRequirements result = tools.getJobRequirements(21L);
 
         verify(scope).requireConfirmedJob(21L);
+        verify(planningState).recordJobRequirements(21L);
         assertThat(result).isEqualTo(new JobRequirements(21L, "Backend Engineer", "Senior",
                 "Build reliable services", "Design APIs", "Java and Spring Boot", "PostgreSQL",
                 "Clear communication"));

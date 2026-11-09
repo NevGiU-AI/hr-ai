@@ -26,9 +26,10 @@ import java.util.Set;
  * Tool arguments deliberately contain no organization identifier, role, or authorization flag that a model could
  * invent or override.
  *
- * <p>{@link RequestScope} gives each HTTP request its own tool object. Spring injects a scoped proxy into longer-lived
- * collaborators and resolves that proxy to the current request's instance only when a tool is used. Consequently no
- * mutable tool lifecycle or authenticated context can be shared between concurrent users or organizations.</p>
+ * <p>Spring components are singleton-scoped by default. {@link RequestScope} instead gives each HTTP request its own
+ * tool object and discards it after the response. Spring injects a scoped proxy into longer-lived collaborators and
+ * resolves that proxy to the current request's instance only when a tool is used. Consequently no mutable tool
+ * lifecycle or authenticated context can be shared between concurrent users or organizations.</p>
  */
 @Component
 @RequestScope

@@ -14,8 +14,14 @@ import java.util.function.Predicate;
  * Explicit allow list for future tool-enabled chat orchestration. Nothing registers these callbacks globally: a
  * reviewed model call must opt in with {@code .toolCallbacks(registry.callbacks())} for this request only.
  *
- * <p>The registry is request-scoped because each callback is bound to that request's {@link CvChatReadTools} proxy and
- * execution guard. Retaining callbacks in a singleton could accidentally retain or resolve the wrong request scope.</p>
+ * <p>Spring components are singleton-scoped by default. This registry deliberately uses {@link RequestScope} instead:
+ * Spring constructs a fresh registry for each HTTP request and discards it when the response completes. Each generated
+ * callback is therefore bound to that request's {@link CvChatReadTools}, execution guard, confirmed scope, and
+ * discovery state. Retaining these callbacks in the default singleton scope could accidentally retain or resolve
+ * state belonging to another concurrent request.</p>
+ *
+ * <p>When this request-scoped registry is injected into the singleton orchestration service, Spring injects a scoped
+ * proxy. Calling the proxy during a request resolves the actual registry instance for that request.</p>
  */
 @Component
 @RequestScope
@@ -25,6 +31,8 @@ public class CvChatReadToolRegistry {
     private final List<ToolCallback> callbacks;
 
     public CvChatReadToolRegistry(CvChatReadTools tools) {
+        // This constructor runs once per HTTP request, not once at application startup. The callbacks below therefore
+        // wrap the current request's tool object and must not be cached beyond that request.
         // Spring AI discovers @Tool methods and generates their JSON schemas. Compare the discovered names with a
         // closed allow list so adding another annotated method cannot silently expose it to a future model call.
         List<ToolCallback> discovered = Arrays.asList(MethodToolCallbackProvider.builder()

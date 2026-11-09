@@ -11,9 +11,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Privacy-safe request-local evidence about candidate-search execution.
  *
- * <p>This is not conversation memory and it is not a candidate cache. Spring creates one instance per HTTP request.
- * The {@code search_candidates} tool records what happened while the model was executing, and the orchestration
- * service reads the aggregate snapshot after that same model call returns.</p>
+ * <p>This is not conversation memory and it is not a candidate cache. Spring components normally default to singleton
+ * scope, which would incorrectly share these counters between every user. {@link RequestScope} instead creates one
+ * state instance per HTTP request and discards it afterward. The {@code search_candidates} tool records what happened
+ * while the model was executing, and the orchestration service reads the aggregate snapshot from that same request
+ * after the model call returns. Spring's scoped proxy lets the singleton service and request-scoped tools resolve the
+ * same request-specific state instance.</p>
  *
  * <p>Queries remain only in this short-lived object to distinguish repeated calls; snapshots expose counts only and
  * are safe for decision diagnostics. No candidate name, query, card, or CV content is logged or persisted.</p>

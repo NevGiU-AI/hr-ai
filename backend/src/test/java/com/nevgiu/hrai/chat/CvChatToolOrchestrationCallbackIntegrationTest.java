@@ -9,6 +9,8 @@ import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
 import com.nevgiu.hrai.chat.tool.CvChatToolExecutionGuard;
 import com.nevgiu.hrai.chat.tool.CvChatToolPlanningState;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
+import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
+import com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
@@ -22,13 +24,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** Exercises the actual Spring AI method callbacks and request-local postcondition state without a billable model. */
@@ -62,7 +68,8 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
         ExecutorFixture executorFixture = executorFixture();
         try {
             CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class), candidates,
-                    documents, jobs, executorFixture.guard(), scope, new CvChatToolDiscoveryState(), planningState);
+                    documents, jobs, mock(EvaluationHistoryService.class), executorFixture.guard(), scope,
+                    new CvChatToolDiscoveryState(), planningState);
             CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
             CvChatToolOrchestrationModel callbackDispatchingModel = (message, mode, callbacks, candidateIds, jobId) -> {
                 candidateIds.forEach(candidateId -> callback(callbacks, "get_candidate_summary")
@@ -91,6 +98,68 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
         }
     }
 
+    @Test
+    void evaluationEvidenceCallbackUsesConfirmedTenantScopeAndReturnsBoundedMinimizedHistory() throws Exception {
+        authenticate();
+        EvaluationHistoryService evaluationHistory = mock(EvaluationHistoryService.class);
+        when(evaluationHistory.findRecentEvidenceForCandidate(1L, "tenant-a", 6)).thenReturn(List.of(
+                evaluation(101L, true),
+                evaluation(102L, false),
+                evaluation(103L, false),
+                evaluation(104L, false),
+                evaluation(105L, false),
+                evaluation(106L, false)));
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirm(List.of(1L));
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
+                    mock(CandidateRepository.class), mock(CvDocumentRepository.class), mock(JobRepository.class),
+                    evaluationHistory, executorFixture.guard(), scope, new CvChatToolDiscoveryState(),
+                    new CvChatToolPlanningState());
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+
+            String result = callback(registry.evaluationEvidenceCallbacks(), "get_evaluation_evidence")
+                    .call("{\"candidateId\":1}");
+
+            verify(evaluationHistory).findRecentEvidenceForCandidate(1L, "tenant-a", 6);
+            assertThat(result)
+                    .contains("\"candidateId\":1", "\"evaluationId\":101", "\"evaluationId\":105",
+                            "\"truncated\":true", "\"skillsMatch\":80")
+                    .doesNotContain("\"evaluationId\":106", "Synthetic Candidate", "reviewer@example.test",
+                            "tenant-a", "organizationId", "candidateName", "aiExplanation", "generatedRationale");
+        } finally {
+            executorFixture.close();
+        }
+    }
+
+    @Test
+    void evaluationEvidenceCallbackRejectsAnUnconfirmedCandidateBeforeHistoryAccess() throws Exception {
+        authenticate();
+        EvaluationHistoryService evaluationHistory = mock(EvaluationHistoryService.class);
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirm(List.of(1L));
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
+                    mock(CandidateRepository.class), mock(CvDocumentRepository.class), mock(JobRepository.class),
+                    evaluationHistory, executorFixture.guard(), scope, new CvChatToolDiscoveryState(),
+                    new CvChatToolPlanningState());
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+            ToolCallback callback = callback(registry.evaluationEvidenceCallbacks(), "get_evaluation_evidence");
+
+            Throwable failure = catchThrowable(() -> callback.call("{\"candidateId\":2}"));
+
+            assertThat(failure).isInstanceOf(RuntimeException.class);
+            assertThat(rootCause(failure))
+                    .isInstanceOf(CvChatException.class)
+                    .hasMessage("Candidate is outside the confirmed chat scope");
+            verifyNoInteractions(evaluationHistory);
+        } finally {
+            executorFixture.close();
+        }
+    }
+
     private ToolCallback callback(List<ToolCallback> callbacks, String name) {
         return callbacks.stream()
                 .filter(callback -> callback.getToolDefinition().name().equals(name))
@@ -103,6 +172,21 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
         candidate.setId(id);
         candidate.setName("Synthetic Candidate " + id);
         return candidate;
+    }
+
+    private EvaluationEvidenceSnapshot evaluation(Long id, boolean current) {
+        Instant createdAt = Instant.parse("2026-11-10T10:00:00Z").minusSeconds(id);
+        return new EvaluationEvidenceSnapshot(id, 21L, "Backend Engineer",
+                80, 8, 7, 6, 70, 9, 8, 85, 79, createdAt,
+                current ? null : createdAt.plusSeconds(60), current);
+    }
+
+    private Throwable rootCause(Throwable failure) {
+        Throwable current = failure;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current;
     }
 
     private void authenticate() {

@@ -3,6 +3,7 @@ package com.nevgiu.hrai.chat.tool;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
+import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
 import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.tool.ToolCallback;
@@ -20,15 +21,19 @@ class CvChatReadToolRegistryTest {
         CvChatReadTools tools = tools();
         CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
 
-        List<ToolCallback> callbacks = registry.callbacks();
+        List<ToolCallback> callbacks = registry.allReviewedCallbacksForTesting();
 
         assertThat(callbacks).extracting(callback -> callback.getToolDefinition().name())
-                .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements");
+                .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements",
+                        "get_evaluation_evidence");
         assertThat(registry.confirmedScopeCallbacks()).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactly("get_candidate_summary");
         assertThat(registry.confirmedScopeCallbacksWithJob())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("get_candidate_summary", "get_job_requirements");
+        assertThat(registry.evaluationEvidenceCallbacks())
+                .extracting(callback -> callback.getToolDefinition().name())
+                .containsExactly("get_evaluation_evidence");
         assertThat(callbacks).allSatisfy(callback -> assertThat(callback.getToolDefinition().inputSchema())
                 .doesNotContainIgnoringCase("organization")
                 .doesNotContainIgnoringCase("tenant")
@@ -43,15 +48,17 @@ class CvChatReadToolRegistryTest {
 
         CvChatReadToolRegistry registry = new CvChatReadToolRegistry((CvChatReadTools) proxyFactory.getProxy());
 
-        assertThat(registry.callbacks()).extracting(callback -> callback.getToolDefinition().name())
-                .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements");
+        assertThat(registry.allReviewedCallbacksForTesting())
+                .extracting(callback -> callback.getToolDefinition().name())
+                .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements",
+                        "get_evaluation_evidence");
     }
 
     private CvChatReadTools tools() {
         return new CvChatReadTools(
                 mock(CvChatCandidateResolutionService.class), mock(CandidateRepository.class),
-                mock(CvDocumentRepository.class), mock(JobRepository.class), mock(CvChatToolExecutionGuard.class),
-                mock(CvChatToolScope.class), mock(CvChatToolDiscoveryState.class),
+                mock(CvDocumentRepository.class), mock(JobRepository.class), mock(EvaluationHistoryService.class),
+                mock(CvChatToolExecutionGuard.class), mock(CvChatToolScope.class), mock(CvChatToolDiscoveryState.class),
                 mock(CvChatToolPlanningState.class));
     }
 }

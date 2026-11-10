@@ -194,9 +194,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   refusal, and privacy-safe log checks successfully. A production latency percentile was not recorded and remains part
   of the later performance benchmark.
 - [~] Implement retrieval, filtering, candidate-detail query tools, and comparison orchestration. Request-scoped candidate search,
-  confirmed candidate summaries, and optional approved-job requirements are implemented and staging-accepted; the
-  final grounded comparison reuses the tenant-reauthorized evidence service rather than delegating authorization to a
-  tool. Evaluation-evidence, document-status, and dashboard aggregate tools remain.
+  confirmed candidate summaries, optional approved-job requirements, and a bounded evaluation-history read-tool
+  foundation are implemented; the first three capabilities are staging- and production-accepted in the current
+  orchestration flow. The final grounded comparison reuses the tenant-reauthorized evidence service rather than
+  delegating authorization to a tool. User-visible evaluation-aware tool consumption, document-status tools, and
+  dashboard aggregate tools remain.
 - [x] Add deterministic exact-name candidate resolution before multi-candidate retrieval. The
   `POST /api/chat/candidates/resolve` endpoint takes only a validated name and obtains the organization from the
   authenticated principal, performs case-insensitive exact matching without fuzzy or partial widening, and returns a
@@ -250,7 +252,14 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   for cached clients. Candidate-only and approved-job flows, ambiguity, refusal, required tool reads, citations, and
   stale language-scope clearing passed focused staging acceptance on 10 November 2026 at revision `22d56c5`.
   Production repeated those focused checks successfully the same day in release `v0.32.0` at revision `1a5f247`.
-  The remaining evaluation-evidence/document-status/dashboard tools are pending.
+  The foundational `get_evaluation_evidence` read tool now returns at most the five most recent persisted evaluations
+  for one tenant-authorized, explicitly confirmed candidate. It minimizes the result to job context, persisted scores,
+  and current/stale timestamps. Generated rationale is intentionally omitted because it can contain candidate personal
+  information or quoted CV content, and metric-level source evidence is not yet persisted. Its dedicated callback
+  subset is deliberately excluded from the current comparison preflight because that preflight discards tool output.
+  A later evaluation-aware conversational path must opt in and consume it explicitly. Document-status and dashboard
+  tools, that user-visible evaluation integration, and complete evaluation reproducibility/evidence persistence remain
+  pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool

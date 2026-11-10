@@ -2,6 +2,7 @@ package com.nevgiu.hrai.chat.tool;
 
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
+import com.nevgiu.hrai.candidate.CvOriginalAccessException;
 import com.nevgiu.hrai.candidate.CvDocument;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.candidate.CvExtractionMethod;
@@ -9,6 +10,8 @@ import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
+import com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
@@ -40,12 +43,14 @@ class CvChatReadToolsTest {
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
     private final JobRepository jobs = mock(JobRepository.class);
+    private final EvaluationHistoryService evaluationHistory = mock(EvaluationHistoryService.class);
     private final CvChatToolExecutionGuard executionGuard = mock(CvChatToolExecutionGuard.class);
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
     private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
     private final CvChatToolPlanningState planningState = mock(CvChatToolPlanningState.class);
     private final CvChatReadTools tools = new CvChatReadTools(
-            candidateResolution, candidates, documents, jobs, executionGuard, scope, discoveryState, planningState);
+            candidateResolution, candidates, documents, jobs, evaluationHistory, executionGuard, scope, discoveryState,
+            planningState);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
@@ -188,17 +193,80 @@ class CvChatReadToolsTest {
     }
 
     @Test
+    void returnsOnlyBoundedPersistedEvaluationHistoryForTheConfirmedCandidate() {
+        authenticate("tenant-a", "ROLE_REVIEWER");
+        Instant staleAt = Instant.parse("2026-11-01T09:00:00Z");
+        List<EvaluationEvidenceSnapshot> history = List.of(
+                evaluation(6L, "x".repeat(400), null),
+                evaluation(5L, "Backend Engineer", null),
+                evaluation(4L, "Platform Engineer", staleAt),
+                evaluation(3L, "API Engineer", staleAt),
+                evaluation(2L, "Java Engineer", staleAt),
+                evaluation(1L, "Legacy Engineer", staleAt));
+        when(evaluationHistory.findRecentEvidenceForCandidate(7L, "tenant-a", 6)).thenReturn(history);
+
+        EvaluationEvidenceResult result = tools.getEvaluationEvidence(7L);
+
+        verify(scope).requireConfirmed(7L);
+        verify(evaluationHistory).findRecentEvidenceForCandidate(7L, "tenant-a", 6);
+        assertThat(result.candidateId()).isEqualTo(7L);
+        assertThat(result.evaluations()).hasSize(5);
+        assertThat(result.truncated()).isTrue();
+        assertThat(result.evaluations().getFirst().jobTitle()).hasSize(255);
+        assertThat(result.evaluations().getFirst().current()).isTrue();
+        assertThat(result.evaluations().get(2).invalidatedAt()).isEqualTo(staleAt);
+        assertThat(result.evaluations().getFirst().scores()).isEqualTo(
+                new EvaluationScores(90, 8, 7, 8, 75, 9, 8, 88, 82));
+        assertThat(EvaluationEvidenceItem.class.getRecordComponents())
+                .extracting(component -> component.getName())
+                .doesNotContain("candidateName", "organizationId", "email", "cvText", "storageKey", "sha256",
+                        "prompt", "model", "provider", "aiExplanation", "modelGeneratedExplanation");
+    }
+
+    @Test
+    void rejectsEvaluationEvidenceOutsideTheConfirmedScopeBeforeHistoryAccess() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        org.mockito.Mockito.doThrow(new CvChatException(org.springframework.http.HttpStatus.FORBIDDEN,
+                        "Candidate is outside the confirmed chat scope"))
+                .when(scope).requireConfirmed(7L);
+
+        assertThatThrownBy(() -> tools.getEvaluationEvidence(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate is outside the confirmed chat scope");
+        verifyNoInteractions(evaluationHistory);
+    }
+
+    @Test
+    void keepsMissingAndCrossTenantEvaluationCandidatesIndistinguishable() {
+        authenticate("tenant-a", "ROLE_ADMIN");
+        when(evaluationHistory.findRecentEvidenceForCandidate(99L, "tenant-a", 6))
+                .thenThrow(new CvOriginalAccessException(org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Candidate not found"));
+
+        assertThatThrownBy(() -> tools.getEvaluationEvidence(99L))
+                .isInstanceOf(CvOriginalAccessException.class)
+                .hasMessage("Candidate not found");
+        verify(scope).requireConfirmed(99L);
+    }
+
+    @Test
     void rejectsReadOnlyAndUnauthenticatedCallsBeforeDataAccess() {
         authenticate("tenant-a", "ROLE_READ_ONLY");
 
         assertThatThrownBy(() -> tools.searchCandidates("Ada"))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV chat access denied");
+        assertThatThrownBy(() -> tools.getEvaluationEvidence(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat access denied");
         SecurityContextHolder.clearContext();
         assertThatThrownBy(() -> tools.getCandidateSummary(7L))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("Authentication required");
-        verifyNoInteractions(candidateResolution, candidates, documents);
+        assertThatThrownBy(() -> tools.getEvaluationEvidence(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Authentication required");
+        verifyNoInteractions(candidateResolution, candidates, documents, evaluationHistory, scope);
     }
 
     @Test
@@ -206,14 +274,23 @@ class CvChatReadToolsTest {
         Method search = CvChatReadTools.class.getMethod("searchCandidates", String.class);
         Method summary = CvChatReadTools.class.getMethod("getCandidateSummary", Long.class);
         Method requirements = CvChatReadTools.class.getMethod("getJobRequirements", Long.class);
+        Method evaluationEvidence = CvChatReadTools.class.getMethod("getEvaluationEvidence", Long.class);
 
         assertThat(search.getAnnotation(Tool.class).name()).isEqualTo("search_candidates");
         assertThat(summary.getAnnotation(Tool.class).name()).isEqualTo("get_candidate_summary");
         assertThat(requirements.getAnnotation(Tool.class).name()).isEqualTo("get_job_requirements");
+        assertThat(evaluationEvidence.getAnnotation(Tool.class).name()).isEqualTo("get_evaluation_evidence");
         assertThat(CvChatReadTools.class.getDeclaredMethods())
                 .filteredOn(method -> method.isAnnotationPresent(Tool.class))
                 .extracting(Method::getName)
-                .containsExactlyInAnyOrder("searchCandidates", "getCandidateSummary", "getJobRequirements");
+                .containsExactlyInAnyOrder("searchCandidates", "getCandidateSummary", "getJobRequirements",
+                        "getEvaluationEvidence");
+    }
+
+    private EvaluationEvidenceSnapshot evaluation(Long id, String jobTitle, Instant invalidatedAt) {
+        return new EvaluationEvidenceSnapshot(id, 100L + id, jobTitle,
+                90, 8, 7, 8, 75, 9, 8, 88, 82,
+                Instant.parse("2026-11-01T08:00:00Z"), invalidatedAt, invalidatedAt == null);
     }
 
     private void authenticate(String organizationId, String role) {

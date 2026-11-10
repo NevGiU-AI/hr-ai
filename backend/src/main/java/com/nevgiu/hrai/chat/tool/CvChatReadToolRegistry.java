@@ -11,8 +11,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Explicit allow list for future tool-enabled chat orchestration. Nothing registers these callbacks globally: a
- * reviewed model call must opt in with {@code .toolCallbacks(registry.callbacks())} for this request only.
+ * Explicit allow list for tool-enabled chat orchestration. Nothing registers these callbacks globally: every reviewed
+ * model call must opt in to one of the narrow, phase-specific callback subsets exposed below.
  *
  * <p>Spring components are singleton-scoped by default. This registry deliberately uses {@link RequestScope} instead:
  * Spring constructs a fresh registry for each HTTP request and discards it when the response completes. Each generated
@@ -27,7 +27,11 @@ import java.util.function.Predicate;
 @RequestScope
 public class CvChatReadToolRegistry {
     private static final Set<String> ALLOWED_TOOL_NAMES = Set.of(
-            "search_candidates", "get_candidate_summary", "get_job_requirements");
+            "search_candidates", "get_candidate_summary", "get_job_requirements", "get_evaluation_evidence");
+    private static final Set<String> CONFIRMED_SCOPE_TOOL_NAMES = Set.of("get_candidate_summary");
+    private static final Set<String> CONFIRMED_SCOPE_WITH_JOB_TOOL_NAMES = Set.of(
+            "get_candidate_summary", "get_job_requirements");
+    private static final Set<String> EVALUATION_EVIDENCE_TOOL_NAMES = Set.of("get_evaluation_evidence");
     private final List<ToolCallback> callbacks;
 
     public CvChatReadToolRegistry(CvChatReadTools tools) {
@@ -48,21 +52,34 @@ public class CvChatReadToolRegistry {
         this.callbacks = List.copyOf(discovered);
     }
 
-    public List<ToolCallback> callbacks() {
-        // The immutable list prevents an orchestrator from adding a callback after allow-list validation.
+    /** Package-private inspection hook for the exact allow-list and generated-schema regression tests. */
+    List<ToolCallback> allReviewedCallbacksForTesting() {
+        // Production orchestration never receives this complete set; it must choose a phase-specific public subset.
         return callbacks;
     }
 
     /** Confirmed-scope planning may search again and may summarize only IDs enforced by {@link CvChatToolScope}. */
     public List<ToolCallback> confirmedScopeCallbacks() {
         // Candidate discovery is already complete. Expose only the minimum tool needed for the confirmed plan.
-        return matching(callback -> callback.getToolDefinition().name().equals("get_candidate_summary"));
+        return matching(callback -> CONFIRMED_SCOPE_TOOL_NAMES.contains(callback.getToolDefinition().name()));
     }
 
     /** Adds approved-job requirements only after application code confirms and authorizes a selected job. */
     public List<ToolCallback> confirmedScopeCallbacksWithJob() {
-        // Search remains unavailable after confirmation; the model cannot widen the human-selected candidate scope.
-        return matching(callback -> !callback.getToolDefinition().name().equals("search_candidates"));
+        // Use an explicit set rather than "everything except search" so newly reviewed tools are not exposed to this
+        // existing preflight accidentally. The model cannot widen scope or read unrelated data after confirmation.
+        return matching(callback -> CONFIRMED_SCOPE_WITH_JOB_TOOL_NAMES.contains(callback.getToolDefinition().name()));
+    }
+
+    /**
+     * Supplies the persisted evaluation-history tool to a future evaluation-aware conversational answer path.
+     *
+     * <p>The current confirmed-scope call is advisory and discards tool output, so deliberately keep this callback out
+     * of both generic preflight subsets. Registering it there would consume database/model calls without changing the
+     * recruiter-visible comparison. The dedicated chat path must opt in explicitly after installing confirmed scope.</p>
+     */
+    public List<ToolCallback> evaluationEvidenceCallbacks() {
+        return matching(callback -> EVALUATION_EVIDENCE_TOOL_NAMES.contains(callback.getToolDefinition().name()));
     }
 
     private List<ToolCallback> matching(Predicate<ToolCallback> predicate) {

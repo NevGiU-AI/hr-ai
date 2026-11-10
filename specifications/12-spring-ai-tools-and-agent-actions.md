@@ -84,7 +84,9 @@ Implement a small, request-scoped tool set after the underlying domain services 
 - `getCandidateProfile` for an authorized, minimized candidate view.
 - `getJobRequirements` for approved comparison criteria.
 - `compareCandidates` for structured comparison inputs and evidence.
-- `getEvaluationEvidence` for metric-level source references and evaluation history.
+- `get_evaluation_evidence` for bounded persisted evaluation history. The current schema does not yet retain
+  metric-level source references, and the tool intentionally excludes generated rationale because it can contain
+  candidate personal information or quoted CV content.
 - `getDocumentStatus` and `getIngestionWarnings` for CV processing state.
 - `getOpenJobMetrics`, `getCandidatePipelineSummary`, and other governed dashboard aggregates.
 
@@ -96,7 +98,25 @@ The internal request-scoped foundation currently provides:
 
 - `search_candidates`, available during discovery and returning bounded tenant-scoped identity cards;
 - `get_candidate_summary`, available only after application code authorizes and confirms candidate IDs; and
-- `get_job_requirements`, available only when application code also authorizes and confirms one approved job ID.
+- `get_job_requirements`, available only when application code also authorizes and confirms one approved job ID; and
+- `get_evaluation_evidence`, implemented as a dedicated future evaluation-aware callback subset and available only for
+  a candidate already authorized and confirmed by application code.
+
+`get_evaluation_evidence` returns at most the five most recent persisted evaluations for one confirmed candidate. Its
+minimized result contains evaluation/job identifiers, bounded job title, persisted scores, creation and invalidation
+timestamps, and explicit current/stale state. It omits the generated evaluation rationale, candidate name,
+organization, contact details, CV text, storage metadata, hashes, prompts, provider configuration, and model metadata.
+Generated rationale is untrusted historical model output and may contain candidate personal information or quoted CV
+content, so bounding its length would not make it appropriate tool context. Complete reproducibility still requires
+the planned persistence of prompts, model configuration, weights, source-document/text fingerprints, and metric-level
+evidence references.
+
+The registry exposes this operation through an explicit `evaluationEvidenceCallbacks()` subset. It is deliberately not
+part of the current confirmed-scope preflight: that preflight validates that the provider can read confirmed candidate
+summaries and an optional confirmed job, then discards the provider-written response before the separate grounded
+comparison runs. Registering evaluation history there would add database reads, provider context, and tool calls
+without changing the user-visible comparison. A future evaluation-aware conversational answer path must opt into this
+dedicated subset and consume its minimized result explicitly.
 
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job
@@ -199,7 +219,10 @@ flowchart TD
     CandidateRepo[CandidateRepository]
     DocumentRepo[CvDocumentRepository]
     JobRepo[JobRepository]
+    EvaluationService[EvaluationHistoryService]
+    EvaluationRepo[CandidateEvaluationRepository]
     Results[CandidateSearchResult / CandidateSummary / JobRequirements]
+    EvaluationResult[EvaluationEvidenceResult]
     DiscoveryResponse[CvChatToolDiscoveryResponse with application-owned candidateScope]
 
     Angular -->|POST discover or confirmed-scope| Controller
@@ -226,8 +249,12 @@ flowchart TD
     Tools --> CandidateRepo
     Tools --> DocumentRepo
     Tools --> JobRepo
+    Tools -.->|explicit future evaluation-aware subset| EvaluationService
+    EvaluationService -.->|privacy-minimized projection| EvaluationRepo
     Tools --> Results
     Results -.->|minimized structured tool result| ChatClient
+    Tools -.-> EvaluationResult
+    EvaluationResult -.->|future evaluation-aware consumer| ChatClient
     Results -->|reuse authorized discovery cards| DiscoveryResponse
     Service -->|validated kind and optional scope| DiscoveryResponse
     DiscoveryResponse -->|one-pass confirmation response| Angular
@@ -255,9 +282,12 @@ The main responsibilities are:
   authorization. It receives trusted IDs separately from untrusted recruiter text, must call the minimized tools for
   every trusted ID, and cannot authorize, refuse, change the confirmed workflow state, or supply UI text.
 - `CvChatReadToolRegistry` converts `@Tool` methods into Spring AI callbacks, verifies an exact closed allow list, and
-  returns callback subsets for confirmed candidates and confirmed candidates plus a job.
-- `CvChatReadTools` implements the three model-facing read operations. Each operation independently authenticates,
+  returns explicit callback subsets for confirmed candidates, confirmed candidates plus a job, and the foundational
+  evaluation-history capability. The evaluation subset is not registered in the current comparison preflight.
+- `CvChatReadTools` implements the four model-facing read operations. Each operation independently authenticates,
   enforces tenant and confirmed-record scope, delegates to deterministic services/repositories, and minimizes output.
+  The evaluation operation queries through `EvaluationHistoryService`, caps history at five items, and omits generated
+  rationale and metric-level evidence that is not safely available in the current persistence model.
 - `CvChatToolDiscoveryState` records request-local search-call, distinct-success, and empty-result counts without
   exposing queries or candidate data. It is new for every HTTP request and cannot leak discovery state between users.
 - `CvChatToolDiscoveryDecision` converts authorized discovery facts into application-owned postconditions: at least

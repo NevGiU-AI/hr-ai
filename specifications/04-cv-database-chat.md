@@ -317,6 +317,14 @@ embedding, or provider payload. No new environment variable, Flyway migration, d
 was required. Production response latency was functionally acceptable during the smoke tests, but no percentile or
 representative numeric baseline was captured; p50/p95/p99 measurement remains part of the later concurrency benchmark.
 
+The neutral candidate-reference safeguard passed focused production acceptance on 10 November 2026 at main revision
+`f759b88`. The answer prompts no longer infer or choose `he`, `she`, or singular `they` from a candidate name or CV
+evidence. Single-candidate answers prefer “the candidate,” translated into the response language; comparisons prefer
+the backend-supplied candidate label, confirmed display name, or the same neutral reference. Grounding, citations,
+question-language preservation, safe refusals, and existing single- and multi-candidate behavior remained functional.
+This is a generated-answer presentation rule, not pronoun detection or storage. No environment variable, Flyway
+migration, database, Compose, or frontend change was required.
+
 Multi-candidate result cards, conversation memory, and the complete retrieval/generated-answer evaluation suite remain
 separate implementation slices. The first versioned question-policy dataset is operational, but acceptance of this
 bounded single-candidate path does not mark broader AI evaluation complete.

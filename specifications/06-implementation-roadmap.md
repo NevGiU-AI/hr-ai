@@ -139,6 +139,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   out-of-scope responses, authorization boundaries, and privacy-safe logs in staging on 27 October 2026.
 - [x] Promote the accepted candidate-specific backend to production and repeat the focused smoke and privacy checks
   successfully on 27 October 2026.
+- [x] Prefer neutral candidate references in grounded generated answers rather than inferring personal pronouns from
+  names or CV evidence. Single-candidate answers use the translated equivalent of “the candidate”; comparisons use
+  supplied candidate labels, confirmed display names, or that neutral reference. Focused production acceptance passed
+  on 10 November 2026 at main revision `f759b88` without environment, schema, migration, Compose, or frontend changes.
 - [x] Add the Flyway-owned Spring AI `PgVectorStore` schema, bounded native/OCR chunking, portable tenant metadata,
   composite tenant constraints, post-commit indexing, reprocessing replacement, deletion cascades, and bounded
   reconciliation backfill.
@@ -260,9 +264,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   A later evaluation-aware conversational path must opt in and consume it explicitly. Focused staging acceptance
   completed on 10 November 2026 at main revision `5455b32`: backend health, tenant-scoped persisted evaluation
   history, current/stale state, missing/cross-tenant protection, and existing chat regressions passed. The acceptance
-  covers the deployed foundation and supporting contract, not user-visible evaluation-aware answers; production
-  acceptance remains pending. Document-status and dashboard tools, that user-visible evaluation integration, and
-  complete evaluation reproducibility/evidence persistence remain pending.
+  covers the deployed foundation and supporting contract, not user-visible evaluation-aware answers. Production
+  repeated the focused deployment-health, tenant-isolation, persisted-history, current/stale-state, and existing-chat
+  regression checks successfully on 10 November 2026; no environment, schema, migration, Compose, or frontend change
+  was required. Document-status and dashboard tools, that user-visible evaluation integration, and complete evaluation
+  reproducibility/evidence persistence remain pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool

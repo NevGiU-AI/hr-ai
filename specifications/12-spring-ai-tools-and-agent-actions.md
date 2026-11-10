@@ -126,7 +126,10 @@ callback tests additionally cover the five-row bound and truncation probe, confi
 consistency across candidate/job/evaluation records, privacy-minimized projection, and omission of generated rationale.
 This is acceptance of the read-tool foundation and its supporting domain contract only. The current chat path does not
 register or consume this callback subset, so user-visible evaluation-aware chat has not yet been accepted. No Flyway,
-Compose, frontend, or runtime environment-variable change was required. Production acceptance remains pending.
+Compose, frontend, or runtime environment-variable change was required. Production repeated the focused backend
+health, tenant-boundary, persisted-history, current/stale-state, missing/cross-tenant, and existing-chat regression
+checks successfully on 10 November 2026. The production result has the same boundary: it validates the deployed tool
+foundation, not user-visible evaluation-aware chat consumption.
 
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job

@@ -118,6 +118,16 @@ comparison runs. Registering evaluation history there would add database reads, 
 without changing the user-visible comparison. A future evaluation-aware conversational answer path must opt into this
 dedicated subset and consume its minimized result explicitly.
 
+Focused staging acceptance completed on 10 November 2026 at main revision `5455b32` after PR #157. The deployed
+backend remained healthy; a same-tenant candidate with persisted evaluations returned bounded history with job IDs,
+scores, creation timestamps, and coherent current/stale invalidation state; missing and cross-tenant candidate access
+retained the generic `404` boundary; and existing single- and multi-candidate chat paths remained functional. Automated
+callback tests additionally cover the five-row bound and truncation probe, confirmed-scope enforcement, tenant
+consistency across candidate/job/evaluation records, privacy-minimized projection, and omission of generated rationale.
+This is acceptance of the read-tool foundation and its supporting domain contract only. The current chat path does not
+register or consume this callback subset, so user-visible evaluation-aware chat has not yet been accepted. No Flyway,
+Compose, frontend, or runtime environment-variable change was required. Production acceptance remains pending.
+
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job
 is looked up inside the authenticated organization before its ID enters the immutable request scope. The callback is

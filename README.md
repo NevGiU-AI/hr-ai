@@ -102,7 +102,11 @@ decisions.
   intentionally omitted because it can contain candidate personal information or quoted CV content; metric-level
   source evidence is not yet persisted either. Its dedicated callback subset is intentionally absent from the current
   comparison preflight, whose tool output is discarded; user-visible consumption must be connected explicitly rather
-  than adding an ineffective database/model read to that preflight.
+  than adding an ineffective database/model read to that preflight. Focused staging acceptance completed on
+  10 November 2026 at main revision `5455b32`: backend health, tenant-scoped persisted evaluation history, current and
+  stale state, missing/cross-tenant protection, and existing single- and multi-candidate chat regressions passed. This
+  validates the deployed read-tool foundation and its supporting domain contract; it does not claim that current chat
+  answers consume evaluation history. Production acceptance remains pending.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

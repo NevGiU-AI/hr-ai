@@ -257,9 +257,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and current/stale timestamps. Generated rationale is intentionally omitted because it can contain candidate personal
   information or quoted CV content, and metric-level source evidence is not yet persisted. Its dedicated callback
   subset is deliberately excluded from the current comparison preflight because that preflight discards tool output.
-  A later evaluation-aware conversational path must opt in and consume it explicitly. Document-status and dashboard
-  tools, that user-visible evaluation integration, and complete evaluation reproducibility/evidence persistence remain
-  pending.
+  A later evaluation-aware conversational path must opt in and consume it explicitly. Focused staging acceptance
+  completed on 10 November 2026 at main revision `5455b32`: backend health, tenant-scoped persisted evaluation
+  history, current/stale state, missing/cross-tenant protection, and existing chat regressions passed. The acceptance
+  covers the deployed foundation and supporting contract, not user-visible evaluation-aware answers; production
+  acceptance remains pending. Document-status and dashboard tools, that user-visible evaluation integration, and
+  complete evaluation reproducibility/evidence persistence remain pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool

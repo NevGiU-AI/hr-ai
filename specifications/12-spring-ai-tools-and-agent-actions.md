@@ -87,7 +87,7 @@ Implement a small, request-scoped tool set after the underlying domain services 
 - `get_evaluation_evidence` for bounded persisted evaluation history. The current schema does not yet retain
   metric-level source references, and the tool intentionally excludes generated rationale because it can contain
   candidate personal information or quoted CV content.
-- `getDocumentStatus` and `getIngestionWarnings` for CV processing state.
+- `get_document_status` and `get_ingestion_warnings` for minimized CV processing state and safe warning codes.
 - `getOpenJobMetrics`, `getCandidatePipelineSummary`, and other governed dashboard aggregates.
 
 Tools must expose domain services rather than arbitrary SQL, repository access, filesystem access, HTTP access, or generic code execution.
@@ -100,7 +100,11 @@ The internal request-scoped foundation currently provides:
 - `get_candidate_summary`, available only after application code authorizes and confirms candidate IDs; and
 - `get_job_requirements`, available only when application code also authorizes and confirms one approved job ID; and
 - `get_evaluation_evidence`, implemented as a dedicated future evaluation-aware callback subset and available only for
-  a candidate already authorized and confirmed by application code.
+  a candidate already authorized and confirmed by application code;
+- `get_document_status`, returning the newest document's bounded operational state for a candidate already authorized
+  and confirmed by application code; and
+- `get_ingestion_warnings`, returning application-owned processing warning codes for that newest document without raw
+  parser, OCR, malware-scanner, or provider details.
 
 `get_evaluation_evidence` returns at most the five most recent persisted evaluations for one confirmed candidate. Its
 minimized result contains evaluation/job identifiers, bounded job title, persisted scores, creation and invalidation
@@ -130,6 +134,18 @@ Compose, frontend, or runtime environment-variable change was required. Producti
 health, tenant-boundary, persisted-history, current/stale-state, missing/cross-tenant, and existing-chat regression
 checks successfully on 10 November 2026. The production result has the same boundary: it validates the deployed tool
 foundation, not user-visible evaluation-aware chat consumption.
+
+The document-status foundation follows the same boundary. `get_document_status` returns only candidate/document IDs,
+ingestion status, extraction method, import time, and optional reprocessing time. A confirmed candidate with no document
+returns a null current document rather than appearing missing. `get_ingestion_warnings` returns only the bounded codes
+`NO_DOCUMENT_AVAILABLE`, `MANUAL_REVIEW_REQUIRED`, `INGESTION_FAILED`, or `PROCESSING_WARNING_RECORDED`; it never
+returns the persisted raw ingestion error. Both operations first require the exact application-confirmed candidate ID,
+then resolve the candidate and newest document with organization predicates so missing and cross-tenant IDs retain the
+same generic boundary. Their explicit `documentStatusCallbacks()` subset is excluded from discovery and confirmed-scope
+preflight. A later processing-aware answer path must opt in and consume the results deliberately. Automated unit and
+real-callback tests cover scope rejection, tenant filtering, newest-document selection, no-document behavior, minimized
+schemas, raw-error omission, and the closed callback allow list. No environment, Flyway, database, Compose, or frontend
+change is required.
 
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job

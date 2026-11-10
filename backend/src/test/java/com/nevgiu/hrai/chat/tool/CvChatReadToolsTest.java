@@ -250,6 +250,99 @@ class CvChatReadToolsTest {
     }
 
     @Test
+    void returnsOnlyMinimizedStatusForTheConfirmedCandidatesNewestDocument() {
+        authenticate("tenant-a", "ROLE_REVIEWER");
+        Candidate candidate = new Candidate();
+        candidate.setId(7L);
+        CvDocument document = mock(CvDocument.class);
+        when(document.getId()).thenReturn(12L);
+        when(document.getStatus()).thenReturn(CvIngestionStatus.NEEDS_REVIEW);
+        when(document.getExtractionMethod()).thenReturn(CvExtractionMethod.OCR);
+        when(document.getImportedAt()).thenReturn(Instant.parse("2026-11-10T01:00:00Z"));
+        when(document.getReprocessedAt()).thenReturn(Instant.parse("2026-11-10T02:00:00Z"));
+        CvDocument olderDocument = mock(CvDocument.class);
+        when(olderDocument.getId()).thenReturn(11L);
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+        // The repository contract orders newest first; the tool must expose only that current processing state.
+        when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a"))
+                .thenReturn(List.of(document, olderDocument));
+
+        DocumentStatusResult result = tools.getDocumentStatus(7L);
+
+        verify(scope).requireConfirmed(7L);
+        assertThat(result).isEqualTo(new DocumentStatusResult(7L,
+                new CurrentDocumentStatus(12L, CvIngestionStatus.NEEDS_REVIEW, CvExtractionMethod.OCR,
+                        Instant.parse("2026-11-10T01:00:00Z"), Instant.parse("2026-11-10T02:00:00Z"))));
+        assertThat(DocumentStatusResult.class.getRecordComponents())
+                .extracting(component -> component.getName())
+                .doesNotContain("organizationId", "filename", "ingestionError", "cvText", "storageKey", "sha256");
+    }
+
+    @Test
+    void returnsApplicationOwnedWarningsWithoutRawIngestionErrors() {
+        authenticate("tenant-a", "ROLE_ADMIN");
+        Candidate candidate = new Candidate();
+        candidate.setId(7L);
+        CvDocument document = mock(CvDocument.class);
+        when(document.getId()).thenReturn(12L);
+        when(document.getStatus()).thenReturn(CvIngestionStatus.NEEDS_REVIEW);
+        when(document.getIngestionError()).thenReturn("provider secret and parser stack trace");
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of(document));
+
+        IngestionWarningsResult result = tools.getIngestionWarnings(7L);
+
+        verify(scope).requireConfirmed(7L);
+        assertThat(result).isEqualTo(new IngestionWarningsResult(
+                7L, 12L, List.of(IngestionWarning.MANUAL_REVIEW_REQUIRED)));
+        assertThat(result.toString()).doesNotContain("provider secret", "stack trace");
+    }
+
+    @Test
+    void reportsNoDocumentWithoutMakingTheCandidateLookMissing() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        Candidate candidate = new Candidate();
+        candidate.setId(7L);
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of());
+
+        assertThat(tools.getDocumentStatus(7L)).isEqualTo(new DocumentStatusResult(7L, null));
+        assertThat(tools.getIngestionWarnings(7L)).isEqualTo(new IngestionWarningsResult(
+                7L, null, List.of(IngestionWarning.NO_DOCUMENT_AVAILABLE)));
+    }
+
+    @Test
+    void rejectsDocumentToolsOutsideConfirmedScopeBeforeDataAccess() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        org.mockito.Mockito.doThrow(new CvChatException(org.springframework.http.HttpStatus.FORBIDDEN,
+                        "Candidate is outside the confirmed chat scope"))
+                .when(scope).requireConfirmed(7L);
+
+        assertThatThrownBy(() -> tools.getDocumentStatus(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate is outside the confirmed chat scope");
+        assertThatThrownBy(() -> tools.getIngestionWarnings(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate is outside the confirmed chat scope");
+        verifyNoInteractions(candidates, documents);
+    }
+
+    @Test
+    void keepsMissingAndCrossTenantDocumentCandidatesIndistinguishable() {
+        authenticate("tenant-a", "ROLE_ADMIN");
+        when(candidates.findByIdAndOrganizationId(99L, "tenant-a")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tools.getDocumentStatus(99L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate not found");
+        assertThatThrownBy(() -> tools.getIngestionWarnings(99L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate not found");
+        verify(scope, org.mockito.Mockito.times(2)).requireConfirmed(99L);
+        verifyNoInteractions(documents);
+    }
+
+    @Test
     void rejectsReadOnlyAndUnauthenticatedCallsBeforeDataAccess() {
         authenticate("tenant-a", "ROLE_READ_ONLY");
 
@@ -275,16 +368,20 @@ class CvChatReadToolsTest {
         Method summary = CvChatReadTools.class.getMethod("getCandidateSummary", Long.class);
         Method requirements = CvChatReadTools.class.getMethod("getJobRequirements", Long.class);
         Method evaluationEvidence = CvChatReadTools.class.getMethod("getEvaluationEvidence", Long.class);
+        Method documentStatus = CvChatReadTools.class.getMethod("getDocumentStatus", Long.class);
+        Method ingestionWarnings = CvChatReadTools.class.getMethod("getIngestionWarnings", Long.class);
 
         assertThat(search.getAnnotation(Tool.class).name()).isEqualTo("search_candidates");
         assertThat(summary.getAnnotation(Tool.class).name()).isEqualTo("get_candidate_summary");
         assertThat(requirements.getAnnotation(Tool.class).name()).isEqualTo("get_job_requirements");
         assertThat(evaluationEvidence.getAnnotation(Tool.class).name()).isEqualTo("get_evaluation_evidence");
+        assertThat(documentStatus.getAnnotation(Tool.class).name()).isEqualTo("get_document_status");
+        assertThat(ingestionWarnings.getAnnotation(Tool.class).name()).isEqualTo("get_ingestion_warnings");
         assertThat(CvChatReadTools.class.getDeclaredMethods())
                 .filteredOn(method -> method.isAnnotationPresent(Tool.class))
                 .extracting(Method::getName)
                 .containsExactlyInAnyOrder("searchCandidates", "getCandidateSummary", "getJobRequirements",
-                        "getEvaluationEvidence");
+                        "getEvaluationEvidence", "getDocumentStatus", "getIngestionWarnings");
     }
 
     private EvaluationEvidenceSnapshot evaluation(Long id, String jobTitle, Instant invalidatedAt) {

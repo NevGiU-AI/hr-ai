@@ -52,8 +52,8 @@
 
 **Exit condition:** Product, security, and scoring decisions are documented and testable.
 
-**Current delivery sequence:** candidate details and ingestion history -> correction/reprocessing -> OCR -> typed CV chat
--> speech input/playback -> final dashboard -> codebase-wide comments/Javadoc review -> publish stable OpenAPI contracts
+**Current delivery sequence:** complete typed CV-chat read tools, scoped memory, dedicated chat page, evaluation, and
+controlled-message localization -> speech input/playback -> final dashboard -> codebase-wide comments/Javadoc review -> publish stable OpenAPI contracts
 -> benchmark bounded concurrency and virtual threads -> validate paired backup/restore in staging -> validate it in
 production -> persist evaluation reproducibility metadata -> cross-cutting release validation -> private object storage
 -> consider horizontal or multi-host backend scaling. External messaging follows stable web chat, speech controls, and
@@ -193,8 +193,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   at main revision `7576611`; production repeated the grounded EN/FR/PT, citation, tenant isolation, missing-evidence,
   refusal, and privacy-safe log checks successfully. A production latency percentile was not recorded and remains part
   of the later performance benchmark.
-- [ ] Implement retrieval, filtering, candidate detail, and comparison tools. Deterministic tenant-scoped candidate
-  resolution is complete as the first independently reviewable foundation; model-facing tools remain pending.
+- [~] Implement retrieval, filtering, candidate-detail query tools, and comparison orchestration. Request-scoped candidate search,
+  confirmed candidate summaries, and optional approved-job requirements are implemented and staging-accepted; the
+  final grounded comparison reuses the tenant-reauthorized evidence service rather than delegating authorization to a
+  tool. Evaluation-evidence, document-status, and dashboard aggregate tools remain.
 - [x] Add deterministic exact-name candidate resolution before multi-candidate retrieval. The
   `POST /api/chat/candidates/resolve` endpoint takes only a validated name and obtains the organization from the
   authenticated principal, performs case-insensitive exact matching without fuzzy or partial widening, and returns a
@@ -242,14 +244,20 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   selected candidate and no citation-coverage, normalization, provider, or raw-control-token failure.
 - [~] Expose authorized candidate, job, evaluation-evidence, document-status, and dashboard services as request-scoped
   Spring AI query tools. Candidate discovery, confirmed candidate summaries, optional approved-job requirements, the
-  reviewed orchestration API, and Angular activation are implemented through PR #144. The current correction makes
-  discovery one-pass: the same extracted references and tenant-authorized search results decide the workflow and
-  populate confirmation cards, while the former candidate-scope endpoint remains temporarily for cached clients.
-  Staging acceptance and the remaining evidence/document/dashboard tools are pending.
+  reviewed orchestration API, and Angular activation are implemented through PR #144 and the PR #146–#154 stabilization
+  series. Discovery is deterministic and one-pass: the same extracted references and tenant-authorized search results
+  decide the workflow and populate confirmation cards, while the former candidate-scope endpoint remains temporarily
+  for cached clients. Candidate-only and approved-job flows, ambiguity, refusal, required tool reads, citations, and
+  stale language-scope clearing passed focused staging acceptance on 10 November 2026 at revision `22d56c5`.
+  Production promotion and the remaining evaluation-evidence/document-status/dashboard tools are pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
-- [ ] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits.
-- [ ] Add prompt-injection tests proving CV text and chat input cannot expand tool access or cross organization boundaries.
+- [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool
+  slice has request-local call budgets, timeouts, bounded DTOs, a closed callback allow list, and exact confirmed-ID/job
+  postconditions; broader concurrency/provider budgets and future tools remain.
+- [~] Add prompt-injection tests proving CV text and chat input cannot expand tool access or cross organization
+  boundaries. Direct workflow-override, role/organization injection, tool-result injection, scope-widening, and
+  confirmation-bypass regressions exist; extend the suite for future evidence/document tools and indirect CV content.
 - [ ] Add preview-only command tools, then require explicit confirmation, idempotency, and audit records before any state change or external communication.
 - [ ] Pin tool implementation to the current Spring AI version and evaluate the 2.x `ToolCallingAdvisor` migration separately with regression tests.
 - [ ] Persist scoped conversation memory. Store the explicitly confirmed candidate IDs and allow follow-up questions
@@ -264,12 +272,16 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   28 October 2026.
 - [x] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
   navigation, failure, and privacy checks successfully on 28 October 2026.
-- [ ] Build semantic multi-candidate search and structured result cards. Keep candidate identification separate from
-  comparison criteria so recruiters can compare the verified set by skills, experience, education, leadership,
-  evaluation results, or fit for an explicitly selected job.
-- [ ] Prove the model cannot resolve names globally, invent candidates, silently widen the selected set, or retrieve
-  evidence outside the authenticated organization; require citations for every factual comparison.
-- [ ] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests.
+- [~] Build semantic multi-candidate discovery and structured result cards. Named-candidate picker- and language-first
+  comparison is implemented for two to five verified candidates with optional approved-job context; broader skill-first
+  discovery across the authorized tenant remains.
+- [~] Prove the model cannot resolve names globally, invent candidates, silently widen the selected set, or retrieve
+  evidence outside the authenticated organization; require citations for every factual comparison. Current deterministic
+  resolution, tenant authorization, visible confirmation, bounded per-candidate retrieval, and complete-citation tests
+  cover the implemented flows; repeat these invariants for scoped memory and every new tool.
+- [~] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests. Citations,
+  clarification, refusal, privacy-safe tool diagnostics, versioned datasets, deterministic regressions, and opt-in
+  provider gates exist; user-facing tool explanations and broader capability evaluation remain.
 - [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
 - [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
   application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,

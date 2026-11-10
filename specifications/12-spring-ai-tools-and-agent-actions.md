@@ -133,8 +133,22 @@ text is discarded. Missing calls, malformed output, provider refusal, or provide
 application-owned ready message instead of revoking scope, injecting unsupported claims, or returning a
 provider-dependent workflow error. Success and degraded fallback have distinct privacy-safe log events so staging can
 prove whether the tool path actually completed; a READY HTTP result alone is not tool-preflight acceptance evidence.
-Grounded evidence retrieval remains a separate recruiter action. Stale results are
-discarded when the message, selected cards, or optional approved job changes. Staging acceptance remains pending.
+Grounded evidence retrieval remains a separate recruiter action. The final comparison endpoint repeats tenant
+authorization for every candidate and any optional approved job, builds a bounded `CvChatComparisonJobContext`, and
+passes only an application-owned `approvedJobSelected` fact into question policy. The comparison model receives bounded
+job requirements only when that job was explicitly selected; candidate-only comparison remains valid without a job.
+`JobRequirements` is model context, never authorization state.
+
+Stale results are discarded when the message, selected cards, or optional approved job changes. Starting a new
+language-first discovery clears the previous language-derived cards, confirmed IDs, comparison question/job context,
+answer, and errors before the request is sent. The request text and optional approved-job selector remain inputs for
+the new discovery. A refusal, clarification, or delayed response therefore cannot leave an earlier language scope
+visible. This reset deliberately does not erase independently assembled picker-first selections.
+
+Focused staging acceptance completed on 10 November 2026 at main revision `22d56c5` after PRs #146–#154. The accepted
+checks covered deterministic two-to-five-person discovery, bounded ambiguity cards, sensitive/unrelated refusal,
+candidate-only and approved-job confirmed scope, complete tool-preflight postconditions, cited grounded comparison,
+privacy-safe diagnostics, and stale language-scope clearing. Production acceptance remains pending.
 
 Explicit instructions to ignore, bypass, skip, fake, assume, override, or disable confirmation, authorization,
 tenant, role, tool, or scope controls are rejected by `CvChatToolRequestPolicy` before any provider or tool call. This
@@ -255,6 +269,11 @@ The main responsibilities are:
   approved work on virtual threads with a timeout. It contains no tenant or authorization state.
 - `CandidateCard`, `CandidateSearchResult`, `CandidateSummary`, `CurrentDocumentStatus`, and `JobRequirements` are
   bounded transfer records. They define what may cross from deterministic application code into the model context.
+
+The diagram ends at confirmed-scope readiness intentionally. `CvChatComparisonService` is the later, separate evidence
+boundary: it reauthorizes candidate IDs and the optional job, applies the comparison question policy, retrieves bounded
+CV evidence, calls `CvChatComparisonModel`, and validates complete citations. Tool preflight cannot bypass or replace
+that path.
 
 ## Trusted context and authorization
 

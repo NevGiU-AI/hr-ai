@@ -34,8 +34,8 @@ decisions.
   stale-source rejection. A strict pre-retrieval question-policy decision prevents unrelated or sensitive questions
   from initiating candidate-evidence search. Staging and production accepted the calibrated `0.35` retrieval threshold
   on 30 October 2026; the corrected policy boundary and its 21-case provider-backed evaluation passed staging the same
-  day, then the same policy behavior passed production acceptance in release `v0.22.0`. Multi-candidate chat remains
-  roadmap work.
+  day, then the same policy behavior passed production acceptance in release `v0.22.0`. The same authorization,
+  evidence, citation, and refusal boundaries now support the implemented multi-candidate comparison flows below.
 - Evaluate multilingual single-candidate retrieval and generated answers against a versioned synthetic EN/FR/PT
   dataset. The opt-in provider gate checks expected documents, tenant/candidate filters, required evidence, citations,
   response language, repeated-run stability, and Spring AI relevancy/fact-checking judgments. Its first environment
@@ -81,12 +81,19 @@ decisions.
 - Support a final dual-entry chat experience. Recruiters may select candidates first and then ask, or ask naturally
   and confirm tenant-resolved candidate cards before evidence retrieval. Both paths converge on the same verified IDs,
   keep the active scope visible and editable, and prohibit conversation memory or the model from silently widening it.
-  PR #144 connects the existing workspace flow to the reviewed Spring AI discovery and confirmed-scope phases. The
-  current one-pass correction reuses the exact tenant-scoped discovery results as confirmation cards instead of
-  extracting the same names twice; focused staging acceptance is pending. The workspace remains the contract-validation
-  surface. After scoped conversation
-  memory is stable, a dedicated message-style CV-chat page will reuse these same authorization, confirmation,
-  retrieval, citation, and refusal boundaries.
+  PR #144 connected the existing workspace flow to the reviewed Spring AI discovery and confirmed-scope phases.
+  PRs #146–#154 then made discovery application-owned and one-pass, bounded confirmed-scope tool execution, kept the
+  approved job optional, reauthorized any selected job for the final comparison, and separated trusted application
+  scope from untrusted recruiter wording. Candidate-only comparison remains valid when no job is selected. Focused
+  staging acceptance completed on 10 November 2026 at main revision `22d56c5`: valid two-to-five candidate requests,
+  ambiguity cards, sensitive/unrelated refusal, job and no-job comparisons, citations, and privacy-safe logs passed.
+  Starting a new language-first request now clears its previous language-derived candidate chips, confirmed comparison
+  question/job context, and result immediately, so a refusal, clarification, or slow response cannot display stale
+  scope. The new request text and optional job selector remain inputs, and independently assembled picker-first
+  selections remain intact. Production acceptance for this tool-orchestrated increment remains pending.
+  The workspace remains the contract-validation surface. After scoped conversation memory is stable, a dedicated
+  message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
+  boundaries.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -119,7 +126,8 @@ paraphrase remained a safe retrieval miss. The same scoped behavior passed focus
 1 November 2026 without lowering the `0.35` threshold and resolved that real-CV French KLx miss, followed by focused
 production acceptance in release `v0.24.0`.
 The picker-first comparison UI and deterministic language-first confirmation flow are accepted in staging and
-production. Tool-orchestrated Angular activation is implemented through PR #144 and awaits focused staging acceptance.
+production. Tool-orchestrated Angular activation and its PR #146–#154 stabilization series passed focused staging
+acceptance on 10 November 2026 at main revision `22d56c5`; production promotion remains pending.
 Scoped conversation memory, the dedicated conversational CV-chat page, speech input/playback, and the recruitment
 dashboard remain roadmap work.
 Production repeated the focused question-policy
@@ -183,10 +191,11 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Extend the staging- and production-accepted single-candidate semantic retrieval with organization-scoped
-   candidate-name resolution, conversation memory, multi-candidate result cards, cited comparison, and formal CV-chat
-   evaluation testing. Candidate names or UI selections must resolve to verified tenant-scoped IDs before evidence
-   retrieval; missing or ambiguous names are never guessed.
+1. Complete the remaining CV-chat foundation: add evaluation-evidence and document-status read tools, persist scoped
+   conversation memory, build the dedicated message-style chat page, broaden deterministic and provider-backed
+   evaluation, and localize controlled outcomes. The implemented picker- and language-first flows already resolve
+   candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity confirmation, and
+   produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job context.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,

@@ -105,8 +105,10 @@ questions through `classify(...)` and selected-candidate rows through `classifyS
 the dataset's trusted `approvedJobSelected` boolean. It reports only synthetic case identifiers and metadata on failure
 and never prints the questions.
 
-The expanded version `1.1.0` live-provider gate remains required before production promotion of the changed
-selected-comparison policy prompt. Focused staging workflow checks do not replace that explicit provider evaluation.
+The expanded version `1.1.0` live-provider gate was not rerun before release `v0.32.0`, an acknowledged release-process
+exception. The authorized post-release run passed all 24 human-reviewed cases on 10 November 2026. Future changes to
+the selected-comparison policy prompt or model still require a fresh successful run before production promotion;
+focused environment workflow checks and a green ordinary CI run do not replace that explicit provider evaluation.
 
 Near-boundary cases distinguish a candidate's personal characteristic from professional context. For example, asking
 whether someone worked for a religious organization is job-related employer history; it must not be treated as evidence
@@ -435,9 +437,11 @@ readiness, while retaining Spring AI callbacks as a bounded advisory preflight a
 `1.2.0` adds the optional approved-job confirmed-scope case and keeps the earlier discovery attacks as deterministic
 regressions. Focused staging acceptance completed on 10 November 2026 at main revision `22d56c5`: ambiguity cards,
 sensitive/unrelated refusal, no-job and approved-job confirmed scope, required tool reads, grounded citations,
-privacy-safe diagnostics, and stale language-scope clearing passed. Production promotion remains pending. A current
-live-provider rerun is still required whenever the confirmed-scope prompt or model changes; a green ordinary CI run
-does not substitute for that opt-in gate.
+privacy-safe diagnostics, and stale language-scope clearing passed. Production repeated the focused workflow checks on
+10 November 2026 in release `v0.32.0` at revision `1a5f247`. The separate authorized live-provider run then passed all
+24 cases in the expanded question-policy dataset `1.1.0` the same day. Focused environment acceptance and a green
+ordinary CI run do not substitute for this opt-in evaluation; rerun the relevant provider gate whenever its prompt or
+model changes.
 
 ### Speech
 

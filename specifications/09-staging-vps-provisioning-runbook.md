@@ -669,6 +669,15 @@ Run PowerShell-style `scp` commands from the local Windows PowerShell prompt, no
 
 ## Credential rotation
 
+### Rotate the staging GHCR pull token
+
+The staging `GHCR_TOKEN` belongs to the protected GitHub `staging` environment and is not stored in the VPS `.env`.
+Track its owner and expiry separately from production, schedule rotation before expiry, and keep only `read:packages`
+plus any required organization SSO authorization. Update `GHCR_USERNAME` only when the token owner changes, validate the
+new credential through the staging deployment workflow, and revoke the previous token after successful health and smoke
+checks. Never copy the production token into staging or print either token in commands, logs, documentation, or
+screenshots.
+
 ### Rotate the OpenAI API key
 
 1. Revoke the old key at the provider.
@@ -1039,7 +1048,8 @@ bounded job requirements. Grounded answers cited every selected candidate. Start
 removed the previous language-derived cards, confirmed comparison context, and result immediately, while retaining the
 new request inputs and independently assembled picker-first choices. Backend logs remained privacy-safe and contained
 no recruiter question, CV excerpt, provider response, or secret. No staging environment variable, Flyway migration,
-database change, or Compose change was required. Production promotion remains pending.
+database change, or Compose change was required. Production repeated the focused checks successfully on 10 November
+2026 in release `v0.32.0` at revision `1a5f247`.
 
 ### Rollback boundary observed in staging
 

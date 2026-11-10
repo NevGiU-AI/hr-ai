@@ -847,6 +847,20 @@ The release required no environment, Flyway, database, Compose, or frontend chan
 acceptable during smoke testing, but no production percentile or representative numeric latency was recorded; retain
 p50/p95/p99 measurement for the later concurrency benchmark.
 
+**Tool-orchestrated language-first comparison acceptance recorded 10 November 2026 for release `v0.32.0` at main
+revision `1a5f247`:** the first production workflow attempt stopped at **Log production VPS in to GHCR** because GitHub
+reported that the protected production Environment's classic package-read personal access token had expired. The
+deployment bundle had been copied, but `deploy.sh` had not run, so the active images, containers, database, and
+application availability remained unchanged; no rollback or restore was required. Only the production Environment's
+`GHCR_TOKEN` was rotated, and the configured `GHCR_USERNAME` was verified to match the rotated token owner. Rerunning
+the failed job against the same release and immutable images succeeded without a replacement tag, rebuild, `.env`
+update, migration, database action, or Compose change. Backend health and focused functional tests then passed for
+deterministic candidate discovery, ambiguity confirmation, sensitive/unrelated refusal, candidate-only and approved-job
+confirmed scope, cited grounded comparison, stale language-scope clearing, picker-first independence, and privacy-safe
+logs. This environment acceptance did not substitute for the separate opt-in model-behavior gate. The authorized
+post-release run of the expanded 24-case question-policy dataset `1.1.0` subsequently passed on 10 November 2026;
+future policy prompt or model changes require a fresh run before promotion.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

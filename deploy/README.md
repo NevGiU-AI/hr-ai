@@ -160,7 +160,21 @@ DEPLOY_USER=deploy
 Environment URL=https://staging-hr.nevgiuai.com
 ```
 
-Create `GHCR_TOKEN` as a classic personal access token with only `read:packages`. If the organization enforces SSO, authorize the token for the organization. Store the token immediately because GitHub displays it only once. `GHCR_USERNAME` must be the personal or bot account that created that token, not the organization name.
+Create `GHCR_TOKEN` as a classic personal access token with only `read:packages`. If the organization enforces SSO,
+authorize the token for the organization. Store the token immediately because GitHub displays it only once.
+`GHCR_USERNAME` must be the personal or bot account that created that token, not the organization name. Use separate
+staging and production pull tokens. Record the environment, owner, expiry date, scope, SSO status, rotation owner, and
+reminder date in the restricted credential inventory or password manager—never record the token value in this
+repository—and schedule rotation before expiry.
+
+If the remote `docker login ghcr.io` step returns `denied`, first check token expiry or revocation, the exact token-owner
+username, `read:packages` access, and organization SSO authorization. This token is a GitHub Environment secret, not a
+VPS `.env` value. Replace `Settings` → `Environments` → the affected environment → `GHCR_TOKEN` without printing it,
+and update `GHCR_USERNAME` only if the token owner changed. A failure at this step occurs before `deploy.sh` changes the
+active application images, so the existing containers remain in service. Rerun the failed workflow job and validate the
+deployed revision, health, public smoke tests, and focused functional tests before revoking the old token. When the
+release tag and immutable images are unchanged, this recovery does not require a new release, rebuild, application
+rollback, database action, or VPS `.env` change.
 
 Populate `DEPLOY_KNOWN_HOSTS` from a host key already verified during an interactive SSH connection. For example, from Windows PowerShell:
 

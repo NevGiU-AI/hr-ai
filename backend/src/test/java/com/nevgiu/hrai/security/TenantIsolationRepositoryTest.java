@@ -49,6 +49,15 @@ class TenantIsolationRepositoryTest {
         evaluationB.setCandidate(candidateB);
         evaluationB.setJob(jobB);
         evaluations.save(evaluationB);
+        assertThat(evaluations.findAllByOrganizationId("tenant-a")).containsExactly(evaluationA);
+
+        // Simulate a legacy or corrupt row whose evaluation and candidate tenant match but whose job does not. Both
+        // history projections must reject it so a foreign-tenant job title cannot cross the read boundary.
+        CandidateEvaluation inconsistentJobTenant = new CandidateEvaluation();
+        inconsistentJobTenant.setOrganizationId("tenant-a");
+        inconsistentJobTenant.setCandidate(olderCandidateA);
+        inconsistentJobTenant.setJob(jobB);
+        evaluations.save(inconsistentJobTenant);
 
         assertThat(candidates.findAllByOrganizationIdOrderByCreatedAtDescIdDesc("tenant-a"))
                 .extracting(Candidate::getName)
@@ -63,12 +72,17 @@ class TenantIsolationRepositoryTest {
         assertThat(jobs.findAllByOrganizationId("tenant-a")).extracting(Job::getTitle)
                 .containsExactly("Backend Engineer");
         assertThat(jobs.findByIdAndOrganizationId(jobB.getId(), "tenant-a")).isEmpty();
-        assertThat(evaluations.findAllByOrganizationId("tenant-a")).containsExactly(evaluationA);
         assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(olderCandidateA.getId(), "tenant-a"))
                 .extracting(com.nevgiu.hrai.evaluation.dto.EvaluationHistoryItem::id)
                 .containsExactly(evaluationA.getId());
         assertThat(evaluations.findHistoryByCandidateIdAndOrganizationId(
                 candidateB.getId(), "tenant-a")).isEmpty();
+        assertThat(evaluations.findRecentEvidenceByCandidateIdAndOrganizationId(
+                olderCandidateA.getId(), "tenant-a", PageRequest.of(0, 1)))
+                .extracting(com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot::evaluationId)
+                .containsExactly(evaluationA.getId());
+        assertThat(evaluations.findRecentEvidenceByCandidateIdAndOrganizationId(
+                candidateB.getId(), "tenant-a", PageRequest.of(0, 1))).isEmpty();
     }
 
     private Candidate candidate(String organizationId, String name) {

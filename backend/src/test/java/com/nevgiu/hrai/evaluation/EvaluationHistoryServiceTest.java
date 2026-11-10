@@ -3,8 +3,10 @@ package com.nevgiu.hrai.evaluation;
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvOriginalAccessException;
+import com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot;
 import com.nevgiu.hrai.evaluation.dto.EvaluationHistoryItem;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +52,32 @@ class EvaluationHistoryServiceTest {
         verifyNoInteractions(evaluations);
     }
 
+    @Test
+    void boundsRecentHistoryAtTheRepositoryQuery() {
+        Candidate candidate = candidate(7L, "Ada Lovelace");
+        EvaluationEvidenceSnapshot current = evidence(2L, null);
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
+        when(evaluations.findRecentEvidenceByCandidateIdAndOrganizationId(
+                7L, "tenant-a", PageRequest.of(0, 6))).thenReturn(List.of(current));
+
+        var history = service.findRecentEvidenceForCandidate(7L, "tenant-a", 6);
+
+        assertThat(history).containsExactly(current);
+        verify(evaluations).findRecentEvidenceByCandidateIdAndOrganizationId(
+                7L, "tenant-a", PageRequest.of(0, 6));
+    }
+
+    @Test
+    void rejectsInvalidRecentHistoryLimitsBeforeDataAccess() {
+        assertThatThrownBy(() -> service.findRecentEvidenceForCandidate(7L, "tenant-a", 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("maxResults must be between 1 and 100");
+        assertThatThrownBy(() -> service.findRecentEvidenceForCandidate(7L, "tenant-a", 101))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("maxResults must be between 1 and 100");
+        verifyNoInteractions(candidates, evaluations);
+    }
+
     private Candidate candidate(Long id, String name) {
         Candidate candidate = new Candidate();
         candidate.setId(id);
@@ -59,6 +88,12 @@ class EvaluationHistoryServiceTest {
     private EvaluationHistoryItem history(Long id, Instant invalidatedAt) {
         return new EvaluationHistoryItem(id, 7L, "Ada Lovelace", 12L, "Backend Engineer",
                 90, 8, 7, 8, 75, 9, 8, 88, 82, "Strong match",
+                Instant.parse("2026-10-23T08:00:00Z"), invalidatedAt, invalidatedAt == null);
+    }
+
+    private EvaluationEvidenceSnapshot evidence(Long id, Instant invalidatedAt) {
+        return new EvaluationEvidenceSnapshot(id, 12L, "Backend Engineer",
+                90, 8, 7, 8, 75, 9, 8, 88, 82,
                 Instant.parse("2026-10-23T08:00:00Z"), invalidatedAt, invalidatedAt == null);
     }
 }

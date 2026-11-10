@@ -96,6 +96,13 @@ decisions.
   The workspace remains the contract-validation surface. After scoped conversation memory is stable, a dedicated
   message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
   boundaries.
+- Provide a foundational `get_evaluation_evidence` Spring AI read tool for a future evaluation-aware chat path. It is
+  tenant-scoped, requires an application-confirmed candidate ID, and returns at most the five most recent persisted
+  evaluations with minimized job context, scores, and current/stale timestamps. Generated evaluation rationale is
+  intentionally omitted because it can contain candidate personal information or quoted CV content; metric-level
+  source evidence is not yet persisted either. Its dedicated callback subset is intentionally absent from the current
+  comparison preflight, whose tool output is discarded; user-visible consumption must be connected explicitly rather
+  than adding an ineffective database/model read to that preflight.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.
@@ -196,11 +203,12 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Complete the remaining CV-chat foundation: add evaluation-evidence and document-status read tools, persist scoped
-   conversation memory, build the dedicated message-style chat page, broaden deterministic and provider-backed
-   evaluation, and localize controlled outcomes. The implemented picker- and language-first flows already resolve
-   candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity confirmation, and
-   produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job context.
+1. Complete the remaining CV-chat foundation: connect the bounded evaluation-history read-tool foundation only to a
+   future answer path that consumes it, add document-status read tools, persist scoped conversation memory, build the
+   dedicated message-style chat page, broaden deterministic and provider-backed evaluation, and localize controlled
+   outcomes. The implemented picker- and language-first flows already resolve candidate names or UI selections to
+   verified tenant-scoped IDs, require explicit ambiguity confirmation, and produce cited two-to-five-candidate
+   comparisons with optional tenant-authorized approved-job context.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,

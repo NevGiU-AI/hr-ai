@@ -109,14 +109,16 @@ Define the representative workload, concurrency, downstream quotas, database con
 ## 12. Spring AI tool calling and version strategy
 
 The initial read-only decision is implemented on pinned Spring AI `1.1.0`: request-scoped candidate search, confirmed
-candidate summary, and optional approved-job requirements are exposed through a closed callback allow list to
-`ADMIN`, `RECRUITER`, and `REVIEWER`. Application code owns tenant context, candidate/job authorization, discovery and
-confirmed-scope transitions, a five-call request budget, timeout/postcondition checks, minimized results, and
-privacy-safe diagnostics. The model-facing callback preflight cannot authorize scope or replace the final
-tenant-reauthorized comparison service.
+candidate summary, optional approved-job requirements, and a dedicated bounded evaluation-history callback subset are
+protected by a closed callback allow list for `ADMIN`, `RECRUITER`, and `REVIEWER`. Application code owns tenant
+context, candidate/job authorization, discovery and confirmed-scope transitions, a six-call request budget,
+timeout/postcondition checks, minimized results, and privacy-safe diagnostics. The model-facing callback preflight
+cannot authorize scope or replace the final tenant-reauthorized comparison service. The evaluation-history subset is
+not exposed to that output-discarding preflight and intentionally omits generated rationale and unavailable
+metric-level source evidence.
 
-Open decisions remain for evaluation-evidence, document-status, and dashboard read tools; role-specific expansion;
-production telemetry limits; and every state-changing command. Command tools require deterministic preview, explicit
-confirmation, idempotency, audit, and separately approved limits. Evaluate Spring AI 2.x and its preferred tool
-execution lifecycle as an independent migration. Do not combine a framework upgrade with privileged command-tool
-rollout without separate regression and security validation.
+Open decisions remain for user-visible evaluation-aware tool consumption, document-status and dashboard read tools,
+role-specific expansion, production telemetry limits, and every state-changing command. Command tools require
+deterministic preview, explicit confirmation, idempotency, audit, and separately approved limits. Evaluate Spring AI
+2.x and its preferred tool execution lifecycle as an independent migration. Do not combine a framework upgrade with
+privileged command-tool rollout without separate regression and security validation.

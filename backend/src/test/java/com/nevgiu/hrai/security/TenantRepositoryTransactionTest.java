@@ -31,6 +31,9 @@ class TenantRepositoryTransactionTest {
         assertReadOnlyTransaction(CandidateEvaluationRepository.class, "findAllByOrganizationId", String.class);
         assertReadOnlyTransaction(CandidateEvaluationRepository.class,
                 "findHistoryByCandidateIdAndOrganizationId", Long.class, String.class);
+        assertReadOnlyTransaction(CandidateEvaluationRepository.class,
+                "findRecentEvidenceByCandidateIdAndOrganizationId", Long.class, String.class,
+                org.springframework.data.domain.Pageable.class);
     }
 
     @Test

@@ -7,6 +7,8 @@ import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
+import com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
@@ -37,24 +39,30 @@ public class CvChatReadTools {
     private static final Set<String> CHAT_ROLES = Set.of("ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER");
     private static final int MAX_SEARCH_RESULTS = 10;
     private static final int MAX_REQUIREMENT_FIELD_CHARACTERS = 2_000;
+    private static final int MAX_EVALUATION_RESULTS = 5;
+    // Match Job.title's persistence limit while still defending the model-facing result boundary independently.
+    private static final int MAX_EVALUATION_JOB_TITLE_CHARACTERS = 255;
 
     private final CvChatCandidateResolutionService candidateResolution;
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
     private final JobRepository jobs;
+    private final EvaluationHistoryService evaluationHistory;
     private final CvChatToolExecutionGuard executionGuard;
     private final CvChatToolScope scope;
     private final CvChatToolDiscoveryState discoveryState;
     private final CvChatToolPlanningState planningState;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
-                           CvDocumentRepository documents, JobRepository jobs, CvChatToolExecutionGuard executionGuard,
-                           CvChatToolScope scope, CvChatToolDiscoveryState discoveryState,
-                           CvChatToolPlanningState planningState) {
+                           CvDocumentRepository documents, JobRepository jobs,
+                           EvaluationHistoryService evaluationHistory,
+                           CvChatToolExecutionGuard executionGuard, CvChatToolScope scope,
+                           CvChatToolDiscoveryState discoveryState, CvChatToolPlanningState planningState) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
         this.jobs = jobs;
+        this.evaluationHistory = evaluationHistory;
         this.executionGuard = executionGuard;
         this.scope = scope;
         this.discoveryState = discoveryState;
@@ -133,11 +141,47 @@ public class CvChatReadTools {
         return requirements;
     }
 
+    @Tool(name = "get_evaluation_evidence", description = "Return at most five newest persisted evaluation results "
+            + "for one candidate that the recruiter already selected. Includes bounded job context, scores, "
+            + "timestamps, and current/stale state. Never returns generated rationale, candidate names, contact "
+            + "details, raw CV text, tenant identifiers, storage identifiers, hashes, prompts, provider configuration, "
+            + "or model settings. Persisted scores are human-review context, not metric-level CV source evidence.")
+    public EvaluationEvidenceResult getEvaluationEvidence(
+            @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
+        AppUserPrincipal actor = currentChatActor();
+        // Evaluation history is candidate data. Knowing an ID or receiving it from the model never authorizes access;
+        // the application must first install that exact recruiter-confirmed ID in this request's scope.
+        scope.requireConfirmed(candidateId);
+        List<EvaluationEvidenceSnapshot> history = executionGuard.execute(() ->
+                evaluationHistory.findRecentEvidenceForCandidate(
+                        candidateId, actor.organizationId(), MAX_EVALUATION_RESULTS + 1));
+        boolean truncated = history.size() > MAX_EVALUATION_RESULTS;
+        List<EvaluationEvidenceItem> boundedHistory = history.stream()
+                .limit(MAX_EVALUATION_RESULTS)
+                .map(this::evaluationEvidence)
+                .toList();
+        return new EvaluationEvidenceResult(candidateId, boundedHistory, truncated);
+    }
+
+    private EvaluationEvidenceItem evaluationEvidence(EvaluationEvidenceSnapshot history) {
+        EvaluationScores scores = new EvaluationScores(
+                history.skillsMatchScore(), history.experienceRelevanceScore(), history.educationFitScore(),
+                history.achievementImpactScore(), history.keywordDensityScore(), history.employmentGapScore(),
+                history.readabilityScore(), history.aiConfidenceScore(), history.overallFitScore());
+        return new EvaluationEvidenceItem(history.evaluationId(), history.jobId(),
+                bounded(history.jobTitle(), MAX_EVALUATION_JOB_TITLE_CHARACTERS), scores, history.createdAt(),
+                history.invalidatedAt(), history.current());
+    }
+
     private String bounded(String value) {
-        if (value == null || value.length() <= MAX_REQUIREMENT_FIELD_CHARACTERS) {
+        return bounded(value, MAX_REQUIREMENT_FIELD_CHARACTERS);
+    }
+
+    private String bounded(String value, int maximumCharacters) {
+        if (value == null || value.length() <= maximumCharacters) {
             return value;
         }
-        return value.substring(0, MAX_REQUIREMENT_FIELD_CHARACTERS);
+        return value.substring(0, maximumCharacters);
     }
 
     private AppUserPrincipal currentChatActor() {

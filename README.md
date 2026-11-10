@@ -114,6 +114,13 @@ decisions.
   answers consume evaluation history. Production repeated the focused health, tenant-boundary, persisted-history,
   current/stale-state, and chat-regression checks successfully on 10 November 2026 with the same no-configuration
   deployment boundary.
+- Provide foundational `get_document_status` and `get_ingestion_warnings` Spring AI read tools for a future
+  processing-aware chat path. Both require an application-confirmed candidate and repeat tenant authorization. Status
+  exposes only the newest document's ID, ingestion state, extraction method, and processing timestamps; warnings are
+  application-owned codes rather than raw parser, OCR, malware-scanner, or provider errors. Filenames, CV text,
+  organization identifiers, storage keys, hashes, and original-file metadata remain excluded. Their dedicated callback
+  subset is not registered in the current comparison preflight because that path discards tool output; user-visible
+  consumption remains a separate slice. No environment, schema, migration, Compose, or frontend change is required.
 - Maintain an opt-in semantic-indexing foundation that creates bounded native/OCR chunks, sends them to Spring AI's
   `PgVectorStore` only after the CV transaction commits, stores portable tenant metadata plus database-enforced tenant
   references, retries missing/stale indexes, and removes them through document/candidate deletion cascades.

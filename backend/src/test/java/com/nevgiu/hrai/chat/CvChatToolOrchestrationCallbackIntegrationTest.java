@@ -3,6 +3,9 @@ package com.nevgiu.hrai.chat;
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
+import com.nevgiu.hrai.candidate.CvDocument;
+import com.nevgiu.hrai.candidate.CvExtractionMethod;
+import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatReadTools;
 import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
@@ -155,6 +158,48 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
                     .isInstanceOf(CvChatException.class)
                     .hasMessage("Candidate is outside the confirmed chat scope");
             verifyNoInteractions(evaluationHistory);
+        } finally {
+            executorFixture.close();
+        }
+    }
+
+    @Test
+    void documentCallbacksUseConfirmedTenantScopeAndHideRawProcessingDetails() throws Exception {
+        authenticate();
+        CandidateRepository candidates = mock(CandidateRepository.class);
+        CvDocumentRepository documents = mock(CvDocumentRepository.class);
+        when(candidates.findByIdAndOrganizationId(1L, "tenant-a")).thenReturn(Optional.of(candidate(1L)));
+        CvDocument document = mock(CvDocument.class);
+        when(document.getId()).thenReturn(61L);
+        when(document.getStatus()).thenReturn(CvIngestionStatus.NEEDS_REVIEW);
+        when(document.getExtractionMethod()).thenReturn(CvExtractionMethod.OCR);
+        when(document.getImportedAt()).thenReturn(Instant.parse("2026-11-10T10:00:00Z"));
+        when(document.getIngestionError()).thenReturn("private parser and provider diagnostic");
+        when(documents.findAllByCandidateIdAndOrganizationId(1L, "tenant-a")).thenReturn(List.of(document));
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirm(List.of(1L));
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class), candidates,
+                    documents, mock(JobRepository.class), mock(EvaluationHistoryService.class),
+                    executorFixture.guard(), scope, new CvChatToolDiscoveryState(), new CvChatToolPlanningState());
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+
+            String status = callback(registry.documentStatusCallbacks(), "get_document_status")
+                    .call("{\"candidateId\":1}");
+            String warnings = callback(registry.documentStatusCallbacks(), "get_ingestion_warnings")
+                    .call("{\"candidateId\":1}");
+
+            verify(candidates, org.mockito.Mockito.times(2)).findByIdAndOrganizationId(1L, "tenant-a");
+            verify(documents, org.mockito.Mockito.times(2))
+                    .findAllByCandidateIdAndOrganizationId(1L, "tenant-a");
+            assertThat(status)
+                    .contains("\"candidateId\":1", "\"documentId\":61", "\"status\":\"NEEDS_REVIEW\"",
+                            "\"extractionMethod\":\"OCR\"")
+                    .doesNotContain("tenant-a", "organizationId", "filename", "storageKey", "sha256", "cvText");
+            assertThat(warnings)
+                    .contains("\"candidateId\":1", "\"documentId\":61", "MANUAL_REVIEW_REQUIRED")
+                    .doesNotContain("private parser", "provider diagnostic", "ingestionError");
         } finally {
             executorFixture.close();
         }

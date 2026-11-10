@@ -25,7 +25,7 @@ class CvChatReadToolRegistryTest {
 
         assertThat(callbacks).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements",
-                        "get_evaluation_evidence");
+                        "get_evaluation_evidence", "get_document_status", "get_ingestion_warnings");
         assertThat(registry.confirmedScopeCallbacks()).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactly("get_candidate_summary");
         assertThat(registry.confirmedScopeCallbacksWithJob())
@@ -34,6 +34,9 @@ class CvChatReadToolRegistryTest {
         assertThat(registry.evaluationEvidenceCallbacks())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactly("get_evaluation_evidence");
+        assertThat(registry.documentStatusCallbacks())
+                .extracting(callback -> callback.getToolDefinition().name())
+                .containsExactlyInAnyOrder("get_document_status", "get_ingestion_warnings");
         assertThat(callbacks).allSatisfy(callback -> assertThat(callback.getToolDefinition().inputSchema())
                 .doesNotContainIgnoringCase("organization")
                 .doesNotContainIgnoringCase("tenant")
@@ -51,7 +54,7 @@ class CvChatReadToolRegistryTest {
         assertThat(registry.allReviewedCallbacksForTesting())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements",
-                        "get_evaluation_evidence");
+                        "get_evaluation_evidence", "get_document_status", "get_ingestion_warnings");
     }
 
     private CvChatReadTools tools() {

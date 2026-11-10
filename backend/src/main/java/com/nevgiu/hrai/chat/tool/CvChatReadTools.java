@@ -4,6 +4,7 @@ import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocument;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
+import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
@@ -20,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -110,9 +112,7 @@ public class CvChatReadTools {
             CvDocument currentDocument = documents
                     .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
                     .stream().findFirst().orElse(null);
-            CurrentDocumentStatus documentStatus = currentDocument == null ? null : new CurrentDocumentStatus(
-                    currentDocument.getId(), currentDocument.getStatus(), currentDocument.getExtractionMethod(),
-                    currentDocument.getImportedAt(), currentDocument.getReprocessedAt());
+            CurrentDocumentStatus documentStatus = currentDocument == null ? null : documentStatus(currentDocument);
             return new CandidateSummary(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),
                     candidate.getYearsExperience(), documentStatus);
         });
@@ -161,6 +161,61 @@ public class CvChatReadTools {
                 .map(this::evaluationEvidence)
                 .toList();
         return new EvaluationEvidenceResult(candidateId, boundedHistory, truncated);
+    }
+
+    @Tool(name = "get_document_status", description = "Return minimized processing state for the newest CV document "
+            + "of one candidate that the recruiter already selected. Never returns filenames, raw errors, CV text, "
+            + "tenant identifiers, storage identifiers, hashes, or original-file metadata.")
+    public DocumentStatusResult getDocumentStatus(
+            @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
+        AppUserPrincipal actor = currentChatActor();
+        scope.requireConfirmed(candidateId);
+        CvDocument document = executionGuard.execute(() -> currentDocument(candidateId, actor.organizationId()));
+        return new DocumentStatusResult(candidateId, document == null ? null : documentStatus(document));
+    }
+
+    @Tool(name = "get_ingestion_warnings", description = "Return application-owned processing warning codes for "
+            + "the newest CV document of one candidate that the recruiter already selected. Never returns raw parser, "
+            + "OCR, malware-scanner, provider, filename, storage, hash, or CV-content details.")
+    public IngestionWarningsResult getIngestionWarnings(
+            @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
+        AppUserPrincipal actor = currentChatActor();
+        scope.requireConfirmed(candidateId);
+        return executionGuard.execute(() -> {
+            CvDocument document = currentDocument(candidateId, actor.organizationId());
+            if (document == null) {
+                return new IngestionWarningsResult(candidateId, null,
+                        List.of(IngestionWarning.NO_DOCUMENT_AVAILABLE));
+            }
+            List<IngestionWarning> warnings = new ArrayList<>();
+            if (document.getStatus() == CvIngestionStatus.NEEDS_REVIEW) {
+                warnings.add(IngestionWarning.MANUAL_REVIEW_REQUIRED);
+            }
+            if (document.getStatus() == CvIngestionStatus.FAILED) {
+                warnings.add(IngestionWarning.INGESTION_FAILED);
+            }
+            // Raw ingestion errors may contain parser/provider internals. Report only that an additional warning was
+            // recorded, and avoid duplicating the already explicit FAILED or NEEDS_REVIEW status codes.
+            if (document.getIngestionError() != null && !document.getIngestionError().isBlank()
+                    && warnings.isEmpty()) {
+                warnings.add(IngestionWarning.PROCESSING_WARNING_RECORDED);
+            }
+            return new IngestionWarningsResult(candidateId, document.getId(), warnings);
+        });
+    }
+
+    private CvDocument currentDocument(Long candidateId, String organizationId) {
+        // Resolve the candidate first so a missing/cross-tenant candidate never becomes distinguishable from an empty
+        // document history. The repository's organization predicate is repeated for the document query.
+        candidates.findByIdAndOrganizationId(candidateId, organizationId)
+                .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
+        return documents.findAllByCandidateIdAndOrganizationId(candidateId, organizationId)
+                .stream().findFirst().orElse(null);
+    }
+
+    private CurrentDocumentStatus documentStatus(CvDocument document) {
+        return new CurrentDocumentStatus(document.getId(), document.getStatus(), document.getExtractionMethod(),
+                document.getImportedAt(), document.getReprocessedAt());
     }
 
     private EvaluationEvidenceItem evaluationEvidence(EvaluationEvidenceSnapshot history) {

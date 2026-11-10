@@ -267,8 +267,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   covers the deployed foundation and supporting contract, not user-visible evaluation-aware answers. Production
   repeated the focused deployment-health, tenant-isolation, persisted-history, current/stale-state, and existing-chat
   regression checks successfully on 10 November 2026; no environment, schema, migration, Compose, or frontend change
-  was required. Document-status and dashboard tools, that user-visible evaluation integration, and complete evaluation
-  reproducibility/evidence persistence remain pending.
+  was required. The foundational `get_document_status` and `get_ingestion_warnings` tools now expose the newest
+  confirmed candidate document's minimized processing state and application-owned warning codes through a dedicated
+  callback subset. They repeat tenant authorization and omit raw errors, filenames, CV text, tenant/storage/hash data,
+  and original-file metadata. The current comparison preflight does not register them because it discards tool output.
+  Dashboard tools, user-visible evaluation/document-status integration, and complete evaluation reproducibility/
+  evidence persistence remain pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool

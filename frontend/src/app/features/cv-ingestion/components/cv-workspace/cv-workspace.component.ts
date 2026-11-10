@@ -254,6 +254,12 @@ export class CvWorkspaceComponent implements OnInit {
     const message = this.languageComparisonMessage.trim();
     if (!this.canUseCvChat || message.length < 2 || message.length > 2000 || this.languageScopeBusy) return;
 
+    if (this.comparisonEstablishedByLanguageWorkflow) {
+      // Submitting another natural-language request supersedes the previously confirmed language-first scope.
+      // Clear its cards, question, job, and result immediately so a refusal, clarification, or slow response cannot
+      // leave stale candidates visible under the new request. Picker-first selections remain independent.
+      this.clearComparison();
+    }
     this.languageScopeBusy = true;
     this.languageScopeError = '';
     this.languageWorkflowOutcome = null;

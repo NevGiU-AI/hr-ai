@@ -319,6 +319,53 @@ describe('CvWorkspaceComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Please name at least two candidates.');
   });
 
+  it('clears a previous language-confirmed scope as soon as a new discovery request starts', () => {
+    component.languageScopeResponse = {
+      message: 'Compare Ada and Grace for this approved job',
+      references: [
+        { requestedName: 'Ada', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'RESOLVED', truncated: false,
+          candidates: [{ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' }] },
+      ],
+    };
+    component.languageScopeSelections = [
+      { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace Hopper', currentTitle: 'Architect' },
+    ];
+    component.languageComparisonJobId = 12;
+    component.confirmLanguageScope();
+    component.comparisonResponse = { answer: 'Old answer', candidates: [], citations: [] };
+
+    const pending = new Subject<CvChatToolDiscoveryResponse>();
+    chatService.discoverWithTools.and.returnValue(pending);
+    component.languageComparisonMessage = 'Compare their religions for this approved job';
+
+    component.proposeLanguageScope();
+
+    expect(component.comparisonCandidates).toEqual([]);
+    expect(component.comparisonQuestion).toBe('');
+    expect(component.comparisonJobId).toBeNull();
+    expect(component.comparisonResponse).toBeNull();
+    expect(component.languageComparisonJobId).toBe(12);
+  });
+
+  it('keeps an independently assembled picker-first scope when language discovery is refused', () => {
+    component.addComparisonCandidate({ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' });
+    component.addComparisonCandidate({ id: 8, name: 'Grace Hopper', currentTitle: 'Architect' });
+    component.comparisonQuestion = 'Compare backend experience';
+    chatService.discoverWithTools.and.returnValue(of({
+      kind: 'REFUSED', message: 'Sensitive comparison is not allowed.', candidateScope: null,
+    }));
+    component.languageComparisonMessage = 'Compare their religions';
+
+    component.proposeLanguageScope();
+
+    expect(component.comparisonCandidates.map((item) => item.id)).toEqual([7, 8]);
+    expect(component.comparisonQuestion).toBe('Compare backend experience');
+    expect(component.languageWorkflowOutcome?.kind).toBe('REFUSED');
+  });
+
   it('fails closed when confirmation does not include cards from the same discovery request', () => {
     chatService.discoverWithTools.and.returnValue(of({
       kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the candidate cards.', candidateScope: null,

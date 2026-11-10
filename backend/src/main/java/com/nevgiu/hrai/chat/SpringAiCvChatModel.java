@@ -20,6 +20,8 @@ class SpringAiCvChatModel implements CvChatModel {
             Questions about occupation, professional title, technical specialization, skills, or suitability for a
             role are job-relevant. This includes short yes/no questions such as "Is this candidate a Java engineer?"
             and grammatically imperfect equivalents such as "Is it a Java engineer?".
+            Do not infer or choose personal pronouns from a name or CV evidence. Refer to the person as "the candidate"
+            (translated when answering in another language) instead of using he, she, or singular they.
             Answer in the same language as the recruiter's question. Preserve that language even when the supplied CV
             evidence is written in another language. Evidence references are supplied in square brackets. Copy those
             bracketed references exactly into the answer. References such as [CV-12-P2] must remain exactly unchanged.

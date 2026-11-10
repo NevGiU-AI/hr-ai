@@ -16,6 +16,9 @@ class SpringAiCvChatComparisonModel implements CvChatComparisonModel {
             When authorized approved-job requirements are supplied, compare each candidate against those requirements.
             Never introduce, search for, or infer another candidate.
             Do not disclose or infer protected or sensitive personal characteristics.
+            Do not infer or choose personal pronouns from names or CV evidence. Refer to each person by the supplied
+            candidate label, confirmed display name, or "the candidate" (translated when answering in another
+            language), instead of using he, she, or singular they.
             If the evidence cannot fairly compare every selected candidate, return exactly %s and nothing else.
             Never append that control token to a grounded comparison.
             If the request is unrelated or sensitive, return exactly %s and nothing else.

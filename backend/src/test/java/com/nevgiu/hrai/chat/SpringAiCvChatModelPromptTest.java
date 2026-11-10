@@ -12,6 +12,8 @@ class SpringAiCvChatModelPromptTest {
     void requiresTheAnswerToPreserveTheRecruiterQuestionLanguage() {
         assertThat(SpringAiCvChatModel.SYSTEM_PROMPT)
                 .contains("Answer in the same language as the recruiter's question")
+                .contains("Refer to the person as \"the candidate\"")
+                .contains("instead of using he, she, or singular they")
                 .contains("Evidence references are supplied in square brackets")
                 .contains("References such as [CV-12-P2] must remain exactly unchanged");
     }

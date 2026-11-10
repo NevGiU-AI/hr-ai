@@ -90,7 +90,9 @@ decisions.
   Starting a new language-first request now clears its previous language-derived candidate chips, confirmed comparison
   question/job context, and result immediately, so a refusal, clarification, or slow response cannot display stale
   scope. The new request text and optional job selector remain inputs, and independently assembled picker-first
-  selections remain intact. Production acceptance for this tool-orchestrated increment remains pending.
+  selections remain intact. Production repeated the focused workflow checks successfully on 10 November 2026 in
+  release `v0.32.0` at revision `1a5f247`; no application runtime environment-variable, schema, migration, or Compose
+  change was required.
   The workspace remains the contract-validation surface. After scoped conversation memory is stable, a dedicated
   message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
   boundaries.
@@ -127,7 +129,10 @@ paraphrase remained a safe retrieval miss. The same scoped behavior passed focus
 production acceptance in release `v0.24.0`.
 The picker-first comparison UI and deterministic language-first confirmation flow are accepted in staging and
 production. Tool-orchestrated Angular activation and its PR #146–#154 stabilization series passed focused staging
-acceptance on 10 November 2026 at main revision `22d56c5`; production promotion remains pending.
+acceptance on 10 November 2026 at main revision `22d56c5`, followed by focused production acceptance in release
+`v0.32.0` at revision `1a5f247` the same day.
+The expanded 24-case question-policy dataset `1.1.0` live-provider gate then passed on 10 November 2026. Future policy
+prompt or model changes still require a fresh opt-in provider run before promotion.
 Scoped conversation memory, the dedicated conversational CV-chat page, speech input/playback, and the recruitment
 dashboard remain roadmap work.
 Production repeated the focused question-policy

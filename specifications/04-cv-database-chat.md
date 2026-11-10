@@ -662,7 +662,9 @@ Do not mark this slice accepted until all of the following pass on the deployed 
 Focused staging acceptance completed on 10 November 2026 at main revision `22d56c5` after PRs #146–#154. Valid
 two-to-five-candidate discovery, bounded ambiguity cards, sensitive/unrelated refusal, optional-job and candidate-only
 confirmed scope, grounded citations, privacy-safe diagnostics, and stale language-scope clearing passed. Picker-first
-selection remained independent. Production promotion and its acceptance record remain a separate step.
+selection remained independent. Production repeated the focused workflow successfully on 10 November 2026 in release
+`v0.32.0` at revision `1a5f247`, without an application runtime environment-variable, schema, migration, or Compose
+change.
 
 ## Acceptance criteria
 

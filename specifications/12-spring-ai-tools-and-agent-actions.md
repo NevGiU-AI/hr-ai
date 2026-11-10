@@ -148,7 +148,8 @@ visible. This reset deliberately does not erase independently assembled picker-f
 Focused staging acceptance completed on 10 November 2026 at main revision `22d56c5` after PRs #146–#154. The accepted
 checks covered deterministic two-to-five-person discovery, bounded ambiguity cards, sensitive/unrelated refusal,
 candidate-only and approved-job confirmed scope, complete tool-preflight postconditions, cited grounded comparison,
-privacy-safe diagnostics, and stale language-scope clearing. Production acceptance remains pending.
+privacy-safe diagnostics, and stale language-scope clearing. Production repeated the focused checks successfully on
+10 November 2026 in release `v0.32.0` at revision `1a5f247`.
 
 Explicit instructions to ignore, bypass, skip, fake, assume, override, or disable confirmation, authorization,
 tenant, role, tool, or scope controls are rejected by `CvChatToolRequestPolicy` before any provider or tool call. This
@@ -380,6 +381,12 @@ or from Spring AI 2.x.
    `CvChatToolRequestPolicy` without asking the provider to enforce application authorization. Confirmed-scope cases
    use the same callback subsets as production and assert that each synthetic confirmed candidate—and the optional
    selected job—was actually read exactly once; a READY label without those calls fails the evaluation.
+5. The community-maintained [Prompt Engineering Guide](https://www.promptingguide.ai/) is a useful supplemental learning
+   index for prompt elements, zero- and few-shot techniques, prompt chaining, retrieval-augmented generation, tool use,
+   agents, context engineering, and adversarial prompting. Use it to generate design alternatives and evaluation cases,
+   not as framework-version or security authority. Any adopted technique must preserve the application-owned trust
+   boundaries in this specification and pass deterministic, provider-backed, multilingual, and adversarial tests before
+   promotion.
 
 These references explain the framework mechanics, not this application's authorization policy. Tenant isolation,
 confirmed candidate scope, approved-job scope, read-only exposure, bounded results, timeout handling, and refusal

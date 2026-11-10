@@ -249,7 +249,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   decide the workflow and populate confirmation cards, while the former candidate-scope endpoint remains temporarily
   for cached clients. Candidate-only and approved-job flows, ambiguity, refusal, required tool reads, citations, and
   stale language-scope clearing passed focused staging acceptance on 10 November 2026 at revision `22d56c5`.
-  Production promotion and the remaining evaluation-evidence/document-status/dashboard tools are pending.
+  Production repeated those focused checks successfully the same day in release `v0.32.0` at revision `1a5f247`.
+  The remaining evaluation-evidence/document-status/dashboard tools are pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool

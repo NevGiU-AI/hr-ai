@@ -357,7 +357,12 @@ GHCR_USERNAME
 GHCR_TOKEN
 ```
 
-For staging, `DEPLOY_HOST` is `141.94.33.197` and `DEPLOY_USER` is `deploy`. `GHCR_TOKEN` is a classic personal access token limited to `read:packages`; authorize it for organization SSO when applicable. `GHCR_USERNAME` is the account that created the token. `DEPLOY_KNOWN_HOSTS` must contain the previously verified SSH host-key entry.
+For staging, `DEPLOY_HOST` is `141.94.33.197` and `DEPLOY_USER` is `deploy`. `GHCR_TOKEN` is a classic personal access
+token limited to `read:packages`; authorize it for organization SSO when applicable. `GHCR_USERNAME` is the account that
+created the token. `DEPLOY_KNOWN_HOSTS` must contain the previously verified SSH host-key entry. Use independent staging
+and production pull tokens. Record each token's environment, owner, expiry, minimal scope, SSO status, rotation owner,
+and reminder date in the restricted credential inventory, and rotate it before expiry; never put the inventory's token
+value in the repository.
 
 The following application configuration remains in the VPS-only `/opt/nevgiu/deploy/.env` file and is deliberately not stored in GitHub:
 
@@ -393,6 +398,26 @@ GitHub documentation:
 Required-reviewer availability depends on repository visibility and GitHub plan. Confirm those constraints before relying on GitHub approval as the only production gate.
 
 ## Deployment logging and diagnosis
+
+### Remote GHCR login returns `denied`
+
+The release-resolution job uses the workflow `GITHUB_TOKEN` to inspect staging-validated images, while the remote VPS
+login uses the affected environment's longer-lived `GHCR_TOKEN`. If image resolution passes but the remote
+`docker login ghcr.io` step returns `denied`:
+
+1. Confirm the failure is the remote GHCR-login step and not image resolution, SSH, Compose, or application health.
+2. Check whether the classic token expired or was revoked, whether `GHCR_USERNAME` still matches its owner, whether it
+   still has `read:packages`, and whether organization SSO authorization remains valid.
+3. Replace only the affected protected GitHub Environment's `GHCR_TOKEN` without printing it. Change
+   `GHCR_USERNAME` only when token ownership changes.
+4. Rerun the failed job for the same release. A rerun starts a new environment job and reads the rotated secret.
+5. Verify the immutable revision, service health, public smoke tests, and focused functional tests before revoking the
+   previous token.
+
+The workflow copies the tracked deployment bundle before the remote GHCR login, but it does not invoke `deploy.sh`
+until login succeeds. Therefore this failure may update deployment files on the VPS while leaving the running images,
+containers, database, and application availability unchanged. Do not create a replacement release, rebuild unchanged
+artifacts, or perform an application/database rollback solely to recover from this credential failure.
 
 GitHub Actions is the source of truth for pipeline execution. Operators inspect the relevant `CI`, `Deploy staging`, or `Deploy production` run and begin with the first failed step. Workflow summaries identify the deployed commit and public environment URLs.
 

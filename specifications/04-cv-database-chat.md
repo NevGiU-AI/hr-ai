@@ -426,19 +426,24 @@ passed regression checks. Automatic autocomplete remains deferred rather than im
 
 ### Explicit multi-candidate comparison backend
 
-`POST /api/chat/candidates/compare` accepts one job-relevant question and between two and five distinct candidate IDs.
-The organization is taken only from the authenticated principal. Application code verifies the complete candidate set
-before classification or evidence retrieval; one missing or cross-tenant ID therefore produces the same generic `404`
-without disclosing which ID failed. Duplicate IDs are rejected, and the existing CV-chat role and CSRF policy applies.
+`POST /api/chat/candidates/compare` accepts one job-relevant question, between two and five distinct candidate IDs, and
+an optional approved-job ID. The organization is taken only from the authenticated principal. Application code verifies
+the complete candidate set before classification or evidence retrieval; one missing or cross-tenant ID therefore
+produces the same generic `404` without disclosing which ID failed. Duplicate IDs are rejected, and the existing CV-chat
+role and CSRF policy applies. If a job ID is present, the backend independently loads an approved job in the same
+organization and converts it into a bounded `CvChatComparisonJobContext`; a missing or cross-tenant job receives the
+same generic approved-job `404`. No job ID keeps the original candidate-only comparison contract.
 
 After pre-retrieval sensitive/out-of-scope classification, evidence is loaded independently and remains bounded for
-each verified candidate. If any candidate has no relevant evidence, the backend returns a controlled insufficient-
-evidence response rather than letting the model turn a retrieval miss into a negative comparison. The comparison model
-receives only the verified minimal identities and authorized evidence. Server-side validation rejects unknown
-citations and uncited prose. A comparison that does not cite every selected candidate is replaced with the controlled
-insufficient-evidence response rather than exposing partial output. A grounded response returns the answer,
-the verified minimal candidate identities, and only reconstructed authorized citations. The model cannot search for,
-add, or select candidates; the Angular multi-selector supplies only the recruiter-visible verified scope.
+each verified candidate. The question-policy classifier receives only the trusted application fact that an approved job
+was selected, never a model-proposed job or authorization state. If any candidate has no relevant evidence, the backend
+returns a controlled insufficient-evidence response rather than letting the model turn a retrieval miss into a negative
+comparison. The comparison model receives only the verified minimal identities, authorized evidence, and optional
+bounded job requirements. Server-side validation rejects unknown citations and uncited prose. A comparison that does
+not cite every selected candidate is replaced with the controlled insufficient-evidence response rather than exposing
+partial output. A grounded response returns the answer, the verified minimal candidate identities, and only
+reconstructed authorized citations. The model cannot search for, add, or select candidates or jobs; Angular supplies
+only the recruiter-visible scope, and Java reauthorizes it at the final evidence boundary.
 
 The backend comparison contract passed focused staging acceptance on 2 November 2026 after PR #120 was merged at main
 revision `bf1ebb8`. The first live-provider request correctly failed closed with `502` because the generated comparison
@@ -462,9 +467,10 @@ required. The backend comparison contract is therefore accepted in both environm
 PR #124 added the reusable picker-first Angular comparison interface. Candidate search results and the currently open
 candidate can be added to an explicit two-to-five-candidate scope. The interface keeps that scope visible as removable
 candidate chips, supports clearing the selection, preserves the written question across retryable errors, and sends
-only the displayed candidate IDs to `POST /api/chat/candidates/compare`. Successful responses render the verified
-minimal candidate identities, answer, and candidate-labelled citations. Selecting a citation opens its owning
-candidate before navigating to the cited document, so the UI does not leave a source attached to the wrong person.
+only the displayed candidate IDs plus an optional explicitly selected approved-job ID to
+`POST /api/chat/candidates/compare`. Successful responses render the verified minimal candidate identities, answer,
+and candidate-labelled citations. Selecting a citation opens its owning candidate before navigating to the cited
+document, so the UI does not leave a source attached to the wrong person.
 
 The client captures the submitted candidate-ID scope and ignores a delayed response if that scope changes before
 completion. Ordinary selection controls are disabled while a request is active, while the scope comparison remains a
@@ -503,6 +509,19 @@ failure, or comparison-provider error appeared. Production repeated those checks
 No schema, Flyway, environment-variable, or frontend configuration change was required. The picker-first and
 language-first entry paths are therefore accepted in staging and production through the same verified-ID comparison
 boundary.
+
+PR #144 connected that language-first path to the Spring AI read-tool preflight. PRs #146–#154 then stabilized the
+application-owned workflow: discovery became deterministic and one-pass, ambiguity returns bounded confirmation cards,
+confirmed-scope callbacks can read only the exact selected candidate summaries and optional tenant-authorized approved
+job, and provider output cannot authorize, refuse, or rewrite the workflow transition. The final grounded comparison is
+deliberately outside the tool preflight and repeats candidate/job authorization before evidence retrieval.
+
+The Angular language-derived scope now includes the selected candidate IDs, question, and optional job ID. Changing the
+job invalidates a language-confirmed comparison, and starting another language-first request immediately clears its old
+cards, confirmed comparison question/job context, result, and errors. The new request text and optional approved-job
+dropdown selection remain available as inputs for the new request. A later refusal, clarification, or asynchronous
+response therefore cannot leave cards from a previous request visible. This reset applies only to the language-first
+scope; independently assembled picker-first selections remain intact.
 
 ## Inputs and outputs
 
@@ -593,14 +612,15 @@ temporarily available for cached-client compatibility, but it is not part of the
 Clarification or refusal stops before any cards are returned. A confirmation outcome without `candidateScope` fails
 closed in the browser rather than falling back to a second extraction. After the recruiter selects one card for every
 reference, confirmed-scope validation receives only the selected candidate IDs, bounded message, and optional currently
-selected approved-job ID. The visible
-Java tenant-authorizes every selected candidate and optional approved job before returning the application-owned
-`CONFIRMED_SCOPE_READY` state. A provider cannot refuse or advance this trusted workflow transition. The comparison
-scope is populated only after that state; grounded comparison remains a separate recruiter
-action. Request-version, message, selection, and job checks discard stale asynchronous results. No schema, migration,
-or environment change is required.
+selected approved-job ID. Java tenant-authorizes every selected candidate and optional approved job before returning
+the application-owned `CONFIRMED_SCOPE_READY` state. A provider cannot refuse or advance this trusted workflow
+transition. The comparison scope is populated only after that state; grounded comparison remains a separate recruiter
+action and repeats candidate/job authorization. Request-version, message, selection, and job checks discard stale
+asynchronous results. Starting a new language-first discovery also clears the earlier language-derived scope before the
+request is sent, while leaving independently assembled picker-first choices untouched. No schema, migration, or
+environment change is required.
 
-### PR #144 staging acceptance procedure
+### Tool-orchestrated language-first staging acceptance
 
 Do not mark this slice accepted until all of the following pass on the deployed merged revision:
 
@@ -620,19 +640,29 @@ Do not mark this slice accepted until all of the following pass on the deployed 
    continue.
 4. Submit a sensitive or unrelated request. Verify it is refused before candidate-card lookup and no evidence is
    retrieved.
-5. For the valid request, select exactly one card per reference and confirm. Verify confirmed-scope planning succeeds,
-   includes the currently selected approved job when one is present, and fills the visible comparison scope only after
-   `CONFIRMED_SCOPE_READY`. Browser Network inspection should show `candidateIds` and the selected `jobId` in
-   `/api/chat/tools/confirmed-scope`, but no organization or role field.
-6. Review the visible candidates/question, submit the grounded comparison separately, and verify every factual claim
-   is supported by citations for the confirmed candidates only.
-7. Recheck picker-first comparison, single-candidate chat, and candidate evaluation to detect regressions outside the
+5. For the valid request, select exactly one card per reference and confirm. Verify confirmed-scope planning succeeds
+   with no job selected and fills the visible comparison scope only after `CONFIRMED_SCOPE_READY`. Browser Network
+   inspection should show `candidateIds` and no `jobId` in `/api/chat/tools/confirmed-scope`; it must contain no
+   organization or role field.
+6. Repeat with an explicitly selected approved job. Verify the confirmed-scope payload contains its `jobId`, changing
+   the job invalidates the prior confirmed scope, and the grounded comparison uses the selected job criteria. Inspect
+   the final `/api/chat/candidates/compare` request as well: the job-grounded flow contains that `jobId`, the no-job flow
+   omits it, and neither request contains organization or role fields.
+7. Review the visible candidates/question, submit candidate-only and job-grounded comparisons separately, and verify
+   every factual claim is supported by citations for the confirmed candidates only.
+8. After cards are visible, start a sensitive, unrelated, unclear, or different valid language-first request. Verify
+   the previous language-derived cards, confirmed comparison question/job context, and result disappear immediately;
+   the current job dropdown remains available for the new request, and refusal/clarification does not restore the old
+   scope. Separately assembled picker-first chips must remain unchanged.
+9. Recheck picker-first comparison, single-candidate chat, and candidate evaluation to detect regressions outside the
    new orchestration path.
-8. Inspect privacy-safe backend logs. There must be no unexpected provider/orchestration error, cross-tenant access,
-   confirmation bypass, raw prompt/CV content, or secret value.
+10. Inspect privacy-safe backend logs. There must be no unexpected provider/orchestration error, cross-tenant access,
+    confirmation bypass, raw prompt/CV content, or secret value.
 
-After these checks, record the staging date and immutable main revision in this document. Production promotion and its
-acceptance record remain a separate step.
+Focused staging acceptance completed on 10 November 2026 at main revision `22d56c5` after PRs #146–#154. Valid
+two-to-five-candidate discovery, bounded ambiguity cards, sensitive/unrelated refusal, optional-job and candidate-only
+confirmed scope, grounded citations, privacy-safe diagnostics, and stale language-scope clearing passed. Picker-first
+selection remained independent. Production promotion and its acceptance record remain a separate step.
 
 ## Acceptance criteria
 

@@ -1025,6 +1025,22 @@ pending later percentile and concurrency measurement. No staging `.env`, Flyway,
 was required. The same immutable implementation subsequently passed focused production acceptance on 1 November 2026
 in release `v0.24.0`.
 
+### Validated tool-orchestrated language-first comparison
+
+**Accepted 10 November 2026 for main revision `22d56c5`:** PR #144 and the PR #146–#154 stabilization series connected
+the Angular language-first flow to deterministic one-pass tenant candidate discovery and a bounded Spring AI
+confirmed-scope read-tool preflight. Valid requests naming two to five candidates returned minimal confirmation cards;
+ambiguous names remained explicit human choices; sensitive and unrelated requests were refused before evidence
+retrieval. The model could neither authorize scope nor replace the application-owned ready transition.
+
+Candidate-only comparison passed without a job ID. When an approved job was explicitly selected, both confirmed-scope
+preflight and the final comparison request carried that ID, and the backend independently reauthorized it before using
+bounded job requirements. Grounded answers cited every selected candidate. Starting a new language-first request
+removed the previous language-derived cards, confirmed comparison context, and result immediately, while retaining the
+new request inputs and independently assembled picker-first choices. Backend logs remained privacy-safe and contained
+no recruiter question, CV excerpt, provider response, or secret. No staging environment variable, Flyway migration,
+database change, or Compose change was required. Production promotion remains pending.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

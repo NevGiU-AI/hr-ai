@@ -262,6 +262,7 @@ REDIS_PASSWORD=<different generated staging password>
 REDIS_SESSION_NAMESPACE=hr-ai:session:staging
 REDIS_SECURITY_NAMESPACE=hr-ai:security:login:staging
 OPENAI_API_KEY=<staging OpenAI key>
+OPENAI_CHAT_MODEL=gpt-4o-mini
 BOOTSTRAP_ADMIN_EMAIL=<staging administrator email>
 BOOTSTRAP_ADMIN_PASSWORD=<random staging-only password of at least 12 characters>
 BOOTSTRAP_ADMIN_ORGANIZATION=staging

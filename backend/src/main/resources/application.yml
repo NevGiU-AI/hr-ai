@@ -26,6 +26,10 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
+      chat:
+        # Pin the runtime model instead of inheriting Spring AI's default. Spring AI 2 defaults to gpt-5-mini, which
+        # rejects the temperature=0 option used by the application's deterministic policy and orchestration calls.
+        model: ${APP_OPENAI_CHAT_MODEL:gpt-4o-mini}
       embedding:
         options:
           # The Flyway vector column is fixed at 1,536 dimensions; keep model and dimensions explicit.

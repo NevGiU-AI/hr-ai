@@ -300,6 +300,7 @@ Set at least these private values in `.env`:
 
 ```env
 OPENAI_API_KEY=<local OpenAI key>
+OPENAI_CHAT_MODEL=gpt-4o-mini
 APP_SECURITY_BOOTSTRAP_ADMIN_EMAIL=admin@localhost
 APP_SECURITY_BOOTSTRAP_ADMIN_PASSWORD=<local-only password of at least 12 characters>
 APP_SECURITY_BOOTSTRAP_ADMIN_ORGANIZATION=local

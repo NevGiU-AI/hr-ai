@@ -45,6 +45,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: super-secret
       APP_FLYWAY_BASELINE_ON_MIGRATE: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      APP_OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4o-mini}
       APP_REDIS_HOST: redis
       APP_REDIS_PORT: 6379
       APP_REDIS_PASSWORD: local-redis-secret

@@ -258,8 +258,9 @@ persists a generated conversation ID, owning user, organization, one-to-five exp
 an optional approved job. Composite database foreign keys enforce the organization boundary, while every API request
 also reauthorizes the owner and tenant. Missing, expired, cross-tenant, and other-user conversation IDs all return the
 same not-found result. Scope replacement is explicit and versioned; it cannot be inferred from message text. The
-default seven-day expiry and bounded cleanup job remove abandoned scope, and **Clear conversation** deletes it
-immediately. PostgreSQL persistence survives backend restarts and supports later replicas without treating an HTTP
+default **Time To Live (TTL)** is seven days: creation or an explicit scope replacement starts a new expiry period,
+after which the bounded cleanup job removes the abandoned scope and associated model memory. **Clear conversation**
+deletes it immediately. PostgreSQL persistence survives backend restarts and supports later replicas without treating an HTTP
 session or a model-supplied conversation ID as authorization.
 
 Spring AI model memory is a separate, bounded linguistic-context concern. The project now configures

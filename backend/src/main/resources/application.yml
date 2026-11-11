@@ -154,7 +154,8 @@ app:
     # recall while unsupported restaurant and salary questions still followed the controlled no-evidence path.
     semantic-min-similarity: ${APP_CV_CHAT_SEMANTIC_MIN_SIMILARITY:0.35}
     conversation:
-      # Memory is a bounded context window, while this TTL controls the application-owned authorization scope.
+      # TTL means Time To Live: after this validity period the application-owned authorization scope expires and its
+      # subordinate Spring AI memory becomes eligible for scheduled deletion. Scope replacement refreshes the expiry.
       ttl: ${APP_CV_CHAT_CONVERSATION_TTL:7d}
       max-memory-messages: ${APP_CV_CHAT_MAX_MEMORY_MESSAGES:10}
       cleanup-batch-size: ${APP_CV_CHAT_CONVERSATION_CLEANUP_BATCH_SIZE:100}

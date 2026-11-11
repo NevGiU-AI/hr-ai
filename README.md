@@ -202,6 +202,8 @@ Release `v0.34.0` established the Spring Boot 3.5.16 and Spring AI 1.1.8 mainten
 migrated to Spring Boot 4.1.2 and Spring AI 2.0.2 as a separate, reversible platform slice. That migration includes
 Boot 4's modular web, security-test, JPA-test, session, and Flyway starters; Jackson 3 for application-owned JSON;
 Spring AI 2 request APIs; and regression coverage for authentication, tenant isolation, Flyway, pgvector, and containers.
+Release `v0.35.0` passed staging and production acceptance on 11 November 2026. Both environments explicitly pin
+`OPENAI_CHAT_MODEL=gpt-4o-mini`; the application never inherits Spring AI's provider-model default implicitly.
 
 ### PostgreSQL and pgvector
 

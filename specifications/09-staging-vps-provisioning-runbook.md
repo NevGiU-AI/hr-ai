@@ -1062,6 +1062,23 @@ had passed the deterministic Maven suite, six Docker-backed pgvector/Flyway/Hibe
 and Compose rendering. This acceptance closed only the maintained 3.5/1.1 patch baseline; the subsequent Spring Boot 4.1 and Spring AI
 2.0 remain a separate platform migration with independent rollback and regression gates.
 
+### Spring Boot 4 and Spring AI 2 acceptance
+
+**Accepted 11 November 2026 for release `v0.35.0` at main revision `f690fb4`:** staging deployed Spring Boot `4.1.2`
+and Spring AI `2.0.2`. The backend became healthy; Flyway validated the existing V1–V6 history without rerunning a
+migration; and authentication, Redis-backed sessions, authorization, tenant isolation, CV ingestion, OCR, semantic
+indexing, grounded chat, comparison, job generation, evaluation, and security auditing passed focused smoke tests.
+The migration required no Flyway script, database change, or frontend change.
+
+The first CV-chat policy checks exposed a migration-specific runtime default: Spring AI 2 selected `gpt-5-mini` when
+no chat model was configured, while deterministic policy and orchestration requests send `temperature=0.0`. OpenAI
+rejected that combination with `BadRequestException`; the API failed closed with HTTP 502 and `CV chat question policy
+is unavailable`, and retrieval did not run. Job generation still worked because it does not add that deterministic
+request option. PR #166 corrected the configuration by pinning `OPENAI_CHAT_MODEL=gpt-4o-mini`, matching the reviewed
+provider-evaluation model and the pre-migration runtime behavior. The variable was added explicitly to the private
+staging `.env`, even though Compose has the same safe fallback. After backend recreation, the failed questions and the
+focused chat, comparison, and job-generation checks passed, and no further policy `BadRequestException` appeared.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

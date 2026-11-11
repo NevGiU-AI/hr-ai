@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/chat/conversations")
 class CvChatConversationController {
     private final CvChatConversationService service;
+    private final CvChatConversationTurnService turns;
 
-    CvChatConversationController(CvChatConversationService service) {
+    CvChatConversationController(CvChatConversationService service, CvChatConversationTurnService turns) {
         this.service = service;
+        this.turns = turns;
     }
 
     @PostMapping
@@ -47,5 +49,13 @@ class CvChatConversationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@PathVariable String id, @AuthenticationPrincipal AppUserPrincipal actor) {
         service.delete(id, actor);
+    }
+
+    /** Executes one grounded follow-up against only the conversation's persisted, reauthorized visible scope. */
+    @PostMapping("/{id}/messages")
+    CvChatConversationTurnResponse ask(@PathVariable String id,
+                                       @Valid @RequestBody CvChatConversationRequests.FollowUp request,
+                                       @AuthenticationPrincipal AppUserPrincipal actor) {
+        return turns.ask(id, request.message(), actor);
     }
 }

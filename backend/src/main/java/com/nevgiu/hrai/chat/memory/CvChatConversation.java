@@ -62,6 +62,12 @@ public class CvChatConversation {
         expiresAt = newExpiry;
     }
 
+    /** Refreshes activity/expiry after a successfully persisted turn without changing the confirmed scope. */
+    void touch(Instant now, Instant newExpiry) {
+        updatedAt = now;
+        expiresAt = newExpiry;
+    }
+
     public String getId() { return id; }
     public String getOrganizationId() { return organizationId; }
     public Long getOwnerUserId() { return ownerUserId; }

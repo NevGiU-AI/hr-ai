@@ -1,5 +1,7 @@
 package com.nevgiu.hrai.chat;
 
+import org.springframework.ai.chat.messages.Message;
+
 import java.util.List;
 
 /**
@@ -14,4 +16,14 @@ interface CvChatModel {
     String OUT_OF_SCOPE = "OUT_OF_SCOPE";
 
     String answer(String question, List<CvChatEvidence> evidence);
+
+    /**
+     * Answers with a bounded, application-authorized conversation history.
+     *
+     * <p>The default preserves existing non-conversational implementations and tests. Provider implementations may
+     * use the history as untrusted conversational context; it never changes evidence or tenant authorization.</p>
+     */
+    default String answer(String question, List<CvChatEvidence> evidence, List<Message> history) {
+        return answer(question, evidence);
+    }
 }

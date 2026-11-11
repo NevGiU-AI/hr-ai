@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CvChatConversationControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean CvChatConversationService service;
+    @MockitoBean CvChatConversationTurnService turns;
     @MockitoBean SecurityAuditService securityAuditService;
 
     @Test
@@ -62,6 +63,32 @@ class CvChatConversationControllerTest {
                         .content("{\"candidateIds\":[1,2,3,4,5,6]}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.validationErrors.candidateIds").exists());
+    }
+
+    @Test
+    void executesFollowUpWithoutAcceptingCandidateJobOrTenantOverrides() throws Exception {
+        var actor = actor();
+        Instant expiry = Instant.parse("2026-11-12T05:00:00Z");
+        when(turns.ask(any(), any(), any())).thenReturn(new CvChatConversationTurnResponse(
+                "conversation-1", 2, "Grounded answer [CV-7].",
+                List.of(new CvChatConversationResponse.CandidateCard(7L, "Ada", "Engineer")),
+                null, List.of(new com.nevgiu.hrai.chat.CvChatResponse.Citation(
+                        "CV-7", 7L, 7L, null, "Evidence")), expiry));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/conversations/conversation-1/messages")
+                            .contentType("application/json")
+                            .content("{\"message\":\"What about Spring?\",\"candidateIds\":[999],"
+                                    + "\"jobId\":999,\"organizationId\":\"attacker\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.conversationId").value("conversation-1"))
+                    .andExpect(jsonPath("$.answer").value("Grounded answer [CV-7]."))
+                    .andExpect(jsonPath("$.candidates[0].id").value(7))
+                    .andExpect(jsonPath("$.citations[0].candidateId").value(7));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     private AppUserPrincipal actor() {

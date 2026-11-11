@@ -3,6 +3,7 @@ package com.nevgiu.hrai.chat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +33,11 @@ public class CvChatService {
      * The returned citation objects are reconstructed from authorized server-side evidence, never model-provided text.
      */
     public CvChatResponse ask(Long candidateId, String question, String organizationId) {
+        return ask(candidateId, question, organizationId, List.of());
+    }
+
+    /** Uses bounded prior turns only as model context; authorization and retrieval use the current explicit scope. */
+    public CvChatResponse ask(Long candidateId, String question, String organizationId, List<Message> history) {
         String normalizedQuestion = question.trim();
         // Preserve generic missing/cross-tenant 404 behavior before any model call, without loading CV content.
         evidenceService.authorizeCandidate(candidateId, organizationId);
@@ -61,7 +67,11 @@ public class CvChatService {
         }
         String answer;
         try {
-            answer = model.answer(normalizedQuestion, evidence);
+            // Preserve the established non-conversational provider contract when no history exists. This also keeps
+            // first-turn behavior identical while the follow-up path opts into the history-aware overload.
+            answer = history.isEmpty()
+                    ? model.answer(normalizedQuestion, evidence)
+                    : model.answer(normalizedQuestion, evidence, history);
         } catch (RuntimeException providerFailure) {
             // Keep provider internals and potentially sensitive prompt fragments out of the API response.
             LOGGER.warn("CV chat provider call failed for candidateId={} organizationId={} failureType={}",

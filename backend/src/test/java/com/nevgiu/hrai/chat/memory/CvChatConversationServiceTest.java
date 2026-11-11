@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class CvChatConversationServiceTest {
@@ -79,6 +80,24 @@ class CvChatConversationServiceTest {
     }
 
     @Test
+    void replacingVisibleScopeClearsHistoryFromThePreviousScope() {
+        CvChatConversation conversation = new CvChatConversation(
+                "conversation", "tenant-a", 1L, null, Instant.now(), Instant.now().plusSeconds(60));
+        Candidate candidate = candidate(8L, "tenant-a", "Grace");
+        when(conversations.findByIdAndOrganizationIdAndOwnerUserIdAndExpiresAtAfter(
+                org.mockito.ArgumentMatchers.eq("conversation"), org.mockito.ArgumentMatchers.eq("tenant-a"),
+                org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(Optional.of(conversation));
+        when(candidates.findByIdAndOrganizationId(8L, "tenant-a")).thenReturn(Optional.of(candidate));
+
+        service.replaceScope("conversation",
+                new CvChatConversationRequests.ReplaceScope(0, List.of(8L), null), actor(1L, "tenant-a"));
+
+        verify(memory).clear("conversation");
+        verify(scopeCandidates).deleteAllByIdConversationId("conversation");
+        verify(scopeCandidates).save(any(CvChatConversationCandidate.class));
+    }
+
+    @Test
     void deletionClearsSpringMemoryBeforeRemovingScope() {
         CvChatConversation conversation = new CvChatConversation(
                 "conversation", "tenant-a", 1L, null, Instant.now(), Instant.now().plusSeconds(60));
@@ -90,6 +109,21 @@ class CvChatConversationServiceTest {
 
         verify(memory).clear("conversation");
         verify(conversations).delete(conversation);
+    }
+
+    @Test
+    void refusesToPersistATurnWhenTheConfirmedScopeVersionChangedDuringProviderWork() {
+        CvChatConversation conversation = new CvChatConversation(
+                "conversation", "tenant-a", 1L, null, Instant.now(), Instant.now().plusSeconds(60));
+        when(conversations.findLockedById("conversation")).thenReturn(Optional.of(conversation));
+
+        assertThatThrownBy(() -> service.appendTurn("conversation", 1,
+                "Follow-up", "Generated answer", actor(1L, "tenant-a")))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Conversation scope changed; retry the question");
+
+        verifyNoInteractions(memory);
+        verify(conversations, never()).flush();
     }
 
     private Candidate candidate(Long id, String organizationId, String name) {

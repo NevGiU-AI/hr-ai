@@ -398,10 +398,19 @@ scope-replace/delete behavior, owner and tenant isolation, stale-version conflic
 deletion cleanup. Existing single-candidate chat, candidate discovery, grounded comparison, job generation, and
 candidate evaluation remained functional, and no production environment override was required.
 
-This acceptance validates the storage, authorization, expiry, and cleanup foundation only. The Spring AI memory table
-remains empty during ordinary chat because persisted conversation memory is not yet connected to follow-up answer
-execution. The next slice must connect it without allowing remembered state to add, replace, remove, or widen the
-application-confirmed candidate and optional approved-job scope.
+This acceptance validated the storage, authorization, expiry, and cleanup foundation. The subsequent follow-up slice
+adds `POST /api/chat/conversations/{id}/messages`. It reauthorizes the owning user, organization, ordered candidate
+scope, and optional approved job before reading memory. One confirmed candidate uses the grounded single-candidate
+path; two to five use the existing comparison path. Both paths preserve their question policy, retrieval, citation,
+and safe-control behavior.
+
+Provider I/O runs without an open database transaction. After generation, the application locks the conversation and
+checks the exact optimistic version used to authorize the request. A concurrent scope edit returns `409` and the stale
+turn is not written. Otherwise, the bounded Spring AI JDBC memory receives the recruiter and assistant messages and
+the conversation expiry is refreshed. History is untrusted context only: it cannot add, replace, remove, reorder, or
+authorize candidates or jobs, and every turn retrieves freshly authorized evidence for the current visible scope.
+Replacing either the candidate set or approved job clears the previous message window before the new scope is saved,
+so old-scope content cannot influence a later answer.
 
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may

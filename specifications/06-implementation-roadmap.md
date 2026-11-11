@@ -282,9 +282,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   boundaries. Direct workflow-override, role/organization injection, tool-result injection, scope-widening, and
   confirmation-bypass regressions exist; extend the suite for future evidence/document tools and indirect CV content.
 - [ ] Add preview-only command tools, then require explicit confirmation, idempotency, and audit records before any state change or external communication.
-- [~] Keep the tool implementation on the maintained Spring AI `1.1.8` patch line and evaluate the 2.x
-  `ToolCallingAdvisor` migration separately with regression tests. The patch baseline is prepared independently; the
-  Spring Boot 4 / Spring AI 2 platform migration remains.
+- [x] Upgrade the maintained platform baseline to Spring Boot `3.5.16` and Spring AI `1.1.8`. Release `v0.34.0` at
+  main revision `0ea2642` passed staging and production acceptance on 11 November 2026 without an environment,
+  Flyway, database, Compose, or frontend change.
+- [ ] Migrate separately to stable Spring Boot `4.1.2` and Spring AI `2.0.2`, including the 2.x
+  `ToolCallingAdvisor` lifecycle and complete compile, authorization, tenant-isolation, pgvector, provider-evaluation,
+  container, staging, and production regression gates.
 - [ ] Persist scoped conversation memory. Store the explicitly confirmed candidate IDs and allow follow-up questions
   to reuse only that visible scope; memory must never silently add, replace, remove, or widen candidates.
 - [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after

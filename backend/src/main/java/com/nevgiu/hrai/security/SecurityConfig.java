@@ -49,7 +49,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/cv-documents/*/reprocess").hasAnyRole("ADMIN", "RECRUITER")
                         .requestMatchers(HttpMethod.POST, "/api/candidates/**", "/api/jobs/**").hasAnyRole("ADMIN", "RECRUITER")
                         .requestMatchers(HttpMethod.POST, "/api/evaluations/**").hasAnyRole("ADMIN", "RECRUITER", "REVIEWER")
-                        .requestMatchers(HttpMethod.POST, "/api/chat/**").hasAnyRole("ADMIN", "RECRUITER", "REVIEWER")
+                        // Conversation scope has POST/GET/PUT/DELETE operations, so protect every HTTP method rather
+                        // than relying on the older POST-only CV-chat rule.
+                        .requestMatchers("/api/chat/**").hasAnyRole("ADMIN", "RECRUITER", "REVIEWER")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .exceptionHandling(errors -> errors

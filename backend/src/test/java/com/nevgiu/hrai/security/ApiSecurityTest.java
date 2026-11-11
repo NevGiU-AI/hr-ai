@@ -88,4 +88,19 @@ class ApiSecurityTest {
                         .content("{\"name\":\"Ada\"}"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(roles = "READ_ONLY")
+    void rejectsConversationReadsForReadOnlyUsers() throws Exception {
+        mvc.perform(get("/api/chat/conversations/conversation-id"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "READ_ONLY")
+    void rejectsConversationDeletionForReadOnlyUsers() throws Exception {
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .delete("/api/chat/conversations/conversation-id").with(csrf()))
+                .andExpect(status().isForbidden());
+    }
 }

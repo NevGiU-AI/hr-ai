@@ -80,6 +80,11 @@ services:
       # Query-time disclosure and relevance bounds; tune only through reviewed staging evidence.
       APP_CV_CHAT_SEMANTIC_MAX_MATCHES: ${CV_CHAT_SEMANTIC_MAX_MATCHES:-6}
       APP_CV_CHAT_SEMANTIC_MIN_SIMILARITY: ${CV_CHAT_SEMANTIC_MIN_SIMILARITY:-0.35}
+      # Time To Live (TTL) controls when inactive server-owned scope expires, independently of the message-window size.
+      APP_CV_CHAT_CONVERSATION_TTL: ${CV_CHAT_CONVERSATION_TTL:-7d}
+      APP_CV_CHAT_MAX_MEMORY_MESSAGES: ${CV_CHAT_MAX_MEMORY_MESSAGES:-10}
+      APP_CV_CHAT_CONVERSATION_CLEANUP_BATCH_SIZE: ${CV_CHAT_CONVERSATION_CLEANUP_BATCH_SIZE:-100}
+      APP_CV_CHAT_CONVERSATION_CLEANUP_CRON: ${CV_CHAT_CONVERSATION_CLEANUP_CRON:-0 29 4 * * *}
       # Semantic indexing is deployed dark by default and enabled only after migration/environment acceptance.
       APP_CV_SEMANTIC_INDEX_ENABLED: ${CV_SEMANTIC_INDEX_ENABLED:-false}
       APP_CV_SEMANTIC_EMBEDDING_MODEL: ${CV_SEMANTIC_EMBEDDING_MODEL:-text-embedding-3-small}

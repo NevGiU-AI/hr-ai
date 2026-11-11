@@ -98,7 +98,8 @@ decisions.
   selections remain intact. Production repeated the focused workflow checks successfully on 10 November 2026 in
   release `v0.32.0` at revision `1a5f247`; no application runtime environment-variable, schema, migration, or Compose
   change was required.
-  The workspace remains the contract-validation surface. After scoped conversation memory is stable, a dedicated
+  The workspace remains the contract-validation surface. Flyway V7 and the scoped-conversation API now provide the
+  durable authorization/memory foundation; after follow-up execution is connected and accepted, a dedicated
   message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
   boundaries.
 - Provide a foundational `get_evaluation_evidence` Spring AI read tool for a future evaluation-aware chat path. It is
@@ -158,8 +159,8 @@ acceptance on 10 November 2026 at main revision `22d56c5`, followed by focused p
 `v0.32.0` at revision `1a5f247` the same day.
 The expanded 24-case question-policy dataset `1.1.0` live-provider gate then passed on 10 November 2026. Future policy
 prompt or model changes still require a fresh opt-in provider run before promotion.
-Scoped conversation memory, the dedicated conversational CV-chat page, speech input/playback, and the recruitment
-dashboard remain roadmap work.
+Connecting scoped memory to follow-up execution, the dedicated conversational CV-chat page, speech input/playback,
+and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
@@ -231,7 +232,7 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 1. Complete the remaining CV-chat foundation. The bounded `get_evaluation_evidence`, `get_document_status`, and
    `get_ingestion_warnings` read-tool foundations are implemented; connect each one only to a future answer path that
    consumes its result. Next persist the recruiter-confirmed candidate IDs and optional approved job as
-   application-owned, session-scoped memory, build the dedicated message-style chat page, broaden deterministic and
+   application-owned, owner- and tenant-scoped memory, build the dedicated message-style chat page, broaden deterministic and
    provider-backed evaluation, and localize controlled outcomes. The implemented picker- and language-first flows
    already resolve candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity
    confirmation, and produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job
@@ -252,19 +253,23 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 13. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
 14. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
-For the first dedicated-chat version, confirmed scope belongs to the application rather than the model. Store only the
-confirmed candidate IDs and optional approved job in the existing Spring Session Redis state, expire them with the
-authenticated session, require explicit **Change candidates** and **Clear conversation** operations, and reauthorize
-every remembered identifier against the current user and organization on every turn. Logout, account/session
-revocation, or session expiry therefore removes access to that scope; the first version does not promise cross-device
-or post-login continuity.
+For the first dedicated-chat version, confirmed scope belongs to the application rather than the model. Flyway V7
+persists a generated conversation ID, owning user, organization, one-to-five explicitly confirmed candidate IDs, and
+an optional approved job. Composite database foreign keys enforce the organization boundary, while every API request
+also reauthorizes the owner and tenant. Missing, expired, cross-tenant, and other-user conversation IDs all return the
+same not-found result. Scope replacement is explicit and versioned; it cannot be inferred from message text. The
+default **Time To Live (TTL)** is seven days: creation or an explicit scope replacement starts a new expiry period,
+after which the bounded cleanup job removes the abandoned scope and associated model memory. **Clear conversation**
+deletes it immediately. PostgreSQL persistence survives backend restarts and supports later replicas without treating an HTTP
+session or a model-supplied conversation ID as authorization.
 
-Spring AI model memory is a separate, bounded linguistic-context concern. The project may use
-`MessageWindowChatMemory` with `MessageChatMemoryAdvisor` and an explicit server-derived conversation ID when the
-dedicated page needs follow-up-language continuity, but model memory never authorizes or modifies candidate/job scope.
-The default in-memory repository is not production-safe across backend restarts or replicas. Durable transcripts and
-cross-session conversation history remain deferred until their ownership, retention, deletion, candidate-erasure, and
-backup rules are approved. Spring AI's
+Spring AI model memory is a separate, bounded linguistic-context concern. The project now configures
+`MessageWindowChatMemory` over Spring AI's JDBC repository with an explicit application-generated conversation ID and
+a default ten-message window. Flyway owns the repository table and links it to the application conversation with
+cascade deletion. This memory is not yet connected to the answer path, never authorizes or modifies candidate/job
+scope, and is not a durable transcript or user-visible history. Connecting it through `MessageChatMemoryAdvisor` is
+the next backend slice; durable transcript/history remains deferred until its ownership, retention, deletion,
+candidate-erasure, and backup rules are approved. Spring AI's
 [ChatClient memory guidance](https://docs.spring.io/spring-ai/reference/1.1/api/chatclient.html#_chat_memory) covers the
 bounded model-context concern; it is not the application's durable transcript contract.
 

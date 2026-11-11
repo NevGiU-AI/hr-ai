@@ -289,8 +289,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   `f690fb4` passed deterministic, authorization, tenant-isolation, Flyway, pgvector, container, opt-in provider,
   staging, and production gates on 11 November 2026. Both environments explicitly pin the reviewed
   `gpt-4o-mini` runtime model instead of inheriting Spring AI 2's changing provider default.
-- [ ] Persist scoped conversation memory. Store the explicitly confirmed candidate IDs and allow follow-up questions
-  to reuse only that visible scope; memory must never silently add, replace, remove, or widen candidates.
+- [~] Persist scoped conversation memory. Flyway V7, owner/tenant-authorized scope CRUD, bounded Spring AI JDBC
+  memory, optimistic scope replacement, and expiry cleanup are implemented; the next slice must connect follow-up
+  questions through the stored visible scope without allowing memory to add, replace, remove, or widen candidates.
 - [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after
   orchestration and scoped memory are stable. Provide a message timeline, one natural-language composer, visible
   candidate/job scope chips, ambiguity confirmation cards, citations, and conversation-history controls while

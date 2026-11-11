@@ -24,6 +24,12 @@ spring:
     validate-migration-naming: true
 
   ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            # Flyway V7 owns the Spring AI memory table and its authorization-scope foreign key.
+            initialize-schema: never
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:
@@ -147,6 +153,13 @@ app:
     # Staging calibration accepted 0.35 as the highest reviewed value that retained grounded paraphrase/education
     # recall while unsupported restaurant and salary questions still followed the controlled no-evidence path.
     semantic-min-similarity: ${APP_CV_CHAT_SEMANTIC_MIN_SIMILARITY:0.35}
+    conversation:
+      # TTL means Time To Live: after this validity period the application-owned authorization scope expires and its
+      # subordinate Spring AI memory becomes eligible for scheduled deletion. Scope replacement refreshes the expiry.
+      ttl: ${APP_CV_CHAT_CONVERSATION_TTL:7d}
+      max-memory-messages: ${APP_CV_CHAT_MAX_MEMORY_MESSAGES:10}
+      cleanup-batch-size: ${APP_CV_CHAT_CONVERSATION_CLEANUP_BATCH_SIZE:100}
+      cleanup-cron: ${APP_CV_CHAT_CONVERSATION_CLEANUP_CRON:0 29 4 * * *}
   cv-semantic-index:
     # Opt in per environment after the V6 backup/migration and embedding-cost review.
     enabled: ${APP_CV_SEMANTIC_INDEX_ENABLED:false}

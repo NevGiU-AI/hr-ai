@@ -1051,6 +1051,16 @@ no recruiter question, CV excerpt, provider response, or secret. No staging envi
 database change, or Compose change was required. Production repeated the focused checks successfully on 10 November
 2026 in release `v0.32.0` at revision `1a5f247`.
 
+### Spring maintenance-baseline acceptance
+
+**Accepted 11 November 2026 for release `v0.34.0` at main revision `0ea2642`:** staging deployed the Spring Boot
+`3.5.16` and Spring AI `1.1.8` maintenance baseline successfully. The backend became healthy and the focused
+application regression and smoke tests passed. The release required no staging environment variable, Flyway migration,
+database change, Compose change, or frontend change. Before environment promotion, the same immutable backend source
+had passed the deterministic Maven suite, six Docker-backed pgvector/Flyway/Hibernate checks, backend image packaging,
+and Compose rendering. This acceptance closes only the maintained 3.5/1.1 patch baseline; Spring Boot 4.1 and Spring AI
+2.0 remain a separate platform migration with independent rollback and regression gates.
+
 ### Rollback boundary observed in staging
 
 The deployment script records the current backend and frontend images before replacement. If PostgreSQL, Redis, backend, or frontend health does not pass within approximately three minutes, or Caddy is not running, it restores those application images and repeats internal health checks. The GitHub job remains failed so the attempted release is visible.

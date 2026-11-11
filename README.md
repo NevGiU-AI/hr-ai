@@ -190,13 +190,17 @@ and ClamAV remain on the private Compose network.
 ## Technology stack
 
 - Angular 19, TypeScript, Bootstrap, Nginx
-- Spring Boot 3.5, Java 21, Spring Security, Spring Data JPA, Spring Session
-- Spring AI with OpenAI and `PgVectorStore`
+- Spring Boot 3.5.16, Java 21, Spring Security, Spring Data JPA, Spring Session
+- Spring AI 1.1.8 with OpenAI and `PgVectorStore`
 - PostgreSQL 16 with pgvector
 - Flyway versioned schema migrations
 - Redis 7.4
 - ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
+
+The Spring Boot 3.5.16 and Spring AI 1.1.8 maintenance baseline passed staging and production acceptance on
+11 November 2026 in release `v0.34.0`. The later Spring Boot 4.1 / Spring AI 2.0 platform migration remains a separate,
+reversible delivery slice.
 
 ### PostgreSQL and pgvector
 

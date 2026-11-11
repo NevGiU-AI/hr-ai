@@ -371,6 +371,25 @@ one natural-language composer, visible candidate/job scope chips, confirmation c
 ambiguous, cited answers, conversation-history controls, and later speech input/playback. Picker-first and
 language-first entry remain available and converge on the same application-owned confirmed scope.
 
+#### Scoped conversation-memory staging acceptance
+
+The Flyway V7 scoped-memory foundation passed focused staging acceptance on 11 November 2026 at main revision
+`ec4e500`. A validated matched PostgreSQL and original-CV backup preceded deployment. The backend remained healthy,
+Flyway reported schema version `7`, and Hibernate validation completed without migration or mapping errors.
+
+Authenticated conversation creation, owner retrieval, explicit ordered scope replacement, and deletion passed through
+the new `/api/chat/conversations` contract. Scope replacement refreshed the Time To Live (TTL) expiry and incremented
+the optimistic version; replaying the stale version returned `409`. Duplicate IDs returned `400`, while missing or
+cross-tenant candidates returned the generic `404`. A second authorized user could not retrieve the first user's
+conversation and received the same generic `404`, confirming that a conversation ID alone grants no access.
+
+PostgreSQL inspection confirmed the expected owning organization/user, candidate order, version, timestamps, and
+expiry. The Spring AI memory table correctly contained zero rows because this slice does not yet connect memory to the
+answer path. Deleting the disposable conversation removed its scope, candidate memberships, and any subordinate
+memory rows. Existing single-candidate chat, picker-first and language-first discovery, multi-candidate comparison,
+sensitive-question refusal, job generation, and candidate evaluation remained functional. No staging environment
+override was required because the reviewed TTL, message-window, cleanup-batch, and cleanup-schedule defaults applied.
+
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may
 help interpret the recruiter message, but it cannot supply the organization boundary or authorize a candidate. Both

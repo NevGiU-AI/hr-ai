@@ -290,8 +290,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   staging, and production gates on 11 November 2026. Both environments explicitly pin the reviewed
   `gpt-4o-mini` runtime model instead of inheriting Spring AI 2's changing provider default.
 - [~] Persist scoped conversation memory. Flyway V7, owner/tenant-authorized scope CRUD, bounded Spring AI JDBC
-  memory, optimistic scope replacement, and expiry cleanup are implemented; the next slice must connect follow-up
-  questions through the stored visible scope without allowing memory to add, replace, remove, or widen candidates.
+  memory, optimistic scope replacement, and expiry cleanup are implemented. Focused staging acceptance passed on
+  11 November 2026 at main revision `ec4e500`, including Flyway V7, CRUD, owner/tenant isolation, stale-version
+  conflict, database state, deletion cleanup, and existing-chat regression checks. Production acceptance remains;
+  the next implementation slice must connect follow-up questions through the stored visible scope without allowing
+  memory to add, replace, remove, or widen candidates.
 - [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after
   orchestration and scoped memory are stable. Provide a message timeline, one natural-language composer, visible
   candidate/job scope chips, ambiguity confirmation cards, citations, and conversation-history controls while

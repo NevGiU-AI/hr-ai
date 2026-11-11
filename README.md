@@ -101,7 +101,9 @@ decisions.
   The workspace remains the contract-validation surface. Flyway V7 and the scoped-conversation API now provide the
   durable authorization/memory foundation; after follow-up execution is connected and accepted, a dedicated
   message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
-  boundaries.
+  boundaries. Focused staging acceptance passed on 11 November 2026 at main revision `ec4e500`: migration, backend
+  health, scope CRUD, owner/tenant isolation, optimistic conflict, deletion cleanup, and existing chat regressions
+  passed without a required environment override. Production acceptance remains pending.
 - Provide a foundational `get_evaluation_evidence` Spring AI read tool for a future evaluation-aware chat path. It is
   tenant-scoped, requires an application-confirmed candidate ID, and returns at most the five most recent persisted
   evaluations with minimized job context, scores, and current/stale timestamps. Generated evaluation rationale is

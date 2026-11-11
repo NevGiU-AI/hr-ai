@@ -477,7 +477,7 @@ Exact thresholds remain an approved product decision and must be calibrated agai
 
 ## Spring AI version boundary
 
-The repository currently pins Spring AI `1.1.0`, while current reference documentation also covers Spring AI 2.x. Build evaluation datasets, metric records, and release reports behind application-owned interfaces. Verify evaluator availability and signatures against the pinned version, consider an independently tested upgrade within the 1.1 line, and evaluate 2.x separately alongside the planned tool-calling migration.
+The repository currently pins Spring AI `1.1.8`, while current reference documentation also covers Spring AI 2.x. Build evaluation datasets, metric records, and release reports behind application-owned interfaces. Verify evaluator availability and signatures against the pinned version, and evaluate 2.x separately alongside the planned tool-calling migration.
 
 ## Acceptance criteria
 

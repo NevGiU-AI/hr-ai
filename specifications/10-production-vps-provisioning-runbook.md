@@ -868,6 +868,15 @@ variable, Flyway migration, database action, Compose change, or frontend change 
 the maintained 3.5/1.1 baseline only; the subsequent Spring Boot `4.1.2` and Spring AI `2.0.2` migration remains a separate
 release with its own staging-first validation and rollback boundary.
 
+**Spring Boot 4 and Spring AI 2 acceptance recorded 11 November 2026 for release `v0.35.0` at main revision
+`f690fb4`:** production promoted the staging-accepted Spring Boot `4.1.2` and Spring AI `2.0.2` images. The private
+production `.env` explicitly records `OPENAI_CHAT_MODEL=gpt-4o-mini`, preventing a future framework upgrade from
+silently replacing the reviewed model. Backend health, Flyway V1–V6 validation without migration replay,
+authentication, Redis sessions, authorization, tenant boundaries, CV ingestion/OCR/indexing, grounded single- and
+multi-candidate chat, job generation, evaluation, and audit behavior passed focused production checks. The staging
+`BadRequestException` caused by Spring AI 2's implicit `gpt-5-mini` default did not recur. No Flyway migration,
+database action, or frontend change was required for this release.
+
 ### 15. Configure bounded Docker log rotation
 
 Before starting any production containers, check whether Docker already has daemon configuration:

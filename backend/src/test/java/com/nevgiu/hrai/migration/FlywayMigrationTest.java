@@ -27,7 +27,7 @@ class FlywayMigrationTest {
     @Test
     void createsANewSchemaAndSafelyAdoptsAnExistingSchema() throws Exception {
         Flyway cleanDatabase = flyway(false);
-        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(6);
+        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(7);
         assertThat(count("SELECT COUNT(*) FROM app_users")).isEqualTo(0);
         assertThat(count("SELECT COUNT(*) FROM information_schema.columns "
                 + "WHERE table_name = 'cv_documents' AND column_name = 'storage_key'"))
@@ -42,6 +42,12 @@ class FlywayMigrationTest {
                 + "WHERE table_name = 'cv_semantic_chunks'"))
                 .isEqualTo(1);
         assertThat(count("SELECT COUNT(*) FROM pg_extension WHERE extname = 'vector'"))
+                .isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM information_schema.tables "
+                + "WHERE table_name = 'cv_chat_conversations'"))
+                .isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM information_schema.tables "
+                + "WHERE table_name = 'spring_ai_chat_memory'"))
                 .isEqualTo(1);
         // Insert through Spring AI's native content/metadata/embedding contract; generated columns must enforce tenant
         // ownership without requiring the Java adapter to duplicate relational values.
@@ -81,6 +87,27 @@ class FlywayMigrationTest {
         // Candidate/document erasure must remove derived embeddings without a separate provider call.
         assertThat(count("SELECT COUNT(*) FROM cv_semantic_chunks WHERE document_id = 9002")).isZero();
 
+        execute("INSERT INTO app_users (id, email, password_hash, organization_id, enabled) "
+                + "VALUES (9100, 'owner@example.com', 'hash', 'tenant-a', true)");
+        execute("INSERT INTO cv_chat_conversations "
+                + "(id, organization_id, owner_user_id, version, created_at, updated_at, expires_at) "
+                + "VALUES ('00000000-0000-0000-0000-000000000001', 'tenant-a', 9100, 0, "
+                + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '7 days')");
+        execute("INSERT INTO cv_chat_conversation_candidates "
+                + "(conversation_id, candidate_id, organization_id, display_order) "
+                + "VALUES ('00000000-0000-0000-0000-000000000001', 9001, 'tenant-a', 0)");
+        execute("INSERT INTO candidates (id, organization_id, name) VALUES (9003, 'tenant-a', 'Other Index Test')");
+        execute("INSERT INTO spring_ai_chat_memory "
+                + "(conversation_id, content, type, \"timestamp\", sequence_id) "
+                + "VALUES ('00000000-0000-0000-0000-000000000001', 'bounded context', 'USER', "
+                + "CURRENT_TIMESTAMP, 1)");
+        assertThatThrownBy(() -> execute("INSERT INTO cv_chat_conversation_candidates "
+                + "(conversation_id, candidate_id, organization_id, display_order) "
+                + "VALUES ('00000000-0000-0000-0000-000000000001', 9003, 'tenant-b', 1)"))
+                .hasMessageContaining("fk_cv_chat_conversation_candidates_conversation_tenant");
+        execute("DELETE FROM cv_chat_conversations WHERE id = '00000000-0000-0000-0000-000000000001'");
+        assertThat(count("SELECT COUNT(*) FROM spring_ai_chat_memory")).isZero();
+
         execute("DROP TABLE flyway_schema_history");
         execute("ALTER TABLE security_audit_events ADD CONSTRAINT security_audit_events_event_type_check "
                 + "CHECK (event_type IN ('LOGIN_FAILED'))");
@@ -88,9 +115,9 @@ class FlywayMigrationTest {
                 + "CHECK (outcome IN ('SUCCESS'))");
 
         Flyway existingDatabase = flyway(true);
-        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(6);
-        // Baseline version 0 plus migrations V1-V6 must be recorded after adopting the existing schema.
-        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(7);
+        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(7);
+        // Baseline version 0 plus migrations V1-V7 must be recorded after adopting the existing schema.
+        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(8);
         assertThat(count("SELECT COUNT(*) FROM pg_constraint "
                 + "WHERE conrelid = 'security_audit_events'::regclass AND contype = 'c'"))
                 .isEqualTo(0);

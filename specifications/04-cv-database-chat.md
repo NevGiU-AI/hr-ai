@@ -325,9 +325,10 @@ question-language preservation, safe refusals, and existing single- and multi-ca
 This is a generated-answer presentation rule, not pronoun detection or storage. No environment variable, Flyway
 migration, database, Compose, or frontend change was required.
 
-Multi-candidate result cards, conversation memory, and the complete retrieval/generated-answer evaluation suite remain
-separate implementation slices. The first versioned question-policy dataset is operational, but acceptance of this
-bounded single-candidate path does not mark broader AI evaluation complete.
+The dedicated multi-turn page, connecting the new bounded JDBC memory to follow-up execution, and the complete
+retrieval/generated-answer evaluation suite remain separate implementation slices. The first versioned
+question-policy dataset is operational, but acceptance of this bounded single-candidate path does not mark broader AI
+evaluation complete.
 
 ## Supported interactions
 
@@ -363,10 +364,12 @@ the verified scope only through recruiter action. Follow-up questions may reuse 
 memory must never infer, add, replace, or silently widen that set.
 
 The current candidate workspace is the integration and acceptance surface for these contracts, not the final chat
-layout. After tool orchestration and scoped conversation memory are stable, build a dedicated CV-chat page with a
-message timeline, one natural-language composer, visible candidate/job scope chips, confirmation cards only when
-resolution is ambiguous, cited answers, conversation-history controls, and later speech input/playback. Picker-first
-and language-first entry remain available and converge on the same application-owned confirmed scope.
+layout. Flyway V7 and the scoped-conversation CRUD API now establish the owner/tenant/candidate/job authorization
+boundary and a bounded Spring AI JDBC memory repository; the answer path does not consume that memory yet. After this
+foundation is accepted and follow-up execution is connected, build a dedicated CV-chat page with a message timeline,
+one natural-language composer, visible candidate/job scope chips, confirmation cards only when resolution is
+ambiguous, cited answers, conversation-history controls, and later speech input/playback. Picker-first and
+language-first entry remain available and converge on the same application-owned confirmed scope.
 
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may

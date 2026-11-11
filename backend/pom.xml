@@ -89,6 +89,12 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
+        <!-- Persists the bounded model-context window in PostgreSQL. Application-owned conversation tables remain
+             the authority for user, tenant, candidate, and optional-job scope. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
+        </dependency>
         <!-- Provides Spring AI's VectorStore abstraction and PostgreSQL metadata-filter implementation. -->
         <dependency>
             <groupId>org.springframework.ai</groupId>

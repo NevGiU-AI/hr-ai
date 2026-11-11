@@ -13,6 +13,7 @@ import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -93,6 +94,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException exception, HttpServletRequest request) {
         return response(HttpStatus.BAD_REQUEST, exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> handleOptimisticConflict(
+            ObjectOptimisticLockingFailureException exception, HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT, "Resource was modified; reload and try again", request, Map.of());
     }
 
     private ResponseEntity<ApiError> response(

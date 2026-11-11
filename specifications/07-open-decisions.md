@@ -108,7 +108,7 @@ Define the representative workload, concurrency, downstream quotas, database con
 
 ## 12. Spring AI tool calling and version strategy
 
-The initial read-only decision is implemented on pinned Spring AI `1.1.0`: request-scoped candidate search, confirmed
+The initial read-only decision is implemented on pinned Spring AI `1.1.8`: request-scoped candidate search, confirmed
 candidate summary, optional approved-job requirements, and a dedicated bounded evaluation-history callback subset are
 protected by a closed callback allow list for `ADMIN`, `RECRUITER`, and `REVIEWER`. Application code owns tenant
 context, candidate/job authorization, discovery and confirmed-scope transitions, a six-call request budget,

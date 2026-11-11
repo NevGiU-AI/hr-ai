@@ -390,6 +390,19 @@ memory rows. Existing single-candidate chat, picker-first and language-first dis
 sensitive-question refusal, job generation, and candidate evaluation remained functional. No staging environment
 override was required because the reviewed TTL, message-window, cleanup-batch, and cleanup-schedule defaults applied.
 
+#### Scoped conversation-memory production acceptance
+
+The same foundation passed focused production acceptance on 11 November 2026 in release `v0.36.0` at main revision
+`10a4db1`. Production confirmed backend health, Flyway schema version `7`, authenticated conversation create/read/
+scope-replace/delete behavior, owner and tenant isolation, stale-version conflict handling, database state, and
+deletion cleanup. Existing single-candidate chat, candidate discovery, grounded comparison, job generation, and
+candidate evaluation remained functional, and no production environment override was required.
+
+This acceptance validates the storage, authorization, expiry, and cleanup foundation only. The Spring AI memory table
+remains empty during ordinary chat because persisted conversation memory is not yet connected to follow-up answer
+execution. The next slice must connect it without allowing remembered state to add, replace, remove, or widen the
+application-confirmed candidate and optional approved-job scope.
+
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may
 help interpret the recruiter message, but it cannot supply the organization boundary or authorize a candidate. Both

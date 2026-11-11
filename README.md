@@ -103,7 +103,9 @@ decisions.
   message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
   boundaries. Focused staging acceptance passed on 11 November 2026 at main revision `ec4e500`: migration, backend
   health, scope CRUD, owner/tenant isolation, optimistic conflict, deletion cleanup, and existing chat regressions
-  passed without a required environment override. Production acceptance remains pending.
+  passed without a required environment override. Production repeated the focused checks successfully the same day
+  in release `v0.36.0` at revision `10a4db1`, also without a required environment override. This acceptance covers
+  the durable scope and bounded-memory foundation; follow-up chat answers do not consume persisted memory yet.
 - Provide a foundational `get_evaluation_evidence` Spring AI read tool for a future evaluation-aware chat path. It is
   tenant-scoped, requires an application-confirmed candidate ID, and returns at most the five most recent persisted
   evaluations with minimized job context, scores, and current/stale timestamps. Generated evaluation rationale is

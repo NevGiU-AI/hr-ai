@@ -221,12 +221,14 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Complete the remaining CV-chat foundation: connect the bounded evaluation-history read-tool foundation only to a
-   future answer path that consumes it, add document-status read tools, persist scoped conversation memory, build the
-   dedicated message-style chat page, broaden deterministic and provider-backed evaluation, and localize controlled
-   outcomes. The implemented picker- and language-first flows already resolve candidate names or UI selections to
-   verified tenant-scoped IDs, require explicit ambiguity confirmation, and produce cited two-to-five-candidate
-   comparisons with optional tenant-authorized approved-job context.
+1. Complete the remaining CV-chat foundation. The bounded `get_evaluation_evidence`, `get_document_status`, and
+   `get_ingestion_warnings` read-tool foundations are implemented; connect each one only to a future answer path that
+   consumes its result. Next persist the recruiter-confirmed candidate IDs and optional approved job as
+   application-owned, session-scoped memory, build the dedicated message-style chat page, broaden deterministic and
+   provider-backed evaluation, and localize controlled outcomes. The implemented picker- and language-first flows
+   already resolve candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity
+   confirmation, and produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job
+   context.
 2. Add editable speech-to-text input, then optional text-to-speech playback.
 3. Build the final recruitment dashboard and drill-down workflows.
 4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
@@ -242,6 +244,22 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 12. Consider horizontal or multi-host scaling.
 13. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
 14. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+
+For the first dedicated-chat version, confirmed scope belongs to the application rather than the model. Store only the
+confirmed candidate IDs and optional approved job in the existing Spring Session Redis state, expire them with the
+authenticated session, require explicit **Change candidates** and **Clear conversation** operations, and reauthorize
+every remembered identifier against the current user and organization on every turn. Logout, account/session
+revocation, or session expiry therefore removes access to that scope; the first version does not promise cross-device
+or post-login continuity.
+
+Spring AI model memory is a separate, bounded linguistic-context concern. The project may use
+`MessageWindowChatMemory` with `MessageChatMemoryAdvisor` and an explicit server-derived conversation ID when the
+dedicated page needs follow-up-language continuity, but model memory never authorizes or modifies candidate/job scope.
+The default in-memory repository is not production-safe across backend restarts or replicas. Durable transcripts and
+cross-session conversation history remain deferred until their ownership, retention, deletion, candidate-erasure, and
+backup rules are approved. Spring AI's
+[ChatClient memory guidance](https://docs.spring.io/spring-ai/reference/1.1/api/chatclient.html#_chat_memory) covers the
+bounded model-context concern; it is not the application's durable transcript contract.
 
 See the [implementation roadmap](specifications/06-implementation-roadmap.md) for the complete plan.
 
@@ -344,9 +362,10 @@ or production schemas.
 
 The local Compose configuration enables one-time baselining so an existing developer database created before Flyway can
 be adopted. New empty databases run the ordered migration history, currently `V1__baseline_schema.sql`,
-`V2__add_original_cv_storage_metadata.sql`, `V3__add_cv_legal_hold.sql`, then
-`V4__add_candidate_correction_and_reprocessing.sql`. Staging and production require a validated backup and the
-controlled, temporary baseline flag documented in their runbooks.
+`V2__add_original_cv_storage_metadata.sql`, `V3__add_cv_legal_hold.sql`,
+`V4__add_candidate_correction_and_reprocessing.sql`, `V5__add_cv_ocr_provenance.sql`, and
+`V6__add_cv_semantic_index.sql`. Staging and production require a validated backup and the controlled, temporary
+baseline flag documented in their runbooks.
 
 Migration rules:
 
@@ -383,7 +402,9 @@ unexpected model call.
 | `FAILED` | Validation, extraction, or persistence failed. |
 
 PDFs are limited to 20 MB and ZIP requests to 100 MB. Candidate metadata inferred from filenames or extracted text must
-be reviewed. The application currently stores extracted text and document metadata, not the original PDF binary.
+be reviewed. The application stores extracted text and document metadata in PostgreSQL and retains accepted original
+PDF binaries in the private tenant-scoped original-CV storage provider under the documented retention and legal-hold
+rules.
 
 ## Authentication and security boundaries
 

@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.evaluation.dto.AiEvaluationResult;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.Instant;
 
 @Service
@@ -156,7 +156,7 @@ public class CvEvaluationService {
     AiEvaluationResult parseModelResponse(String json) {
         try {
             return objectMapper.readValue(json, AiEvaluationResult.class);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new EvaluationException(HttpStatus.BAD_GATEWAY, "AI evaluation returned an invalid response");
         }
     }

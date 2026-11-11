@@ -37,11 +37,12 @@ class SpringAiCvChatCandidateReferenceExtractor implements CvChatCandidateRefere
     private static final int MAXIMUM_REFERENCES = 5;
     private static final int MAXIMUM_REFERENCE_CHARACTERS = 255;
     private static final String PREFIX = "CANDIDATE:";
-    private static final OpenAiChatOptions DETERMINISTIC_OPTIONS = OpenAiChatOptions.builder()
-            .temperature(0.0)
-            // The protocol allows at most five short lines; bounding output reduces cost and runaway provider prose.
-            .maxCompletionTokens(150)
-            .build();
+    private static OpenAiChatOptions.Builder deterministicOptions() {
+        return OpenAiChatOptions.builder()
+                .temperature(0.0)
+                // The protocol allows at most five short lines; bounding output reduces cost and runaway provider prose.
+                .maxCompletionTokens(150);
+    }
 
     private final ChatClient chatClient;
 
@@ -54,7 +55,7 @@ class SpringAiCvChatCandidateReferenceExtractor implements CvChatCandidateRefere
         String output = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
                 .user(message)
-                .options(DETERMINISTIC_OPTIONS)
+                .options(deterministicOptions())
                 .call()
                 .content();
         return parse(output);

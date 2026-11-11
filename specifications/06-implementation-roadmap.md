@@ -285,9 +285,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [x] Upgrade the maintained platform baseline to Spring Boot `3.5.16` and Spring AI `1.1.8`. Release `v0.34.0` at
   main revision `0ea2642` passed staging and production acceptance on 11 November 2026 without an environment,
   Flyway, database, Compose, or frontend change.
-- [ ] Migrate separately to stable Spring Boot `4.1.2` and Spring AI `2.0.2`, including the 2.x
-  `ToolCallingAdvisor` lifecycle and complete compile, authorization, tenant-isolation, pgvector, provider-evaluation,
-  container, staging, and production regression gates.
+- [~] Migrate separately to stable Spring Boot `4.1.2` and Spring AI `2.0.2`. The repository compiles and its
+  deterministic, authorization, tenant-isolation, Flyway, pgvector, and container gates pass on the migration branch.
+  Opt-in provider evaluation plus staging and production acceptance remain release gates before this item is complete.
 - [ ] Persist scoped conversation memory. Store the explicitly confirmed candidate IDs and allow follow-up questions
   to reuse only that visible scope; memory must never silently add, replace, remove, or widen candidates.
 - [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after

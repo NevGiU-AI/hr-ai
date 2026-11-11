@@ -17,10 +17,10 @@ public class SecurityAuditEvent {
     @Column(length = 320) private String targetEmail;
     @Column(length = 64) private String targetIdentifierHash;
     @Column(length = 64) private String clientIpHash;
-    @Convert(converter = SecurityEventTypeConverter.class)
-    @Column(nullable = false, length = 40) private SecurityEventType eventType;
-    @Convert(converter = SecurityEventOutcomeConverter.class)
-    @Column(nullable = false, length = 20) private SecurityEventOutcome outcome;
+    // Store names as plain strings so Hibernate cannot regenerate closed enum CHECK constraints. The public API still
+    // exposes typed enums, while Flyway remains the sole authority for production schema evolution.
+    @Column(nullable = false, length = 40) private String eventType;
+    @Column(nullable = false, length = 20) private String outcome;
     @Column(length = 500) private String details;
     @Column(nullable = false) private Instant createdAt;
 
@@ -36,8 +36,8 @@ public class SecurityAuditEvent {
         this.targetEmail = targetEmail;
         this.targetIdentifierHash = targetIdentifierHash;
         this.clientIpHash = clientIpHash;
-        this.eventType = eventType;
-        this.outcome = outcome;
+        this.eventType = eventType.name();
+        this.outcome = outcome.name();
         this.details = details;
         this.createdAt = Instant.now();
     }
@@ -50,8 +50,8 @@ public class SecurityAuditEvent {
     public String getTargetEmail() { return targetEmail; }
     public String getTargetIdentifierHash() { return targetIdentifierHash; }
     public String getClientIpHash() { return clientIpHash; }
-    public SecurityEventType getEventType() { return eventType; }
-    public SecurityEventOutcome getOutcome() { return outcome; }
+    public SecurityEventType getEventType() { return SecurityEventType.valueOf(eventType); }
+    public SecurityEventOutcome getOutcome() { return SecurityEventOutcome.valueOf(outcome); }
     public String getDetails() { return details; }
     public Instant getCreatedAt() { return createdAt; }
 }

@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.chat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +19,14 @@ final class CvChatQuestionPolicyEvaluationDataset {
             if (input == null) {
                 throw new IllegalStateException("Question-policy evaluation dataset is missing: " + RESOURCE);
             }
-            return new ObjectMapper().readValue(input, Dataset.class);
+            // Most cases use the safe default workflow (no preselected candidates and no approved job), so the
+            // versioned JSON intentionally omits those false flags. Jackson 3 rejects a missing/null JSON value for
+            // a primitive by default; disabling that strict check only for this synthetic dataset preserves the
+            // established "absent means false" contract without weakening application JSON handling.
+            return JsonMapper.builder()
+                    .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+                    .build()
+                    .readValue(input, Dataset.class);
         } catch (IOException invalidDataset) {
             throw new IllegalStateException("Question-policy evaluation dataset cannot be read", invalidDataset);
         }

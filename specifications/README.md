@@ -71,7 +71,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | CI/CD and VPS deployment | Staging and production operational | CI, immutable GHCR publication, automatic staging deployment, protected production promotion, and production smoke validation are working. Encrypted paired backup/restore is implemented; staging/production installation and restoration acceptance are scheduled after the dashboard, stable OpenAPI contracts, and concurrency benchmark. Observability and further rollback hardening remain. |
 | VPS provisioning | Staging and production deployed | Staging and production are independently hardened and deployed. Production has dedicated SSH access, firewall rules, Docker, DNS, TLS, logging, Premium VPS backup, and private Object Storage preparation. Paired database/original-file backup installation, isolated restoration acceptance, and timer activation are deferred until after the dashboard, OpenAPI, and concurrency milestones; separate runbooks prevent environment-specific credentials and procedures from being mixed. |
 
-The application uses an Angular 19 frontend, a Spring Boot 3 / Java 21 backend, PostgreSQL with the pgvector image,
+The application uses an Angular 19 frontend, a Spring Boot 4 / Java 21 backend, PostgreSQL with the pgvector image,
 Flyway versioned schema migrations, Redis-backed Spring Session, and Spring AI with OpenAI.
 
 > This snapshot is based on the source tree at the time these Markdown files were created. Keep it updated as features are delivered.

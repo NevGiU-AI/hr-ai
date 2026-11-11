@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.job;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
 import com.nevgiu.hrai.job.dto.ApproveJobRequest;
 import com.nevgiu.hrai.job.dto.GeneratedJobOffer;
 import com.nevgiu.hrai.job.dto.JobGenerationRequest;
@@ -11,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 
 @Service
 public class JobGenerationService {
@@ -111,7 +111,7 @@ public class JobGenerationService {
     JobGenerationResponse parseModelResponse(String json) {
         try {
             return objectMapper.readValue(json, JobGenerationResponse.class);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new JobGenerationException(HttpStatus.BAD_GATEWAY,
                     "AI job generation returned an invalid response");
         }

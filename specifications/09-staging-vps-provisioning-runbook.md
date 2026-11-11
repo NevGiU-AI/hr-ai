@@ -1058,7 +1058,7 @@ database change, or Compose change was required. Production repeated the focused
 application regression and smoke tests passed. The release required no staging environment variable, Flyway migration,
 database change, Compose change, or frontend change. Before environment promotion, the same immutable backend source
 had passed the deterministic Maven suite, six Docker-backed pgvector/Flyway/Hibernate checks, backend image packaging,
-and Compose rendering. This acceptance closes only the maintained 3.5/1.1 patch baseline; Spring Boot 4.1 and Spring AI
+and Compose rendering. This acceptance closed only the maintained 3.5/1.1 patch baseline; the subsequent Spring Boot 4.1 and Spring AI
 2.0 remain a separate platform migration with independent rollback and regression gates.
 
 ### Rollback boundary observed in staging

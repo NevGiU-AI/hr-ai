@@ -13,7 +13,6 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 
@@ -47,12 +46,17 @@ class CvChatMultilingualProviderEvaluationTest {
                 "AI_EVALUATION_EMBEDDING_MODEL", "text-embedding-3-small");
         double similarityThreshold = Double.parseDouble(System.getenv().getOrDefault(
                 "AI_EVALUATION_SIMILARITY_THRESHOLD", "0.35"));
-        OpenAiApi api = OpenAiApi.builder().apiKey(apiKey).build();
-        OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(api, MetadataMode.NONE,
-                OpenAiEmbeddingOptions.builder().model(embeddingModelName).dimensions(1536).build());
+        OpenAiEmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
+                .metadataMode(MetadataMode.NONE)
+                .options(OpenAiEmbeddingOptions.builder()
+                        .apiKey(apiKey)
+                        .model(embeddingModelName)
+                        .dimensions(1536)
+                        .build())
+                .build();
         SimpleVectorStore vectorStore = SimpleVectorStore.builder(embeddingModel).build();
-        OpenAiChatModel answerModel = chatModel(api, chatModelName);
-        OpenAiChatModel judgeModel = chatModel(api, judgeModelName);
+        OpenAiChatModel answerModel = chatModel(apiKey, chatModelName);
+        OpenAiChatModel judgeModel = chatModel(apiKey, judgeModelName);
         SpringAiCvChatModel cvChatModel = new SpringAiCvChatModel(ChatClient.builder(answerModel).build());
         SpringAiCvChatRetrievalQueryNormalizer queryNormalizer =
                 new SpringAiCvChatRetrievalQueryNormalizer(ChatClient.builder(answerModel).build());
@@ -166,10 +170,13 @@ class CvChatMultilingualProviderEvaluationTest {
                 ((Number) document.getMetadata().get("document_id")).longValue(), null, document.getText());
     }
 
-    private OpenAiChatModel chatModel(OpenAiApi api, String modelName) {
+    private OpenAiChatModel chatModel(String apiKey, String modelName) {
         return OpenAiChatModel.builder()
-                .openAiApi(api)
-                .defaultOptions(OpenAiChatOptions.builder().model(modelName).temperature(0.0).build())
+                .options(OpenAiChatOptions.builder()
+                        .apiKey(apiKey)
+                        .model(modelName)
+                        .temperature(0.0)
+                        .build())
                 .build();
     }
 

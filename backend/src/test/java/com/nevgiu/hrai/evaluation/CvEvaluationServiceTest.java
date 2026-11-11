@@ -1,6 +1,6 @@
 package com.nevgiu.hrai.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.nevgiu.hrai.evaluation.dto.AiEvaluationResult;
 import com.nevgiu.hrai.evaluation.dto.EvaluationWeights;
 import com.nevgiu.hrai.evaluation.dto.EvaluationRequest;

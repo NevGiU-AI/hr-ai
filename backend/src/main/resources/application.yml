@@ -64,10 +64,11 @@ spring:
         # Business repositories are JPA-backed; Redis is used directly for sessions and security counters.
         enabled: false
   session:
-    redis:
-      flush-mode: immediate
-      repository-type: indexed
-      namespace: ${APP_REDIS_SESSION_NAMESPACE:hr-ai:session}
+    data:
+      redis:
+        flush-mode: immediate
+        repository-type: indexed
+        namespace: ${APP_REDIS_SESSION_NAMESPACE:hr-ai:session}
 
 server:
   forward-headers-strategy: framework

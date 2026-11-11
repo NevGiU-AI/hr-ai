@@ -6,7 +6,6 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
 
 import java.util.List;
 
@@ -17,10 +16,12 @@ class CvChatCandidateReferenceProviderEvaluationTest {
     void extractsHumanReviewedCandidateReferences() {
         String apiKey = requiredEnvironmentVariable("OPENAI_API_KEY");
         String modelName = System.getenv().getOrDefault("AI_EVALUATION_CHAT_MODEL", "gpt-4o-mini");
-        OpenAiApi api = OpenAiApi.builder().apiKey(apiKey).build();
         OpenAiChatModel model = OpenAiChatModel.builder()
-                .openAiApi(api)
-                .defaultOptions(OpenAiChatOptions.builder().model(modelName).temperature(0.0).build())
+                .options(OpenAiChatOptions.builder()
+                        .apiKey(apiKey)
+                        .model(modelName)
+                        .temperature(0.0)
+                        .build())
                 .build();
         var extractor = new SpringAiCvChatCandidateReferenceExtractor(ChatClient.builder(model).build());
         List<Case> cases = List.of(

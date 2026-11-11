@@ -175,7 +175,7 @@ Browser
 Angular 19 / Nginx
   |
   v
-Spring Boot 3 / Java 21
+Spring Boot 4 / Java 21
   |---- PostgreSQL 16 + pgvector  (business data and Flyway history)
   |---- Redis 7.4                 (sessions, revocation, login throttling)
   |---- ClamAV 1.4                (fail-closed CV upload scanning)
@@ -190,17 +190,18 @@ and ClamAV remain on the private Compose network.
 ## Technology stack
 
 - Angular 19, TypeScript, Bootstrap, Nginx
-- Spring Boot 3.5.16, Java 21, Spring Security, Spring Data JPA, Spring Session
-- Spring AI 1.1.8 with OpenAI and `PgVectorStore`
+- Spring Boot 4.1.2, Java 21, Spring Security, Spring Data JPA, Spring Session
+- Spring AI 2.0.2 with OpenAI and `PgVectorStore`
 - PostgreSQL 16 with pgvector
 - Flyway versioned schema migrations
 - Redis 7.4
 - ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
 
-The Spring Boot 3.5.16 and Spring AI 1.1.8 maintenance baseline passed staging and production acceptance on
-11 November 2026 in release `v0.34.0`. The later Spring Boot 4.1 / Spring AI 2.0 platform migration remains a separate,
-reversible delivery slice.
+Release `v0.34.0` established the Spring Boot 3.5.16 and Spring AI 1.1.8 maintenance baseline. The repository has since
+migrated to Spring Boot 4.1.2 and Spring AI 2.0.2 as a separate, reversible platform slice. That migration includes
+Boot 4's modular web, security-test, JPA-test, session, and Flyway starters; Jackson 3 for application-owned JSON;
+Spring AI 2 request APIs; and regression coverage for authentication, tenant isolation, Flyway, pgvector, and containers.
 
 ### PostgreSQL and pgvector
 

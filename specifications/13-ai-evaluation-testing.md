@@ -180,7 +180,7 @@ from retrieval quality.
 
 `CvChatMultilingualEvaluationDatasetTest` runs on every normal build and validates version, identifiers, languages,
 documents, expected references, required evidence terms, language markers, and the bounded repeated-answer subset.
-`CvChatMultilingualProviderEvaluationTest` is opt-in and uses the actual Spring AI 1.1 APIs pinned by this repository:
+`CvChatMultilingualProviderEvaluationTest` is opt-in and uses the actual Spring AI 2.0 APIs pinned by this repository:
 
 - OpenAI `text-embedding-3-small` with 1,536 dimensions and `SimpleVectorStore` for real multilingual similarity;
 - the accepted `0.35` threshold, six-result limit, and mandatory organization/candidate metadata filters;
@@ -477,7 +477,9 @@ Exact thresholds remain an approved product decision and must be calibrated agai
 
 ## Spring AI version boundary
 
-The repository currently pins Spring AI `1.1.8`, while current reference documentation also covers Spring AI 2.x. Build evaluation datasets, metric records, and release reports behind application-owned interfaces. Verify evaluator availability and signatures against the pinned version, and evaluate 2.x separately alongside the planned tool-calling migration.
+The repository currently pins Spring AI `2.0.2`. Build evaluation datasets, metric records, and release reports behind
+application-owned interfaces, and verify evaluator availability and signatures against that exact pinned version.
+Provider-backed evaluations remain opt-in because ordinary CI has no provider key and must stay deterministic.
 
 ## Acceptance criteria
 

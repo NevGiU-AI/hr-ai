@@ -865,7 +865,7 @@ future policy prompt or model changes require a fresh run before promotion.
 `0ea2642`:** production promoted the staging-accepted Spring Boot `3.5.16` and Spring AI `1.1.8` images successfully.
 The backend became healthy and the focused production smoke and regression tests passed. No production environment
 variable, Flyway migration, database action, Compose change, or frontend change was required. This acceptance confirms
-the maintained 3.5/1.1 baseline only; the planned Spring Boot `4.1.2` and Spring AI `2.0.2` migration remains a separate
+the maintained 3.5/1.1 baseline only; the subsequent Spring Boot `4.1.2` and Spring AI `2.0.2` migration remains a separate
 release with its own staging-first validation and rollback boundary.
 
 ### 15. Configure bounded Docker log rotation

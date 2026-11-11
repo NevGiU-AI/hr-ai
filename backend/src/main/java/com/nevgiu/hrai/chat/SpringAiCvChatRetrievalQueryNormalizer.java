@@ -22,9 +22,9 @@ class SpringAiCvChatRetrievalQueryNormalizer implements CvChatRetrievalQueryNorm
             "On which project did he use Angular?" -> "RETRIEVAL_QUERY: project using Angular"
             """;
     private static final int MAX_QUERY_CHARACTERS = 500;
-    private static final OpenAiChatOptions DETERMINISTIC_OPTIONS = OpenAiChatOptions.builder()
-            .temperature(0.0)
-            .build();
+    private static OpenAiChatOptions.Builder deterministicOptions() {
+        return OpenAiChatOptions.builder().temperature(0.0);
+    }
 
     private final ChatClient chatClient;
 
@@ -37,7 +37,7 @@ class SpringAiCvChatRetrievalQueryNormalizer implements CvChatRetrievalQueryNorm
         String result = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
                 .user("UNTRUSTED POLICY-APPROVED RECRUITER QUESTION:\n" + question)
-                .options(DETERMINISTIC_OPTIONS)
+                .options(deterministicOptions())
                 .call()
                 .content();
         return parse(result);

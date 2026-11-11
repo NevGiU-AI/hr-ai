@@ -398,7 +398,9 @@ Tool calls that wait on JDBC, Spring AI, Object Storage, OCR, speech, or messagi
 
 ## Spring AI version boundary
 
-The repository currently uses Spring AI `1.1.8`. Implement against documentation and APIs matching the pinned version. Evaluate a Spring AI 2.x upgrade separately because its preferred tool-execution lifecycle uses `ChatClient` with `ToolCallingAdvisor`, and framework behavior must not be changed implicitly during feature work.
+The repository currently uses Spring AI `2.0.2`. Implement against documentation and APIs matching that pinned
+version. The migration remains deliberately separate from tool feature work so framework lifecycle changes can be
+validated through deterministic, provider, authorization, tenant-isolation, pgvector, and deployment regression gates.
 
 Before an upgrade:
 
@@ -409,18 +411,18 @@ Before an upgrade:
 
 ## Learning sources and project mapping
 
-The implementation was derived primarily from official Spring documentation. The versioned Spring AI links below
-describe the `1.1.x` API family used by this repository; the project remains pinned to Spring AI `1.1.8`, so examples
-must still be checked against the dependency actually compiled by Maven rather than copied blindly from Spring AI 2.x.
+The implementation was derived primarily from official Spring documentation. The historical 1.1 links below explain
+the design used to create the original tool layer; current implementation work must use the Spring AI 2.0 reference
+and must still be checked against the exact `2.0.2` dependency compiled by Maven.
 
-1. [Spring AI 1.1 Tool Calling](https://docs.spring.io/spring-ai/reference/1.1/api/tools.html) explains the complete
+1. [Spring AI Tool Calling](https://docs.spring.io/spring-ai/reference/api/tools.html) explains the complete
    tool lifecycle: the application publishes a name, description, and input schema; the model may request a call; the
    application executes the matching `ToolCallback`; and the result returns to the model. It also documents
    declarative `@Tool` methods, `ToolCallback`, `ToolCallbacks.from(...)`, result conversion, exception handling, and
    observability. This is the foundation for `CvChatReadTools`, `CvChatReadToolRegistry`, and the bounded callback
    results used here. The guide explicitly states that the model never receives direct access to the underlying API;
    that is why every callback delegates to an authorized application service instead of exposing repositories or SQL.
-2. [Spring AI 1.1 ChatClient API](https://docs.spring.io/spring-ai/reference/1.1/api/chatclient.html) explains the fluent
+2. [Spring AI ChatClient API](https://docs.spring.io/spring-ai/reference/api/chatclient.html) explains the fluent
    `prompt()`, `system(...)`, `user(...)`, `options(...)`, `call()`, and `content()` sequence used by
    `SpringAiCvChatToolOrchestrationModel`. Its distinction between defaults and request-specific configuration supports
    this project's choice to attach callbacks only to the reviewed orchestration call rather than make privileged or

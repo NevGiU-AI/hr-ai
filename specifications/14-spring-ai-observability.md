@@ -232,7 +232,9 @@ This supports analysis of whether a prompt, model, retrieval, tool, concurrency,
 
 ## Spring AI version boundary
 
-The repository currently pins Spring AI `1.1.8`, while current reference documentation also covers Spring AI 2.x. Verify observation names, supported components, Micrometer conventions, configuration properties, and streaming context behavior against the pinned version. Evaluate the later 2.x migration through independent integration, redaction, cardinality, dashboard, and alert tests.
+The repository currently pins Spring AI `2.0.2`. Verify observation names, supported components, Micrometer conventions,
+configuration properties, and streaming context behavior against that exact version. Validate redaction, cardinality,
+dashboard, and alert behavior independently before enabling additional production telemetry.
 
 ## Acceptance criteria
 

@@ -36,9 +36,11 @@ decisions.
   on 30 October 2026; the corrected policy boundary and its 21-case provider-backed evaluation passed staging the same
   day, then the same policy behavior passed production acceptance in release `v0.22.0`. The same authorization,
   evidence, citation, and refusal boundaries now support the implemented multi-candidate comparison flows below.
-  Grounded single- and multi-candidate answers now avoid inferring personal pronouns from names or CV evidence:
-  single-candidate answers prefer the translated equivalent of “the candidate,” while comparisons use candidate
-  labels, confirmed display names, or that neutral reference. Production accepted this presentation safeguard on
+  Grounded single- and multi-candidate answers avoid inferring personal pronouns from names or CV evidence. Answers
+  introduce each person with the server-confirmed CV display name and stable identifier—for example,
+  `Ada Lovelace (CANDIDATE-7)`—then use the exact name or a neutral reference. Names remain untrusted prompt data and
+  cannot authorize scope or evidence; `[CV-N]` citation tokens remain unchanged. Production accepted the underlying
+  neutral-reference safeguard on
   10 November 2026 at main revision `f759b88`; no environment, schema, migration, Compose, or frontend change was
   required.
 - Evaluate multilingual single-candidate retrieval and generated answers against a versioned synthetic EN/FR/PT

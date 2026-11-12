@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Synthetic multilingual retrieval and generated-answer cases with no real candidate personal data.",
   "documents": [
     {
@@ -25,15 +25,24 @@
       "candidateId": 99,
       "documentId": 99,
       "text": "Decoy record: at KLx the person used an unrelated technology and never worked on instant payments. This document belongs to another organization and must never be returned for tenant-a."
+    },
+    {
+      "id": "cv-70-java-mobile",
+      "reference": "CV-70",
+      "organizationId": "tenant-a",
+      "candidateId": 71,
+      "documentId": 70,
+      "text": "Professional experience includes native Android mobile development using Java and Kotlin, mobile architecture, cloud services, and backend integrations. The candidate developed and maintained customer mobile applications and later delivered mobile AI features using Python, Node.js, and cloud platforms."
     }
   ],
   "cases": [
-    {"id":"en-klx","language":"en","question":"What did he work on at KLx?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":true,"languageMarkers":[" the "," he "," candidate "]},
-    {"id":"fr-klx-direct","language":"fr","question":"Sur quoi a-t-il travaillé chez KLx ?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":true,"languageMarkers":[" il "," le "," la "," les "," des "," chez "]},
-    {"id":"fr-klx-experience","language":"fr","question":"Quelle était son expérience professionnelle chez KLx ?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":false,"languageMarkers":[" il "," le "," la "," les "," des "," chez "]},
-    {"id":"pt-klx","language":"pt","question":"Em que trabalhou na KLx?","expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":false,"languageMarkers":[" ele "," o "," a "," os "," as "," na "]},
-    {"id":"en-angular","language":"en","question":"On which project did he use Angular?","expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":false,"languageMarkers":[" the "," he "," candidate "]},
-    {"id":"fr-angular","language":"fr","question":"Dans quel projet a-t-il utilisé Angular ?","expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":false,"languageMarkers":[" il "," le "," la "," les "," dans "]},
-    {"id":"pt-angular","language":"pt","question":"Em que projeto ele usou Angular?","expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":true,"languageMarkers":[" ele "," o "," a "," no "," na "]}
+    {"id":"en-klx","language":"en","question":"What did he work on at KLx?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":true,"languageMarkers":[" the "," he "," candidate "]},
+    {"id":"fr-klx-direct","language":"fr","question":"Sur quoi a-t-il travaillé chez KLx ?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":true,"languageMarkers":[" il "," le "," la "," les "," des "," chez "]},
+    {"id":"fr-klx-experience","language":"fr","question":"Quelle était son expérience professionnelle chez KLx ?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":false,"languageMarkers":[" il "," le "," la "," les "," des "," chez "]},
+    {"id":"pt-klx","language":"pt","question":"Em que trabalhou na KLx?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["Instant Payments","Verification of Payee"],"evaluateAnswer":false,"languageMarkers":[" ele "," o "," a "," os "," as "," na "]},
+    {"id":"en-angular","language":"en","question":"On which project did he use Angular?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":false,"languageMarkers":[" the "," he "," candidate "]},
+    {"id":"fr-angular","language":"fr","question":"Dans quel projet a-t-il utilisé Angular ?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":false,"languageMarkers":[" il "," le "," la "," les "," dans "]},
+    {"id":"pt-angular","language":"pt","question":"Em que projeto ele usou Angular?","expectedCandidateId":60,"expectedReference":"CV-61","requiredEvidenceTerms":["NevGiU HR AI Recruitment Manager","Angular 19"],"evaluateAnswer":true,"languageMarkers":[" ele "," o "," a "," no "," na "]},
+    {"id":"en-picker-short-java-comparison","language":"en","question":"Compare their Java experience","expectedCandidateId":71,"expectedReference":"CV-70","requiredEvidenceTerms":["Android mobile development","Java and Kotlin"],"evaluateAnswer":false,"languageMarkers":[" the "," candidate "]}
   ]
 }

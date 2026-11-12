@@ -34,7 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnabledIfEnvironmentVariable(named = "RUN_AI_EVALUATIONS", matches = "(?i)true")
 class CvChatMultilingualProviderEvaluationTest {
     private static final String EVALUATION_ORGANIZATION = "tenant-a";
-    private static final long EVALUATION_CANDIDATE = 60L;
     private static final int ANSWER_REPETITIONS = 2;
 
     @Test
@@ -68,8 +67,8 @@ class CvChatMultilingualProviderEvaluationTest {
 
         for (var testCase : dataset.cases()) {
             String normalizedQuery = queryNormalizer.normalize(testCase.question());
-            List<Document> originalMatches = search(vectorStore, testCase.question());
-            List<Document> normalizedMatches = search(vectorStore, normalizedQuery);
+            List<Document> originalMatches = search(vectorStore, testCase.question(), testCase.expectedCandidateId());
+            List<Document> normalizedMatches = search(vectorStore, normalizedQuery, testCase.expectedCandidateId());
             List<Document> retrieved = java.util.stream.Stream.concat(
                             originalMatches.stream(), normalizedMatches.stream())
                     .collect(Collectors.toMap(Document::getId, Function.identity(),
@@ -115,12 +114,12 @@ class CvChatMultilingualProviderEvaluationTest {
         results.assertAll();
     }
 
-    private List<Document> search(SimpleVectorStore vectorStore, String query) {
+    private List<Document> search(SimpleVectorStore vectorStore, String query, Long candidateId) {
         return vectorStore.similaritySearch(SearchRequest.builder()
                 .query(query)
                 .topK(6)
                 .similarityThresholdAll()
-                .filterExpression("organization_id == 'tenant-a' && candidate_id == 60")
+                .filterExpression("organization_id == 'tenant-a' && candidate_id == " + candidateId)
                 .build());
     }
 
@@ -145,7 +144,7 @@ class CvChatMultilingualProviderEvaluationTest {
                 .allSatisfy(document -> {
                     assertThat(document.getMetadata().get("organization_id")).isEqualTo(EVALUATION_ORGANIZATION);
                     assertThat(((Number) document.getMetadata().get("candidate_id")).longValue())
-                            .isEqualTo(EVALUATION_CANDIDATE);
+                            .isEqualTo(testCase.expectedCandidateId());
                 });
         String combinedEvidence = retrieved.stream().map(Document::getText).reduce("", (left, right) -> left + right);
         results.assertThat(combinedEvidence).as(description + " required evidence")

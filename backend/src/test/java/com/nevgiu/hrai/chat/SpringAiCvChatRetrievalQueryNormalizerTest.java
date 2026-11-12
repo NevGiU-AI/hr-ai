@@ -14,6 +14,10 @@ class SpringAiCvChatRetrievalQueryNormalizerTest {
                 .contains("remove candidate/person names, comparison boilerplate")
                 .contains("Use them only to resolve references in the current")
                 .contains("Never replace the current intent with a prior question")
+                .contains("When a selected-candidate comparison contains only a short professional criterion")
+                .contains("Do not add a category that changes the requested criterion")
+                .contains("Compare their Java experience")
+                .contains("professional Java experience, Java roles, projects, responsibilities")
                 .contains("Do not answer the question, infer facts, or add CV evidence")
                 .contains("Sur quoi a-t-elle travaillé chez Exemple SA ?")
                 .doesNotContain("KLx");

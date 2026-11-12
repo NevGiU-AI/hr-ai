@@ -187,6 +187,11 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   original-versus-normalized measurements. All seven cases passed on 30 October 2026; direct French KLx improved from
   `0.4561` to `0.5451`, alternate French KLx from `0.4621` to `0.5887`, and cases where original wording scored better
   confirmed the need to merge rather than replace queries.
+- [~] Correct short picker-first comparison-query recall without lowering the global threshold. Staging showed that
+  `Compare their Java experience` produced `0.5554` with six accepted matches for candidate `70`, but only `0.2871`
+  and zero accepted matches for candidate `71`. The normalizer now expands concise professional criteria into neutral
+  evidence categories, and multilingual retrieval dataset `1.1.0` adds the synthetic regression. Deterministic tests
+  pass, and the fresh eight-case provider gate passed on 12 November 2026; focused staging acceptance remains.
 - [x] Validate the dual-query multilingual-recall correction in staging before production promotion. On 1 November
   2026, merged PR #109 at main revision `26d59e8` preserved grounded EN/FR/PT answers, citations, tenant/candidate/current-
   document isolation, missing-evidence behavior, and pre-retrieval sensitive/unrelated refusals. Privacy-safe logs

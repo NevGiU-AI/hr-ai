@@ -32,7 +32,8 @@ final class CvChatMultilingualEvaluationDataset {
                               String text) {
     }
 
-    record EvaluationCase(String id, String language, String question, String expectedReference,
+    record EvaluationCase(String id, String language, String question, Long expectedCandidateId,
+                          String expectedReference,
                           List<String> requiredEvidenceTerms, boolean evaluateAnswer, List<String> languageMarkers) {
     }
 }

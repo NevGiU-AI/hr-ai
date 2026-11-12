@@ -359,8 +359,11 @@ representative numeric baseline was captured; p50/p95/p99 measurement remains pa
 
 The neutral candidate-reference safeguard passed focused production acceptance on 10 November 2026 at main revision
 `f759b88`. The answer prompts no longer infer or choose `he`, `she`, or singular `they` from a candidate name or CV
-evidence. Single-candidate answers prefer “the candidate,” translated into the response language; comparisons prefer
-the backend-supplied candidate label, confirmed display name, or the same neutral reference. Grounding, citations,
+evidence. Grounded answers now introduce each person with the server-confirmed CV display name and immutable candidate
+identifier, for example `Ada Lovelace (CANDIDATE-7)`, then use that exact name or “the candidate.” Keeping both values
+makes answers readable while disambiguating duplicate or similar CV names. Display names remain untrusted data: they
+cannot change authorization, policy, evidence scope, or tool behavior. The bracketed `[CV-N]` citation contract remains
+unchanged. Grounding, citations,
 question-language preservation, safe refusals, and existing single- and multi-candidate behavior remained functional.
 This is a generated-answer presentation rule, not pronoun detection or storage. No environment variable, Flyway
 migration, database, Compose, or frontend change was required.

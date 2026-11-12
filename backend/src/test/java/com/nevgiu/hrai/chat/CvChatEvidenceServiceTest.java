@@ -35,6 +35,7 @@ class CvChatEvidenceServiceTest {
     void buildsBoundedNativeEvidenceForTheAuthorizedCandidate() {
         Candidate candidate = new Candidate();
         candidate.setId(7L);
+        candidate.setName("Ada Lovelace");
         candidate.setCvText("  Java   and Spring Boot engineer  ");
         when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(candidate));
         when(documents.findAllByCandidateIdAndOrganizationId(7L, "tenant-a")).thenReturn(List.of());
@@ -43,6 +44,7 @@ class CvChatEvidenceServiceTest {
 
         assertThat(evidence).singleElement().satisfies(item -> {
             assertThat(item.reference()).isEqualTo("CV-CANDIDATE-7");
+            assertThat(item.candidateName()).isEqualTo("Ada Lovelace");
             assertThat(item.excerpt()).isEqualTo("Java and Spring Boot engineer");
         });
         verifyNoInteractions(retrievalQueryNormalizer);
@@ -67,6 +69,7 @@ class CvChatEvidenceServiceTest {
     void usesBoundedOcrPageEvidenceWithReviewerVisibleReferences() {
         Candidate candidate = new Candidate();
         candidate.setId(7L);
+        candidate.setName("Ada Lovelace");
         candidate.setCvText("document fallback must not be used");
         CvDocument document = mock(CvDocument.class);
         when(document.getId()).thenReturn(12L);
@@ -88,6 +91,7 @@ class CvChatEvidenceServiceTest {
     void retrievesOnlyRelevantCurrentDocumentChunksInsideTheAuthorizedTenantAndCandidate() {
         Candidate candidate = new Candidate();
         candidate.setId(7L);
+        candidate.setName("Ada Lovelace");
         CvDocument current = mock(CvDocument.class);
         when(current.getId()).thenReturn(12L);
         when(current.getImportedAt()).thenReturn(Instant.parse("2026-10-28T00:00:00Z"));
@@ -108,7 +112,7 @@ class CvChatEvidenceServiceTest {
         List<CvChatEvidence> evidence = semanticService.find(7L, "expérience Java", "tenant-a");
 
         assertThat(evidence).containsExactly(new CvChatEvidence(
-                "CV-12-P2", 7L, 12L, 2, "Java and Spring Boot PostgreSQL"));
+                "CV-12-P2", 7L, 12L, 2, "Ada Lovelace", "Java and Spring Boot PostgreSQL"));
         verify(semanticSearch).search("tenant-a", "expérience Java", List.of(7L), 6);
         verify(semanticSearch).search("tenant-a", "Java experience", List.of(7L), 6);
         verify(pages, never()).findAllByDocumentIdOrderByPageNumber(12L);

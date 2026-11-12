@@ -90,7 +90,8 @@ class CvChatEvidenceService {
                     .limit(properties.maxEvidencePages())
                     .filter(page -> page.getExtractedText() != null && !page.getExtractedText().isBlank())
                     .map(page -> new CvChatEvidence("CV-" + current.getId() + "-P" + page.getPageNumber(),
-                            candidate.getId(), current.getId(), page.getPageNumber(), excerpt(page.getExtractedText())))
+                            candidate.getId(), current.getId(), page.getPageNumber(), candidate.getName(),
+                            excerpt(page.getExtractedText())))
                     .toList();
             // Native extraction has no page provenance, so it receives one document-level citation instead.
             evidence = pageEvidence.isEmpty() ? nativeEvidence(candidate, current.getId()) : pageEvidence;
@@ -170,7 +171,7 @@ class CvChatEvidenceService {
                 organizationId, candidate.getId(), current.getId(), queries.size(), matches.size(), accepted.size(),
                 String.format(java.util.Locale.ROOT, "%.4f", topSimilarity));
         Map<String, CvChatEvidence> evidenceByReference = new LinkedHashMap<>();
-        accepted.forEach(match -> mergeEvidence(evidenceByReference, candidate.getId(), match));
+        accepted.forEach(match -> mergeEvidence(evidenceByReference, candidate.getId(), candidate.getName(), match));
         return List.copyOf(evidenceByReference.values());
     }
 
@@ -204,7 +205,7 @@ class CvChatEvidenceService {
         }
     }
 
-    private void mergeEvidence(Map<String, CvChatEvidence> evidenceByReference, Long candidateId,
+    private void mergeEvidence(Map<String, CvChatEvidence> evidenceByReference, Long candidateId, String candidateName,
                                CvSemanticMatch match) {
         String reference = reference(match);
         CvChatEvidence existing = evidenceByReference.get(reference);
@@ -212,7 +213,7 @@ class CvChatEvidenceService {
         // Multiple chunks can originate from one OCR page. One merged, bounded evidence item keeps the reviewer-visible
         // citation unique while retaining the vector-store ranking order in the supplied excerpt.
         evidenceByReference.put(reference, new CvChatEvidence(reference, candidateId, match.documentId(),
-                match.pageNumber(), excerpt(combined)));
+                match.pageNumber(), candidateName, excerpt(combined)));
     }
 
     private String reference(CvSemanticMatch match) {
@@ -226,7 +227,7 @@ class CvChatEvidenceService {
             return List.of();
         }
         String reference = documentId == null ? "CV-CANDIDATE-" + candidate.getId() : "CV-" + documentId;
-        return List.of(new CvChatEvidence(reference, candidate.getId(), documentId, null,
+        return List.of(new CvChatEvidence(reference, candidate.getId(), documentId, null, candidate.getName(),
                 excerpt(candidate.getCvText())));
     }
 

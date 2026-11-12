@@ -191,7 +191,7 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   `Compare their Java experience` produced `0.5554` with six accepted matches for candidate `70`, but only `0.2871`
   and zero accepted matches for candidate `71`. The normalizer now expands concise professional criteria into neutral
   evidence categories, and multilingual retrieval dataset `1.1.0` adds the synthetic regression. Deterministic tests
-  pass; the fresh opt-in provider gate and focused staging acceptance remain.
+  pass, and the fresh eight-case provider gate passed on 12 November 2026; focused staging acceptance remains.
 - [x] Validate the dual-query multilingual-recall correction in staging before production promotion. On 1 November
   2026, merged PR #109 at main revision `26d59e8` preserved grounded EN/FR/PT answers, citations, tenant/candidate/current-
   document isolation, missing-evidence behavior, and pre-retrieval sensitive/unrelated refusals. Privacy-safe logs

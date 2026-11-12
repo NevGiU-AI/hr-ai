@@ -211,7 +211,9 @@ tests cannot establish multilingual embedding quality, latency, or cost.
 The version `1.1.0` gate must prove that constrained normalization expands the short comparison criterion into relevant
 professional evidence categories and retrieves the expected `CV-70` fixture above the unchanged `0.35` threshold. It
 uses candidate ID `71` only as synthetic fixture metadata; no production candidate text, question, or embedding is
-included. A fresh successful opt-in provider run is required before this correction is promoted to staging.
+included. The fresh provider run passed all eight multilingual retrieval cases on 12 November 2026. This satisfies the
+live-model gate for the picker-first correction; focused staging acceptance is still required before production
+promotion. Any later normalizer prompt, embedding model, or similarity-policy change requires another fresh run.
 
 The authorized live-provider run passed on 30 October 2026 in 27.91 seconds of test time. Results were:
 

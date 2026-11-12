@@ -151,6 +151,8 @@ authorization, selection order, and the comparison endpoint were sound. The quer
 selected-candidate professional criteria with neutral evidence categories such as roles, projects, responsibilities,
 frameworks, technologies, and versions. It must not invent candidate facts or change the requested criterion. Dataset
 `1.1.0` adds a synthetic Java/Android retrieval regression; the threshold and tenant/candidate filters remain unchanged.
+The fresh eight-case multilingual provider evaluation passed on 12 November 2026. Focused staging acceptance of the
+real picker-first request remains required before production promotion.
 
 The focused synthetic live-provider gate passed on 30 October 2026. The direct French KLx formulation improved from an
 original-query top score of `0.4561` to `0.5451` after normalization, while the alternate French formulation improved

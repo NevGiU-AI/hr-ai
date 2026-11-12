@@ -105,7 +105,8 @@ public class CvChatReadTools {
     public CandidateEvidenceSearchResult searchCandidatesByEvidence(
             @ToolParam(description = "Job-relevant skills, experience, education, or professional criteria") String query) {
         AppUserPrincipal actor = currentChatActor();
-        return executionGuard.execute(() -> organizationDiscovery.discover(query, actor.organizationId()));
+        return executionGuard.executeSemanticDiscovery(
+                () -> organizationDiscovery.discover(query, actor.organizationId()));
     }
 
     @Tool(name = "get_candidate_summary", description = "Return a minimized, tenant-authorized summary for one "

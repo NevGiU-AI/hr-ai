@@ -59,6 +59,8 @@ class CvChatReadToolsTest {
     void executeGuardedActionsSynchronously() {
         when(executionGuard.execute(any())).thenAnswer(invocation ->
                 ((Supplier<?>) invocation.getArgument(0)).get());
+        when(executionGuard.executeSemanticDiscovery(any())).thenAnswer(invocation ->
+                ((Supplier<?>) invocation.getArgument(0)).get());
     }
 
     @AfterEach

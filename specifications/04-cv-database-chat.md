@@ -787,6 +787,24 @@ selection remained independent. Production repeated the focused workflow success
 `v0.32.0` at revision `1a5f247`, without an application runtime environment-variable, schema, migration, or Compose
 change.
 
+### Dedicated chat flexible-scope staging acceptance
+
+The current dedicated `/chat` workflow passed focused staging acceptance on 12 November 2026 at main revision
+`9002238`, after PRs #178–#180. Organization-wide natural-language discovery completed within the bounded tool timeout,
+returned only tenant-authorized confirmation cards, and still required explicit recruiter selection before any CV
+evidence was used. Manual picker-first selection, named-candidate discovery, single-candidate questions,
+multi-candidate comparisons, contextual follow-ups, optional approved-job scope, safe refusal, and controlled
+insufficient-evidence behavior remained functional.
+
+Citation links opened the cited document under its owning candidate on the dedicated page. Grounded single-candidate,
+comparison, and follow-up answers introduced each person with the server-confirmed CV display name and stable label,
+for example `Ada Lovelace (CANDIDATE-7)`, while preserving the existing `[CV-N]` and `[CV-N-PM]` citation syntax.
+Duplicate or similar names therefore remain disambiguated by immutable ID. Candidate names remain untrusted prompt
+data and cannot authorize a candidate, organization, job, evidence record, or tool call. Backend and frontend health,
+privacy-safe logs, and existing workspace chat/evaluation regressions were also checked successfully. No environment
+variable, Flyway migration, database, Compose, or storage change was required. Production promotion and equivalent
+focused acceptance remain pending.
+
 ## Acceptance criteria
 
 - Follow-up questions retain the correct conversation context.

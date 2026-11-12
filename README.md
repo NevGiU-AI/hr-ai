@@ -105,7 +105,9 @@ decisions.
   health, scope CRUD, owner/tenant isolation, optimistic conflict, deletion cleanup, and existing chat regressions
   passed without a required environment override. Production repeated the focused checks successfully the same day
   in release `v0.36.0` at revision `10a4db1`, also without a required environment override. This acceptance covers
-  the durable scope and bounded-memory foundation; follow-up chat answers do not consume persisted memory yet.
+  the durable scope and bounded-memory foundation. `POST /api/chat/conversations/{id}/messages` now executes grounded
+  follow-ups against that reauthorized stored scope, supplies only the bounded Spring AI history as untrusted model
+  context, and persists the completed turn only if a locked version check proves the scope did not change meanwhile.
 - Provide a foundational `get_evaluation_evidence` Spring AI read tool for a future evaluation-aware chat path. It is
   tenant-scoped, requires an application-confirmed candidate ID, and returns at most the five most recent persisted
   evaluations with minimized job context, scores, and current/stale timestamps. Generated evaluation rationale is

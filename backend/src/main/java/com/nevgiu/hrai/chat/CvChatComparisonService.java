@@ -5,6 +5,7 @@ import com.nevgiu.hrai.job.JobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -38,6 +39,12 @@ public class CvChatComparisonService {
 
     public CvChatComparisonResponse compare(List<Long> requestedCandidateIds, String question, Long requestedJobId,
                                             String organizationId) {
+        return compare(requestedCandidateIds, question, requestedJobId, organizationId, List.of());
+    }
+
+    /** Uses history as conversational context only; every candidate and optional job is still reauthorized here. */
+    public CvChatComparisonResponse compare(List<Long> requestedCandidateIds, String question, Long requestedJobId,
+                                            String organizationId, List<Message> history) {
         List<Long> candidateIds = distinctIds(requestedCandidateIds);
         String normalizedQuestion = question.trim();
 
@@ -82,7 +89,9 @@ public class CvChatComparisonService {
 
         String answer;
         try {
-            answer = model.compare(normalizedQuestion, candidates, List.copyOf(evidence), jobContext);
+            answer = history.isEmpty()
+                    ? model.compare(normalizedQuestion, candidates, List.copyOf(evidence), jobContext)
+                    : model.compare(normalizedQuestion, candidates, List.copyOf(evidence), jobContext, history);
         } catch (RuntimeException failure) {
             LOGGER.warn("CV comparison provider failed for organizationId={} candidateCount={} failureType={}",
                     organizationId, candidateIds.size(), failure.getClass().getSimpleName());

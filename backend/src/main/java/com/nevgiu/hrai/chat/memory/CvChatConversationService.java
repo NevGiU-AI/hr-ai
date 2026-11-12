@@ -7,6 +7,9 @@ import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -56,6 +59,41 @@ class CvChatConversationService {
         return response(conversation, loadCandidates(conversation), loadJob(conversation));
     }
 
+    /**
+     * Reauthorizes the owner, tenant, candidate IDs, and optional job before any persisted history is read.
+     * The immutable snapshot lets provider work run outside a database transaction.
+     */
+    @Transactional(readOnly = true)
+    ExecutionScope executionScope(String id, AppUserPrincipal actor) {
+        var conversation = ownedActive(id, actor);
+        var selected = loadCandidates(conversation);
+        var job = loadJob(conversation);
+        return new ExecutionScope(conversation.getId(), conversation.getVersion(), conversation.getOrganizationId(),
+                selected.stream().map(Candidate::getId).toList(), job == null ? null : job.getId());
+    }
+
+    List<Message> history(String id) {
+        return List.copyOf(memory.get(id));
+    }
+
+    /**
+     * Persists a completed turn only if the locked conversation still has the scope version used for generation.
+     * A concurrent scope edit therefore yields 409 instead of attaching an answer to stale authorization state.
+     */
+    @Transactional
+    CvChatConversationResponse appendTurn(String id, long expectedVersion, String question, String answer,
+                                          AppUserPrincipal actor) {
+        var conversation = lockedOwnedActive(id, actor);
+        if (conversation.getVersion() != expectedVersion) {
+            throw new CvChatException(HttpStatus.CONFLICT, "Conversation scope changed; retry the question");
+        }
+        memory.add(id, List.of(new UserMessage(question), new AssistantMessage(answer)));
+        Instant now = Instant.now();
+        conversation.touch(now, now.plus(properties.ttl()));
+        conversations.flush();
+        return response(conversation, loadCandidates(conversation), loadJob(conversation));
+    }
+
     @Transactional
     CvChatConversationResponse replaceScope(String id, CvChatConversationRequests.ReplaceScope request,
                                             AppUserPrincipal actor) {
@@ -65,6 +103,9 @@ class CvChatConversationService {
         }
         var authorizedCandidates = authorizeScope(request.candidateIds(), actor.organizationId());
         Job authorizedJob = authorizeJob(request.jobId(), actor.organizationId());
+        // History belongs to the exact confirmed scope. Clear it before replacing candidates/job so content from an
+        // earlier scope can never influence answers after the visible authorization boundary changes.
+        memory.clear(id);
         scopeCandidates.deleteAllByIdConversationId(id);
         saveScope(conversation, authorizedCandidates);
         Instant now = Instant.now();
@@ -96,6 +137,18 @@ class CvChatConversationService {
                         id, actor.organizationId(), actor.id(), Instant.now())
                 // Use one indistinguishable response for missing, expired, cross-tenant, and other-user conversations.
                 .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Conversation not found"));
+    }
+
+    private CvChatConversation lockedOwnedActive(String id, AppUserPrincipal actor) {
+        CvChatConversation conversation = conversations.findLockedById(id)
+                .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Conversation not found"));
+        Instant now = Instant.now();
+        if (!conversation.getOrganizationId().equals(actor.organizationId())
+                || !conversation.getOwnerUserId().equals(actor.id())
+                || !conversation.getExpiresAt().isAfter(now)) {
+            throw new CvChatException(HttpStatus.NOT_FOUND, "Conversation not found");
+        }
+        return conversation;
     }
 
     private List<Candidate> authorizeScope(List<Long> ids, String organizationId) {
@@ -136,5 +189,9 @@ class CvChatConversationService {
                 job.getId(), job.getTitle(), job.getLevel());
         return new CvChatConversationResponse(conversation.getId(), conversation.getVersion(), cards, jobCard,
                 conversation.getCreatedAt(), conversation.getUpdatedAt(), conversation.getExpiresAt());
+    }
+
+    record ExecutionScope(String conversationId, long version, String organizationId,
+                          List<Long> candidateIds, Long jobId) {
     }
 }

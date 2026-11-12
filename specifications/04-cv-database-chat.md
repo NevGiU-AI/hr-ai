@@ -154,7 +154,8 @@ frameworks, technologies, and versions. It must not invent candidate facts or ch
 The fresh eight-case multilingual provider evaluation passed on 12 November 2026. Focused staging acceptance of the
 real picker-first request passed the same day after PR #173 at main revision `ceded13`: the formerly failing concise
 criterion returned a grounded comparison for both selected candidates without changing their order, scope, or the
-`0.35` threshold. Production acceptance remains required.
+`0.35` threshold. Production repeated the focused picker-first check successfully on 12 November 2026 in release
+`v0.37.0` at revision `657207f`.
 
 The focused synthetic live-provider gate passed on 30 October 2026. The direct French KLx formulation improved from an
 original-query top score of `0.4561` to `0.5451` after normalization, while the alternate French formulation improved
@@ -433,7 +434,8 @@ request is still rejected even after professional history. Dataset `1.2.0` prese
 The authorized 26-case live-provider evaluation passed on 12 November 2026. Focused staging acceptance of the
 corrected follow-up passed the same day after PR #172 at main revision `038c9bc`: a professional reference to prior
 technology context returned a grounded cited answer, while a current sensitive question remained refused before
-retrieval. Production acceptance remains required.
+retrieval. Production repeated those focused follow-up and refusal checks successfully on 12 November 2026 in release
+`v0.37.0` at revision `657207f`.
 
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may

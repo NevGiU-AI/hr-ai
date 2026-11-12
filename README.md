@@ -173,7 +173,8 @@ Multilingual retrieval dataset `1.1.0` adds the staging picker-first regression 
 a synthetic Java/Android CV. The correction expands short comparison criteria into neutral professional evidence
 categories without adding candidate facts, changing candidate scope, or lowering the accepted `0.35` threshold. Its
 fresh eight-case multilingual provider run passed on 12 November 2026. The deployed picker-first request then passed
-focused staging acceptance after PR #173 at revision `ceded13`; production acceptance remains required.
+focused staging acceptance after PR #173 at revision `ceded13`. Production repeated the picker-first and contextual
+follow-up checks successfully in release `v0.37.0` at revision `657207f`.
 The dedicated conversational CV-chat page, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,

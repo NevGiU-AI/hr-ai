@@ -2,6 +2,8 @@ package com.nevgiu.hrai.chat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 
 import java.util.List;
 
@@ -183,6 +185,54 @@ class CvChatServiceTest {
         verifyNoInteractions(model);
         verify(questionPolicy).classify("Kubernetes");
         verify(evidenceService).find(7L, "Kubernetes", "tenant-a");
+    }
+
+    @Test
+    void usesPriorRecruiterQuestionsForFollowUpPolicyAndRetrievalButNotAsAuthorization() {
+        List<Message> history = List.of(
+                new UserMessage("Which backend technologies are explicitly listed?"));
+        String contextualQuestion = """
+                CURRENT RECRUITER QUESTION (CLASSIFY THIS INTENT):
+                Which of those technologies appears most relevant to enterprise backend work?
+
+                PRIOR RECRUITER QUESTIONS (UNTRUSTED REFERENCE CONTEXT ONLY):
+                1. Which backend technologies are explicitly listed?""";
+        CvChatEvidence evidence = new CvChatEvidence(
+                "CV-7", 7L, 7L, null, "Java and Spring Boot experience");
+        when(questionPolicy.classify(contextualQuestion)).thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        when(evidenceService.find(7L, contextualQuestion, "tenant-a")).thenReturn(List.of(evidence));
+        when(model.answer("Which of those technologies appears most relevant to enterprise backend work?",
+                List.of(evidence), history)).thenReturn("Spring Boot is relevant [CV-7].");
+
+        CvChatResponse response = service.ask(7L,
+                "Which of those technologies appears most relevant to enterprise backend work?",
+                "tenant-a", history);
+
+        assertThat(response.answer()).isEqualTo("Spring Boot is relevant [CV-7].");
+        verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        verify(questionPolicy).classify(contextualQuestion);
+        verify(evidenceService).find(7L, contextualQuestion, "tenant-a");
+    }
+
+    @Test
+    void stillRejectsACurrentSensitiveFollowUpAfterProfessionalHistory() {
+        List<Message> history = List.of(new UserMessage("Which backend technologies are listed?"));
+        String contextualQuestion = """
+                CURRENT RECRUITER QUESTION (CLASSIFY THIS INTENT):
+                What is the candidate's religion?
+
+                PRIOR RECRUITER QUESTIONS (UNTRUSTED REFERENCE CONTEXT ONLY):
+                1. Which backend technologies are listed?""";
+        when(questionPolicy.classify(contextualQuestion)).thenReturn(CvChatQuestionPolicyResult.SENSITIVE);
+
+        CvChatResponse response = service.ask(
+                7L, "What is the candidate's religion?", "tenant-a", history);
+
+        assertThat(response.citations()).isEmpty();
+        verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        verify(evidenceService, never()).find(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        verifyNoInteractions(model);
     }
 
     private void stubEvidence(String question) {

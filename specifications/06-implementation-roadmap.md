@@ -295,7 +295,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   stale-version conflict, database-state, deletion-cleanup, and existing-chat regression checks successfully in
   release `v0.36.0` at revision `10a4db1`. The follow-up endpoint now reauthorizes stored scope before reading bounded
   history, clears history on every scope replacement, runs provider I/O outside a transaction, and persists a
-  completed turn only after a locked version check.
+  completed turn only after a locked version check. A staging false refusal showed that policy and retrieval also need
+  bounded recruiter-only reference context. That correction is implemented, and the dataset `1.2.0` 26-case
+  live-provider gate passed on 12 November 2026; focused staging acceptance remains.
   Staging and production acceptance of follow-up execution remain before the dedicated conversational page.
 - [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after
   orchestration and scoped memory are stable. Provide a message timeline, one natural-language composer, visible

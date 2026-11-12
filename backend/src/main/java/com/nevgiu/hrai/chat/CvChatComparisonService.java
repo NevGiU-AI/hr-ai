@@ -47,6 +47,7 @@ public class CvChatComparisonService {
                                             String organizationId, List<Message> history) {
         List<Long> candidateIds = distinctIds(requestedCandidateIds);
         String normalizedQuestion = question.trim();
+        String contextualQuestion = CvChatFollowUpContext.contextualQuestion(normalizedQuestion, history);
 
         // Authorize the entire set before policy or evidence work. One missing/cross-tenant ID fails the whole request
         // with the same generic response, preventing partial disclosure about which IDs belong to this organization.
@@ -57,7 +58,7 @@ public class CvChatComparisonService {
         CvChatQuestionPolicyResult policyResult;
         try {
             policyResult = questionPolicy.classifySelectedCandidateComparison(
-                    normalizedQuestion, jobContext != null);
+                    contextualQuestion, jobContext != null);
         } catch (RuntimeException failure) {
             LOGGER.warn("CV comparison question policy failed for organizationId={} candidateCount={} failureType={}",
                     organizationId, candidateIds.size(), failure.getClass().getSimpleName());
@@ -72,8 +73,8 @@ public class CvChatComparisonService {
         // Normalize once and reuse the exact same search intent for every selected candidate. Normalizing separately
         // would allow provider variation to give otherwise comparable candidates different retrieval queries.
         String retrievalIntent = jobContext == null
-                ? normalizedQuestion
-                : normalizedQuestion + "\n\nAUTHORIZED APPROVED JOB REQUIREMENTS:\n" + jobContext.promptText();
+                ? contextualQuestion
+                : contextualQuestion + "\n\nAUTHORIZED APPROVED JOB REQUIREMENTS:\n" + jobContext.promptText();
         List<String> retrievalQueries = evidenceService.prepareRetrievalQueries(retrievalIntent, organizationId);
         List<CvChatEvidence> evidence = new ArrayList<>();
         for (Long candidateId : candidateIds) {

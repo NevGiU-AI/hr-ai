@@ -305,7 +305,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   bounded recruiter-only reference context. That correction is implemented, and the dataset `1.2.0` 26-case
   live-provider gate passed on 12 November 2026. Focused staging acceptance then passed after PR #172 at revision
   `038c9bc`; production repeated the focused contextual-answer and sensitive-refusal checks in release `v0.37.0` at
-  revision `657207f`. Both follow-up corrections are accepted before the dedicated conversational page.
+  revision `657207f`. Dataset `1.3.0` adds the professional evidence-ranking case `Who is the best AI dev?`; its fresh
+  27-case live-provider gate passed on 12 November 2026 while preserving sensitive-characteristic refusal. Both
+  follow-up corrections are accepted before the dedicated conversational page; the flexible discovery extension still
+  requires environment acceptance.
 - [~] Add the dedicated conversational CV-chat page after orchestration and scoped memory are stable. The first `/chat`
   slice provides explicit candidate search/selection, optional approved-job scope, an application-owned welcome
   bubble, one natural-language composer, a bounded message timeline, current-turn citations, active-conversation

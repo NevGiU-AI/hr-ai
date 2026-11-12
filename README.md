@@ -179,6 +179,10 @@ Question-policy dataset `1.2.0` adds contextual professional and current-sensiti
 path supplies only the two most recent bounded recruiter questions to policy and retrieval, never assistant answers,
 and keeps the current question authoritative. Its fresh 26-case opt-in provider run passed on 12 November 2026;
 focused staging acceptance passed the same day after PR #172 at revision `038c9bc`.
+Dataset `1.3.0` adds the professional evidence-ranking request `Who is the best AI dev?`. Its fresh 27-case opt-in
+provider run passed on 12 November 2026, confirming that evidence-qualified professional comparison remains
+`JOB_RELEVANT` while protected or sensitive characteristic ranking remains refused. Deployment acceptance of the
+associated flexible candidate-discovery slice is tracked separately.
 Multilingual retrieval dataset `1.1.0` adds the staging picker-first regression `Compare their Java experience` against
 a synthetic Java/Android CV. The correction expands short comparison criteria into neutral professional evidence
 categories without adding candidate facts, changing candidate scope, or lowering the accepted `0.35` threshold. Its

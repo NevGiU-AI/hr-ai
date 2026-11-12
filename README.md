@@ -168,11 +168,12 @@ prompt or model changes still require a fresh opt-in provider run before promoti
 Question-policy dataset `1.2.0` adds contextual professional and current-sensitive follow-up regressions. The follow-up
 path supplies only the two most recent bounded recruiter questions to policy and retrieval, never assistant answers,
 and keeps the current question authoritative. Its fresh 26-case opt-in provider run passed on 12 November 2026;
-staging acceptance remains required.
+focused staging acceptance passed the same day after PR #172 at revision `038c9bc`.
 Multilingual retrieval dataset `1.1.0` adds the staging picker-first regression `Compare their Java experience` against
 a synthetic Java/Android CV. The correction expands short comparison criteria into neutral professional evidence
 categories without adding candidate facts, changing candidate scope, or lowering the accepted `0.35` threshold. Its
-fresh eight-case multilingual provider run passed on 12 November 2026; focused staging acceptance remains required.
+fresh eight-case multilingual provider run passed on 12 November 2026. The deployed picker-first request then passed
+focused staging acceptance after PR #173 at revision `ceded13`; production acceptance remains required.
 The dedicated conversational CV-chat page, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,

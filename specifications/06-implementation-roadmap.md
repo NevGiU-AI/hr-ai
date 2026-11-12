@@ -316,7 +316,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   listing, persisted citation metadata for reloaded turns, language-first ambiguity confirmation on this page, and
   editable scope replacement remain before this item is complete. The flexible-scope, organization-discovery,
   owning-candidate citation navigation, and readable `Display Name (CANDIDATE-ID)` output passed focused staging
-  acceptance on 12 November 2026 at main revision `9002238`; production acceptance is pending.
+  acceptance on 12 November 2026 at main revision `9002238`. Production repeated the focused checks successfully in
+  release `v0.38.0` at revision `eea0a3a`.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.
 - [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on
@@ -328,8 +329,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   criteria discovery through the tenant-scoped `search_candidates_by_evidence` Spring AI read tool. It searches only
   current authorized semantic evidence, ranks a bounded shortlist of at most ten minimal cards, and still requires the
   recruiter to confirm no more than five candidates before conversation creation. Focused staging acceptance passed
-  on 12 November 2026 at revision `9002238`; production acceptance, broader recall evaluation, and persisted
-  language-first confirmation history remain before completion.
+  on 12 November 2026 at revision `9002238`, followed by production acceptance in release `v0.38.0` at revision
+  `eea0a3a`; broader recall evaluation and persisted language-first confirmation history remain before completion.
 - [~] Prove the model cannot resolve names globally, invent candidates, silently widen the selected set, or retrieve
   evidence outside the authenticated organization; require citations for every factual comparison. Current deterministic
   resolution, tenant authorization, visible confirmation, bounded per-candidate retrieval, and complete-citation tests

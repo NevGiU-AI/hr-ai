@@ -10,6 +10,7 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -74,6 +75,20 @@ class CvChatConversationService {
 
     List<Message> history(String id) {
         return List.copyOf(memory.get(id));
+    }
+
+    /** Returns only the bounded USER/ASSISTANT window after applying the same opaque owner/tenant lookup as scope. */
+    @Transactional(readOnly = true)
+    CvChatConversationHistoryResponse history(String id, AppUserPrincipal actor) {
+        ownedActive(id, actor);
+        var messages = memory.get(id).stream()
+                .filter(message -> message.getMessageType() == MessageType.USER
+                        || message.getMessageType() == MessageType.ASSISTANT)
+                .map(message -> new CvChatConversationHistoryResponse.TimelineMessage(
+                        message.getMessageType() == MessageType.USER ? "USER" : "ASSISTANT",
+                        message.getText()))
+                .toList();
+        return new CvChatConversationHistoryResponse(messages);
     }
 
     /**

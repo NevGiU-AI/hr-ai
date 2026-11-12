@@ -98,10 +98,13 @@ decisions.
   selections remain intact. Production repeated the focused workflow checks successfully on 10 November 2026 in
   release `v0.32.0` at revision `1a5f247`; no application runtime environment-variable, schema, migration, or Compose
   change was required.
-  The workspace remains the contract-validation surface. Flyway V7 and the scoped-conversation API now provide the
-  durable authorization/memory foundation; after follow-up execution is connected and accepted, a dedicated
-  message-style CV-chat page will reuse these same authorization, confirmation, retrieval, citation, and refusal
-  boundaries. Focused staging acceptance passed on 11 November 2026 at main revision `ec4e500`: migration, backend
+  The workspace remains the contract-validation surface. Flyway V7 and the scoped-conversation API provide the
+  durable authorization/memory foundation. A dedicated `/chat` page now reuses those same authorization, retrieval,
+  citation, and refusal boundaries: recruiters explicitly select one to five candidates and an optional approved job,
+  see the confirmed scope throughout the conversation, exchange bounded follow-up messages in a timeline, reopen the
+  active conversation after a browser refresh, and delete it explicitly. An application-owned welcome bubble explains
+  that NevGiU means “Never Give Up” and offers candidate help without entering model memory. Focused staging acceptance passed on
+  11 November 2026 at main revision `ec4e500`: migration, backend
   health, scope CRUD, owner/tenant isolation, optimistic conflict, deletion cleanup, and existing chat regressions
   passed without a required environment override. Production repeated the focused checks successfully the same day
   in release `v0.36.0` at revision `10a4db1`, also without a required environment override. This acceptance covers
@@ -175,7 +178,9 @@ categories without adding candidate facts, changing candidate scope, or lowering
 fresh eight-case multilingual provider run passed on 12 November 2026. The deployed picker-first request then passed
 focused staging acceptance after PR #173 at revision `ceded13`. Production repeated the picker-first and contextual
 follow-up checks successfully in release `v0.37.0` at revision `657207f`.
-The dedicated conversational CV-chat page, speech input/playback, and the recruitment dashboard remain roadmap work.
+The first dedicated conversational CV-chat page slice is implemented and awaiting staging acceptance. A conversation
+index, persisted citation cards for reloaded historical answers, language-first ambiguity cards on this page,
+controlled-response localization, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
@@ -246,9 +251,11 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 
 1. Complete the remaining CV-chat foundation. The bounded `get_evaluation_evidence`, `get_document_status`, and
    `get_ingestion_warnings` read-tool foundations are implemented; connect each one only to a future answer path that
-   consumes its result. Next persist the recruiter-confirmed candidate IDs and optional approved job as
-   application-owned, owner- and tenant-scoped memory, build the dedicated message-style chat page, broaden deterministic and
-   provider-backed evaluation, and localize controlled outcomes. The implemented picker- and language-first flows
+   consumes its result. Recruiter-confirmed candidate IDs and the optional approved job now have owner- and
+   tenant-scoped persistence, and the first dedicated message-style page consumes that scope. Next complete its
+   conversation index, historical citation metadata, language-first ambiguity confirmation, and editable scope;
+   then broaden deterministic/provider-backed evaluation and localize controlled outcomes. The implemented picker-
+   and language-first flows
    already resolve candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity
    confirmation, and produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job
    context.

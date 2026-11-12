@@ -19,6 +19,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -86,6 +87,24 @@ class CvChatConversationControllerTest {
                     .andExpect(jsonPath("$.answer").value("Grounded answer [CV-7]."))
                     .andExpect(jsonPath("$.candidates[0].id").value(7))
                     .andExpect(jsonPath("$.citations[0].candidateId").value(7));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    void returnsTheAuthorizedBoundedTimeline() throws Exception {
+        var actor = actor();
+        when(service.history("conversation-1", actor)).thenReturn(new CvChatConversationHistoryResponse(List.of(
+                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?"),
+                new CvChatConversationHistoryResponse.TimelineMessage("ASSISTANT", "Java 17 [CV-7]."))));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
+        try {
+            mvc.perform(get("/api/chat/conversations/conversation-1/messages"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.messages[0].role").value("USER"))
+                    .andExpect(jsonPath("$.messages[1].content").value("Java 17 [CV-7]."));
         } finally {
             SecurityContextHolder.clearContext();
         }

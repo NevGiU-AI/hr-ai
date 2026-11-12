@@ -7,6 +7,9 @@ import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.Duration;
@@ -77,6 +80,25 @@ class CvChatConversationServiceTest {
         assertThatThrownBy(() -> service.get("conversation", actor(2L, "tenant-a")))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("Conversation not found");
+    }
+
+    @Test
+    void returnsOnlyBoundedUserAndAssistantHistoryForTheOwner() {
+        CvChatConversation conversation = new CvChatConversation(
+                "conversation", "tenant-a", 1L, null, Instant.now(), Instant.now().plusSeconds(60));
+        when(conversations.findByIdAndOrganizationIdAndOwnerUserIdAndExpiresAtAfter(
+                org.mockito.ArgumentMatchers.eq("conversation"), org.mockito.ArgumentMatchers.eq("tenant-a"),
+                org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(Optional.of(conversation));
+        when(memory.get("conversation")).thenReturn(List.of(
+                new SystemMessage("internal"), new UserMessage("Which Java versions?"),
+                new AssistantMessage("Java 17 [CV-7].")));
+
+        CvChatConversationHistoryResponse response = service.history(
+                "conversation", actor(1L, "tenant-a"));
+
+        assertThat(response.messages()).containsExactly(
+                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?"),
+                new CvChatConversationHistoryResponse.TimelineMessage("ASSISTANT", "Java 17 [CV-7]."));
     }
 
     @Test

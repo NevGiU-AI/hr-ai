@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -23,6 +24,9 @@ public class CvChatToolExecutionGuard {
     // searches. Calls beyond that reviewed product limit are rejected before more work reaches repositories.
     // Confirmed planning may read five candidate summaries plus one explicitly selected approved job.
     private static final int MAX_CALLS_PER_REQUEST = 6;
+    // Organization-wide evidence discovery includes one bounded provider normalization call and up to two pgvector
+    // searches. Keep its latency budget separate so lightweight repository tools retain the executor's 3-second cap.
+    private static final Duration SEMANTIC_DISCOVERY_TIMEOUT = Duration.ofSeconds(20);
     private final AtomicInteger callCount = new AtomicInteger();
     private final CvChatToolExecutor executor;
 
@@ -35,9 +39,19 @@ public class CvChatToolExecutionGuard {
     <T> T execute(Supplier<T> action) {
         // Increment before execution so failed and timed-out calls still consume budget; otherwise a model could retry
         // a failing operation indefinitely without reaching the limit.
+        consumeCallBudget();
+        return executor.execute(action);
+    }
+
+    /** Applies the same request call budget but the reviewed semantic-discovery latency budget. */
+    <T> T executeSemanticDiscovery(Supplier<T> action) {
+        consumeCallBudget();
+        return executor.execute(action, SEMANTIC_DISCOVERY_TIMEOUT);
+    }
+
+    private void consumeCallBudget() {
         if (callCount.incrementAndGet() > MAX_CALLS_PER_REQUEST) {
             throw new CvChatException(HttpStatus.TOO_MANY_REQUESTS, "CV chat tool call limit exceeded");
         }
-        return executor.execute(action);
     }
 }

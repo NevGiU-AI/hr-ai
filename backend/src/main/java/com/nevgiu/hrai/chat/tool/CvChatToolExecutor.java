@@ -33,11 +33,16 @@ class CvChatToolExecutor {
     }
 
     <T> T execute(Supplier<T> action) {
+        return execute(action, timeout);
+    }
+
+    /** Runs one reviewed operation with a capability-specific timeout while reusing the same virtual-thread pool. */
+    <T> T execute(Supplier<T> action, Duration operationTimeout) {
         // Future.get provides a hard upper bound for the tool caller. Cancellation interrupts the virtual thread on a
         // best-effort basis; repository/driver code must still honor interruption for the underlying work to stop.
         Future<T> future = executor.submit(action::get);
         try {
-            return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            return future.get(operationTimeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException failure) {
             future.cancel(true);
             throw new CvChatException(HttpStatus.GATEWAY_TIMEOUT, "CV chat tool execution timed out");

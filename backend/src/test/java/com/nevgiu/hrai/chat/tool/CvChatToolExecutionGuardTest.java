@@ -4,10 +4,12 @@ import com.nevgiu.hrai.chat.CvChatException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CvChatToolExecutionGuardTest {
@@ -47,5 +49,19 @@ class CvChatToolExecutionGuardTest {
         } finally {
             executor.shutdown();
         }
+    }
+
+    @Test
+    void givesBoundedSemanticDiscoveryItsReviewedLongerTimeout() {
+        CvChatToolExecutor executor = mock(CvChatToolExecutor.class);
+        when(executor.execute(org.mockito.ArgumentMatchers.<Supplier<Integer>>any(),
+                org.mockito.ArgumentMatchers.eq(Duration.ofSeconds(20))))
+                .thenAnswer(invocation -> invocation.<Supplier<Integer>>getArgument(0).get());
+        CvChatToolExecutionGuard guard = new CvChatToolExecutionGuard(executor);
+
+        assertThat(guard.executeSemanticDiscovery(() -> 42)).isEqualTo(42);
+
+        verify(executor).execute(org.mockito.ArgumentMatchers.<Supplier<Integer>>any(),
+                org.mockito.ArgumentMatchers.eq(Duration.ofSeconds(20)));
     }
 }

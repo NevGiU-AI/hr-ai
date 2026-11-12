@@ -77,6 +77,16 @@ describe('CvChatService', () => {
     });
   });
 
+  it('discovers organization candidates without sending browser-owned tenant context', () => {
+    service.discoverOrganizationCandidates('Find strong AI developers').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/organization-discover`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ message: 'Find strong AI developers' });
+    request.flush({ kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm cards.', candidates: [],
+      truncated: false });
+  });
+
   it('plans a confirmed scope and omits the optional job when none is selected', () => {
     service.planConfirmedScope('Compare Ada and Grace', [7, 8], null).subscribe();
 

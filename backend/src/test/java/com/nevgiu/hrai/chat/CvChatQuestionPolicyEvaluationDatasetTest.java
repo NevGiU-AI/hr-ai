@@ -13,7 +13,7 @@ class CvChatQuestionPolicyEvaluationDatasetTest {
     void keepsTheVersionedHumanReviewedDatasetCompleteAndUnambiguous() {
         var dataset = CvChatQuestionPolicyEvaluationDataset.load();
 
-        assertThat(dataset.version()).isEqualTo("1.2.0");
+        assertThat(dataset.version()).isEqualTo("1.3.0");
         assertThat(dataset.description()).isNotBlank();
         assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(20)
                 .allSatisfy(testCase -> {

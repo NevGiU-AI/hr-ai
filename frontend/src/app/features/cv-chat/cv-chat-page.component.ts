@@ -8,7 +8,9 @@ import {
   CvChatCandidateOption,
   CvChatCitation,
   CvChatConversation,
+  CvChatOrganizationDiscoveryResponse,
   CvChatTimelineMessage,
+  CvChatToolDiscoveryResponse,
 } from '../cv-ingestion/models/cv-chat.models';
 import { CvChatService } from '../cv-ingestion/services/cv-chat.service';
 import { CvIngestionService } from '../cv-ingestion/services/cv-ingestion.service';
@@ -37,6 +39,12 @@ export class CvChatPageComponent implements OnInit {
   selectedJobId: number | null = null;
   searchQuery = '';
   searchResults: CvChatCandidateOption[] = [];
+  discoveryMode: 'NAMES' | 'ORGANIZATION' = 'NAMES';
+  naturalRequest = '';
+  discoveryMessage = '';
+  naturalResults: CvChatCandidateOption[] = [];
+  naturalBusy = false;
+  pendingQuestion = '';
   searchBusy = false;
   pageBusy = false;
   sendBusy = false;
@@ -60,6 +68,32 @@ export class CvChatPageComponent implements OnInit {
     });
   }
 
+  discoverNaturally(): void {
+    const request = this.naturalRequest.trim();
+    if (request.length < 2 || request.length > 2000 || this.naturalBusy) return;
+    this.naturalBusy = true;
+    this.error = '';
+    this.discoveryMessage = '';
+    this.naturalResults = [];
+    if (this.discoveryMode === 'ORGANIZATION') {
+      this.chat.discoverOrganizationCandidates(request)
+        .pipe(finalize(() => this.naturalBusy = false))
+        .subscribe({
+          next: (response) => this.applyOrganizationDiscovery(request, response),
+          error: (error: HttpErrorResponse) =>
+            this.error = this.apiError(error, 'Candidate discovery could not complete.'),
+        });
+      return;
+    }
+    this.chat.discoverWithTools(request)
+      .pipe(finalize(() => this.naturalBusy = false))
+      .subscribe({
+        next: (response) => this.applyNamedDiscovery(request, response),
+        error: (error: HttpErrorResponse) =>
+          this.error = this.apiError(error, 'Candidate discovery could not complete.'),
+      });
+  }
+
   addCandidate(candidate: CvChatCandidateOption): void {
     if (this.selectedCandidates.some((value) => value.id === candidate.id) || this.selectedCandidates.length >= 5) {
       return;
@@ -69,6 +103,10 @@ export class CvChatPageComponent implements OnInit {
 
   removeCandidate(candidateId: number): void {
     this.selectedCandidates = this.selectedCandidates.filter((candidate) => candidate.id !== candidateId);
+  }
+
+  isSelected(candidateId: number): boolean {
+    return this.selectedCandidates.some((candidate) => candidate.id === candidateId);
   }
 
   createConversation(): void {
@@ -81,6 +119,7 @@ export class CvChatPageComponent implements OnInit {
         next: (conversation) => {
           this.conversation = conversation;
           this.timeline = [];
+          this.message = this.pendingQuestion;
           this.persistConversationId(conversation.id);
         },
         error: (error) => this.error = this.apiError(error, 'Conversation could not be created.'),
@@ -154,12 +193,32 @@ export class CvChatPageComponent implements OnInit {
       });
   }
 
+  private applyNamedDiscovery(request: string, response: CvChatToolDiscoveryResponse): void {
+    const candidates = response.candidateScope?.references.flatMap((reference) => reference.candidates) ?? [];
+    this.applyDiscovery(request, response.kind, response.message, candidates);
+  }
+
+  private applyOrganizationDiscovery(request: string, response: CvChatOrganizationDiscoveryResponse): void {
+    this.applyDiscovery(request, response.kind, response.message, response.candidates);
+  }
+
+  private applyDiscovery(request: string, kind: string, message: string,
+                         candidates: CvChatCandidateOption[]): void {
+    this.discoveryMessage = message;
+    if (kind !== 'CANDIDATE_CONFIRMATION_REQUIRED') return;
+    this.naturalResults = [...new Map(candidates.map((candidate) => [candidate.id, candidate])).values()];
+    this.pendingQuestion = request;
+  }
+
   private resetLocalState(): void {
     this.conversation = null;
     this.timeline = [];
     this.selectedCandidates = [];
     this.selectedJobId = null;
     this.searchResults = [];
+    this.naturalResults = [];
+    this.discoveryMessage = '';
+    this.pendingQuestion = '';
     this.message = '';
     if (typeof localStorage !== 'undefined') localStorage.removeItem(ACTIVE_CONVERSATION_KEY);
   }

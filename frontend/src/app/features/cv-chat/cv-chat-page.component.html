@@ -16,7 +16,41 @@
 
   <section class="setup card" *ngIf="!conversation" aria-labelledby="new-conversation-title">
     <h2 id="new-conversation-title">Start a conversation</h2>
-    <p class="text-muted">Search and confirm one to five candidates. An approved job is optional.</p>
+    <p class="text-muted">Find candidates manually or describe the scope naturally, then confirm one to five cards.</p>
+
+    <fieldset class="natural-discovery">
+      <legend>Find candidates with natural language</legend>
+      <div class="scope-mode" role="radiogroup" aria-label="Candidate discovery scope">
+        <label><input type="radio" name="discoveryMode" [(ngModel)]="discoveryMode" value="NAMES" />
+          Named candidates</label>
+        <label><input type="radio" name="discoveryMode" [(ngModel)]="discoveryMode" value="ORGANIZATION" />
+          All organization candidates</label>
+      </div>
+      <label class="visually-hidden" for="natural-candidate-request">Candidate discovery request</label>
+      <textarea id="natural-candidate-request" class="form-control" [(ngModel)]="naturalRequest"
+                name="naturalRequest" maxlength="2000" rows="2"
+                [placeholder]="discoveryMode === 'NAMES'
+                  ? 'For example: Compare Fanon and Boris for Java engineering'
+                  : 'For example: Find the strongest AI developers in this organization'"></textarea>
+      <button class="btn btn-outline-primary mt-2" type="button" (click)="discoverNaturally()"
+              [disabled]="naturalRequest.trim().length < 2 || naturalBusy">
+        {{ naturalBusy ? 'Finding candidates…' : 'Find candidate cards' }}
+      </button>
+      <p class="discovery-note" *ngIf="discoveryMode === 'ORGANIZATION'">
+        Searches indexed professional evidence only inside your organization and returns a bounded shortlist.
+      </p>
+      <div class="alert alert-info mt-2" *ngIf="discoveryMessage">{{ discoveryMessage }}</div>
+      <div class="results" *ngIf="naturalResults.length">
+        <button type="button" class="result" *ngFor="let candidate of naturalResults"
+                (click)="addCandidate(candidate)"
+                [disabled]="selectedCandidates.length >= 5 || isSelected(candidate.id)">
+          <strong>{{ candidate.name }}</strong>
+          <span>{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
+        </button>
+      </div>
+    </fieldset>
+
+    <h3 class="manual-title">Or search by candidate name</h3>
     <div class="search-row">
       <label class="visually-hidden" for="chat-candidate-search">Candidate name</label>
       <input id="chat-candidate-search" class="form-control" [(ngModel)]="searchQuery"
@@ -29,7 +63,7 @@
     <div class="results" *ngIf="searchResults.length">
       <button type="button" class="result" *ngFor="let candidate of searchResults"
               (click)="addCandidate(candidate)"
-              [disabled]="selectedCandidates.length >= 5 || selectedCandidates.includes(candidate)">
+              [disabled]="selectedCandidates.length >= 5 || isSelected(candidate.id)">
         <strong>{{ candidate.name }}</strong>
         <span>{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
       </button>

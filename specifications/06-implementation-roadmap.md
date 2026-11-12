@@ -305,7 +305,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   bounded recruiter-only reference context. That correction is implemented, and the dataset `1.2.0` 26-case
   live-provider gate passed on 12 November 2026. Focused staging acceptance then passed after PR #172 at revision
   `038c9bc`; production repeated the focused contextual-answer and sensitive-refusal checks in release `v0.37.0` at
-  revision `657207f`. Both follow-up corrections are accepted before the dedicated conversational page.
+  revision `657207f`. Dataset `1.3.0` adds the professional evidence-ranking case `Who is the best AI dev?`; its fresh
+  27-case live-provider gate passed on 12 November 2026 while preserving sensitive-characteristic refusal. Both
+  follow-up corrections are accepted before the dedicated conversational page; the flexible discovery extension still
+  requires environment acceptance.
 - [~] Add the dedicated conversational CV-chat page after orchestration and scoped memory are stable. The first `/chat`
   slice provides explicit candidate search/selection, optional approved-job scope, an application-owned welcome
   bubble, one natural-language composer, a bounded message timeline, current-turn citations, active-conversation
@@ -318,9 +321,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   28 October 2026.
 - [x] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
   navigation, failure, and privacy checks successfully on 28 October 2026.
-- [~] Build semantic multi-candidate discovery and structured result cards. Named-candidate picker- and language-first
-  comparison is implemented for two to five verified candidates with optional approved-job context; broader skill-first
-  discovery across the authorized tenant remains.
+- [~] Build semantic multi-candidate discovery and structured result cards. Manual name search and named-candidate
+  language-first comparison remain available. The dedicated page now also provides organization-wide natural-language
+  criteria discovery through the tenant-scoped `search_candidates_by_evidence` Spring AI read tool. It searches only
+  current authorized semantic evidence, ranks a bounded shortlist of at most ten minimal cards, and still requires the
+  recruiter to confirm no more than five candidates before conversation creation. Staging and production acceptance,
+  broader recall evaluation, and persisted language-first confirmation history remain before completion.
 - [~] Prove the model cannot resolve names globally, invent candidates, silently widen the selected set, or retrieve
   evidence outside the authenticated organization; require citations for every factual comparison. Current deterministic
   resolution, tenant authorization, visible confirmation, bounded per-candidate retrieval, and complete-citation tests

@@ -68,6 +68,11 @@ export interface CvChatToolDiscoveryResponse extends CvChatToolOrchestrationOutc
   candidateScope: CvChatLanguageScopeResponse | null;
 }
 
+export interface CvChatOrganizationDiscoveryResponse extends CvChatToolOrchestrationOutcome {
+  candidates: Array<CvChatCandidateOption & { evidenceReferences: string[] }>;
+  truncated: boolean;
+}
+
 export interface CvChatConversation {
   id: string;
   version: number;

@@ -78,6 +78,27 @@ class CvChatToolOrchestrationControllerTest {
     }
 
     @Test
+    void returnsBoundedOrganizationEvidenceCardsWithoutAcceptingTenantContext() throws Exception {
+        when(orchestration.discoverOrganization("Find AI developers")).thenReturn(
+                new CvChatOrganizationDiscoveryResponse(
+                        CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
+                        "Confirm the shortlist.",
+                        List.of(new CvChatOrganizationDiscoveryResponse.CandidateOption(
+                                7L, "Ada", "AI Engineer", List.of("CV-17-P2"))), false));
+
+        mvc.perform(post("/api/chat/tools/organization-discover")
+                        .contentType("application/json")
+                        .content("{\"message\":\"Find AI developers\",\"organizationId\":\"attacker\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("CANDIDATE_CONFIRMATION_REQUIRED"))
+                .andExpect(jsonPath("$.candidates[0].id").value(7))
+                .andExpect(jsonPath("$.candidates[0].evidenceReferences[0]").value("CV-17-P2"))
+                .andExpect(jsonPath("$.organizationId").doesNotExist());
+
+        verify(orchestration).discoverOrganization("Find AI developers");
+    }
+
+    @Test
     void usesAuthenticatedOrganizationForConfirmedScopeAndIgnoresInjectedContext() throws Exception {
         AppUserPrincipal principal = principal();
         when(orchestration.planConfirmedScope("Plan review", List.of(7L, 9L), 21L, "tenant-a"))

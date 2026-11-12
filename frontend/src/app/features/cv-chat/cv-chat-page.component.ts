@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { ApiError, Job } from '../cv-ingestion/models/cv-ingestion.models';
 import {
@@ -20,7 +21,7 @@ const ACTIVE_CONVERSATION_KEY = 'hr-ai-active-cv-chat-conversation';
 @Component({
   selector: 'app-cv-chat-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './cv-chat-page.component.html',
   styleUrl: './cv-chat-page.component.scss',
 })
@@ -171,8 +172,8 @@ export class CvChatPageComponent implements OnInit {
     this.resetLocalState();
   }
 
-  citationLink(citation: CvChatCitation): string {
-    return citation.documentId === null ? '/candidates/import' : `/candidates/import#cv-document-${citation.documentId}`;
+  citationFragment(citation: CvChatCitation): string {
+    return citation.documentId === null ? 'candidate-details-title' : `cv-document-${citation.documentId}`;
   }
 
   private loadConversation(id: string): void {

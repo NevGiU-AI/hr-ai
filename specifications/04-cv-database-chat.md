@@ -803,7 +803,15 @@ Duplicate or similar names therefore remain disambiguated by immutable ID. Candi
 data and cannot authorize a candidate, organization, job, evidence record, or tool call. Backend and frontend health,
 privacy-safe logs, and existing workspace chat/evaluation regressions were also checked successfully. No environment
 variable, Flyway migration, database, Compose, or storage change was required. Production promotion and equivalent
-focused acceptance remain pending.
+focused acceptance remained pending at that point.
+
+Production repeated the focused checks successfully on 12 November 2026 in release `v0.38.0` at main revision
+`eea0a3a`. Organization-wide discovery, explicit confirmation, picker-first and named-candidate flows, grounded
+single- and multi-candidate answers, contextual follow-ups, optional approved-job scope, owning-candidate citation
+navigation, and readable `Display Name (CANDIDATE-ID)` references remained functional. Sensitive and unrelated
+requests were refused safely, insufficient evidence remained controlled, candidate and organization scope did not
+widen, and backend/frontend health and privacy-safe logs were correct. Production required no new environment
+variable, migration, database, Compose, or storage change.
 
 ## Acceptance criteria
 

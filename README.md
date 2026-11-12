@@ -193,7 +193,7 @@ focused staging acceptance after PR #173 at revision `ceded13`. Production repea
 follow-up checks successfully in release `v0.37.0` at revision `657207f`.
 The dedicated conversational CV-chat page, organization-wide criteria discovery, owning-candidate citation navigation,
 and readable `Display Name (CANDIDATE-ID)` grounded-answer format passed focused staging acceptance on 12 November
-2026 at main revision `9002238`. Production acceptance remains pending. A conversation
+2026 at main revision `9002238`, then production acceptance in release `v0.38.0` at revision `eea0a3a`. A conversation
 index, persisted citation cards for reloaded historical answers, language-first ambiguity cards on this page,
 controlled-response localization, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy

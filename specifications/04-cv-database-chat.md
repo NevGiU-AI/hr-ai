@@ -144,6 +144,14 @@ numeric similarity score. They deliberately exclude recruiter wording, normalize
 provider messages. This allows successful and failed paraphrases to be compared without placing candidate or recruiter
 content in logs. The global `0.35` threshold is unchanged.
 
+On 12 November 2026, picker-first staging comparison exposed a narrower recall failure: `Compare their Java
+experience` retrieved six accepted chunks for candidate `70` but none for candidate `71`, whose top score was `0.2871`.
+Explicit names and a longer candidate-neutral criterion both succeeded with the same candidate order, proving that
+authorization, selection order, and the comparison endpoint were sound. The query normalizer now expands only short
+selected-candidate professional criteria with neutral evidence categories such as roles, projects, responsibilities,
+frameworks, technologies, and versions. It must not invent candidate facts or change the requested criterion. Dataset
+`1.1.0` adds a synthetic Java/Android retrieval regression; the threshold and tenant/candidate filters remain unchanged.
+
 The focused synthetic live-provider gate passed on 30 October 2026. The direct French KLx formulation improved from an
 original-query top score of `0.4561` to `0.5451` after normalization, while the alternate French formulation improved
 from `0.4621` to `0.5887`. All seven EN/FR/PT cases retained the expected tenant/candidate-filtered document, required

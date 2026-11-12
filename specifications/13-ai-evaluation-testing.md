@@ -181,7 +181,8 @@ The versioned synthetic dataset at
 `backend/src/test/resources/ai-evaluations/cv-chat-multilingual-retrieval-v1.json` contains tenant-scoped source
 documents plus English, French, and Portuguese paraphrases for KLx experience and the Angular project. It includes a
 cross-tenant decoy with deliberately overlapping vocabulary so metadata filtering is exercised rather than inferred
-from retrieval quality.
+from retrieval quality. Version `1.1.0` adds a synthetic Java/Android document and the short picker-first criterion
+`Compare their Java experience`, which reproduces the class of staging recall failure without using production CV data.
 
 `CvChatMultilingualEvaluationDatasetTest` runs on every normal build and validates version, identifiers, languages,
 documents, expected references, required evidence terms, language markers, and the bounded repeated-answer subset.
@@ -206,6 +207,11 @@ questions, normalized queries, excerpts, embeddings, and provider messages are n
 parsing, original-plus-normalized retrieval, tenant/current-version filtering, and fallback to the original query when
 the optional normalization call fails. Provider evaluation and environment acceptance remain mandatory because unit
 tests cannot establish multilingual embedding quality, latency, or cost.
+
+The version `1.1.0` gate must prove that constrained normalization expands the short comparison criterion into relevant
+professional evidence categories and retrieves the expected `CV-70` fixture above the unchanged `0.35` threshold. It
+uses candidate ID `71` only as synthetic fixture metadata; no production candidate text, question, or embedding is
+included. A fresh successful opt-in provider run is required before this correction is promoted to staging.
 
 The authorized live-provider run passed on 30 October 2026 in 27.91 seconds of test time. Results were:
 

@@ -71,6 +71,35 @@ class CvChatComparisonServiceTest {
     }
 
     @Test
+    void preparesOneExpandedQuerySetForEveryCandidateInAShortPickerComparison() {
+        String question = "Compare their Java experience";
+        List<String> queries = List.of(question,
+                "professional Java experience, Java roles, projects, responsibilities, frameworks, technologies, "
+                        + "and versions");
+        CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java and Spring experience");
+        CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Android development with Java");
+        when(questionPolicy.classifySelectedCandidateComparison(question, false))
+                .thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        when(evidenceService.prepareRetrievalQueries(question, "tenant-a")).thenReturn(queries);
+        when(evidenceService.find(7L, queries, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, queries, "tenant-a")).thenReturn(List.of(grace));
+        List<CandidateIdentity> candidates = List.of(
+                new CandidateIdentity(7L, "Ada Lovelace", "Engineer"),
+                new CandidateIdentity(8L, "Grace Hopper", "Architect"));
+        when(model.compare(question, candidates, List.of(ada, grace), null))
+                .thenReturn("Ada lists Java and Spring [CV-10]; Grace lists Android Java [CV-11].");
+
+        CvChatComparisonResponse response = service.compare(
+                List.of(7L, 8L), question, null, "tenant-a");
+
+        assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
+                .containsExactly(7L, 8L);
+        verify(evidenceService).prepareRetrievalQueries(question, "tenant-a");
+        verify(evidenceService).find(7L, queries, "tenant-a");
+        verify(evidenceService).find(8L, queries, "tenant-a");
+    }
+
+    @Test
     void usesPriorRecruiterQuestionsToResolveAContextualComparisonFollowUp() {
         List<Message> history = List.of(new UserMessage("Compare their backend engineering experience."));
         String currentQuestion = "Which one has stronger Java evidence?";

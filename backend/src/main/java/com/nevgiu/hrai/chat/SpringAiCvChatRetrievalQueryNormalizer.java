@@ -17,12 +17,18 @@ class SpringAiCvChatRetrievalQueryNormalizer implements CvChatRetrievalQueryNorm
             Preserve explicit employer, project, certification, technology, and product names exactly.
             Preserve the professional intent, but remove candidate/person names, comparison boilerplate, pronouns, and
             conversational filler. The application already enforces the selected candidate scope independently.
+            When a selected-candidate comparison contains only a short professional criterion, retain that criterion
+            and expand it with neutral CV evidence categories such as roles, projects, responsibilities, skills,
+            technologies, frameworks, versions, education, or certifications that are relevant to the criterion.
+            Do not add a category that changes the requested criterion or presumes that any candidate has that evidence.
             Translate non-English wording into English. Do not answer the question, infer facts, or add CV evidence.
             Return exactly one line beginning with "RETRIEVAL_QUERY: " followed by the query and nothing else.
             Example:
             "Sur quoi a-t-elle travaillé chez Exemple SA ?" ->
                 "RETRIEVAL_QUERY: professional work and projects at Exemple SA"
             "On which project did he use Angular?" -> "RETRIEVAL_QUERY: project using Angular"
+            "Compare their Java experience" ->
+                "RETRIEVAL_QUERY: professional Java experience, Java roles, projects, responsibilities, frameworks, technologies, and versions"
             """;
     private static final int MAX_QUERY_CHARACTERS = 500;
     private static OpenAiChatOptions.Builder deterministicOptions() {

@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environments';
 import { CvChatPageComponent } from './cv-chat-page.component';
 
@@ -13,7 +14,7 @@ describe('CvChatPageComponent', () => {
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [CvChatPageComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     fixture = TestBed.createComponent(CvChatPageComponent);
     component = fixture.componentInstance;
@@ -61,6 +62,9 @@ describe('CvChatPageComponent', () => {
     });
     expect(component.timeline.map((item) => item.role)).toEqual(['USER', 'ASSISTANT']);
     expect(component.timeline[1].citations?.[0].reference).toBe('CV-7');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.citations a').getAttribute('href'))
+      .toBe('/candidates/import?candidateId=7#cv-document-7');
   });
 
   it('uses natural language to discover organization candidates before confirmation', () => {

@@ -109,7 +109,8 @@
         <p class="message-role">{{ item.role === 'USER' ? 'You' : 'Grounded assistant' }}</p>
         <p class="message-content">{{ item.content }}</p>
         <div class="citations" *ngIf="item.citations?.length">
-          <a *ngFor="let citation of item.citations" [href]="citationLink(citation)">
+          <a *ngFor="let citation of item.citations" routerLink="/candidates/import"
+             [queryParams]="{ candidateId: citation.candidateId }" [fragment]="citationFragment(citation)">
             {{ citation.reference }}<span *ngIf="citation.pageNumber"> · page {{ citation.pageNumber }}</span>
           </a>
         </div>

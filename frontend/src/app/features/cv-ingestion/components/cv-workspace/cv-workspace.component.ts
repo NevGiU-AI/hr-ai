@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize, forkJoin, switchMap } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
@@ -39,6 +39,7 @@ export class CvWorkspaceComponent implements OnInit {
   private readonly service = inject(CvIngestionService);
   private readonly chatService = inject(CvChatService);
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
   private pendingComparisonCitationFragment: string | null = null;
 
   pdfFile: File | null = null;
@@ -103,7 +104,16 @@ export class CvWorkspaceComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.refreshSelections();
+    const candidateId = Number(this.route.snapshot.queryParamMap.get('candidateId'));
+    const preferredCandidateId = Number.isSafeInteger(candidateId) && candidateId > 0 ? candidateId : null;
+    const fragment = this.route.snapshot.fragment;
+    // Cross-page chat citations include both the owning candidate and a constrained local anchor. Load the candidate
+    // first; loadCandidateDetails scrolls only after Angular has rendered the cited document card.
+    if (preferredCandidateId && fragment
+        && (fragment === 'candidate-details-title' || /^cv-document-\d+$/.test(fragment))) {
+      this.pendingComparisonCitationFragment = fragment;
+    }
+    this.refreshSelections(preferredCandidateId);
   }
 
   selectPdf(event: Event): void {

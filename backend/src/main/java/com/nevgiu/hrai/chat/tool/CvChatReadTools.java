@@ -8,6 +8,7 @@ import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.chat.CvChatOrganizationDiscoveryService;
 import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
 import com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot;
 import com.nevgiu.hrai.job.Job;
@@ -54,12 +55,14 @@ public class CvChatReadTools {
     private final CvChatToolScope scope;
     private final CvChatToolDiscoveryState discoveryState;
     private final CvChatToolPlanningState planningState;
+    private final CvChatOrganizationDiscoveryService organizationDiscovery;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
                            CvDocumentRepository documents, JobRepository jobs,
                            EvaluationHistoryService evaluationHistory,
                            CvChatToolExecutionGuard executionGuard, CvChatToolScope scope,
-                           CvChatToolDiscoveryState discoveryState, CvChatToolPlanningState planningState) {
+                           CvChatToolDiscoveryState discoveryState, CvChatToolPlanningState planningState,
+                           CvChatOrganizationDiscoveryService organizationDiscovery) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
         this.documents = documents;
@@ -69,6 +72,7 @@ public class CvChatReadTools {
         this.scope = scope;
         this.discoveryState = discoveryState;
         this.planningState = planningState;
+        this.organizationDiscovery = organizationDiscovery;
     }
 
     @Tool(name = "search_candidates", description = "Search the authenticated organization's candidates by a "
@@ -92,6 +96,16 @@ public class CvChatReadTools {
         discoveryState.record(query, cards.size());
         return new CandidateSearchResult(cards,
                 response.truncated() || response.candidates().size() > MAX_SEARCH_RESULTS);
+    }
+
+    @Tool(name = "search_candidates_by_evidence", description = "Search all indexed candidates in the authenticated "
+            + "organization using job-relevant professional criteria. Returns at most ten ranked minimal candidate "
+            + "cards with evidence references for explicit recruiter confirmation. Never treats ranking as an "
+            + "autonomous hiring decision and never searches another organization.")
+    public CandidateEvidenceSearchResult searchCandidatesByEvidence(
+            @ToolParam(description = "Job-relevant skills, experience, education, or professional criteria") String query) {
+        AppUserPrincipal actor = currentChatActor();
+        return executionGuard.execute(() -> organizationDiscovery.discover(query, actor.organizationId()));
     }
 
     @Tool(name = "get_candidate_summary", description = "Return a minimized, tenant-authorized summary for one "

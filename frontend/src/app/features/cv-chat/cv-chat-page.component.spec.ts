@@ -62,4 +62,37 @@ describe('CvChatPageComponent', () => {
     expect(component.timeline.map((item) => item.role)).toEqual(['USER', 'ASSISTANT']);
     expect(component.timeline[1].citations?.[0].reference).toBe('CV-7');
   });
+
+  it('uses natural language to discover organization candidates before confirmation', () => {
+    component.discoveryMode = 'ORGANIZATION';
+    component.naturalRequest = 'Find strong AI developers in this organization';
+    component.discoverNaturally();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/organization-discover`);
+    request.flush({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the shortlist.', truncated: false,
+      candidates: [{ id: 8, name: 'Grace', currentTitle: 'AI Engineer', evidenceReferences: ['CV-18'] }],
+    });
+
+    expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([8]);
+    expect(component.pendingQuestion).toBe('Find strong AI developers in this organization');
+  });
+
+  it('uses the reviewed name-discovery tools for natural-language candidate selection', () => {
+    component.naturalRequest = 'Compare Ada and Grace for Java';
+    component.discoverNaturally();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/discover`);
+    request.flush({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm cards.',
+      candidateScope: { message: component.naturalRequest, references: [
+        { requestedName: 'Ada', status: 'CHOICES', truncated: false,
+          candidates: [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }] },
+        { requestedName: 'Grace', status: 'CHOICES', truncated: false,
+          candidates: [{ id: 8, name: 'Grace', currentTitle: 'Architect' }] },
+      ] },
+    });
+
+    expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([7, 8]);
+  });
 });

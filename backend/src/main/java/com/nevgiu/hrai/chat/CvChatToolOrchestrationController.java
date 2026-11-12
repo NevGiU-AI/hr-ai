@@ -30,6 +30,13 @@ public class CvChatToolOrchestrationController {
         return orchestration.discover(request.message());
     }
 
+    /** Searches indexed professional evidence across the authenticated organization and returns confirmation cards. */
+    @PostMapping("/organization-discover")
+    public CvChatOrganizationDiscoveryResponse discoverOrganization(
+            @Valid @RequestBody CvChatOrganizationDiscoveryRequest request) {
+        return orchestration.discoverOrganization(request.message());
+    }
+
     /**
      * Planning begins only after the UI explicitly confirms candidate IDs and, optionally, one approved job ID.
      */

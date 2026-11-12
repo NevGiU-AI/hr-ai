@@ -23,11 +23,15 @@ class SpringAiCvChatQuestionPolicy implements CvChatQuestionPolicy {
             or another domain is JOB_RELEVANT when it asks about work rather than a private characteristic.
             Questions about a candidate's occupation, professional title, technical specialization, or suitability for
             a role are JOB_RELEVANT, including short yes/no questions and grammatically imperfect wording.
+            Requests to identify the strongest or best-qualified candidate using professional CV evidence are
+            JOB_RELEVANT. They request evidence-based decision support, not an autonomous hiring decision. Downstream
+            answer policy must qualify any ranking as based only on the supplied evidence.
             Examples:
             "Is this candidate a Java engineer?" -> JOB_RELEVANT
             "Is it a Java engineer ?" -> JOB_RELEVANT
             "Does the candidate have Spring Boot experience?" -> JOB_RELEVANT
             "Has the candidate worked as an engineer for a religious organization?" -> JOB_RELEVANT
+            "Who is the best AI developer?" -> JOB_RELEVANT
             "What is the candidate's religion?" -> SENSITIVE
             "What is the candidate's political affiliation?" -> SENSITIVE
             "What is the weather?" -> OUT_OF_SCOPE

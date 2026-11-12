@@ -3,6 +3,7 @@ package com.nevgiu.hrai.chat.tool;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.candidate.CvDocumentRepository;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
+import com.nevgiu.hrai.chat.CvChatOrganizationDiscoveryService;
 import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
 import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,8 @@ class CvChatReadToolRegistryTest {
 
         assertThat(callbacks).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements",
-                        "get_evaluation_evidence", "get_document_status", "get_ingestion_warnings");
+                        "search_candidates_by_evidence", "get_evaluation_evidence", "get_document_status",
+                        "get_ingestion_warnings");
         assertThat(registry.confirmedScopeCallbacks()).extracting(callback -> callback.getToolDefinition().name())
                 .containsExactly("get_candidate_summary");
         assertThat(registry.confirmedScopeCallbacksWithJob())
@@ -37,6 +39,9 @@ class CvChatReadToolRegistryTest {
         assertThat(registry.documentStatusCallbacks())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("get_document_status", "get_ingestion_warnings");
+        assertThat(registry.organizationDiscoveryCallbacks())
+                .extracting(callback -> callback.getToolDefinition().name())
+                .containsExactly("search_candidates_by_evidence");
         assertThat(callbacks).allSatisfy(callback -> assertThat(callback.getToolDefinition().inputSchema())
                 .doesNotContainIgnoringCase("organization")
                 .doesNotContainIgnoringCase("tenant")
@@ -54,7 +59,8 @@ class CvChatReadToolRegistryTest {
         assertThat(registry.allReviewedCallbacksForTesting())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("search_candidates", "get_candidate_summary", "get_job_requirements",
-                        "get_evaluation_evidence", "get_document_status", "get_ingestion_warnings");
+                        "search_candidates_by_evidence", "get_evaluation_evidence", "get_document_status",
+                        "get_ingestion_warnings");
     }
 
     private CvChatReadTools tools() {
@@ -62,6 +68,6 @@ class CvChatReadToolRegistryTest {
                 mock(CvChatCandidateResolutionService.class), mock(CandidateRepository.class),
                 mock(CvDocumentRepository.class), mock(JobRepository.class), mock(EvaluationHistoryService.class),
                 mock(CvChatToolExecutionGuard.class), mock(CvChatToolScope.class), mock(CvChatToolDiscoveryState.class),
-                mock(CvChatToolPlanningState.class));
+                mock(CvChatToolPlanningState.class), mock(CvChatOrganizationDiscoveryService.class));
     }
 }

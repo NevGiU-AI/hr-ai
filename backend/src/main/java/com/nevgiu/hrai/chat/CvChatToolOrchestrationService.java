@@ -70,6 +70,41 @@ public class CvChatToolOrchestrationService {
                 : discoverCandidates(normalizedMessage);
     }
 
+    /**
+     * Runs the reviewed tenant-wide evidence-search tool deterministically, then returns bounded cards for human
+     * confirmation. The provider may normalize the retrieval query but cannot choose a tenant or candidate ID.
+     */
+    public CvChatOrganizationDiscoveryResponse discoverOrganization(String message) {
+        String normalizedMessage = requireMessage(message);
+        CvChatQuestionPolicyResult policyResult;
+        try {
+            policyResult = questionPolicy.classify(normalizedMessage);
+        } catch (RuntimeException failure) {
+            LOGGER.warn("CV organization discovery policy failed failureType={}",
+                    failure.getClass().getSimpleName());
+            throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat question policy is unavailable");
+        }
+        if (policyResult != CvChatQuestionPolicyResult.JOB_RELEVANT) {
+            return new CvChatOrganizationDiscoveryResponse(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+                    REFUSAL_MESSAGE, List.of(), false);
+        }
+        var result = readTools.searchCandidatesByEvidence(normalizedMessage);
+        if (result.candidates().isEmpty()) {
+            return new CvChatOrganizationDiscoveryResponse(
+                    CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED,
+                    "No indexed candidates matched those professional criteria. Refine the request.",
+                    List.of(), result.truncated());
+        }
+        List<CvChatOrganizationDiscoveryResponse.CandidateOption> cards = result.candidates().stream()
+                .map(candidate -> new CvChatOrganizationDiscoveryResponse.CandidateOption(
+                        candidate.id(), candidate.name(), candidate.currentTitle(), candidate.evidenceReferences()))
+                .toList();
+        return new CvChatOrganizationDiscoveryResponse(
+                CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
+                "Evidence-backed candidate matches were found. Confirm up to five candidates before continuing.",
+                cards, result.truncated());
+    }
+
     public CvChatToolOrchestrationOutcome planConfirmedScope(String message, List<Long> requestedCandidateIds,
                                                               String organizationId) {
         return planConfirmedScope(message, requestedCandidateIds, null, organizationId);

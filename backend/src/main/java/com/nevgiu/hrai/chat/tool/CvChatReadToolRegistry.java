@@ -27,8 +27,9 @@ import java.util.function.Predicate;
 @RequestScope
 public class CvChatReadToolRegistry {
     private static final Set<String> ALLOWED_TOOL_NAMES = Set.of(
-            "search_candidates", "get_candidate_summary", "get_job_requirements", "get_evaluation_evidence",
-            "get_document_status", "get_ingestion_warnings");
+            "search_candidates", "search_candidates_by_evidence", "get_candidate_summary", "get_job_requirements",
+            "get_evaluation_evidence", "get_document_status", "get_ingestion_warnings");
+    private static final Set<String> ORGANIZATION_DISCOVERY_TOOL_NAMES = Set.of("search_candidates_by_evidence");
     private static final Set<String> CONFIRMED_SCOPE_TOOL_NAMES = Set.of("get_candidate_summary");
     private static final Set<String> CONFIRMED_SCOPE_WITH_JOB_TOOL_NAMES = Set.of(
             "get_candidate_summary", "get_job_requirements");
@@ -89,6 +90,11 @@ public class CvChatReadToolRegistry {
     public List<ToolCallback> documentStatusCallbacks() {
         // Keep operational state out of the current confirmed-scope preflight, which discards provider output.
         return matching(callback -> DOCUMENT_STATUS_TOOL_NAMES.contains(callback.getToolDefinition().name()));
+    }
+
+    /** Exposes only tenant-wide professional discovery to a future model-directed discovery phase. */
+    public List<ToolCallback> organizationDiscoveryCallbacks() {
+        return matching(callback -> ORGANIZATION_DISCOVERY_TOOL_NAMES.contains(callback.getToolDefinition().name()));
     }
 
     private List<ToolCallback> matching(Predicate<ToolCallback> predicate) {

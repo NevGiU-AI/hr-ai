@@ -318,9 +318,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   28 October 2026.
 - [x] Promote the accepted Angular candidate-chat interface to production and repeat focused role, answer, citation,
   navigation, failure, and privacy checks successfully on 28 October 2026.
-- [~] Build semantic multi-candidate discovery and structured result cards. Named-candidate picker- and language-first
-  comparison is implemented for two to five verified candidates with optional approved-job context; broader skill-first
-  discovery across the authorized tenant remains.
+- [~] Build semantic multi-candidate discovery and structured result cards. Manual name search and named-candidate
+  language-first comparison remain available. The dedicated page now also provides organization-wide natural-language
+  criteria discovery through the tenant-scoped `search_candidates_by_evidence` Spring AI read tool. It searches only
+  current authorized semantic evidence, ranks a bounded shortlist of at most ten minimal cards, and still requires the
+  recruiter to confirm no more than five candidates before conversation creation. Staging and production acceptance,
+  broader recall evaluation, and persisted language-first confirmation history remain before completion.
 - [~] Prove the model cannot resolve names globally, invent candidates, silently widen the selected set, or retrieve
   evidence outside the authenticated organization; require citations for every factual comparison. Current deterministic
   resolution, tenant authorization, visible confirmation, bounded per-candidate retrieval, and complete-citation tests

@@ -41,6 +41,32 @@ page slice are implemented. Conversation listing, historical citation metadata, 
 page, streaming, and speech controls remain explicit roadmap work and must not be inferred from the current
 request-scoped chat interfaces.
 
+### Candidate-scope entry modes
+
+The dedicated chat page keeps three explicit ways to build candidate scope. All three converge on the same visible
+candidate cards and require recruiter confirmation before a conversation can retrieve CV evidence:
+
+1. Manual name search remains available for recruiters who already know whom they want to review.
+2. Named natural-language discovery extracts references such as `Compare Ada Lovelace and Grace Hopper for backend
+   engineering`, resolves them only through tenant-scoped application services, and displays bounded ambiguous matches
+   rather than allowing the model to select a record silently.
+3. Organization-wide natural-language discovery accepts job-relevant criteria such as `Find the strongest Java and
+   Spring candidates`. The application-owned `search_candidates_by_evidence` Spring AI read tool searches pgvector
+   only inside the authenticated organization, applies the existing similarity and current-source controls, ranks a
+   bounded result set, and returns at most ten minimal cards. The recruiter may then select no more than five cards.
+
+Organization-wide discovery does not load every CV into a prompt and does not make a hiring decision. Each normalized
+query retrieves at most 50 raw semantic matches before tenant/current-document/source-version validation, candidate
+deduplication, ranking, and the ten-card response limit. Returned evidence references identify why a card matched but
+do not contain CV excerpts. The authenticated organization is obtained from the server-side principal and is absent
+from the model-visible tool schema. A phrase such as `best AI developer` is therefore treated as a permitted request
+for evidence-supported professional comparison, while sensitive-characteristic ranking remains refused before search.
+
+The tool is invoked deterministically behind `POST /api/chat/tools/organization-discover`; the model cannot decide the
+tenant or bypass confirmation. This deliberately combines a Spring AI tool contract with application-owned workflow
+control, avoiding the tool-calling instability previously observed in discovery while keeping the capability reusable
+for later conversational orchestration.
+
 ### Pre-retrieval question policy
 
 Question policy is intentionally separate from evidence availability. A religion, political-affiliation, health, or

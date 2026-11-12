@@ -10,6 +10,7 @@ import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatCandidateResolutionService;
 import com.nevgiu.hrai.chat.CvChatCandidateSearchResponse;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.chat.CvChatOrganizationDiscoveryService;
 import com.nevgiu.hrai.evaluation.EvaluationHistoryService;
 import com.nevgiu.hrai.evaluation.dto.EvaluationEvidenceSnapshot;
 import com.nevgiu.hrai.job.Job;
@@ -48,9 +49,11 @@ class CvChatReadToolsTest {
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
     private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
     private final CvChatToolPlanningState planningState = mock(CvChatToolPlanningState.class);
+    private final CvChatOrganizationDiscoveryService organizationDiscovery =
+            mock(CvChatOrganizationDiscoveryService.class);
     private final CvChatReadTools tools = new CvChatReadTools(
             candidateResolution, candidates, documents, jobs, evaluationHistory, executionGuard, scope, discoveryState,
-            planningState);
+            planningState, organizationDiscovery);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
@@ -75,6 +78,19 @@ class CvChatReadToolsTest {
                 List.of(new CandidateCard(7L, "Ada Lovelace", "Engineer")), false));
         verify(candidateResolution).search("Ada", "tenant-a");
         verify(discoveryState).record("Ada", 1);
+    }
+
+    @Test
+    void searchesEvidenceOnlyInsideTheAuthenticatedOrganization() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        CandidateEvidenceSearchResult expected = new CandidateEvidenceSearchResult(
+                List.of(new CandidateEvidenceCard(7L, "Ada Lovelace", "Engineer", List.of("CV-12"))), false);
+        when(organizationDiscovery.discover("Java and Spring experience", "tenant-a")).thenReturn(expected);
+
+        CandidateEvidenceSearchResult result = tools.searchCandidatesByEvidence("Java and Spring experience");
+
+        assertThat(result).isEqualTo(expected);
+        verify(organizationDiscovery).discover("Java and Spring experience", "tenant-a");
     }
 
     @Test
@@ -365,6 +381,7 @@ class CvChatReadToolsTest {
     @Test
     void exposesOnlyReviewedReadToolNames() throws Exception {
         Method search = CvChatReadTools.class.getMethod("searchCandidates", String.class);
+        Method evidenceSearch = CvChatReadTools.class.getMethod("searchCandidatesByEvidence", String.class);
         Method summary = CvChatReadTools.class.getMethod("getCandidateSummary", Long.class);
         Method requirements = CvChatReadTools.class.getMethod("getJobRequirements", Long.class);
         Method evaluationEvidence = CvChatReadTools.class.getMethod("getEvaluationEvidence", Long.class);
@@ -372,6 +389,7 @@ class CvChatReadToolsTest {
         Method ingestionWarnings = CvChatReadTools.class.getMethod("getIngestionWarnings", Long.class);
 
         assertThat(search.getAnnotation(Tool.class).name()).isEqualTo("search_candidates");
+        assertThat(evidenceSearch.getAnnotation(Tool.class).name()).isEqualTo("search_candidates_by_evidence");
         assertThat(summary.getAnnotation(Tool.class).name()).isEqualTo("get_candidate_summary");
         assertThat(requirements.getAnnotation(Tool.class).name()).isEqualTo("get_job_requirements");
         assertThat(evaluationEvidence.getAnnotation(Tool.class).name()).isEqualTo("get_evaluation_evidence");
@@ -380,8 +398,9 @@ class CvChatReadToolsTest {
         assertThat(CvChatReadTools.class.getDeclaredMethods())
                 .filteredOn(method -> method.isAnnotationPresent(Tool.class))
                 .extracting(Method::getName)
-                .containsExactlyInAnyOrder("searchCandidates", "getCandidateSummary", "getJobRequirements",
-                        "getEvaluationEvidence", "getDocumentStatus", "getIngestionWarnings");
+                .containsExactlyInAnyOrder("searchCandidates", "searchCandidatesByEvidence", "getCandidateSummary",
+                        "getJobRequirements", "getEvaluationEvidence", "getDocumentStatus",
+                        "getIngestionWarnings");
     }
 
     private EvaluationEvidenceSnapshot evaluation(Long id, String jobTitle, Instant invalidatedAt) {

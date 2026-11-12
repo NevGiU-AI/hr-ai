@@ -7,6 +7,7 @@ import {
   CvChatConversation,
   CvChatConversationHistory,
   CvChatConversationTurn,
+  CvChatOrganizationDiscoveryResponse,
   CvChatComparisonResponse,
   CvChatResponse,
   CvChatToolDiscoveryResponse,
@@ -38,6 +39,11 @@ export class CvChatService {
   /** Extracts references once and returns the cards from those exact tenant-scoped searches for confirmation. */
   discoverWithTools(message: string): Observable<CvChatToolDiscoveryResponse> {
     return this.http.post<CvChatToolDiscoveryResponse>(`${this.apiUrl}/chat/tools/discover`, { message });
+  }
+
+  discoverOrganizationCandidates(message: string): Observable<CvChatOrganizationDiscoveryResponse> {
+    return this.http.post<CvChatOrganizationDiscoveryResponse>(
+      `${this.apiUrl}/chat/tools/organization-discover`, { message });
   }
 
   /**

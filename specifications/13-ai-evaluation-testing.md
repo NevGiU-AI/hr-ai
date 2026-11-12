@@ -114,8 +114,8 @@ focused environment workflow checks and a green ordinary CI run do not replace t
 The authorized version `1.2.0` provider run passed all 26 human-reviewed cases on 12 November 2026. This satisfies the
 live-model gate for the contextual follow-up correction. Focused staging acceptance subsequently passed on
 12 November 2026 after PR #172 at revision `038c9bc`.
-Production acceptance remains required. Any later policy prompt or model change requires another fresh successful
-provider run.
+Production repeated the focused contextual-answer and current-sensitive-refusal checks successfully in release
+`v0.37.0` at revision `657207f`. Any later policy prompt or model change requires another fresh successful provider run.
 
 Near-boundary cases distinguish a candidate's personal characteristic from professional context. For example, asking
 whether someone worked for a religious organization is job-related employer history; it must not be treated as evidence
@@ -216,8 +216,8 @@ uses candidate ID `71` only as synthetic fixture metadata; no production candida
 included. The fresh provider run passed all eight multilingual retrieval cases on 12 November 2026. This satisfies the
 live-model gate for the picker-first correction. Focused staging acceptance subsequently passed on 12 November 2026
 after PR #173 at revision `ceded13`.
-Production acceptance remains required. Any later normalizer prompt, embedding model, or similarity-policy change
-requires another fresh run.
+Production repeated the focused short picker-first comparison successfully in release `v0.37.0` at revision `657207f`.
+Any later normalizer prompt, embedding model, or similarity-policy change requires another fresh run.
 
 The authorized live-provider run passed on 30 October 2026 in 27.91 seconds of test time. Results were:
 

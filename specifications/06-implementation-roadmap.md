@@ -192,7 +192,7 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and zero accepted matches for candidate `71`. The normalizer now expands concise professional criteria into neutral
   evidence categories, and multilingual retrieval dataset `1.1.0` adds the synthetic regression. Deterministic tests
   pass, and the fresh eight-case provider gate passed on 12 November 2026. Focused staging acceptance then passed after
-  PR #173 at revision `ceded13`; production acceptance remains.
+  PR #173 at revision `ceded13`; production repeated the focused check in release `v0.37.0` at revision `657207f`.
 - [x] Validate the dual-query multilingual-recall correction in staging before production promotion. On 1 November
   2026, merged PR #109 at main revision `26d59e8` preserved grounded EN/FR/PT answers, citations, tenant/candidate/current-
   document isolation, missing-evidence behavior, and pre-retrieval sensitive/unrelated refusals. Privacy-safe logs
@@ -304,7 +304,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   completed turn only after a locked version check. A staging false refusal showed that policy and retrieval also need
   bounded recruiter-only reference context. That correction is implemented, and the dataset `1.2.0` 26-case
   live-provider gate passed on 12 November 2026. Focused staging acceptance then passed after PR #172 at revision
-  `038c9bc`; production acceptance remains before the dedicated conversational page.
+  `038c9bc`; production repeated the focused contextual-answer and sensitive-refusal checks in release `v0.37.0` at
+  revision `657207f`. Both follow-up corrections are accepted before the dedicated conversational page.
 - [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after
   orchestration and scoped memory are stable. Provide a message timeline, one natural-language composer, visible
   candidate/job scope chips, ambiguity confirmation cards, citations, and conversation-history controls while

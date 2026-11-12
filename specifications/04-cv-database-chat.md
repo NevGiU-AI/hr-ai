@@ -152,7 +152,9 @@ selected-candidate professional criteria with neutral evidence categories such a
 frameworks, technologies, and versions. It must not invent candidate facts or change the requested criterion. Dataset
 `1.1.0` adds a synthetic Java/Android retrieval regression; the threshold and tenant/candidate filters remain unchanged.
 The fresh eight-case multilingual provider evaluation passed on 12 November 2026. Focused staging acceptance of the
-real picker-first request remains required before production promotion.
+real picker-first request passed the same day after PR #173 at main revision `ceded13`: the formerly failing concise
+criterion returned a grounded comparison for both selected candidates without changing their order, scope, or the
+`0.35` threshold. Production acceptance remains required.
 
 The focused synthetic live-provider gate passed on 30 October 2026. The direct French KLx formulation improved from an
 original-query top score of `0.4561` to `0.5451` after normalization, while the alternate French formulation improved
@@ -429,7 +431,9 @@ most the two most recent bounded recruiter questions—never assistant answers o
 untrusted reference context to policy and retrieval. The current question remains authoritative: a current sensitive
 request is still rejected even after professional history. Dataset `1.2.0` preserves both cases as provider regressions.
 The authorized 26-case live-provider evaluation passed on 12 November 2026. Focused staging acceptance of the
-corrected follow-up remains required before production promotion.
+corrected follow-up passed the same day after PR #172 at main revision `038c9bc`: a professional reference to prior
+technology context returned a grounded cited answer, while a current sensitive question remained refused before
+retrieval. Production acceptance remains required.
 
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may

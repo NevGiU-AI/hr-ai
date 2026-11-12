@@ -112,8 +112,10 @@ exception. The authorized post-release run passed all 24 human-reviewed cases on
 the selected-comparison policy prompt or model still require a fresh successful run before production promotion;
 focused environment workflow checks and a green ordinary CI run do not replace that explicit provider evaluation.
 The authorized version `1.2.0` provider run passed all 26 human-reviewed cases on 12 November 2026. This satisfies the
-live-model gate for the contextual follow-up correction; focused staging acceptance is still required before production
-promotion. Any later policy prompt or model change requires another fresh successful provider run.
+live-model gate for the contextual follow-up correction. Focused staging acceptance subsequently passed on
+12 November 2026 after PR #172 at revision `038c9bc`.
+Production acceptance remains required. Any later policy prompt or model change requires another fresh successful
+provider run.
 
 Near-boundary cases distinguish a candidate's personal characteristic from professional context. For example, asking
 whether someone worked for a religious organization is job-related employer history; it must not be treated as evidence
@@ -212,8 +214,10 @@ The version `1.1.0` gate must prove that constrained normalization expands the s
 professional evidence categories and retrieves the expected `CV-70` fixture above the unchanged `0.35` threshold. It
 uses candidate ID `71` only as synthetic fixture metadata; no production candidate text, question, or embedding is
 included. The fresh provider run passed all eight multilingual retrieval cases on 12 November 2026. This satisfies the
-live-model gate for the picker-first correction; focused staging acceptance is still required before production
-promotion. Any later normalizer prompt, embedding model, or similarity-policy change requires another fresh run.
+live-model gate for the picker-first correction. Focused staging acceptance subsequently passed on 12 November 2026
+after PR #173 at revision `ceded13`.
+Production acceptance remains required. Any later normalizer prompt, embedding model, or similarity-policy change
+requires another fresh run.
 
 The authorized live-provider run passed on 30 October 2026 in 27.91 seconds of test time. Results were:
 

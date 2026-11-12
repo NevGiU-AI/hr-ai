@@ -412,6 +412,13 @@ authorize candidates or jobs, and every turn retrieves freshly authorized eviden
 Replacing either the candidate set or approved job clears the previous message window before the new scope is saved,
 so old-scope content cannot influence a later answer.
 
+The first staging follow-up exposed a false `OUT_OF_SCOPE` result for “Which of those technologies appears most
+relevant to enterprise backend work?” The original implementation passed history only to the final answer model, so
+the pre-retrieval classifier and semantic query could not resolve “those technologies.” The correction supplies at
+most the two most recent bounded recruiter questions—never assistant answers or CV excerpts—as clearly labelled,
+untrusted reference context to policy and retrieval. The current question remains authoritative: a current sensitive
+request is still rejected even after professional history. Dataset `1.2.0` preserves both cases as provider regressions.
+
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may
 help interpret the recruiter message, but it cannot supply the organization boundary or authorize a candidate. Both

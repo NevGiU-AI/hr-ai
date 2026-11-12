@@ -39,13 +39,14 @@ public class CvChatService {
     /** Uses bounded prior turns only as model context; authorization and retrieval use the current explicit scope. */
     public CvChatResponse ask(Long candidateId, String question, String organizationId, List<Message> history) {
         String normalizedQuestion = question.trim();
+        String contextualQuestion = CvChatFollowUpContext.contextualQuestion(normalizedQuestion, history);
         // Preserve generic missing/cross-tenant 404 behavior before any model call, without loading CV content.
         evidenceService.authorizeCandidate(candidateId, organizationId);
         CvChatQuestionPolicyResult policyResult;
         try {
             // Classify before vector search so unrelated or sensitive questions cannot trigger candidate-data
             // retrieval. The classifier sees only the question; authorization remains enforced in application code.
-            policyResult = questionPolicy.classify(normalizedQuestion);
+            policyResult = questionPolicy.classify(contextualQuestion);
         } catch (RuntimeException policyFailure) {
             // Do not log the question or provider detail: either may contain private or adversarial content.
             LOGGER.warn("CV chat question policy failed for candidateId={} organizationId={} failureType={}",
@@ -59,7 +60,7 @@ public class CvChatService {
             return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
         }
         // Evidence is loaded in a short read transaction; no JDBC connection is held while OpenAI responds.
-        List<CvChatEvidence> evidence = evidenceService.find(candidateId, normalizedQuestion, organizationId);
+        List<CvChatEvidence> evidence = evidenceService.find(candidateId, contextualQuestion, organizationId);
         // An empty semantic result is a normal evidence outcome, not a provider failure. Avoid sending unrelated
         // fallback text to the model and return wording controlled entirely by the backend.
         if (evidence.isEmpty()) {

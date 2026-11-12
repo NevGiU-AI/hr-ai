@@ -16,6 +16,10 @@ class SpringAiCvChatQuestionPolicyTest {
                 .contains("\"Has the candidate worked as an engineer for a religious organization?\" -> JOB_RELEVANT")
                 .contains("An employer's identity or sector is professional context")
                 .contains("short yes/no questions and grammatically imperfect wording");
+        assertThat(SpringAiCvChatQuestionPolicy.SYSTEM_PROMPT.replaceAll("\\s+", " "))
+                .contains("Classify the CURRENT RECRUITER QUESTION")
+                .contains("Use prior questions only to resolve references")
+                .contains("A current sensitive question remains SENSITIVE");
     }
 
     @Test

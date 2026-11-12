@@ -13,7 +13,7 @@ class CvChatQuestionPolicyEvaluationDatasetTest {
     void keepsTheVersionedHumanReviewedDatasetCompleteAndUnambiguous() {
         var dataset = CvChatQuestionPolicyEvaluationDataset.load();
 
-        assertThat(dataset.version()).isEqualTo("1.1.0");
+        assertThat(dataset.version()).isEqualTo("1.2.0");
         assertThat(dataset.description()).isNotBlank();
         assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(20)
                 .allSatisfy(testCase -> {
@@ -35,6 +35,14 @@ class CvChatQuestionPolicyEvaluationDatasetTest {
         assertThat(dataset.cases()).anySatisfy(testCase -> {
             assertThat(testCase.question()).isEqualTo("Is it a Java engineer ?");
             assertThat(testCase.expected()).isEqualTo(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        });
+        assertThat(dataset.cases()).anySatisfy(testCase -> {
+            assertThat(testCase.id()).isEqualTo("en-follow-up-professional-reference");
+            assertThat(testCase.expected()).isEqualTo(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        });
+        assertThat(dataset.cases()).anySatisfy(testCase -> {
+            assertThat(testCase.id()).isEqualTo("en-follow-up-current-sensitive");
+            assertThat(testCase.expected()).isEqualTo(CvChatQuestionPolicyResult.SENSITIVE);
         });
         assertThat(dataset.cases()).anySatisfy(testCase -> {
             assertThat(testCase.question()).isEqualTo(

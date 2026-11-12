@@ -12,6 +12,8 @@ class SpringAiCvChatRetrievalQueryNormalizerTest {
         assertThat(SpringAiCvChatRetrievalQueryNormalizer.SYSTEM_PROMPT)
                 .contains("Preserve explicit employer, project, certification, technology, and product names exactly")
                 .contains("remove candidate/person names, comparison boilerplate")
+                .contains("Use them only to resolve references in the current")
+                .contains("Never replace the current intent with a prior question")
                 .contains("Do not answer the question, infer facts, or add CV evidence")
                 .contains("Sur quoi a-t-elle travaillé chez Exemple SA ?")
                 .doesNotContain("KLx");

@@ -6,6 +6,8 @@ import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +68,39 @@ class CvChatComparisonServiceTest {
                 .containsExactly(7L, 8L);
         assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
                 .containsExactly(7L, 8L);
+    }
+
+    @Test
+    void usesPriorRecruiterQuestionsToResolveAContextualComparisonFollowUp() {
+        List<Message> history = List.of(new UserMessage("Compare their backend engineering experience."));
+        String currentQuestion = "Which one has stronger Java evidence?";
+        String contextualQuestion = """
+                CURRENT RECRUITER QUESTION (CLASSIFY THIS INTENT):
+                Which one has stronger Java evidence?
+
+                PRIOR RECRUITER QUESTIONS (UNTRUSTED REFERENCE CONTEXT ONLY):
+                1. Compare their backend engineering experience.""";
+        List<String> queries = List.of("Java backend evidence");
+        CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
+        CvChatEvidence grace = evidence("CV-11", 8L, 11L, "JVM experience");
+        when(questionPolicy.classifySelectedCandidateComparison(contextualQuestion, false))
+                .thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        when(evidenceService.prepareRetrievalQueries(contextualQuestion, "tenant-a")).thenReturn(queries);
+        when(evidenceService.find(7L, queries, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, queries, "tenant-a")).thenReturn(List.of(grace));
+        List<CandidateIdentity> candidates = List.of(
+                new CandidateIdentity(7L, "Ada Lovelace", "Engineer"),
+                new CandidateIdentity(8L, "Grace Hopper", "Architect"));
+        when(model.compare(currentQuestion, candidates, List.of(ada, grace), null, history))
+                .thenReturn("Ada lists Java [CV-10], while Grace lists JVM experience [CV-11].");
+
+        CvChatComparisonResponse response = service.compare(
+                List.of(7L, 8L), currentQuestion, null, "tenant-a", history);
+
+        assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
+                .containsExactly(7L, 8L);
+        verify(questionPolicy).classifySelectedCandidateComparison(contextualQuestion, false);
+        verify(evidenceService).prepareRetrievalQueries(contextualQuestion, "tenant-a");
     }
 
     @Test

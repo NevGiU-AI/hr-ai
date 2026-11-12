@@ -191,7 +191,9 @@ categories without adding candidate facts, changing candidate scope, or lowering
 fresh eight-case multilingual provider run passed on 12 November 2026. The deployed picker-first request then passed
 focused staging acceptance after PR #173 at revision `ceded13`. Production repeated the picker-first and contextual
 follow-up checks successfully in release `v0.37.0` at revision `657207f`.
-The first dedicated conversational CV-chat page slice is implemented and awaiting staging acceptance. A conversation
+The dedicated conversational CV-chat page, organization-wide criteria discovery, owning-candidate citation navigation,
+and readable `Display Name (CANDIDATE-ID)` grounded-answer format passed focused staging acceptance on 12 November
+2026 at main revision `9002238`. Production acceptance remains pending. A conversation
 index, persisted citation cards for reloaded historical answers, language-first ambiguity cards on this page,
 controlled-response localization, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy

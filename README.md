@@ -167,7 +167,8 @@ The expanded 24-case question-policy dataset `1.1.0` live-provider gate then pas
 prompt or model changes still require a fresh opt-in provider run before promotion.
 Question-policy dataset `1.2.0` adds contextual professional and current-sensitive follow-up regressions. The follow-up
 path supplies only the two most recent bounded recruiter questions to policy and retrieval, never assistant answers,
-and keeps the current question authoritative. Its fresh opt-in provider run and staging acceptance remain required.
+and keeps the current question authoritative. Its fresh 26-case opt-in provider run passed on 12 November 2026;
+staging acceptance remains required.
 The dedicated conversational CV-chat page, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,

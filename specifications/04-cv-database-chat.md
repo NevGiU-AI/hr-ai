@@ -418,6 +418,8 @@ the pre-retrieval classifier and semantic query could not resolve “those techn
 most the two most recent bounded recruiter questions—never assistant answers or CV excerpts—as clearly labelled,
 untrusted reference context to policy and retrieval. The current question remains authoritative: a current sensitive
 request is still rejected even after professional history. Dataset `1.2.0` preserves both cases as provider regressions.
+The authorized 26-case live-provider evaluation passed on 12 November 2026. Focused staging acceptance of the
+corrected follow-up remains required before production promotion.
 
 An exact unique language match still appears for confirmation before evidence retrieval. Partial, ambiguous, or
 multiple matches produce bounded candidate choices; missing names use the generic not-found behavior. The model may

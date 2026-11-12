@@ -111,7 +111,9 @@ The expanded version `1.1.0` live-provider gate was not rerun before release `v0
 exception. The authorized post-release run passed all 24 human-reviewed cases on 10 November 2026. Future changes to
 the selected-comparison policy prompt or model still require a fresh successful run before production promotion;
 focused environment workflow checks and a green ordinary CI run do not replace that explicit provider evaluation.
-Version `1.2.0` requires its own fresh provider run before the contextual follow-up correction is promoted.
+The authorized version `1.2.0` provider run passed all 26 human-reviewed cases on 12 November 2026. This satisfies the
+live-model gate for the contextual follow-up correction; focused staging acceptance is still required before production
+promotion. Any later policy prompt or model change requires another fresh successful provider run.
 
 Near-boundary cases distinguish a candidate's personal characteristic from professional context. For example, asking
 whether someone worked for a religious organization is job-related employer history; it must not be treated as evidence

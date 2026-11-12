@@ -1,0 +1,30 @@
+.chat-page { margin: 0 auto; max-width: 980px; padding: 2rem 1rem 4rem; }
+.hero { background: linear-gradient(135deg, #eef4ff, #f8fbff); border-radius: 1.2rem; margin-bottom: 1.25rem; padding: 1.6rem; }
+.hero h1 { color: #17233c; font-size: clamp(2rem, 5vw, 3.2rem); margin: 0; }
+.eyebrow { color: #1c5cc5; font-size: .78rem; font-weight: 800; letter-spacing: .09em; margin: 0; text-transform: uppercase; }
+.card { border: 1px solid #d7e0ef; border-radius: 1rem; padding: 1.25rem; }
+.search-row { display: grid; gap: .6rem; grid-template-columns: 1fr auto; }
+.results { display: grid; gap: .5rem; margin-top: .75rem; }
+.result { background: #fff; border: 1px solid #cbd7ea; border-radius: .65rem; display: flex; flex-direction: column; padding: .7rem; text-align: left; }
+.result:hover:not(:disabled) { background: #f3f7ff; border-color: #6d9be8; }
+.result span { color: #5a6880; font-size: .82rem; }
+.scope { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+.scope-chip, .job-chip { background: #e7efff; border: 1px solid #b9cff8; border-radius: 999px; display: inline-flex; gap: .4rem; padding: .4rem .65rem; }
+.scope-chip button { background: transparent; border: 0; font-size: 1.1rem; line-height: 1; }
+.job-chip { background: #eff8ed; border-color: #bee0b7; }
+.scope-panel { align-items: center; background: #fff; border: 1px solid #d7e0ef; border-radius: 1rem; display: flex; gap: 1rem; justify-content: space-between; padding: 1rem; }
+.scope-panel > div:first-child { display: flex; flex-wrap: wrap; gap: .5rem; }
+.scope-actions { display: flex; gap: .5rem; }
+.timeline { display: flex; flex-direction: column; gap: .8rem; min-height: 280px; padding: 1.25rem 0; }
+.timeline.welcome-only { min-height: 0; padding-top: 0; }
+.message { border-radius: 1rem; max-width: 85%; padding: .8rem 1rem; }
+.message.recruiter { align-self: flex-end; background: #1c67d8; color: #fff; }
+.message.assistant { align-self: flex-start; background: #f2f5fa; border: 1px solid #dce3ee; }
+.message-role { font-size: .72rem; font-weight: 800; margin: 0 0 .35rem; text-transform: uppercase; }
+.message-content { margin: 0; white-space: pre-wrap; }
+.citations { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .7rem; }
+.citations a { background: #fff; border-radius: .4rem; padding: .25rem .45rem; }
+.empty, .thinking { color: #647089; text-align: center; }
+.composer { background: #fff; border: 1px solid #cbd7ea; border-radius: 1rem; padding: 1rem; position: sticky; bottom: 1rem; }
+.composer-footer { align-items: center; color: #647089; display: flex; font-size: .82rem; justify-content: space-between; margin-top: .6rem; }
+@media (max-width: 680px) { .scope-panel { align-items: stretch; flex-direction: column; } .message { max-width: 95%; } }

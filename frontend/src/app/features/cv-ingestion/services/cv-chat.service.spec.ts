@@ -97,4 +97,29 @@ describe('CvChatService', () => {
     });
     request.flush({ kind: 'CONFIRMED_SCOPE_READY', message: 'Scope is ready.' });
   });
+
+  it('creates and continues an owner-scoped conversation without browser-owned tenant fields', () => {
+    service.createConversation([7, 8], 12).subscribe();
+    const create = http.expectOne(`${environment.apiUrl}/chat/conversations`);
+    expect(create.request.body).toEqual({ candidateIds: [7, 8], jobId: 12 });
+    create.flush({ id: 'conversation-1' });
+
+    service.askConversation('conversation-1', 'Which one has stronger Java evidence?').subscribe();
+    const ask = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
+    expect(ask.request.method).toBe('POST');
+    expect(ask.request.body).toEqual({ message: 'Which one has stronger Java evidence?' });
+    ask.flush({ answer: 'Grounded answer' });
+  });
+
+  it('loads bounded conversation history and deletes the conversation', () => {
+    service.getConversationHistory('conversation-1').subscribe();
+    const history = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
+    expect(history.request.method).toBe('GET');
+    history.flush({ messages: [] });
+
+    service.deleteConversation('conversation-1').subscribe();
+    const deletion = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1`);
+    expect(deletion.request.method).toBe('DELETE');
+    deletion.flush(null);
+  });
 });

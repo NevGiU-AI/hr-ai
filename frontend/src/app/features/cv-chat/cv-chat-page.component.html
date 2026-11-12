@@ -1,0 +1,96 @@
+<section class="chat-page">
+  <header class="hero">
+    <p class="eyebrow">Grounded recruiting assistant</p>
+    <h1>CV chat</h1>
+    <p>Confirm candidates first, then continue a bounded conversation using only authorized CV evidence.</p>
+  </header>
+
+  <div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>
+
+  <section class="timeline welcome-only" aria-label="NevGiU welcome" *ngIf="!conversation">
+    <article class="message assistant welcome-message">
+      <p class="message-role">NevGiU</p>
+      <p class="message-content">{{ welcomeMessage }}</p>
+    </article>
+  </section>
+
+  <section class="setup card" *ngIf="!conversation" aria-labelledby="new-conversation-title">
+    <h2 id="new-conversation-title">Start a conversation</h2>
+    <p class="text-muted">Search and confirm one to five candidates. An approved job is optional.</p>
+    <div class="search-row">
+      <label class="visually-hidden" for="chat-candidate-search">Candidate name</label>
+      <input id="chat-candidate-search" class="form-control" [(ngModel)]="searchQuery"
+             (keyup.enter)="search()" placeholder="Search candidate by name" maxlength="255" />
+      <button class="btn btn-outline-primary" type="button" (click)="search()"
+              [disabled]="searchQuery.trim().length < 2 || searchBusy">
+        {{ searchBusy ? 'Searching…' : 'Search' }}
+      </button>
+    </div>
+    <div class="results" *ngIf="searchResults.length">
+      <button type="button" class="result" *ngFor="let candidate of searchResults"
+              (click)="addCandidate(candidate)"
+              [disabled]="selectedCandidates.length >= 5 || selectedCandidates.includes(candidate)">
+        <strong>{{ candidate.name }}</strong>
+        <span>{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
+      </button>
+    </div>
+    <div class="scope" aria-label="Confirmed candidate scope">
+      <span class="scope-chip" *ngFor="let candidate of selectedCandidates">
+        {{ candidate.name }}
+        <button type="button" (click)="removeCandidate(candidate.id)" [attr.aria-label]="'Remove ' + candidate.name">×</button>
+      </span>
+      <span class="text-muted" *ngIf="!selectedCandidates.length">No candidates selected.</span>
+    </div>
+    <label for="chat-job" class="form-label">Approved job context (optional)</label>
+    <select id="chat-job" class="form-select" [(ngModel)]="selectedJobId">
+      <option [ngValue]="null">No approved job</option>
+      <option *ngFor="let job of jobs" [ngValue]="job.id">{{ job.title }} · {{ job.level }}</option>
+    </select>
+    <button class="btn btn-primary mt-3" type="button" (click)="createConversation()"
+            [disabled]="!selectedCandidates.length || pageBusy">
+      {{ pageBusy ? 'Starting…' : 'Start conversation' }}
+    </button>
+  </section>
+
+  <ng-container *ngIf="conversation as active">
+    <section class="scope-panel" aria-label="Active conversation scope">
+      <div>
+        <span class="scope-chip" *ngFor="let candidate of active.candidates">{{ candidate.name }}</span>
+        <span class="job-chip" *ngIf="active.job">Job: {{ active.job.title }}</span>
+      </div>
+      <div class="scope-actions">
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="startAnother()">New chat</button>
+        <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteConversation()"
+                [disabled]="pageBusy">Delete chat</button>
+      </div>
+    </section>
+
+    <section class="timeline" aria-live="polite" aria-label="Conversation timeline">
+      <article class="message assistant welcome-message">
+        <p class="message-role">NevGiU</p>
+        <p class="message-content">{{ welcomeMessage }}</p>
+      </article>
+      <article *ngFor="let item of timeline" class="message" [class.recruiter]="item.role === 'USER'"
+               [class.assistant]="item.role === 'ASSISTANT'">
+        <p class="message-role">{{ item.role === 'USER' ? 'You' : 'Grounded assistant' }}</p>
+        <p class="message-content">{{ item.content }}</p>
+        <div class="citations" *ngIf="item.citations?.length">
+          <a *ngFor="let citation of item.citations" [href]="citationLink(citation)">
+            {{ citation.reference }}<span *ngIf="citation.pageNumber"> · page {{ citation.pageNumber }}</span>
+          </a>
+        </div>
+      </article>
+      <p class="thinking" *ngIf="sendBusy">Reviewing authorized evidence…</p>
+    </section>
+
+    <form class="composer" (ngSubmit)="send()">
+      <label for="chat-message" class="form-label">Message</label>
+      <textarea id="chat-message" name="message" class="form-control" [(ngModel)]="message" maxlength="2000"
+                rows="3" [disabled]="sendBusy" placeholder="Ask a job-relevant question…"></textarea>
+      <div class="composer-footer">
+        <span>{{ message.length }}/2,000</span>
+        <button class="btn btn-primary" type="submit" [disabled]="!message.trim() || sendBusy">Send</button>
+      </div>
+    </form>
+  </ng-container>
+</section>

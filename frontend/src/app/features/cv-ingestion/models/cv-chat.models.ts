@@ -67,3 +67,33 @@ export interface CvChatToolOrchestrationOutcome {
 export interface CvChatToolDiscoveryResponse extends CvChatToolOrchestrationOutcome {
   candidateScope: CvChatLanguageScopeResponse | null;
 }
+
+export interface CvChatConversation {
+  id: string;
+  version: number;
+  candidates: CvChatCandidateOption[];
+  job: { id: number; title: string; level: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+}
+
+export interface CvChatTimelineMessage {
+  role: 'USER' | 'ASSISTANT';
+  content: string;
+  citations?: CvChatCitation[];
+}
+
+export interface CvChatConversationHistory {
+  messages: CvChatTimelineMessage[];
+}
+
+export interface CvChatConversationTurn {
+  conversationId: string;
+  version: number;
+  answer: string;
+  candidates: CvChatCandidateOption[];
+  job: CvChatConversation['job'];
+  citations: CvChatCitation[];
+  expiresAt: string;
+}

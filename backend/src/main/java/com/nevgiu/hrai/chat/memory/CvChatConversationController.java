@@ -38,6 +38,12 @@ class CvChatConversationController {
         return service.get(id, actor);
     }
 
+    @GetMapping("/{id}/messages")
+    CvChatConversationHistoryResponse history(@PathVariable String id,
+                                               @AuthenticationPrincipal AppUserPrincipal actor) {
+        return service.history(id, actor);
+    }
+
     @PutMapping("/{id}/scope")
     CvChatConversationResponse replaceScope(@PathVariable String id,
                                             @Valid @RequestBody CvChatConversationRequests.ReplaceScope request,

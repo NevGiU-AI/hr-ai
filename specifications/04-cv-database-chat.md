@@ -36,8 +36,9 @@ The first backend slice supports an imperative question about one explicitly sel
 
 The candidate-specific endpoint can consume vector retrieval when its separate environment switch is enabled. The
 application also provides deterministic candidate discovery, explicit picker-first comparison, and the Angular
-language-first orchestration boundary described below. Persisted conversation memory, the dedicated message-style
-chat page, streaming, and speech controls remain explicit roadmap work and must not be inferred from the current
+language-first orchestration boundary described below. Persisted scoped memory and the first dedicated message-style
+page slice are implemented. Conversation listing, historical citation metadata, language-first confirmation on that
+page, streaming, and speech controls remain explicit roadmap work and must not be inferred from the current
 request-scoped chat interfaces.
 
 ### Pre-retrieval question policy
@@ -376,13 +377,20 @@ explicit **Change candidates** and **Clear conversation** actions. Adding, repla
 the verified scope only through recruiter action. Follow-up questions may reuse the confirmed IDs, but conversation
 memory must never infer, add, replace, or silently widen that set.
 
-The current candidate workspace is the integration and acceptance surface for these contracts, not the final chat
-layout. Flyway V7 and the scoped-conversation CRUD API now establish the owner/tenant/candidate/job authorization
-boundary and a bounded Spring AI JDBC memory repository; the answer path does not consume that memory yet. After this
-foundation is accepted and follow-up execution is connected, build a dedicated CV-chat page with a message timeline,
-one natural-language composer, visible candidate/job scope chips, confirmation cards only when resolution is
-ambiguous, cited answers, conversation-history controls, and later speech input/playback. Picker-first and
-language-first entry remain available and converge on the same application-owned confirmed scope.
+The candidate workspace remains an integration and acceptance surface while the dedicated `/chat` page is introduced.
+Flyway V7 and the scoped-conversation API establish the owner/tenant/candidate/job authorization boundary and bounded
+Spring AI JDBC memory. The first dedicated-page slice lets an authorized recruiter search and explicitly select one to
+five candidates, optionally attach an approved job, create or reopen one active conversation, exchange contextual
+messages in a timeline, follow current-turn citations, start a separate local chat, or delete the server conversation.
+Its initial welcome bubble explains that NevGiU means “Never Give Up” and offers candidate help. This is
+application-owned presentation text and is never sent to the provider or stored as conversation history.
+
+This slice intentionally remembers only the active conversation ID in browser storage; it does not yet provide a
+server-side conversation index. Spring AI's existing JDBC message repository persists roles and text, not the
+application citation objects, so reloaded historical answers currently retain their bracketed references but do not
+reconstruct citation cards. Conversation listing, persisted historical citation metadata, editable scope replacement,
+and language-first ambiguity confirmation on the dedicated page remain. Picker-first and language-first entry must
+still converge on the same application-owned confirmed scope before the page milestone is complete.
 
 #### Scoped conversation-memory staging acceptance
 

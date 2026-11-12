@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environments';
 import {
   CvChatCandidateSearchResponse,
+  CvChatConversation,
+  CvChatConversationHistory,
+  CvChatConversationTurn,
   CvChatComparisonResponse,
   CvChatResponse,
   CvChatToolDiscoveryResponse,
@@ -48,5 +51,27 @@ export class CvChatService {
     const body: { message: string; candidateIds: number[]; jobId?: number } = { message, candidateIds };
     if (jobId !== null) body.jobId = jobId;
     return this.http.post<CvChatToolOrchestrationOutcome>(`${this.apiUrl}/chat/tools/confirmed-scope`, body);
+  }
+
+  createConversation(candidateIds: number[], jobId: number | null): Observable<CvChatConversation> {
+    const body: { candidateIds: number[]; jobId?: number } = { candidateIds };
+    if (jobId !== null) body.jobId = jobId;
+    return this.http.post<CvChatConversation>(`${this.apiUrl}/chat/conversations`, body);
+  }
+
+  getConversation(id: string): Observable<CvChatConversation> {
+    return this.http.get<CvChatConversation>(`${this.apiUrl}/chat/conversations/${id}`);
+  }
+
+  getConversationHistory(id: string): Observable<CvChatConversationHistory> {
+    return this.http.get<CvChatConversationHistory>(`${this.apiUrl}/chat/conversations/${id}/messages`);
+  }
+
+  askConversation(id: string, message: string): Observable<CvChatConversationTurn> {
+    return this.http.post<CvChatConversationTurn>(`${this.apiUrl}/chat/conversations/${id}/messages`, { message });
+  }
+
+  deleteConversation(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/chat/conversations/${id}`);
   }
 }

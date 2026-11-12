@@ -306,10 +306,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   live-provider gate passed on 12 November 2026. Focused staging acceptance then passed after PR #172 at revision
   `038c9bc`; production repeated the focused contextual-answer and sensitive-refusal checks in release `v0.37.0` at
   revision `657207f`. Both follow-up corrections are accepted before the dedicated conversational page.
-- [ ] Replace the current candidate-workspace integration surface with the dedicated conversational CV-chat page after
-  orchestration and scoped memory are stable. Provide a message timeline, one natural-language composer, visible
-  candidate/job scope chips, ambiguity confirmation cards, citations, and conversation-history controls while
-  retaining both picker-first and language-first entry.
+- [~] Add the dedicated conversational CV-chat page after orchestration and scoped memory are stable. The first `/chat`
+  slice provides explicit candidate search/selection, optional approved-job scope, an application-owned welcome
+  bubble, one natural-language composer, a bounded message timeline, current-turn citations, active-conversation
+  restoration, and explicit deletion. The candidate workspace remains available during migration. Conversation
+  listing, persisted citation metadata for reloaded turns, language-first ambiguity confirmation on this page, and
+  editable scope replacement remain before this item is complete.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.
 - [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on

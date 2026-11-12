@@ -45,5 +45,11 @@ export const routes: Routes = [
         loadChildren: () =>
             import("./features/cv-ingestion/cv-ingestion.routes").then((m) => m.CV_INGESTION_ROUTES),
     },
+    {
+        path: "chat",
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/cv-chat/cv-chat-page.component')
+            .then((m) => m.CvChatPageComponent),
+    },
     { path: "**", redirectTo: "jobs/job-offer" },
 ];

@@ -31,6 +31,12 @@ class CvChatCandidateReferenceProviderEvaluationTest {
                         List.of("Ada Lovelace", "Grace Hopper")),
                 new Case("fr-full-names", "Comparez Ada Lovelace et Grace Hopper pour ce poste",
                         List.of("Ada Lovelace", "Grace Hopper")),
+                new Case("en-ampersand-partial-name",
+                        "Compare Fanon Jupkwo & Boris on backend experience",
+                        List.of("Fanon Jupkwo", "Boris")),
+                new Case("en-and-partial-name",
+                        "Compare Fanon Jupkwo and Boris on backend experience",
+                        List.of("Fanon Jupkwo", "Boris")),
                 new Case("en-single-name", "Summarize Ada's backend experience", List.of("Ada")),
                 new Case("en-single-partial-name", "Fanon", List.of("Fanon")));
         SoftAssertions results = new SoftAssertions();

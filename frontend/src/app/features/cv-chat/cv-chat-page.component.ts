@@ -34,6 +34,7 @@ export class CvChatPageComponent implements OnInit {
   private readonly candidates = inject(CvIngestionService);
 
   conversation: CvChatConversation | null = null;
+  recentConversations: CvChatConversation[] = [];
   timeline: CvChatTimelineMessage[] = [];
   selectedCandidates: CvChatCandidateOption[] = [];
   jobs: Job[] = [];
@@ -54,6 +55,7 @@ export class CvChatPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.candidates.getJobs().subscribe({ next: (jobs) => this.jobs = jobs });
+    this.loadConversationList();
     const storedId = typeof localStorage === 'undefined' ? null : localStorage.getItem(ACTIVE_CONVERSATION_KEY);
     if (storedId) this.loadConversation(storedId);
   }
@@ -122,6 +124,7 @@ export class CvChatPageComponent implements OnInit {
           this.timeline = [];
           this.message = this.pendingQuestion;
           this.persistConversationId(conversation.id);
+          this.upsertConversation(conversation);
         },
         error: (error) => this.error = this.apiError(error, 'Conversation could not be created.'),
       });
@@ -149,6 +152,7 @@ export class CvChatPageComponent implements OnInit {
         this.timeline = [...this.timeline, {
           role: 'ASSISTANT', content: turn.answer, citations: turn.citations,
         }];
+        this.upsertConversation(this.conversation);
       },
       error: (error) => {
         this.timeline = this.timeline.slice(0, -1);
@@ -163,13 +167,20 @@ export class CvChatPageComponent implements OnInit {
     const id = this.conversation.id;
     this.pageBusy = true;
     this.chat.deleteConversation(id).pipe(finalize(() => this.pageBusy = false)).subscribe({
-      next: () => this.resetLocalState(),
+      next: () => {
+        this.recentConversations = this.recentConversations.filter((value) => value.id !== id);
+        this.resetLocalState();
+      },
       error: (error) => this.error = this.apiError(error, 'Conversation could not be deleted.'),
     });
   }
 
   startAnother(): void {
     this.resetLocalState();
+  }
+
+  resumeConversation(id: string): void {
+    if (!this.pageBusy) this.loadConversation(id);
   }
 
   citationFragment(citation: CvChatCitation): string {
@@ -186,6 +197,8 @@ export class CvChatPageComponent implements OnInit {
           this.timeline = history.messages;
           this.selectedCandidates = conversation.candidates;
           this.selectedJobId = conversation.job?.id ?? null;
+          this.persistConversationId(conversation.id);
+          this.upsertConversation(conversation);
         },
         error: (error) => {
           this.resetLocalState();
@@ -197,6 +210,19 @@ export class CvChatPageComponent implements OnInit {
   private applyNamedDiscovery(request: string, response: CvChatToolDiscoveryResponse): void {
     const candidates = response.candidateScope?.references.flatMap((reference) => reference.candidates) ?? [];
     this.applyDiscovery(request, response.kind, response.message, candidates);
+  }
+
+  private loadConversationList(): void {
+    this.chat.listConversations().subscribe({
+      next: (conversations) => this.recentConversations = conversations,
+      error: (error) => this.error = this.apiError(error, 'Recent conversations could not be loaded.'),
+    });
+  }
+
+  private upsertConversation(conversation: CvChatConversation): void {
+    this.recentConversations = [conversation,
+      ...this.recentConversations.filter((value) => value.id !== conversation.id)]
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
   private applyOrganizationDiscovery(request: string, response: CvChatOrganizationDiscoveryResponse): void {

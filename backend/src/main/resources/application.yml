@@ -154,6 +154,7 @@ app:
     # recall while unsupported restaurant and salary questions still followed the controlled no-evidence path.
     semantic-min-similarity: ${APP_CV_CHAT_SEMANTIC_MIN_SIMILARITY:0.35}
     conversation:
+      # Flyway V7 owns bounded Spring AI memory; V8 owns the separate visible timeline and citation navigation metadata.
       # TTL means Time To Live: after this validity period the application-owned authorization scope expires and its
       # subordinate Spring AI memory becomes eligible for scheduled deletion. Scope replacement refreshes the expiry.
       ttl: ${APP_CV_CHAT_CONVERSATION_TTL:7d}

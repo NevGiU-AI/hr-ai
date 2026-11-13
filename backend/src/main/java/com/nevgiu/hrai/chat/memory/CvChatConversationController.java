@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/chat/conversations")
 class CvChatConversationController {
@@ -30,6 +32,11 @@ class CvChatConversationController {
     CvChatConversationResponse create(@Valid @RequestBody CvChatConversationRequests.Create request,
                                       @AuthenticationPrincipal AppUserPrincipal actor) {
         return service.create(request, actor);
+    }
+
+    @GetMapping
+    List<CvChatConversationResponse> list(@AuthenticationPrincipal AppUserPrincipal actor) {
+        return service.list(actor);
     }
 
     @GetMapping("/{id}")

@@ -276,6 +276,31 @@ describe('CvWorkspaceComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Confirm candidate scope');
   });
 
+  it('shows bounded cards for one partial name without treating it as a completed comparison scope', () => {
+    chatService.discoverWithTools.and.returnValue(of({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the candidate cards.',
+      candidateScope: {
+        message: 'Fanon',
+        references: [{
+          requestedName: 'Fanon', status: 'CHOICES', truncated: false,
+          candidates: [
+            { id: 7, name: 'Fanon Jupkwo', currentTitle: 'Java Engineer' },
+            { id: 8, name: 'Fanon Example', currentTitle: 'Developer' },
+          ],
+        }],
+      },
+    }));
+    component.languageComparisonMessage = 'Fanon';
+
+    component.proposeLanguageScope();
+    fixture.detectChanges();
+
+    expect(component.languageScopeResponse?.references).toHaveSize(1);
+    expect(fixture.nativeElement.textContent).toContain('Fanon Jupkwo');
+    expect(component.languageScopeReady()).toBeFalse();
+    expect(chatService.planConfirmedScope).not.toHaveBeenCalled();
+  });
+
   it('requires explicit confirmation before copying language-first cards into comparison scope', () => {
     component.languageScopeResponse = {
       message: 'Compare Ada and Grace for backend engineering',

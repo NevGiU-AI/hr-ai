@@ -400,6 +400,11 @@ The final web chat supports two entry paths that converge on the same tenant-ver
    resolves candidate references deterministically inside the authenticated organization, displays minimal candidate
    cards, and requires explicit confirmation before retrieving any CV, evaluation, or job-fit evidence.
 
+Named discovery accepts one to five complete or partial candidate references. A single request such as `Fanon` must
+therefore return bounded same-tenant cards when matches exist; it is not rejected merely because comparison needs at
+least two candidates. The dedicated chat may confirm one card for single-candidate conversation. The workspace may
+display the same cards but continues to require two confirmed candidates before enabling its comparison action.
+
 The existing Angular picker is therefore a reusable authorization and clarification component, not a disposable
 picker-only screen. The conversation displays the confirmed scope as removable candidate chips or cards and provides
 explicit **Change candidates** and **Clear conversation** actions. Adding, replacing, or removing a candidate updates

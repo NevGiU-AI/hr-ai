@@ -155,7 +155,7 @@ executed. Candidate-only planning therefore cannot call the approved-job tool.
 
 The reviewed backend contract now exposes two authenticated, CSRF-protected phases:
 
-- `POST /api/chat/tools/discover` accepts only bounded recruiter text, extracts two to five candidate references, and
+- `POST /api/chat/tools/discover` accepts only bounded recruiter text, extracts one to five candidate references, and
   invokes the tenant-scoped candidate search deterministically for every extracted reference;
 - `POST /api/chat/tools/confirmed-scope` accepts bounded text, one to five explicitly confirmed candidate IDs, and an
   optional explicitly confirmed approved-job ID.
@@ -320,7 +320,7 @@ The main responsibilities are:
 - `CvChatToolDiscoveryState` records request-local search-call, distinct-success, and empty-result counts without
   exposing queries or candidate data. It is new for every HTTP request and cannot leak discovery state between users.
 - `CvChatToolDiscoveryDecision` converts authorized discovery facts into application-owned postconditions: at least
-  two distinct successful searches with no missing person require candidate confirmation, while any empty search
+  one successful search with no missing person requires candidate confirmation, while any empty search
   requires clarification. Sensitive and workflow-override requests are rejected before this state can be populated.
 - `CvChatToolPlanningState` records only the authorized candidate/job IDs whose minimized tools completed during this
   HTTP request. The service uses it as a postcondition; it stores no names, CV text, job text, prompts, or tool results.

@@ -16,6 +16,13 @@ class CvChatToolDiscoveryDecisionTest {
     }
 
     @Test
+    void deterministicDiscoveryConfirmsOneSuccessfulPartialName() {
+        assertThat(CvChatToolDiscoveryDecision.decide(
+                new CvChatToolDiscoveryState.Snapshot(1, 1, 0)).kind())
+                .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED);
+    }
+
+    @Test
     void deterministicDiscoveryClarifiesMissingOrIncompleteReferences() {
         assertThat(CvChatToolDiscoveryDecision.decide(
                 new CvChatToolDiscoveryState.Snapshot(2, 1, 1)).kind())

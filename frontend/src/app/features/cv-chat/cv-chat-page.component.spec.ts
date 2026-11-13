@@ -99,4 +99,23 @@ describe('CvChatPageComponent', () => {
 
     expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([7, 8]);
   });
+
+  it('accepts one partial-name discovery result for single-candidate chat', () => {
+    component.naturalRequest = 'Fanon';
+    component.discoverNaturally();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/tools/discover`);
+    request.flush({
+      kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm cards.',
+      candidateScope: { message: component.naturalRequest, references: [{
+        requestedName: 'Fanon', status: 'CHOICES', truncated: false,
+        candidates: [{ id: 7, name: 'Fanon Jupkwo', currentTitle: 'Java Engineer' }],
+      }] },
+    });
+
+    expect(component.naturalResults).toEqual([
+      { id: 7, name: 'Fanon Jupkwo', currentTitle: 'Java Engineer' },
+    ]);
+    expect(component.pendingQuestion).toBe('Fanon');
+  });
 });

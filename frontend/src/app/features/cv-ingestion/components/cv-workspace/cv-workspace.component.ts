@@ -291,7 +291,7 @@ export class CvWorkspaceComponent implements OnInit {
           const candidateScope = response.candidateScope;
           // Fail closed when an old or malformed backend confirms discovery without the cards from that exact request.
           // Never recover by making the old second extraction call: it could resolve a different candidate scope.
-          if (!candidateScope || candidateScope.message !== message || candidateScope.references.length < 2) {
+          if (!candidateScope || candidateScope.message !== message || candidateScope.references.length < 1) {
             this.languageScopeError = 'Candidate cards were not returned for this request. Please try again.';
             return;
           }

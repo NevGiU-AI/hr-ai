@@ -24,9 +24,9 @@ class SpringAiCvChatCandidateReferenceExtractorTest {
     }
 
     @Test
-    void returnsNoScopeWhenFewerThanTwoReferencesArePresent() {
+    void acceptsOneReferenceAndReturnsNoScopeOnlyWhenNoneArePresent() {
         assertThat(SpringAiCvChatCandidateReferenceExtractor.parse("NONE")).isEmpty();
-        assertThat(SpringAiCvChatCandidateReferenceExtractor.parse("CANDIDATE: Ada")).isEmpty();
+        assertThat(SpringAiCvChatCandidateReferenceExtractor.parse("CANDIDATE: Ada")).containsExactly("Ada");
     }
 
     @Test

@@ -46,10 +46,10 @@ public class CvChatToolDiscoveryState {
     }
 
     public record Snapshot(int searchCalls, int distinctSuccessfulSearches, int emptySearches) {
-        public boolean hasConfirmedMultiCandidateMatches() {
+        public boolean hasCandidateMatches() {
             // This proves that candidate cards exist; it does not confirm any card. Human confirmation remains an
             // Angular/API workflow step after this discovery response.
-            return distinctSuccessfulSearches >= 2 && emptySearches == 0;
+            return distinctSuccessfulSearches >= 1 && emptySearches == 0;
         }
     }
 }

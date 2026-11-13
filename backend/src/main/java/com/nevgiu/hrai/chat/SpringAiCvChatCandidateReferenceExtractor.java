@@ -21,13 +21,18 @@ class SpringAiCvChatCandidateReferenceExtractor implements CvChatCandidateRefere
             name.
             Return one reference per line using exactly: CANDIDATE: <reference>
             Preserve each reference exactly as written. Return no more than five distinct references.
-            If fewer than two candidate references are explicitly present, return exactly NONE.
+            If no candidate reference is explicitly present, return exactly NONE. A single partial or complete name is
+            valid because the application supports both single-candidate chat and multi-candidate comparison.
             Return no explanation, comparison, JSON, markdown, or other text.
 
             Example message: Compare Ada and Grace for backend engineering.
             Example output:
             CANDIDATE: Ada
             CANDIDATE: Grace
+
+            Example message: Fanon
+            Example output:
+            CANDIDATE: Fanon
 
             Example message: Compare Ada Lovelace et Grace Hopper sur leur expérience Java.
             Example output:
@@ -79,9 +84,6 @@ class SpringAiCvChatCandidateReferenceExtractor implements CvChatCandidateRefere
             if (distinct.size() > MAXIMUM_REFERENCES) {
                 throw new IllegalArgumentException("Too many candidate references");
             }
-        }
-        if (distinct.size() < 2) {
-            return List.of();
         }
         return List.copyOf(new ArrayList<>(distinct.values()));
     }

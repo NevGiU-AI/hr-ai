@@ -27,6 +27,15 @@ class CvChatToolDiscoveryStateTest {
         state.record("Yogish", 1);
 
         assertThat(state.snapshot()).isEqualTo(new CvChatToolDiscoveryState.Snapshot(2, 2, 0));
-        assertThat(state.snapshot().hasConfirmedMultiCandidateMatches()).isTrue();
+        assertThat(state.snapshot().hasCandidateMatches()).isTrue();
+    }
+
+    @Test
+    void treatsOneSuccessfulPartialNameAsCandidateCardsRequiringHumanConfirmation() {
+        CvChatToolDiscoveryState state = new CvChatToolDiscoveryState();
+
+        state.record("Fanon", 4);
+
+        assertThat(state.snapshot().hasCandidateMatches()).isTrue();
     }
 }

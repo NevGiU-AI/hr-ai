@@ -242,7 +242,7 @@ public class CvChatToolOrchestrationService {
                     failure.getClass().getSimpleName());
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "Candidate reference interpretation is unavailable");
         }
-        if (references.size() < 2) {
+        if (references.isEmpty()) {
             return CvChatToolDiscoveryResponse.from(
                     CvChatToolDiscoveryDecision.decide(discoveryState.snapshot()), null);
         }

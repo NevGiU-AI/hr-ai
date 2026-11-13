@@ -311,14 +311,18 @@ class CvChatToolOrchestrationServiceTest {
     }
 
     @Test
-    void requestsClarificationWithoutSearchingWhenFewerThanTwoReferencesWereExtracted() {
-        when(referenceExtractor.extract("Find Ada")).thenReturn(List.of());
+    void returnsConfirmationCardsForOnePartialCandidateReference() {
+        when(referenceExtractor.extract("Find Ada")).thenReturn(List.of("Ada"));
+        when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(1, 1, 0));
 
         CvChatToolDiscoveryResponse outcome = service.discover("Find Ada");
 
-        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED);
-        assertThat(outcome.candidateScope()).isNull();
-        verifyNoInteractions(readTools);
+        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED);
+        assertThat(outcome.candidateScope()).isNotNull();
+        assertThat(outcome.candidateScope().references())
+                .extracting(CvChatLanguageScopeResponse.Reference::requestedName)
+                .containsExactly("Ada");
+        verify(readTools).searchCandidates("Ada");
     }
 
     private CvChatToolOrchestrationOutcome outcome(CvChatToolOrchestrationOutcome.Kind kind, String message) {

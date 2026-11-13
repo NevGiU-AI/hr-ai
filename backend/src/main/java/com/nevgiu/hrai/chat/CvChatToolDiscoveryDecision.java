@@ -30,7 +30,7 @@ final class CvChatToolDiscoveryDecision {
      * tenant-authorized search tool for each reference. A model is not asked whether those searches should happen.</p>
      */
     static CvChatToolOrchestrationOutcome decide(CvChatToolDiscoveryState.Snapshot searches) {
-        if (searches.emptySearches() > 0 || !searches.hasConfirmedMultiCandidateMatches()) {
+        if (searches.emptySearches() > 0 || !searches.hasCandidateMatches()) {
             return new CvChatToolOrchestrationOutcome(
                     CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED, CLARIFICATION_MESSAGE);
         }

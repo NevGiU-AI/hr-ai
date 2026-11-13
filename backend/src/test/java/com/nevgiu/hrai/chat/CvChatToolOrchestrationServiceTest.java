@@ -325,6 +325,17 @@ class CvChatToolOrchestrationServiceTest {
         verify(readTools).searchCandidates("Ada");
     }
 
+    @Test
+    void requestsClarificationWithoutSearchingWhenNoCandidateReferenceWasExtracted() {
+        when(referenceExtractor.extract("Who has backend experience?")).thenReturn(List.of());
+
+        CvChatToolDiscoveryResponse outcome = service.discover("Who has backend experience?");
+
+        assertThat(outcome.kind()).isEqualTo(CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED);
+        assertThat(outcome.candidateScope()).isNull();
+        verifyNoInteractions(readTools);
+    }
+
     private CvChatToolOrchestrationOutcome outcome(CvChatToolOrchestrationOutcome.Kind kind, String message) {
         return new CvChatToolOrchestrationOutcome(kind, message);
     }

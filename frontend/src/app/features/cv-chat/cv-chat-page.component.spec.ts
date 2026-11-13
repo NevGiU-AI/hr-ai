@@ -21,6 +21,7 @@ describe('CvChatPageComponent', () => {
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
     http.expectOne(`${environment.apiUrl}/jobs`).flush([]);
+    http.expectOne(`${environment.apiUrl}/chat/conversations`).flush([]);
   });
 
   afterEach(() => { http.verify(); localStorage.clear(); });
@@ -28,6 +29,27 @@ describe('CvChatPageComponent', () => {
   it('shows the application-owned NevGiU welcome before a conversation is created', () => {
     expect(fixture.nativeElement.querySelector('.welcome-message').textContent)
       .toContain("Hey! I'm NevGiU—short for ‘Never Give Up.’");
+  });
+
+  it('lists and resumes an owner-scoped recent conversation with persisted citation cards', () => {
+    const conversation = {
+      id: 'conversation-1', version: 2, candidates: [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }], job: null,
+      createdAt: '2026-11-12T00:00:00Z', updatedAt: '2026-11-13T00:00:00Z', expiresAt: '2026-11-20T00:00:00Z',
+    };
+    component.recentConversations = [conversation];
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.recent-item').click();
+
+    http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1`).flush(conversation);
+    http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`).flush({ messages: [
+      { role: 'USER', content: 'Which Java version?', citations: [] },
+      { role: 'ASSISTANT', content: 'Java 17 [CV-7].', citations: [
+        { reference: 'CV-7', candidateId: 7, documentId: 7, pageNumber: null, excerpt: '' },
+      ] },
+    ] });
+
+    expect(component.conversation?.id).toBe('conversation-1');
+    expect(component.timeline[1].citations?.[0].reference).toBe('CV-7');
   });
 
   it('creates an explicit candidate-scoped conversation and renders its scope', () => {
@@ -99,4 +121,5 @@ describe('CvChatPageComponent', () => {
 
     expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([7, 8]);
   });
+
 });

@@ -414,12 +414,19 @@ messages in a timeline, follow current-turn citations, start a separate local ch
 Its initial welcome bubble explains that NevGiU means “Never Give Up” and offers candidate help. This is
 application-owned presentation text and is never sent to the provider or stored as conversation history.
 
-This slice intentionally remembers only the active conversation ID in browser storage; it does not yet provide a
-server-side conversation index. Spring AI's existing JDBC message repository persists roles and text, not the
-application citation objects, so reloaded historical answers currently retain their bracketed references but do not
-reconstruct citation cards. Conversation listing, persisted historical citation metadata, editable scope replacement,
-and language-first ambiguity confirmation on the dedicated page remain. Picker-first and language-first entry must
-still converge on the same application-owned confirmed scope before the page milestone is complete.
+Flyway V8 adds a separate application-owned visible timeline because Spring AI memory is bounded model context rather
+than the presentation contract. It stores user/assistant text plus only the citation reference, owning candidate,
+document, optional page, and display order; it deliberately does not duplicate CV excerpts. The dedicated page lists
+the owning user's 20 most recently updated active conversations, resumes an explicitly selected conversation, and
+reconstructs historical citation cards. During migration, V8 copies the user/assistant text of pre-V8 conversations
+from bounded Spring AI memory into the visible timeline without inventing citation metadata that was never stored;
+the service retains a text-only fallback for defensive compatibility. Scope replacement clears both forms of history. Expiry or explicit deletion
+cascades through both, while candidate erasure removes any conversation containing the erased candidate so historical
+answers cannot retain that candidate's personal information. This implementation awaits environment acceptance.
+
+Editable scope replacement and language-first ambiguity confirmation on the dedicated page remain. Picker-first and
+language-first entry must still converge on the same application-owned confirmed scope before the page milestone is
+complete.
 
 #### Scoped conversation-memory staging acceptance
 

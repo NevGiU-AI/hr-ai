@@ -120,6 +120,12 @@ decisions.
   the durable scope and bounded-memory foundation. `POST /api/chat/conversations/{id}/messages` now executes grounded
   follow-ups against that reauthorized stored scope, supplies only the bounded Spring AI history as untrusted model
   context, and persists the completed turn only if a locked version check proves the scope did not change meanwhile.
+  Flyway V8 now adds an application-owned visible timeline and minimized citation-navigation metadata. The dedicated
+  page lists the owning user's 20 most recently updated active conversations, resumes one explicitly, and restores
+  citation cards for persisted answers. Citation excerpts are deliberately not duplicated in the timeline tables.
+  Candidate erasure deletes every conversation that contains that candidate so neither Spring AI memory nor visible
+  historical answers survive the erasure boundary. This implementation still requires staging and production
+  acceptance before it is marked deployed.
 - Provide a foundational `get_evaluation_evidence` Spring AI read tool for a future evaluation-aware chat path. It is
   tenant-scoped, requires an application-confirmed candidate ID, and returns at most the five most recent persisted
   evaluations with minimized job context, scores, and current/stale timestamps. Generated evaluation rationale is
@@ -193,9 +199,10 @@ focused staging acceptance after PR #173 at revision `ceded13`. Production repea
 follow-up checks successfully in release `v0.37.0` at revision `657207f`.
 The dedicated conversational CV-chat page, organization-wide criteria discovery, owning-candidate citation navigation,
 and readable `Display Name (CANDIDATE-ID)` grounded-answer format passed focused staging acceptance on 12 November
-2026 at main revision `9002238`, then production acceptance in release `v0.38.0` at revision `eea0a3a`. A conversation
-index, persisted citation cards for reloaded historical answers, language-first ambiguity cards on this page,
-controlled-response localization, speech input/playback, and the recruitment dashboard remain roadmap work.
+2026 at main revision `9002238`, then production acceptance in release `v0.38.0` at revision `eea0a3a`. Conversation
+listing and persisted citation cards for reloaded historical answers are now implemented through Flyway V8 and await
+environment acceptance. Language-first ambiguity cards on this page, controlled-response localization,
+speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
@@ -268,8 +275,9 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
    `get_ingestion_warnings` read-tool foundations are implemented; connect each one only to a future answer path that
    consumes its result. Recruiter-confirmed candidate IDs and the optional approved job now have owner- and
    tenant-scoped persistence, and the first dedicated message-style page consumes that scope. Next complete its
-   conversation index, historical citation metadata, language-first ambiguity confirmation, and editable scope;
-   then broaden deterministic/provider-backed evaluation and localize controlled outcomes. The implemented picker-
+   language-first ambiguity confirmation and editable scope; then broaden deterministic/provider-backed evaluation
+   and localize controlled outcomes. The conversation index and historical citation metadata are implemented through
+   Flyway V8 and await environment acceptance. The implemented picker-
    and language-first flows
    already resolve candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity
    confirmation, and produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job
@@ -303,10 +311,10 @@ session or a model-supplied conversation ID as authorization.
 Spring AI model memory is a separate, bounded linguistic-context concern. The project now configures
 `MessageWindowChatMemory` over Spring AI's JDBC repository with an explicit application-generated conversation ID and
 a default ten-message window. Flyway owns the repository table and links it to the application conversation with
-cascade deletion. This memory is not yet connected to the answer path, never authorizes or modifies candidate/job
-scope, and is not a durable transcript or user-visible history. Connecting it through `MessageChatMemoryAdvisor` is
-the next backend slice; durable transcript/history remains deferred until its ownership, retention, deletion,
-candidate-erasure, and backup rules are approved. Spring AI's
+cascade deletion. The follow-up answer path consumes this bounded memory only as untrusted linguistic context; it
+never authorizes or modifies candidate/job scope. Flyway V8 separately persists the user-visible timeline and
+minimized citation-navigation metadata because Spring AI memory is not the durable presentation contract. Candidate
+erasure removes conversations containing that candidate, including both memory and visible history. Spring AI's
 [ChatClient memory guidance](https://docs.spring.io/spring-ai/reference/1.1/api/chatclient.html#_chat_memory) covers the
 bounded model-context concern; it is not the application's durable transcript contract.
 

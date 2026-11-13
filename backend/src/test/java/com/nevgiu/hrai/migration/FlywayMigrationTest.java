@@ -26,9 +26,29 @@ class FlywayMigrationTest {
 
     @Test
     void createsANewSchemaAndSafelyAdoptsAnExistingSchema() throws Exception {
-        Flyway cleanDatabase = flyway(false);
-        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(7);
+        Flyway throughConversationScope = flyway(false, "7");
+        assertThat(throughConversationScope.migrate().migrationsExecuted).isEqualTo(7);
         assertThat(count("SELECT COUNT(*) FROM app_users")).isEqualTo(0);
+
+        // V8 must preserve the visible text of conversations that already exist in V7's bounded Spring AI memory.
+        execute("INSERT INTO app_users (id, email, password_hash, organization_id, enabled) "
+                + "VALUES (8990, 'legacy-owner@example.com', 'hash', 'tenant-a', true)");
+        execute("INSERT INTO cv_chat_conversations "
+                + "(id, organization_id, owner_user_id, version, created_at, updated_at, expires_at) "
+                + "VALUES ('00000000-0000-0000-0000-000000000000', 'tenant-a', 8990, 1, "
+                + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '7 days')");
+        execute("INSERT INTO spring_ai_chat_memory "
+                + "(conversation_id, content, type, \"timestamp\", sequence_id) VALUES "
+                + "('00000000-0000-0000-0000-000000000000', 'Legacy question', 'USER', CURRENT_TIMESTAMP, 1), "
+                + "('00000000-0000-0000-0000-000000000000', 'Legacy answer', 'ASSISTANT', CURRENT_TIMESTAMP, 2)");
+
+        Flyway cleanDatabase = flyway(false);
+        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM cv_chat_messages "
+                + "WHERE conversation_id = '00000000-0000-0000-0000-000000000000'")).isEqualTo(2);
+        execute("DELETE FROM cv_chat_conversations WHERE id = '00000000-0000-0000-0000-000000000000'");
+        execute("DELETE FROM app_users WHERE id = 8990");
+
         assertThat(count("SELECT COUNT(*) FROM information_schema.columns "
                 + "WHERE table_name = 'cv_documents' AND column_name = 'storage_key'"))
                 .isEqualTo(1);
@@ -49,6 +69,9 @@ class FlywayMigrationTest {
         assertThat(count("SELECT COUNT(*) FROM information_schema.tables "
                 + "WHERE table_name = 'spring_ai_chat_memory'"))
                 .isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM information_schema.tables "
+                + "WHERE table_name IN ('cv_chat_messages', 'cv_chat_message_citations')"))
+                .isEqualTo(2);
         // Insert through Spring AI's native content/metadata/embedding contract; generated columns must enforce tenant
         // ownership without requiring the Java adapter to duplicate relational values.
         execute("INSERT INTO candidates (id, organization_id, name) VALUES (9001, 'tenant-a', 'Index Test')");
@@ -101,12 +124,20 @@ class FlywayMigrationTest {
                 + "(conversation_id, content, type, \"timestamp\", sequence_id) "
                 + "VALUES ('00000000-0000-0000-0000-000000000001', 'bounded context', 'USER', "
                 + "CURRENT_TIMESTAMP, 1)");
+        execute("INSERT INTO cv_chat_messages (id, conversation_id, role, content, created_at) "
+                + "VALUES (9200, '00000000-0000-0000-0000-000000000001', 'ASSISTANT', "
+                + "'grounded answer [CV-9002]', CURRENT_TIMESTAMP)");
+        execute("INSERT INTO cv_chat_message_citations "
+                + "(message_id, display_order, reference, candidate_id, document_id) "
+                + "VALUES (9200, 0, 'CV-9002', 9001, 9002)");
         assertThatThrownBy(() -> execute("INSERT INTO cv_chat_conversation_candidates "
                 + "(conversation_id, candidate_id, organization_id, display_order) "
                 + "VALUES ('00000000-0000-0000-0000-000000000001', 9003, 'tenant-b', 1)"))
                 .hasMessageContaining("fk_cv_chat_conversation_candidates_conversation_tenant");
         execute("DELETE FROM cv_chat_conversations WHERE id = '00000000-0000-0000-0000-000000000001'");
         assertThat(count("SELECT COUNT(*) FROM spring_ai_chat_memory")).isZero();
+        assertThat(count("SELECT COUNT(*) FROM cv_chat_messages")).isZero();
+        assertThat(count("SELECT COUNT(*) FROM cv_chat_message_citations")).isZero();
 
         execute("DROP TABLE flyway_schema_history");
         execute("ALTER TABLE security_audit_events ADD CONSTRAINT security_audit_events_event_type_check "
@@ -115,21 +146,28 @@ class FlywayMigrationTest {
                 + "CHECK (outcome IN ('SUCCESS'))");
 
         Flyway existingDatabase = flyway(true);
-        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(7);
-        // Baseline version 0 plus migrations V1-V7 must be recorded after adopting the existing schema.
-        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(8);
+        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(8);
+        // Baseline version 0 plus migrations V1-V8 must be recorded after adopting the existing schema.
+        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(9);
         assertThat(count("SELECT COUNT(*) FROM pg_constraint "
                 + "WHERE conrelid = 'security_audit_events'::regclass AND contype = 'c'"))
                 .isEqualTo(0);
     }
 
     private Flyway flyway(boolean baselineOnMigrate) {
-        return Flyway.configure()
+        return flyway(baselineOnMigrate, null);
+    }
+
+    private Flyway flyway(boolean baselineOnMigrate, String targetVersion) {
+        var configuration = Flyway.configure()
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                 .locations("classpath:db/migration")
                 .baselineOnMigrate(baselineOnMigrate)
-                .baselineVersion(MigrationVersion.fromVersion("0"))
-                .load();
+                .baselineVersion(MigrationVersion.fromVersion("0"));
+        if (targetVersion != null) {
+            configuration.target(MigrationVersion.fromVersion(targetVersion));
+        }
+        return configuration.load();
     }
 
     private void execute(String sql) throws Exception {

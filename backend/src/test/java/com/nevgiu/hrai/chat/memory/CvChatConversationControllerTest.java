@@ -67,6 +67,27 @@ class CvChatConversationControllerTest {
     }
 
     @Test
+    void listsOnlyTheAuthenticatedOwnersActiveConversations() throws Exception {
+        var actor = actor();
+        Instant now = Instant.parse("2026-11-13T05:00:00Z");
+        when(service.list(actor)).thenReturn(List.of(new CvChatConversationResponse(
+                "conversation-1", 2,
+                List.of(new CvChatConversationResponse.CandidateCard(7L, "Ada", "Engineer")),
+                null, now, now, now.plusSeconds(3600))));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
+        try {
+            mvc.perform(get("/api/chat/conversations"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value("conversation-1"))
+                    .andExpect(jsonPath("$[0].candidates[0].name").value("Ada"))
+                    .andExpect(jsonPath("$[0].organizationId").doesNotExist());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
     void executesFollowUpWithoutAcceptingCandidateJobOrTenantOverrides() throws Exception {
         var actor = actor();
         Instant expiry = Instant.parse("2026-11-12T05:00:00Z");
@@ -96,15 +117,19 @@ class CvChatConversationControllerTest {
     void returnsTheAuthorizedBoundedTimeline() throws Exception {
         var actor = actor();
         when(service.history("conversation-1", actor)).thenReturn(new CvChatConversationHistoryResponse(List.of(
-                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?"),
-                new CvChatConversationHistoryResponse.TimelineMessage("ASSISTANT", "Java 17 [CV-7]."))));
+                new CvChatConversationHistoryResponse.TimelineMessage(
+                        "USER", "Which Java versions?", List.of()),
+                new CvChatConversationHistoryResponse.TimelineMessage(
+                        "ASSISTANT", "Java 17 [CV-7].", List.of(new com.nevgiu.hrai.chat.CvChatResponse.Citation(
+                        "CV-7", 7L, 7L, null, ""))))));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
         try {
             mvc.perform(get("/api/chat/conversations/conversation-1/messages"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.messages[0].role").value("USER"))
-                    .andExpect(jsonPath("$.messages[1].content").value("Java 17 [CV-7]."));
+                    .andExpect(jsonPath("$.messages[1].content").value("Java 17 [CV-7]."))
+                    .andExpect(jsonPath("$.messages[1].citations[0].reference").value("CV-7"));
         } finally {
             SecurityContextHolder.clearContext();
         }

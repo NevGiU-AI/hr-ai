@@ -422,7 +422,34 @@ reconstructs historical citation cards. During migration, V8 copies the user/ass
 from bounded Spring AI memory into the visible timeline without inventing citation metadata that was never stored;
 the service retains a text-only fallback for defensive compatibility. Scope replacement clears both forms of history. Expiry or explicit deletion
 cascades through both, while candidate erasure removes any conversation containing the erased candidate so historical
-answers cannot retain that candidate's personal information. This implementation awaits environment acceptance.
+answers cannot retain that candidate's personal information.
+
+#### Visible conversation-history staging and production acceptance
+
+Flyway V8 and the visible-history slice passed focused staging acceptance on 15 November 2026. The backend remained
+healthy and the migration created the application-owned message and minimized citation-navigation tables. The
+authenticated recruiter could list only that recruiter's active recent conversations, restore the active conversation
+after a browser refresh, start a new chat to reveal the recent list, and explicitly resume an earlier conversation.
+Persisted user/assistant messages retained their order, and historical assistant citations retained their owning
+candidate/document navigation metadata without duplicating CV excerpts.
+
+The same-organization administrator session could not list or read the recruiter-owned conversation and received the
+same opaque `404` used for missing, expired, and cross-tenant conversation identifiers. This confirms that an
+administrator role does not turn a conversation UUID into authorization and that the repository lookup still requires
+the exact organization, owner user, and active expiry boundary.
+
+Focused staging citation testing exposed one asynchronous presentation defect: the URL and document fragment were
+correct and the owning document card eventually rendered, but the former one-shot timeout attempted scrolling before
+Angular inserted the card. PR #185 retains the pending fragment, retries at 50-millisecond intervals for at most one
+second, scrolls only after the element exists, and abandons a stale target without leaving an unbounded timer. The
+focused Angular component suite and full 136-test Angular suite passed, and the production build completed
+successfully. Staging then confirmed that restored citation navigation reaches and scrolls to the rendered document.
+
+Production repeated the focused health, migration, owner-isolation, conversation restoration, persisted timeline and
+citation-navigation checks successfully on 15 November 2026 in release `v0.39.0` at revision `592b11b`. No new
+environment variable was required. This acceptance covers PR #184 and its PR #185 citation-scroll correction; broader
+destructive expiry, candidate-erasure, and restoration exercises remain governed by their existing dedicated
+acceptance procedures.
 
 Editable scope replacement and language-first ambiguity confirmation on the dedicated page remain. Picker-first and
 language-first entry must still converge on the same application-owned confirmed scope before the page milestone is

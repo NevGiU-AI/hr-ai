@@ -36,6 +36,12 @@ import { CvIngestionService } from '../../services/cv-ingestion.service';
   styleUrl: './cv-workspace.component.scss',
 })
 export class CvWorkspaceComponent implements OnInit {
+  /**
+   * Candidate details arrive asynchronously, so a cross-page citation target may be rendered shortly after the
+   * router updates the URL. Retry for at most one second instead of silently losing the scroll on the first miss.
+   */
+  private static readonly citationScrollRetryMilliseconds = 50;
+  private static readonly citationScrollMaximumAttempts = 20;
   private readonly service = inject(CvIngestionService);
   private readonly chatService = inject(CvChatService);
   private readonly auth = inject(AuthService);
@@ -710,15 +716,29 @@ export class CvWorkspaceComponent implements OnInit {
     return `${this.comparisonCandidates.map((candidate) => candidate.id).join(',')}|job:${this.comparisonJobId ?? 'none'}`;
   }
 
-  private scrollToPendingComparisonCitation(): void {
+  private scrollToPendingComparisonCitation(attempt = 0): void {
     const fragment = this.pendingComparisonCitationFragment;
     if (!fragment) return;
-    this.pendingComparisonCitationFragment = null;
-    // Angular must finish rendering the newly loaded candidate details before the fragment can be resolved.
+
+    // Angular must finish rendering asynchronously loaded candidate details before the fragment can be resolved.
+    // Keep the pending fragment until the element exists; the former one-shot timeout cleared it too early and left
+    // the browser at its previous scroll position even though the document card appeared moments later.
     setTimeout(() => {
+      const target = document.getElementById(fragment);
+      if (!target) {
+        if (attempt < CvWorkspaceComponent.citationScrollMaximumAttempts) {
+          this.scrollToPendingComparisonCitation(attempt + 1);
+        } else {
+          // Bound retries so a deleted or stale document reference cannot leave a timer running indefinitely.
+          this.pendingComparisonCitationFragment = null;
+        }
+        return;
+      }
+
+      this.pendingComparisonCitationFragment = null;
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${fragment}`);
-      document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
-    });
+      target.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }, attempt === 0 ? 0 : CvWorkspaceComponent.citationScrollRetryMilliseconds);
   }
 
   private selectedFile(event: Event, extension: string, limit: number): File | null {

@@ -308,13 +308,17 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   revision `657207f`. Dataset `1.3.0` adds the professional evidence-ranking case `Who is the best AI dev?`; its fresh
   27-case live-provider gate passed on 12 November 2026 while preserving sensitive-characteristic refusal. Both
   follow-up corrections are accepted before the dedicated conversational page; the flexible discovery extension still
-  requires environment acceptance.
+  requires environment acceptance. Flyway V8 now adds an application-owned visible timeline and minimized citation
+  navigation metadata without duplicating CV excerpts. Owner/tenant-scoped recent-conversation listing, explicit
+  resume, and historical citation-card reconstruction are implemented. Scope replacement, expiry, explicit deletion,
+  and candidate erasure clear the applicable visible history and Spring memory. Environment acceptance remains.
 - [~] Add the dedicated conversational CV-chat page after orchestration and scoped memory are stable. The first `/chat`
   slice provides explicit candidate search/selection, optional approved-job scope, an application-owned welcome
   bubble, one natural-language composer, a bounded message timeline, current-turn citations, active-conversation
   restoration, and explicit deletion. The candidate workspace remains available during migration. Conversation
-  listing, persisted citation metadata for reloaded turns, language-first ambiguity confirmation on this page, and
-  editable scope replacement remain before this item is complete. The flexible-scope, organization-discovery,
+  listing and persisted citation metadata for reloaded turns are now implemented through Flyway V8 and await
+  environment acceptance. Language-first ambiguity confirmation on this page and editable scope replacement remain
+  before this item is complete. The flexible-scope, organization-discovery,
   owning-candidate citation navigation, and readable `Display Name (CANDIDATE-ID)` output passed focused staging
   acceptance on 12 November 2026 at main revision `9002238`. Production repeated the focused checks successfully in
   release `v0.38.0` at revision `eea0a3a`.

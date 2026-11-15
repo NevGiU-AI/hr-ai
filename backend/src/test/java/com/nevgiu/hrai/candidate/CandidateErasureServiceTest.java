@@ -3,6 +3,7 @@ package com.nevgiu.hrai.candidate;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.StagedCvDeletion;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
+import com.nevgiu.hrai.chat.memory.CvChatCandidateErasureService;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import com.nevgiu.hrai.security.audit.SecurityEventOutcome;
@@ -29,10 +30,11 @@ class CandidateErasureServiceTest {
     private final CandidateRepository candidates = mock(CandidateRepository.class);
     private final CvDocumentRepository documents = mock(CvDocumentRepository.class);
     private final CandidateEvaluationRepository evaluations = mock(CandidateEvaluationRepository.class);
+    private final CvChatCandidateErasureService chatConversations = mock(CvChatCandidateErasureService.class);
     private final OriginalCvStorage storage = mock(OriginalCvStorage.class);
     private final SecurityAuditService audit = mock(SecurityAuditService.class);
     private final CandidateErasureService service =
-            new CandidateErasureService(candidates, documents, evaluations, storage, audit);
+            new CandidateErasureService(candidates, documents, evaluations, chatConversations, storage, audit);
     private final AppUserPrincipal actor = new AppUserPrincipal(1L, "admin@example.com", "hash", "tenant-a", true,
             List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
 
@@ -56,7 +58,8 @@ class CandidateErasureServiceTest {
 
         service.erase(7L, actor);
 
-        var databaseOrder = inOrder(evaluations, documents, candidates);
+        var databaseOrder = inOrder(chatConversations, evaluations, documents, candidates);
+        databaseOrder.verify(chatConversations).eraseCandidateConversations(7L, "tenant-a");
         databaseOrder.verify(evaluations).deleteAllByCandidateIdAndOrganizationId(7L, "tenant-a");
         databaseOrder.verify(documents).deleteAll(List.of(document));
         databaseOrder.verify(documents).flush();

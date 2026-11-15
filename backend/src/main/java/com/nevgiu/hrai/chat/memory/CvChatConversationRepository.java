@@ -14,6 +14,9 @@ interface CvChatConversationRepository extends JpaRepository<CvChatConversation,
     Optional<CvChatConversation> findByIdAndOrganizationIdAndOwnerUserIdAndExpiresAtAfter(
             String id, String organizationId, Long ownerUserId, Instant now);
 
+    List<CvChatConversation> findAllByOrganizationIdAndOwnerUserIdAndExpiresAtAfterOrderByUpdatedAtDesc(
+            String organizationId, Long ownerUserId, Instant now, Pageable pageable);
+
     @Query("select conversation.id from CvChatConversation conversation "
             + "where conversation.expiresAt <= :now order by conversation.expiresAt, conversation.id")
     List<String> findExpiredIds(Instant now, Pageable pageable);

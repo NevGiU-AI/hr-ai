@@ -149,6 +149,35 @@ when preserving a code identifier as one phrase improves clarity, paired undersc
 `@DisplayNameGeneration` on individual test classes. Use `@DisplayName` only when the generated text cannot accurately
 express the scenario; JUnit gives that explicit name precedence.
 
+## Pull request descriptions
+
+Code comments and Javadoc explain a local contract or non-obvious implementation decision to a future source reader.
+They do not replace a reviewer-facing PR description. Every non-trivial PR must also provide a cohesive explanation of
+the change without requiring reviewers to reconstruct its purpose by reading every modified file.
+
+The PR description must explain, where applicable:
+
+- the user, business, operational, or security problem being solved;
+- the behavior before the change and the behavior after it;
+- important domain terms introduced or relied upon, such as a chat *turn*, conversation scope, bounded model memory,
+  visible history, tenant ownership, retention, or legal hold;
+- the main request, data, transaction, or lifecycle flow across components;
+- why the chosen design is appropriate and which plausible alternatives were intentionally rejected;
+- database migrations, backfills, rollback/forward-fix implications, configuration, deployment, and compatibility;
+- authorization, tenant-isolation, privacy, retention, deletion, failure, and concurrency boundaries;
+- tests executed, environment acceptance evidence, known limitations, deferred work, and residual risks;
+- the specifications or runbooks updated by the PR.
+
+Prefer a short before/after example, table, or compact flow when it makes the design easier to review. For example, a
+conversation-history PR should distinguish the browser's active-conversation pointer, the application-owned persisted
+scope, bounded Spring AI model memory, and the reviewer-visible citation-aware timeline. Explain what each layer stores,
+why it exists, and how expiry, scope replacement, deletion, and candidate erasure affect it.
+
+Do not merely paste code comments, list changed filenames, or repeat the commit title. Keep the description detailed
+enough for a reviewer, operator, or future maintainer to understand the intent and risks, while excluding credentials,
+candidate content, prompts containing personal data, production identifiers, and unreviewed logs. Update the PR
+description when review changes the design or validation evidence so it remains an accurate summary of the final diff.
+
 ## Review and completion
 
 Before requesting review:
@@ -158,7 +187,8 @@ Before requesting review:
 2. Review the diff for accidental files, secrets, generated output, and unrelated changes.
 3. Run the tests and static checks appropriate to the risk of the change.
 4. Update affected specifications, operational runbooks, examples, and environment templates.
-5. State behavior changes, migrations, configuration, validation evidence, and remaining risks in the PR.
+5. Complete the reviewer-facing PR explanation required above, including behavior changes, migrations, configuration,
+   validation evidence, and remaining risks.
 
 After the recruitment dashboard is delivered and before OpenAPI contracts are published, perform a focused,
 codebase-wide source-documentation review. Add missing comments and Javadoc only where they explain public contracts,

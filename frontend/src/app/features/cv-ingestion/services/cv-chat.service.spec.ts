@@ -121,6 +121,13 @@ describe('CvChatService', () => {
     ask.flush({ answer: 'Grounded answer' });
   });
 
+  it('lists only the conversations returned for the authenticated owner', () => {
+    service.listConversations().subscribe((conversations) => expect(conversations[0].id).toBe('conversation-1'));
+    const request = http.expectOne(`${environment.apiUrl}/chat/conversations`);
+    expect(request.request.method).toBe('GET');
+    request.flush([{ id: 'conversation-1' }]);
+  });
+
   it('loads bounded conversation history and deletes the conversation', () => {
     service.getConversationHistory('conversation-1').subscribe();
     const history = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);

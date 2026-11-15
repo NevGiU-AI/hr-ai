@@ -36,7 +36,7 @@ class CvChatConversationTurnServiceTest {
         when(singleCandidateChat.ask(7L, "What about Spring?", "tenant-a", history)).thenReturn(
                 new CvChatResponse("Spring is listed [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-1", 3, "What about Spring?",
-                "Spring is listed [CV-7].", actor)).thenReturn(conversationResponse(4));
+                "Spring is listed [CV-7].", List.of(citation(7L)), actor)).thenReturn(conversationResponse(4));
 
         CvChatConversationTurnResponse response = service.ask(
                 "conversation-1", " What about Spring? ", actor);
@@ -59,7 +59,8 @@ class CvChatConversationTurnServiceTest {
                 .thenReturn(new CvChatComparisonResponse("Candidate 7 matches [CV-7] and 8 [CV-8].",
                         List.of(), List.of(citation(7L), citation(8L))));
         when(conversations.appendTurn("conversation-2", 5, "Who better matches it?",
-                "Candidate 7 matches [CV-7] and 8 [CV-8].", actor)).thenReturn(conversationResponse(6));
+                "Candidate 7 matches [CV-7] and 8 [CV-8].", List.of(citation(7L), citation(8L)), actor))
+                .thenReturn(conversationResponse(6));
 
         CvChatConversationTurnResponse response = service.ask(
                 "conversation-2", "Who better matches it?", actor);

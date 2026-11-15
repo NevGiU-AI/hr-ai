@@ -3,6 +3,7 @@ package com.nevgiu.hrai.chat.memory;
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.chat.CvChatResponse;
 import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.security.AppUserPrincipal;
@@ -12,12 +13,15 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,17 +32,23 @@ class CvChatConversationService {
     private final CandidateRepository candidates;
     private final JobRepository jobs;
     private final ChatMemory memory;
+    private final CvChatMessageRepository messages;
+    private final CvChatMessageCitationRepository messageCitations;
     private final CvChatConversationProperties properties;
 
     CvChatConversationService(CvChatConversationRepository conversations,
                               CvChatConversationCandidateRepository scopeCandidates,
                               CandidateRepository candidates, JobRepository jobs, ChatMemory memory,
+                              CvChatMessageRepository messages,
+                              CvChatMessageCitationRepository messageCitations,
                               CvChatConversationProperties properties) {
         this.conversations = conversations;
         this.scopeCandidates = scopeCandidates;
         this.candidates = candidates;
         this.jobs = jobs;
         this.memory = memory;
+        this.messages = messages;
+        this.messageCitations = messageCitations;
         this.properties = properties;
     }
 
@@ -58,6 +68,15 @@ class CvChatConversationService {
     CvChatConversationResponse get(String id, AppUserPrincipal actor) {
         var conversation = ownedActive(id, actor);
         return response(conversation, loadCandidates(conversation), loadJob(conversation));
+    }
+
+    /** Lists only active conversations owned by the authenticated user; no other user's metadata is exposed. */
+    @Transactional(readOnly = true)
+    List<CvChatConversationResponse> list(AppUserPrincipal actor) {
+        return conversations.findAllByOrganizationIdAndOwnerUserIdAndExpiresAtAfterOrderByUpdatedAtDesc(
+                        actor.organizationId(), actor.id(), Instant.now(), PageRequest.of(0, 20)).stream()
+                .map(conversation -> response(conversation, loadCandidates(conversation), loadJob(conversation)))
+                .toList();
     }
 
     /**
@@ -81,14 +100,20 @@ class CvChatConversationService {
     @Transactional(readOnly = true)
     CvChatConversationHistoryResponse history(String id, AppUserPrincipal actor) {
         ownedActive(id, actor);
-        var messages = memory.get(id).stream()
+        List<CvChatConversationHistoryResponse.TimelineMessage> visibleMessages = visibleHistory(id);
+        if (!visibleMessages.isEmpty()) {
+            return new CvChatConversationHistoryResponse(visibleMessages);
+        }
+        // Conversations created before Flyway V8 have only Spring AI memory. Preserve their text during the short
+        // migration window, while correctly returning no historical citation cards that were never persisted.
+        var legacyMessages = memory.get(id).stream()
                 .filter(message -> message.getMessageType() == MessageType.USER
                         || message.getMessageType() == MessageType.ASSISTANT)
                 .map(message -> new CvChatConversationHistoryResponse.TimelineMessage(
                         message.getMessageType() == MessageType.USER ? "USER" : "ASSISTANT",
-                        message.getText()))
+                        message.getText(), List.of()))
                 .toList();
-        return new CvChatConversationHistoryResponse(messages);
+        return new CvChatConversationHistoryResponse(legacyMessages);
     }
 
     /**
@@ -97,6 +122,7 @@ class CvChatConversationService {
      */
     @Transactional
     CvChatConversationResponse appendTurn(String id, long expectedVersion, String question, String answer,
+                                          List<CvChatResponse.Citation> citations,
                                           AppUserPrincipal actor) {
         var conversation = lockedOwnedActive(id, actor);
         if (conversation.getVersion() != expectedVersion) {
@@ -104,6 +130,11 @@ class CvChatConversationService {
         }
         memory.add(id, List.of(new UserMessage(question), new AssistantMessage(answer)));
         Instant now = Instant.now();
+        messages.save(new CvChatMessage(id, "USER", question, now));
+        CvChatMessage assistant = messages.saveAndFlush(new CvChatMessage(id, "ASSISTANT", answer, now));
+        for (int index = 0; index < citations.size(); index++) {
+            messageCitations.save(new CvChatMessageCitation(assistant.getId(), index, citations.get(index)));
+        }
         conversation.touch(now, now.plus(properties.ttl()));
         conversations.flush();
         return response(conversation, loadCandidates(conversation), loadJob(conversation));
@@ -121,6 +152,7 @@ class CvChatConversationService {
         // History belongs to the exact confirmed scope. Clear it before replacing candidates/job so content from an
         // earlier scope can never influence answers after the visible authorization boundary changes.
         memory.clear(id);
+        messages.deleteAllByConversationId(id);
         scopeCandidates.deleteAllByIdConversationId(id);
         saveScope(conversation, authorizedCandidates);
         Instant now = Instant.now();
@@ -204,6 +236,20 @@ class CvChatConversationService {
                 job.getId(), job.getTitle(), job.getLevel());
         return new CvChatConversationResponse(conversation.getId(), conversation.getVersion(), cards, jobCard,
                 conversation.getCreatedAt(), conversation.getUpdatedAt(), conversation.getExpiresAt());
+    }
+
+    private List<CvChatConversationHistoryResponse.TimelineMessage> visibleHistory(String conversationId) {
+        var newestFirst = new ArrayList<>(messages.findAllByConversationIdOrderByIdDesc(
+                conversationId, PageRequest.of(0, properties.maxMemoryMessages())));
+        Collections.reverse(newestFirst);
+        return newestFirst.stream().map(message -> {
+            List<CvChatResponse.Citation> citations = "ASSISTANT".equals(message.getRole())
+                    ? messageCitations.findAllByMessageIdOrderByDisplayOrder(message.getId()).stream()
+                    .map(CvChatMessageCitation::response).toList()
+                    : List.of();
+            return new CvChatConversationHistoryResponse.TimelineMessage(
+                    message.getRole(), message.getContent(), citations);
+        }).toList();
     }
 
     record ExecutionScope(String conversationId, long version, String organizationId,

@@ -4,6 +4,7 @@ import com.nevgiu.hrai.candidate.storage.OriginalCvStorage;
 import com.nevgiu.hrai.candidate.storage.OriginalCvStorageException;
 import com.nevgiu.hrai.candidate.storage.StagedCvDeletion;
 import com.nevgiu.hrai.evaluation.CandidateEvaluationRepository;
+import com.nevgiu.hrai.chat.memory.CvChatCandidateErasureService;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import com.nevgiu.hrai.security.audit.SecurityEventOutcome;
@@ -26,15 +27,18 @@ public class CandidateErasureService {
     private final CandidateRepository candidates;
     private final CvDocumentRepository documents;
     private final CandidateEvaluationRepository evaluations;
+    private final CvChatCandidateErasureService chatConversations;
     private final OriginalCvStorage storage;
     private final SecurityAuditService audit;
 
     public CandidateErasureService(CandidateRepository candidates, CvDocumentRepository documents,
-                                   CandidateEvaluationRepository evaluations, OriginalCvStorage storage,
+                                   CandidateEvaluationRepository evaluations,
+                                   CvChatCandidateErasureService chatConversations, OriginalCvStorage storage,
                                    SecurityAuditService audit) {
         this.candidates = candidates;
         this.documents = documents;
         this.evaluations = evaluations;
+        this.chatConversations = chatConversations;
         this.storage = storage;
         this.audit = audit;
     }
@@ -72,6 +76,7 @@ public class CandidateErasureService {
         }
 
         // Delete dependants explicitly before their candidate so foreign keys remain valid throughout the transaction.
+        chatConversations.eraseCandidateConversations(candidateId, actor.organizationId());
         evaluations.deleteAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId());
         documents.deleteAll(candidateDocuments);
         documents.flush();

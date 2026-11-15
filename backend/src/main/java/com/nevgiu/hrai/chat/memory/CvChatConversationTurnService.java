@@ -48,7 +48,7 @@ class CvChatConversationTurnService {
         }
 
         CvChatConversationResponse updated = conversations.appendTurn(
-                conversationId, scope.version(), normalizedMessage, answer, actor);
+                conversationId, scope.version(), normalizedMessage, answer, citations, actor);
         return new CvChatConversationTurnResponse(updated.id(), updated.version(), answer, updated.candidates(),
                 updated.job(), citations, updated.expiresAt());
     }

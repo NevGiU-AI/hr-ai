@@ -65,6 +65,10 @@ export class CvChatService {
     return this.http.post<CvChatConversation>(`${this.apiUrl}/chat/conversations`, body);
   }
 
+  listConversations(): Observable<CvChatConversation[]> {
+    return this.http.get<CvChatConversation[]>(`${this.apiUrl}/chat/conversations`);
+  }
+
   getConversation(id: string): Observable<CvChatConversation> {
     return this.http.get<CvChatConversation>(`${this.apiUrl}/chat/conversations/${id}`);
   }

@@ -212,6 +212,67 @@ Playwright, JUnit Platform Suite, and the established assertion library. Cucumbe
 Dependency versions must be reviewed and pinned when the implementation PR begins; do not copy an unreviewed version
 from an example indefinitely.
 
+### Why this is a separate Maven project
+
+Neither Cucumber nor Playwright requires a separate Maven project. This is an architectural boundary chosen because
+the BDD suite tests the deployed product across both applications rather than testing Spring backend classes:
+
+```text
+                Browser BDD
+                     |
+          +----------+----------+
+          |                     |
+   Angular frontend       Spring backend
+          |                     |
+          +----------+----------+
+                     |
+             Deployed services
+```
+
+A browser scenario opens Angular, authenticates over HTTP, observes session/CSRF behavior, drives backend contracts
+through the UI or an authenticated API client, and asserts final browser behavior. It should not import backend
+services, repositories, or application internals. Its natural boundary is therefore above `frontend` and `backend`,
+not inside either project.
+
+Keeping the suite under `e2e/` provides these controls:
+
+- ordinary `backend/mvn test` remains fast and never installs or launches a browser;
+- Cucumber, PicoContainer, Playwright, browser binaries, Failsafe configuration, traces, screenshots, and reports do
+  not affect the backend dependency graph or packaged application;
+- the browser suite has an independent CI job, timeout, cache, retry policy, secrets, target environment, and artifact
+  retention policy;
+- local, staging, or another approved environment can be selected without changing backend test configuration;
+- browser failures are reported separately from unit, repository, migration, and Testcontainers failures;
+- disposable fixture creation and cleanup belong to the cross-application suite rather than a backend test class;
+- the suite can grow across authentication, CV ingestion, chat, evaluation, accessibility, and dashboard workflows
+  without turning the backend module into the owner of frontend behavior.
+
+The separate project remains in this repository. It is not a separate Git repository, deployable service, container,
+or production runtime. It produces test reports and optional private failure diagnostics only.
+
+### Alternative considered: backend Maven profile
+
+An acceptable smaller alternative would place feature files and Java glue under the backend test tree and isolate them
+with a dedicated profile:
+
+```text
+backend/src/test/resources/features/
+backend/src/test/java/com/nevgiu/hrai/bdd/
+```
+
+```bash
+cd backend
+mvn -Pbdd verify
+```
+
+That layout reduces initial project setup, but it mixes tests of an externally deployed Angular/Spring system with
+backend implementation tests. It also requires careful Surefire/Failsafe exclusions to ensure an ordinary backend
+build never downloads browsers, requires environment credentials, or waits for a deployed frontend.
+
+The backend-profile alternative would be reasonable for one or two temporary browser checks. It was rejected because
+the approved BDD layer is permanent and will cover multiple product areas. The clearer long-term ownership and CI
+isolation of `e2e/` outweigh the small cost of maintaining one additional `pom.xml`.
+
 ## Execution profiles
 
 The suite is opt-in and separate from fast unit tests:

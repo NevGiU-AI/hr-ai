@@ -1,0 +1,101 @@
+name: Browser BDD staging
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Deploy staging
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-bdd-staging
+  cancel-in-progress: false
+
+jobs:
+  browser-bdd:
+    name: Cucumber and Playwright smoke tests
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: staging
+      url: ${{ vars.BDD_BASE_URL }}
+    env:
+      BDD_BASE_URL: ${{ vars.BDD_BASE_URL }}
+      BDD_API_URL: ${{ vars.BDD_API_URL }}
+      BDD_RECRUITER_EMAIL: ${{ secrets.BDD_RECRUITER_EMAIL }}
+      BDD_RECRUITER_PASSWORD: ${{ secrets.BDD_RECRUITER_PASSWORD }}
+      BDD_ADMIN_EMAIL: ${{ secrets.BDD_ADMIN_EMAIL }}
+      BDD_ADMIN_PASSWORD: ${{ secrets.BDD_ADMIN_PASSWORD }}
+      BDD_CANDIDATE_QUERY: ${{ secrets.BDD_CANDIDATE_QUERY }}
+      BDD_CANDIDATE_NAME: ${{ secrets.BDD_CANDIDATE_NAME }}
+      BDD_HEADLESS: 'true'
+    steps:
+      - name: Checkout deployed revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: e2e/pom.xml
+
+      - name: Validate protected BDD configuration
+        shell: bash
+        run: |
+          required=(
+            BDD_BASE_URL BDD_API_URL
+            BDD_RECRUITER_EMAIL BDD_RECRUITER_PASSWORD
+            BDD_ADMIN_EMAIL BDD_ADMIN_PASSWORD
+            BDD_CANDIDATE_QUERY BDD_CANDIDATE_NAME
+          )
+          missing=()
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf '::error::Missing staging BDD configuration: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Compile browser tests
+        working-directory: e2e
+        run: mvn -B --no-transfer-progress test-compile
+
+      - name: Install pinned Chromium and system dependencies
+        working-directory: e2e
+        run: >-
+          mvn -B --no-transfer-progress exec:java
+          -Dexec.classpathScope=test
+          -Dexec.mainClass=com.microsoft.playwright.CLI
+          -Dexec.args="install --with-deps chromium"
+
+      - name: Run deterministic browser BDD smoke tests
+        working-directory: e2e
+        run: mvn -B --no-transfer-progress -Pbdd verify
+
+      # The report can contain the disposable candidate's visible card. Keep it private and short-lived.
+      - name: Upload private failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-bdd-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            e2e/target/cucumber-report.html
+            e2e/target/failsafe-reports/
+          if-no-files-found: warn
+          retention-days: 1

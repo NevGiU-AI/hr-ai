@@ -321,6 +321,12 @@ The ordinary pull-request BDD job runs deterministic `@smoke and not @provider a
 protected staging workflow can run the broader suite. Provider evaluation remains separate from browser BDD so a
 model outage or nondeterministic result cannot obscure deterministic UI, authorization, or persistence failures.
 
+The initial CI integration runs after a successful staging deployment rather than on pull requests. The scenario
+targets the deployed frontend and backend and requires protected staging accounts, so running arbitrary pull-request
+code with those credentials would cross a trust boundary. Manual reruns are accepted only from `main`. Pull-request
+execution can be added later if the application and disposable fixtures are provisioned ephemerally without staging
+secrets.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.
@@ -401,12 +407,13 @@ Feature: CV-chat conversation deletion
 ## CI delivery sequence
 
 1. Add the isolated `e2e` Maven project and pinned dependencies.
-2. Install the pinned Chromium build in a dedicated CI job.
+2. Install the pinned Chromium build and Linux dependencies in a dedicated CI job.
 3. Implement scenario-scoped lifecycle, configuration validation, redaction, and cleanup.
 4. Automate persisted conversation resume and citation viewport visibility first.
 5. Add owner isolation and explicit deletion.
 6. Upload private traces/screenshots only on failure.
-7. Run deterministic smoke scenarios on pull requests once their runtime and reliability are measured.
+7. Run deterministic smoke scenarios after successful staging deployments; consider pull-request execution only with
+   an ephemeral environment that does not expose protected staging credentials.
 8. Add Firefox/WebKit only for a documented compatibility risk; do not multiply every scenario by every browser by
    default.
 9. Add further critical workflows incrementally rather than reproducing every unit test through the browser.

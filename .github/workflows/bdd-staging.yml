@@ -87,8 +87,10 @@ jobs:
 
       - name: Run browser BDD smoke tests
         working-directory: e2e
-        # The runner excludes provider scenarios by default. Staging explicitly includes the one controlled citation
-        # scenario while continuing to exclude any future scenario marked as destructive.
+        # Maven's local default is "not @provider and not @destructive". This override deliberately admits the one
+        # controlled provider-backed citation scenario. Boolean Cucumber syntax means "not @destructive" still skips
+        # every scenario explicitly tagged @destructive; do not remove that boundary merely to increase coverage.
+        # A scenario that erases shared candidates, CVs, jobs, accounts, or retention state must carry that tag.
         run: >-
           mvn -B --no-transfer-progress -Pbdd
           "-Dcucumber.filter.tags=not @destructive"

@@ -24,7 +24,12 @@
         <maven.surefire.version>3.6.1</maven.surefire.version>
         <maven.jar.version>3.4.2</maven.jar.version>
         <exec.maven.version>3.6.3</exec.maven.version>
-        <!-- Keep provider-backed and potentially destructive scenarios opt-in for ordinary local runs. -->
+        <!--
+            Cucumber tag expressions use boolean logic: "not @destructive" means every matching scenario except one
+            explicitly tagged @destructive. Provider scenarios are also excluded from the ordinary local command
+            because they incur cost and can vary with the external model. Callers may override this Maven property,
+            but the protected staging workflow continues to exclude @destructive scenarios.
+        -->
         <cucumber.filter.tags>not @provider and not @destructive</cucumber.filter.tags>
     </properties>
 

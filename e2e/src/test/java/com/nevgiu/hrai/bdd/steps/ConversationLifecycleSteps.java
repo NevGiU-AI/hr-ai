@@ -40,6 +40,8 @@ public class ConversationLifecycleSteps {
 
     @When("the recruiter deletes that conversation")
     public void recruiterDeletesConversation() {
+        // This is not a shared-fixture destructive test. The identifier was created by this scenario, and clearing it
+        // here also prevents the After hook from attempting to delete an already-deleted disposable conversation.
         context.deletedConversationId(context.conversationId());
         chat().deleteActiveConversation();
         context.conversationId(null);

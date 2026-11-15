@@ -13,6 +13,8 @@ Feature: CV-chat conversation lifecycle
     When the recruiter asks the configured grounded question
     Then the first citation opens its rendered CV document
 
+  # This is safe for the regular smoke suite: the scenario creates and deletes only its own disposable conversation.
+  # Tests that erase shared candidates, CVs, jobs, accounts, or retention state must instead be tagged @destructive.
   Scenario: A recruiter permanently deletes a conversation
     Given a recruiter owns an active CV-chat conversation
     When the recruiter deletes that conversation

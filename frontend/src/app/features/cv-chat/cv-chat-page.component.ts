@@ -4,6 +4,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
+import { ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY } from '../../core/storage/application-storage-keys';
 import { ApiError, Job } from '../cv-ingestion/models/cv-ingestion.models';
 import {
   CvChatCandidateOption,
@@ -15,8 +16,6 @@ import {
 } from '../cv-ingestion/models/cv-chat.models';
 import { CvChatService } from '../cv-ingestion/services/cv-chat.service';
 import { CvIngestionService } from '../cv-ingestion/services/cv-ingestion.service';
-
-const ACTIVE_CONVERSATION_KEY = 'hr-ai-active-cv-chat-conversation';
 
 @Component({
   selector: 'app-cv-chat-page',
@@ -56,7 +55,9 @@ export class CvChatPageComponent implements OnInit {
   ngOnInit(): void {
     this.candidates.getJobs().subscribe({ next: (jobs) => this.jobs = jobs });
     this.loadConversationList();
-    const storedId = typeof localStorage === 'undefined' ? null : localStorage.getItem(ACTIVE_CONVERSATION_KEY);
+    const storedId = typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY);
     if (storedId) this.loadConversation(storedId);
   }
 
@@ -247,11 +248,15 @@ export class CvChatPageComponent implements OnInit {
     this.discoveryMessage = '';
     this.pendingQuestion = '';
     this.message = '';
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(ACTIVE_CONVERSATION_KEY);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY);
+    }
   }
 
   private persistConversationId(id: string): void {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(ACTIVE_CONVERSATION_KEY, id);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY, id);
+    }
   }
 
   private apiError(error: HttpErrorResponse, fallback: string): string {

@@ -37,6 +37,7 @@ jobs:
       BDD_ADMIN_PASSWORD: ${{ secrets.BDD_ADMIN_PASSWORD }}
       BDD_CANDIDATE_QUERY: ${{ secrets.BDD_CANDIDATE_QUERY }}
       BDD_CANDIDATE_NAME: ${{ secrets.BDD_CANDIDATE_NAME }}
+      BDD_CANDIDATE_QUESTION: ${{ secrets.BDD_CANDIDATE_QUESTION }}
       BDD_HEADLESS: 'true'
     steps:
       - name: Checkout deployed revision
@@ -59,7 +60,7 @@ jobs:
             BDD_BASE_URL BDD_API_URL
             BDD_RECRUITER_EMAIL BDD_RECRUITER_PASSWORD
             BDD_ADMIN_EMAIL BDD_ADMIN_PASSWORD
-            BDD_CANDIDATE_QUERY BDD_CANDIDATE_NAME
+            BDD_CANDIDATE_QUERY BDD_CANDIDATE_NAME BDD_CANDIDATE_QUESTION
           )
           missing=()
           for name in "${required[@]}"; do
@@ -84,9 +85,16 @@ jobs:
           -Dexec.mainClass=com.microsoft.playwright.CLI
           -Dexec.args="install --with-deps chromium"
 
-      - name: Run deterministic browser BDD smoke tests
+      - name: Run browser BDD smoke tests
         working-directory: e2e
-        run: mvn -B --no-transfer-progress -Pbdd verify
+        # Maven's local default is "not @provider and not @destructive". This override deliberately admits the one
+        # controlled provider-backed citation scenario. Boolean Cucumber syntax means "not @destructive" still skips
+        # every scenario explicitly tagged @destructive; do not remove that boundary merely to increase coverage.
+        # A scenario that erases shared candidates, CVs, jobs, accounts, or retention state must carry that tag.
+        run: >-
+          mvn -B --no-transfer-progress -Pbdd
+          "-Dcucumber.filter.tags=not @destructive"
+          verify
 
       # The report can contain the disposable candidate's visible card. Keep it private and short-lived.
       - name: Upload private failure diagnostics

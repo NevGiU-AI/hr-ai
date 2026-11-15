@@ -45,8 +45,11 @@ public class BrowserHooks {
                 || context.recruiterPage().isClosed()) {
             return;
         }
-        new CvChatPage(context.recruiterPage(), context.configuration().baseUrl())
-                .deleteActiveConversation();
+        // Angular owns CSRF propagation for state-changing requests. Return from a citation's candidate-workspace
+        // route to chat, let the persisted pointer restore the conversation, and delete it through the UI.
+        CvChatPage chat = new CvChatPage(context.recruiterPage(), context.configuration().baseUrl());
+        chat.open();
+        chat.deleteActiveConversation();
         context.conversationId(null);
     }
 

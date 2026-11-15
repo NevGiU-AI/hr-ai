@@ -22,6 +22,7 @@ public class ScenarioContext {
     private Page recruiterPage;
     private Page administratorPage;
     private String conversationId;
+    private String deletedConversationId;
     private APIResponse lastApiResponse;
     private String lastApiResponseBody;
 
@@ -40,6 +41,8 @@ public class ScenarioContext {
     public void administratorPage(Page value) { administratorPage = value; }
     public String conversationId() { return conversationId; }
     public void conversationId(String value) { conversationId = value; }
+    public String deletedConversationId() { return deletedConversationId; }
+    public void deletedConversationId(String value) { deletedConversationId = value; }
     public APIResponse lastApiResponse() { return lastApiResponse; }
     public void lastApiResponse(APIResponse value) { lastApiResponse = value; }
     public String lastApiResponseBody() { return lastApiResponseBody; }

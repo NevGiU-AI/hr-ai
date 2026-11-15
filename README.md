@@ -199,10 +199,11 @@ focused staging acceptance after PR #173 at revision `ceded13`. Production repea
 follow-up checks successfully in release `v0.37.0` at revision `657207f`.
 The dedicated conversational CV-chat page, organization-wide criteria discovery, owning-candidate citation navigation,
 and readable `Display Name (CANDIDATE-ID)` grounded-answer format passed focused staging acceptance on 12 November
-2026 at main revision `9002238`, then production acceptance in release `v0.38.0` at revision `eea0a3a`. Conversation
-listing and persisted citation cards for reloaded historical answers are now implemented through Flyway V8 and await
-environment acceptance. Language-first ambiguity cards on this page, controlled-response localization,
-speech input/playback, and the recruitment dashboard remain roadmap work.
+2026 at main revision `9002238`, then production acceptance in release `v0.38.0` at revision `eea0a3a`. Flyway V8
+conversation listing, persisted historical citation cards, active-conversation restoration, owner isolation, and the
+post-render citation-scroll correction passed focused staging and production acceptance on 15 November 2026. The
+production result is release `v0.39.0` at revision `592b11b`. Language-first ambiguity cards on this page, controlled-
+response localization, speech input/playback, and the recruitment dashboard remain roadmap work.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
@@ -276,8 +277,8 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
    consumes its result. Recruiter-confirmed candidate IDs and the optional approved job now have owner- and
    tenant-scoped persistence, and the first dedicated message-style page consumes that scope. Next complete its
    language-first ambiguity confirmation and editable scope; then broaden deterministic/provider-backed evaluation
-   and localize controlled outcomes. The conversation index and historical citation metadata are implemented through
-   Flyway V8 and await environment acceptance. The implemented picker-
+   and localize controlled outcomes. The conversation index, historical citation metadata, and asynchronous citation
+   navigation passed staging and production acceptance through release `v0.39.0`. The implemented picker-
    and language-first flows
    already resolve candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity
    confirmation, and produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
@@ -506,6 +506,43 @@ describe('CvWorkspaceComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Ada Lovelace · CV document 2');
     expect(fixture.nativeElement.textContent).toContain('Grace Hopper · CV document 3');
   });
+
+  it('retries citation scrolling until asynchronously rendered candidate details contain the target', fakeAsync(() => {
+    const target = { scrollIntoView: jasmine.createSpy('scrollIntoView') } as unknown as HTMLElement;
+    const targetLookup = spyOn(document, 'getElementById').and.returnValues(null, null, target);
+    spyOn(window.history, 'replaceState');
+
+    component.openComparisonCitation(
+      { reference: 'CV-2', candidateId: 7, documentId: 2, pageNumber: null, excerpt: 'Java engineer' },
+      new Event('click'),
+    );
+
+    tick(0);
+    expect(target.scrollIntoView).not.toHaveBeenCalled();
+    tick(50);
+    expect(target.scrollIntoView).not.toHaveBeenCalled();
+    tick(50);
+
+    expect(targetLookup).toHaveBeenCalledTimes(3);
+    expect(target.scrollIntoView).toHaveBeenCalledOnceWith({ behavior: 'auto', block: 'start' });
+    expect(window.history.replaceState).toHaveBeenCalledWith(
+      null, '', `${window.location.pathname}${window.location.search}#cv-document-2`,
+    );
+  }));
+
+  it('stops citation scrolling retries when a stale document target never renders', fakeAsync(() => {
+    const targetLookup = spyOn(document, 'getElementById').and.returnValue(null);
+
+    component.openComparisonCitation(
+      { reference: 'CV-404', candidateId: 7, documentId: 404, pageNumber: null, excerpt: 'Missing' },
+      new Event('click'),
+    );
+
+    tick(2000);
+
+    // One immediate lookup plus twenty bounded retries prevents a stale citation from polling indefinitely.
+    expect(targetLookup).toHaveBeenCalledTimes(21);
+  }));
 
   it('carries the confirmed approved job into the final comparison request', () => {
     component.languageScopeResponse = {

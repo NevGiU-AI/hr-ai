@@ -20,11 +20,13 @@ BDD_ADMIN_EMAIL
 BDD_ADMIN_PASSWORD
 BDD_CANDIDATE_QUERY
 BDD_CANDIDATE_NAME
+BDD_CANDIDATE_QUESTION
 ```
 
 `BDD_CANDIDATE_QUERY` is the name fragment entered in search. `BDD_CANDIDATE_NAME` is the exact expected card name,
-which prevents the test from silently selecting the wrong result. `BDD_HEADLESS=false` is optional for local debugging;
-headless execution is the default.
+which prevents the test from silently selecting the wrong result. `BDD_CANDIDATE_QUESTION` must be a stable,
+job-relevant question answered explicitly by that disposable CV so the citation scenario can require grounded evidence.
+`BDD_HEADLESS=false` is optional for local debugging; headless execution is the default.
 
 ## Install Chromium
 
@@ -40,9 +42,18 @@ mvn test-compile exec:java "-Dexec.classpathScope=test" "-Dexec.mainClass=com.mi
 mvn -Pbdd verify
 ```
 
-The initial scenario creates a conversation through the recruiter UI, verifies through a separate administrator
-browser context that the non-owner receives an opaque `404`, and then deletes the disposable conversation through the
-recruiter UI. Reports are written under `target/` and are ignored by Git.
+The default command excludes scenarios tagged `@provider` or `@destructive`. To reproduce the protected staging run,
+including the single controlled citation request, use:
+
+```powershell
+mvn -Pbdd "-Dcucumber.filter.tags=not @destructive" verify
+```
+
+The suite creates conversations through the recruiter UI and covers owner isolation, explicit resume after leaving the
+active chat, reload restoration, grounded citation navigation, and permanent deletion. Cleanup deletes any disposable
+conversation left by a scenario. The citation scenario makes one provider-backed request; the configured question and
+fixture must remain synthetic and stable. It is excluded from the default local run but included by protected staging
+CI. Reports are written under `target/` and are ignored by Git.
 
 ## Staging CI
 
@@ -54,7 +65,7 @@ Configure the protected GitHub `staging` environment with:
 
 - variables `BDD_BASE_URL` and `BDD_API_URL`;
 - secrets `BDD_RECRUITER_EMAIL`, `BDD_RECRUITER_PASSWORD`, `BDD_ADMIN_EMAIL`, and `BDD_ADMIN_PASSWORD`;
-- secrets `BDD_CANDIDATE_QUERY` and `BDD_CANDIDATE_NAME` for the approved disposable fixture.
+- secrets `BDD_CANDIDATE_QUERY`, `BDD_CANDIDATE_NAME`, and `BDD_CANDIDATE_QUESTION` for the approved disposable fixture.
 
 Restrict that environment to `main` and authorized reviewers. On failure, the workflow stores the Cucumber report and
 Failsafe output as a private artifact for one day. Those artifacts can contain the disposable candidate's visible card

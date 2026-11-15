@@ -24,6 +24,8 @@
         <maven.surefire.version>3.6.1</maven.surefire.version>
         <maven.jar.version>3.4.2</maven.jar.version>
         <exec.maven.version>3.6.3</exec.maven.version>
+        <!-- Keep provider-backed and potentially destructive scenarios opt-in for ordinary local runs. -->
+        <cucumber.filter.tags>not @provider and not @destructive</cucumber.filter.tags>
     </properties>
 
     <dependencyManagement>
@@ -145,6 +147,9 @@
                                     cucumber.junit-platform.naming-strategy=long
                                 </configurationParameters>
                             </properties>
+                            <systemPropertyVariables>
+                                <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
+                            </systemPropertyVariables>
                         </configuration>
                         <executions>
                             <execution>

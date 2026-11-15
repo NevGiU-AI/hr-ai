@@ -331,6 +331,21 @@ GitHub grants the post-deployment `workflow_run` a read-only cache token. The in
 caching disabled. It must not request cache-write access merely for speed while also receiving protected staging
 secrets; a separate trusted cache-seeding design can be added later if dependency download time becomes material.
 
+The lifecycle suite extends the owner-isolation smoke test with three user-visible contracts:
+
+- leaving and explicitly resuming a conversation restores the same server-owned candidate scope, and a browser reload
+  retains that same conversation pointer;
+- one configured, job-relevant question against the synthetic candidate must return a grounded citation whose link
+  loads and scrolls to the cited CV document;
+- explicit deletion clears the browser pointer, removes the conversation from the owner's recent list, and makes its
+  identifier return the same opaque `404` used for unavailable conversations.
+
+Only the citation scenario calls the configured AI provider. The default local runner continues to exclude `@provider`
+and `@destructive` scenarios; protected staging CI explicitly includes the controlled provider scenario while still
+excluding destructive tests. `BDD_CANDIDATE_QUESTION` must describe a stable fact explicitly present in the disposable
+CV. It is protected alongside the other fixture values so a public workflow cannot silently replace the controlled
+evaluation input or spend provider capacity through arbitrary questions.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.

@@ -1,9 +1,9 @@
 package com.nevgiu.hrai.bdd.hooks;
 
 import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.Playwright;
 import com.nevgiu.hrai.bdd.context.ScenarioContext;
-import com.nevgiu.hrai.bdd.pages.CvChatPage;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
@@ -41,12 +41,16 @@ public class BrowserHooks {
     }
 
     private void deleteDisposableConversation() {
-        if (context.conversationId() == null || context.recruiterPage() == null
-                || context.recruiterPage().isClosed()) {
+        if (context.conversationId() == null || context.recruiterBrowserContext() == null) {
             return;
         }
-        new CvChatPage(context.recruiterPage(), context.configuration().baseUrl())
-                .deleteActiveConversation();
+        // A citation scenario finishes on the candidate workspace rather than the chat page. Use the authenticated
+        // browser context's API client so cleanup remains reliable regardless of the scenario's final route.
+        APIResponse response = context.recruiterBrowserContext().request().delete(
+                context.configuration().apiUrl() + "/chat/conversations/" + context.conversationId());
+        if (!(response.ok() || response.status() == 404)) {
+            throw new IllegalStateException("Disposable conversation cleanup failed with HTTP " + response.status());
+        }
         context.conversationId(null);
     }
 

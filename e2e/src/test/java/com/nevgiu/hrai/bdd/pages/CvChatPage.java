@@ -2,6 +2,7 @@ package com.nevgiu.hrai.bdd.pages;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.WaitForSelectorState;
 
 import java.net.URI;
 
@@ -55,5 +56,77 @@ public class CvChatPage {
                 new Page.GetByRoleOptions().setName("Delete chat").setExact(true)).click();
         assertThat(page.getByRole(HEADING,
                 new Page.GetByRoleOptions().setName("Start a conversation").setExact(true))).isVisible();
+    }
+
+    public void leaveActiveConversation() {
+        page.getByRole(BUTTON,
+                new Page.GetByRoleOptions().setName("New chat").setExact(true)).click();
+        assertThat(page.getByRole(HEADING,
+                new Page.GetByRoleOptions().setName("Recent conversations").setExact(true))).isVisible();
+    }
+
+    public void resumeConversation(String candidateName, String expectedConversationId) {
+        page.locator("button.recent-item")
+                .filter(new Locator.FilterOptions().setHasText(candidateName))
+                .first()
+                .click();
+        assertActiveConversation(candidateName, expectedConversationId);
+    }
+
+    public void reloadActiveConversation(String candidateName, String expectedConversationId) {
+        page.reload();
+        assertActiveConversation(candidateName, expectedConversationId);
+    }
+
+    public void askGroundedQuestion(String question) {
+        page.getByLabel("Message").fill(question);
+        page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Send").setExact(true)).click();
+        Locator citation = page.locator(".message.assistant .citations a").first();
+        citation.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+    }
+
+    public void openFirstCitationAndVerifyTarget() {
+        Locator citation = page.locator(".message.assistant .citations a").first();
+        String href = citation.getAttribute("href");
+        if (href == null || !href.matches("/candidates/import\\?candidateId=\\d+#cv-document-\\d+")) {
+            throw new AssertionError("Expected a document citation URL but received: " + href);
+        }
+        String fragment = href.substring(href.indexOf('#') + 1);
+        citation.click();
+        page.waitForURL(url -> {
+            URI navigated = URI.create(url);
+            return navigated.getPath().equals("/candidates/import")
+                    && navigated.getQuery() != null && navigated.getQuery().matches("candidateId=\\d+")
+                    && fragment.equals(navigated.getFragment());
+        });
+
+        Locator target = page.locator("#" + fragment);
+        assertThat(target).isVisible();
+        Boolean inViewport = (Boolean) target.evaluate("element => {"
+                + "const rect = element.getBoundingClientRect();"
+                + "return rect.bottom > 0 && rect.top < window.innerHeight;"
+                + "}");
+        if (!Boolean.TRUE.equals(inViewport)) {
+            throw new AssertionError("Citation target exists but was not scrolled into the viewport");
+        }
+    }
+
+    public void assertNoActiveConversationPointer() {
+        assertThat(page.getByRole(HEADING,
+                new Page.GetByRoleOptions().setName("Start a conversation").setExact(true))).isVisible();
+        Object storedId = page.evaluate("key => localStorage.getItem(key)", ACTIVE_CONVERSATION_KEY);
+        if (storedId != null) {
+            throw new AssertionError("Deleting a conversation must clear its browser-local active pointer");
+        }
+    }
+
+    private void assertActiveConversation(String candidateName, String expectedConversationId) {
+        assertThat(page.getByLabel("Active conversation scope")).isVisible();
+        assertThat(page.getByLabel("Active conversation scope").getByText(candidateName,
+                new Locator.GetByTextOptions().setExact(true))).isVisible();
+        Object storedId = page.evaluate("key => localStorage.getItem(key)", ACTIVE_CONVERSATION_KEY);
+        if (!expectedConversationId.equals(storedId)) {
+            throw new AssertionError("The resumed conversation did not restore the expected browser pointer");
+        }
     }
 }

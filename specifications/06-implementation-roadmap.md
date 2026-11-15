@@ -324,6 +324,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   owning-candidate citation navigation, and readable `Display Name (CANDIDATE-ID)` output passed focused staging
   acceptance on 12 November 2026 at main revision `9002238`. Production repeated the focused checks successfully in
   release `v0.38.0` at revision `eea0a3a`.
+- [ ] Establish the browser behavior-driven development suite described in
+  [browser BDD testing](./26-browser-bdd-testing.md). Use Cucumber-JVM from the first slice, JUnit Platform,
+  PicoContainer scenario state, and Playwright for Java. Automate persisted conversation resume, historical citation
+  viewport navigation, same-organization owner isolation, and explicit deletion before expanding to other critical
+  recruitment workflows. Keep deterministic browser BDD separate from paid provider evaluations and destructive
+  production execution.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.
 - [x] Validate the bounded Angular candidate-chat interface and corrected same-page citation navigation in staging on

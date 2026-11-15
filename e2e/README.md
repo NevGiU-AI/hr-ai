@@ -59,3 +59,6 @@ Configure the protected GitHub `staging` environment with:
 Restrict that environment to `main` and authorized reviewers. On failure, the workflow stores the Cucumber report and
 Failsafe output as a private artifact for one day. Those artifacts can contain the disposable candidate's visible card
 and must not be copied to a public issue or chat.
+
+The post-deployment `workflow_run` token has read-only cache access. The job intentionally does not enable Maven caching
+instead of granting cache-write capability to a workflow that receives protected staging secrets.

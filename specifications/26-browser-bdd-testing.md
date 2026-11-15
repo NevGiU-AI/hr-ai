@@ -327,6 +327,10 @@ code with those credentials would cross a trust boundary. Manual reruns are acce
 execution can be added later if the application and disposable fixtures are provisioned ephemerally without staging
 secrets.
 
+GitHub grants the post-deployment `workflow_run` a read-only cache token. The initial job therefore leaves Maven
+caching disabled. It must not request cache-write access merely for speed while also receiving protected staging
+secrets; a separate trusted cache-seeding design can be added later if dependency download time becomes material.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.

@@ -1,9 +1,9 @@
 package com.nevgiu.hrai.bdd.hooks;
 
 import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.Playwright;
 import com.nevgiu.hrai.bdd.context.ScenarioContext;
+import com.nevgiu.hrai.bdd.pages.CvChatPage;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
@@ -41,16 +41,15 @@ public class BrowserHooks {
     }
 
     private void deleteDisposableConversation() {
-        if (context.conversationId() == null || context.recruiterBrowserContext() == null) {
+        if (context.conversationId() == null || context.recruiterPage() == null
+                || context.recruiterPage().isClosed()) {
             return;
         }
-        // A citation scenario finishes on the candidate workspace rather than the chat page. Use the authenticated
-        // browser context's API client so cleanup remains reliable regardless of the scenario's final route.
-        APIResponse response = context.recruiterBrowserContext().request().delete(
-                context.configuration().apiUrl() + "/chat/conversations/" + context.conversationId());
-        if (!(response.ok() || response.status() == 404)) {
-            throw new IllegalStateException("Disposable conversation cleanup failed with HTTP " + response.status());
-        }
+        // Angular owns CSRF propagation for state-changing requests. Return from a citation's candidate-workspace
+        // route to chat, let the persisted pointer restore the conversation, and delete it through the UI.
+        CvChatPage chat = new CvChatPage(context.recruiterPage(), context.configuration().baseUrl());
+        chat.open();
+        chat.deleteActiveConversation();
         context.conversationId(null);
     }
 

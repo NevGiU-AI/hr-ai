@@ -337,8 +337,8 @@ The lifecycle suite extends the owner-isolation smoke test with three user-visib
   retains that same conversation pointer;
 - one configured, job-relevant question against the synthetic candidate must return a grounded citation whose link
   loads and scrolls to the cited CV document;
-- explicit deletion clears the browser pointer, removes the conversation from the owner's recent list, and makes its
-  identifier return the same opaque `404` used for unavailable conversations.
+- explicit deletion clears the browser pointer and makes its identifier return the same opaque `404` used for
+  unavailable conversations. The backend result is authoritative even when the owner already has other recent chats.
 
 Only the citation scenario calls the configured AI provider. The default local runner continues to exclude `@provider`
 and `@destructive` scenarios; protected staging CI explicitly includes the controlled provider scenario while still

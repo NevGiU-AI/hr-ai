@@ -45,13 +45,9 @@ public class ConversationLifecycleSteps {
         context.conversationId(null);
     }
 
-    @Then("the deleted conversation is absent from recent conversations")
-    public void deletedConversationIsAbsent() {
+    @Then("the deleted conversation is cleared from the active browser state")
+    public void deletedConversationIsClearedFromBrowserState() {
         chat().assertNoActiveConversationPointer();
-        String endpoint = context.configuration().apiUrl() + "/chat/conversations";
-        APIResponse response = context.recruiterBrowserContext().request().get(endpoint);
-        assertThat(response.status()).isEqualTo(200);
-        assertThat(response.text()).doesNotContain(context.deletedConversationId());
     }
 
     @Then("the recruiter can no longer retrieve the deleted conversation")

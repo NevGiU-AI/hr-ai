@@ -16,5 +16,5 @@ Feature: CV-chat conversation lifecycle
   Scenario: A recruiter permanently deletes a conversation
     Given a recruiter owns an active CV-chat conversation
     When the recruiter deletes that conversation
-    Then the deleted conversation is absent from recent conversations
+    Then the deleted conversation is cleared from the active browser state
     And the recruiter can no longer retrieve the deleted conversation

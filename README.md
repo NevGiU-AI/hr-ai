@@ -514,6 +514,14 @@ npm test -- --watch=false
 
 The test suites mock AI dependencies; they do not require an OpenAI key.
 
+The approved browser behavior-driven development layer will use Cucumber-JVM, JUnit Platform, PicoContainer, and
+Playwright for Java in a separate Maven project. It will begin with persisted CV-chat conversation resume, owner
+isolation, historical citation restoration, and citation viewport navigation. Browser BDD complements rather than
+replaces the existing unit, Angular component, Testcontainers, migration, security, AI-evaluation, and manual
+acceptance layers. See the [browser BDD testing design](specifications/26-browser-bdd-testing.md) for the Selenium and
+TypeScript alternatives considered, component relationships, scenario lifecycle, privacy rules, CI profiles, and
+initial Gherkin features.
+
 ## Deployment
 
 | Environment | Frontend | Backend API |

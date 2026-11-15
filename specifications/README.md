@@ -29,6 +29,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 23. [Encrypted paired backup and restore](./23-paired-backup-and-restore.md)
 24. [Candidate correction and document reprocessing](./24-candidate-correction-and-reprocessing.md)
 25. [CV OCR fallback](./25-cv-ocr.md)
+26. [Browser BDD testing with Cucumber and Playwright](./26-browser-bdd-testing.md)
 
 ## Recommended delivery order
 
@@ -38,18 +39,20 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 4. Extend CV ingestion/evaluation with evidence and reproducibility.
 5. Complete the remaining CV-chat read tools and the partially implemented dedicated message-style page, then add
    broader evaluation and controlled-response localization.
-6. Extend the accepted typed CV chat with editable speech-to-text input and optional text-to-speech playback.
-7. Build dashboard APIs and UI from persisted recruitment data.
-8. Complete a focused codebase-wide comments and Javadoc review under the contribution standards.
-9. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts and source documentation are stable.
-10. Benchmark bounded backend concurrency and Java virtual threads in staging.
-11. Install and validate encrypted paired backup/restore in staging, including an isolated restoration test.
-12. Install and validate paired backup/restore in production after staging acceptance.
-13. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
-14. Move original files to private object storage before horizontal or multi-host backend scaling.
-15. Consider horizontal or multi-host backend scaling.
-16. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
-17. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
+6. Establish Cucumber-JVM browser BDD over Playwright for Java, beginning with persisted conversation resume, owner
+   isolation, and citation viewport navigation.
+7. Extend the accepted typed CV chat with editable speech-to-text input and optional text-to-speech playback.
+8. Build dashboard APIs and UI from persisted recruitment data.
+9. Complete a focused codebase-wide comments and Javadoc review under the contribution standards.
+10. Publish reviewed backend Swagger/OpenAPI documentation after the dashboard contracts and source documentation are stable.
+11. Benchmark bounded backend concurrency and Java virtual threads in staging.
+12. Install and validate encrypted paired backup/restore in staging, including an isolated restoration test.
+13. Install and validate paired backup/restore in production after staging acceptance.
+14. Validate security, privacy, AI quality, performance, accessibility, and usability before each release.
+15. Move original files to private object storage before horizontal or multi-host backend scaling.
+16. Consider horizontal or multi-host backend scaling.
+17. Add the selected messaging integration after web chat, web speech controls, and documented backend APIs are stable.
+18. Evaluate human-reviewed employer-branding image generation, then video generation, behind separate product and compliance gates.
 
 ## Current repository snapshot
 
@@ -66,6 +69,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 | Backend concurrency | Planned validation | Java 21 and blocking Spring MVC/JPA/AI workflows are suitable for a virtual-thread experiment, but production enablement requires staging benchmarks, downstream limits, and pinned-thread monitoring. |
 | Spring AI tools | Core orchestration accepted; evidence-discovery extension implemented | Request-scoped deterministic candidate discovery and confirmed candidate-summary tools include approved-job requirements only after application-owned tenant authorization and explicit job confirmation. Separate authenticated/CSRF-protected discovery and confirmed-scope endpoints return application-owned workflow state; discovery returns only the same minimal tenant-scoped cards produced by its deterministic searches. The one-pass Angular flow consumes those cards directly, preserves explicit confirmation, treats the approved job as optional, and keeps grounded comparison as a separate tenant-reauthorized evidence action. Focused staging and production acceptance completed on 10 November 2026, with production using release `v0.32.0` at revision `1a5f247`. The new `search_candidates_by_evidence` tool powers deterministic organization-wide natural-language discovery. Server-owned authentication supplies the organization, semantic search returns a bounded ranked shortlist, and the recruiter must still confirm cards before chat; the model cannot request an organization identifier or retrieve the full tenant corpus. A foundational `get_evaluation_evidence` callback subset exposes at most the five most recent persisted evaluations for one tenant-authorized confirmed candidate, including minimized job context, scores, current/stale state, and timestamps. Generated rationale is omitted because it can contain candidate personal information or quoted CV content, and metric-level source evidence is not yet persisted. Dedicated `get_document_status` and `get_ingestion_warnings` callbacks expose only the newest confirmed candidate document's minimized state and application-owned warning codes; raw errors, filenames, CV text, tenant/storage/hash data, and original-file metadata remain excluded. User-visible evaluation/document-status consumption, dashboard tools, and complete reproducibility metadata remain. The previous scope endpoint stays temporarily for cached-client compatibility, and state-changing tools still require deterministic previews, explicit confirmation, idempotency, and audits. |
 | AI evaluation testing | Foundation implemented; expansion pending | Deterministic structural assertions, versioned policy/retrieval/tool datasets, opt-in provider-backed gates, Spring AI relevancy/fact-checking evaluators, multilingual cases, adversarial cases, and calibrated human review are available. The expanded 24-case question-policy dataset `1.1.0` live-provider gate passed on 10 November 2026 after the `v0.32.0` environment checks. Dataset `1.2.0` adds two contextual-follow-up cases, and its fresh 26-case provider run passed on 12 November 2026. Dataset `1.3.0` adds the professional evidence-ranking request `Who is the best AI dev?`; its fresh 27-case provider run passed on 12 November 2026 while retaining sensitive-characteristic refusal. Multilingual retrieval dataset `1.1.0` adds the short picker-first Java-comparison recall regression, and its fresh eight-case provider run passed on 12 November 2026. Broader task metrics, provider-backed evaluation-history-tool coverage, OCR/speech evaluation, and release automation remain. |
+| Browser BDD testing | Approved design; implementation pending | Cucumber-JVM, JUnit Platform, PicoContainer, and Playwright for Java are the selected stack. The isolated Maven suite will use scenario-scoped browser contexts, disposable fixtures, bounded diagnostics, and private failure artifacts. Initial scenarios cover persisted conversation resume, historical citation viewport navigation, owner isolation, and explicit deletion. Selenium and TypeScript Playwright alternatives were reviewed; Java Playwright preserves the Java/Maven ecosystem while providing stronger isolation, auto-waiting, request inspection, and tracing for this new suite. |
 | Spring AI observability | Planned production control | Current single-host operations use Docker logs. The later performance/observability milestone will add privacy-safe Micrometer and OpenTelemetry instrumentation and evaluate Prometheus/Grafana as an open-source starting point, without exporting candidate content or placing personal or secret values in metric labels. |
 | Production security | Authentication foundation accepted | Email/password login, tenant isolation, bcrypt password management, Redis-backed sessions/revocation, a three-session account limit, account/IP throttling and lockout, and tenant-scoped auditing passed the final staging and production validation suite. Malware quarantine, scheduled original expiry, legal holds, and full candidate erasure passed staging and production acceptance; paired backup governance awaits restoration acceptance. |
 | CI/CD and VPS deployment | Staging and production operational | CI, immutable GHCR publication, automatic staging deployment, protected production promotion, and production smoke validation are working. Encrypted paired backup/restore is implemented; staging/production installation and restoration acceptance are scheduled after the dashboard, stable OpenAPI contracts, and concurrency benchmark. Observability and further rollback hardening remain. |

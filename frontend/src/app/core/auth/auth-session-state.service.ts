@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { AuthUser } from './auth.models';
 import { CsrfTokenStore } from './csrf-token.store';
+import { ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY } from '../storage/application-storage-keys';
 
 const AUTH_CHANNEL = 'hr-ai-auth';
 const AUTH_LOGOUT_STORAGE_KEY = 'hr-ai-auth-logout';
@@ -35,6 +36,11 @@ export class AuthSessionState {
   }
 
   authenticate(user: AuthUser): void {
+    const currentUser = this.userSubject.value;
+    if (currentUser !== null
+        && (currentUser.id !== user.id || currentUser.organizationId !== user.organizationId)) {
+      this.clearOwnerBoundBrowserState();
+    }
     this.userSubject.next(user);
   }
 
@@ -42,6 +48,7 @@ export class AuthSessionState {
     const returnUrl = this.router.url;
     this.userSubject.next(null);
     this.csrf.token = '';
+    this.clearOwnerBoundBrowserState();
 
     if (broadcast) {
       this.channel?.postMessage({ type: 'logout' });
@@ -56,5 +63,12 @@ export class AuthSessionState {
 
   private handleRemoteLogout(): void {
     this.zone.run(() => this.expire(false, true));
+  }
+
+  /** Prevents a later account from attempting to restore state owned by the previous authenticated user. */
+  private clearOwnerBoundBrowserState(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY);
+    }
   }
 }

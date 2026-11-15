@@ -1,6 +1,6 @@
 # Browser behavior-driven development testing
 
-Status: **Approved design; implementation pending**
+Status: **Initial executable foundation implemented; expansion in progress**
 
 ## Purpose
 
@@ -291,7 +291,14 @@ BDD_RECRUITER_EMAIL
 BDD_RECRUITER_PASSWORD
 BDD_ADMIN_EMAIL
 BDD_ADMIN_PASSWORD
+BDD_CANDIDATE_QUERY
+BDD_CANDIDATE_NAME
 ```
+
+The candidate variables identify a disposable, same-tenant fixture. The query is the search fragment entered in the
+browser, while the exact name prevents a broad search from silently selecting the wrong candidate. The first executable
+scenario creates the conversation through Angular, verifies owner isolation with a second authenticated browser
+context, and deletes the conversation through Angular during scenario cleanup. It does not call an AI provider.
 
 No secret may appear in a feature file, source file, command log, screenshot name, trace name, assertion message, or
 test report. The default target is local or staging. Production execution requires an explicit protected workflow and

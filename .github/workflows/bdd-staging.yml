@@ -49,8 +49,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
-          cache-dependency-path: e2e/pom.xml
+          # workflow_run receives a read-only cache token. Do not request a cache save or widen permissions in this
+          # protected-secret job merely to optimize dependency downloads.
 
       - name: Validate protected BDD configuration
         shell: bash

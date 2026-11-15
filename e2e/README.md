@@ -43,3 +43,19 @@ mvn -Pbdd verify
 The initial scenario creates a conversation through the recruiter UI, verifies through a separate administrator
 browser context that the non-owner receives an opaque `404`, and then deletes the disposable conversation through the
 recruiter UI. Reports are written under `target/` and are ignored by Git.
+
+## Staging CI
+
+`.github/workflows/bdd-staging.yml` runs this deterministic smoke suite after a successful `Deploy staging` workflow
+and supports a manual rerun from `main`. It deliberately does not run untrusted pull-request code with staging
+credentials.
+
+Configure the protected GitHub `staging` environment with:
+
+- variables `BDD_BASE_URL` and `BDD_API_URL`;
+- secrets `BDD_RECRUITER_EMAIL`, `BDD_RECRUITER_PASSWORD`, `BDD_ADMIN_EMAIL`, and `BDD_ADMIN_PASSWORD`;
+- secrets `BDD_CANDIDATE_QUERY` and `BDD_CANDIDATE_NAME` for the approved disposable fixture.
+
+Restrict that environment to `main` and authorized reviewers. On failure, the workflow stores the Cucumber report and
+Failsafe output as a private artifact for one day. Those artifacts can contain the disposable candidate's visible card
+and must not be copied to a public issue or chat.

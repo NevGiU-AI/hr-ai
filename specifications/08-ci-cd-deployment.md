@@ -616,6 +616,11 @@ Validated on 16 August 2026: release `v0.2.0` promoted commit `33d8a04` after a 
 controlled production organization migration. The protected deployment completed successfully, public smoke checks
 passed, and authentication plus tenant-scoped application workflows were accepted in production.
 
+Validated on 16 November 2026: release `v0.40.0` promoted main revision `845df46` through the first enforced browser
+behavior-driven development gate. Production resolution required backend and frontend `bdd-validated-*` aliases for
+that exact commit, the immutable images deployed successfully, production health and focused functional checks passed,
+and no rollback was required.
+
 ### Phase 5 - Operational hardening
 
 - [ ] Add uptime, resource, certificate, disk, container, and backup monitoring.
@@ -635,8 +640,9 @@ passed, and authentication plus tenant-scoped application workflows were accepte
 - [ ] Pull requests cannot merge unless required backend and frontend checks pass.
 - [x] A passing `main` commit publishes immutable images and deploys automatically to staging.
 - [x] Staging deployment fails and rolls back when health or smoke tests fail.
-- [ ] Production deployment uses the same image digests validated in staging.
-- [ ] Production requires a versioned release and an explicit approval gate where supported.
+- [x] Production deployment uses the same immutable commit images accepted by staging health checks and exact-revision
+  browser BDD.
+- [x] Production requires a versioned release and the protected environment approval gate available to the repository.
 - [x] Staging and production use separate hosts or an explicitly accepted temporary isolation model.
 - [x] Environment secrets are isolated and never written to logs or the repository.
 - [x] PostgreSQL and backend application ports are not publicly exposed.

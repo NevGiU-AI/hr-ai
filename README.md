@@ -538,6 +538,10 @@ The four-scenario conversation lifecycle suite passed protected staging acceptan
 at main revision `90019b7`, covering owner isolation, explicit resume plus reload, provider-backed citation navigation,
 and deletion of the scenario-owned disposable conversation.
 
+PR #194 then made that protected suite an exact-revision production prerequisite. Release `v0.40.0` promoted main
+revision `845df46` on 16 November 2026 only after both BDD validation aliases were present; production deployment,
+health checks, and focused functional tests passed without rollback.
+
 ## Deployment
 
 | Environment | Frontend | Backend API |

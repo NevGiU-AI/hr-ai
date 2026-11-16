@@ -385,6 +385,12 @@ The initial lifecycle suite passed protected staging acceptance on 16 November 2
 Scenario cleanup also completed without leaving disposable conversations. This acceptance validates PR #193's browser
 suite; the exact-revision production-alias gate is the separate follow-up implemented by the current CI/CD change.
 
+The first BDD-gated production promotion passed on 16 November 2026 after PR #194 in release `v0.40.0` at main
+revision `845df46`. The production workflow resolved the release to that exact commit, found both backend and frontend
+exact-revision `bdd-validated-*` aliases published only after protected staging browser acceptance, deployed the
+immutable images, and passed production health and focused functional checks without rollback. This confirms that a
+successful exact-revision browser run is now an enforced release prerequisite rather than an informational follow-up.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.

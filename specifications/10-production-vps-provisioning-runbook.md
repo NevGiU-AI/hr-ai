@@ -1459,7 +1459,9 @@ Repeat the staging procedure with these changes:
 - [ ] Verify metrics and traces exclude prompts, completions, CV or vector content, transcripts, tool arguments/results, record identifiers, and high-cardinality personal data.
 - [ ] Document who may access or export production logs and how incident extracts are redacted.
 - [ ] Test privacy-safe AI, vector, tool, OCR, speech, backup, infrastructure, and telemetry-export alerts with synthetic data.
-- [x] Do not perform the first production deployment until a release commit has a successful staging-validation image alias.
+- [x] Require exact-revision backend and frontend `bdd-validated-*` aliases before every production promotion.
+- [x] Validate the first enforced BDD-gated promotion in release `v0.40.0` at main revision `845df46` on
+  16 November 2026; deployment, health checks, and focused production tests passed without rollback.
 - [x] Run production-safe HTTPS and read-only smoke tests after deployment.
 
 ## Completion criteria

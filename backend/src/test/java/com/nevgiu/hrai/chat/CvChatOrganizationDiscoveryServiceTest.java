@@ -50,6 +50,37 @@ class CvChatOrganizationDiscoveryServiceTest {
         verify(semantic).search("tenant-a", "Find AI developers", List.of(), 50);
     }
 
+    @Test
+    void prioritizesExplicitTechnologyEvidenceWithoutLoweringTheGlobalSemanticThreshold() {
+        Instant sourceVersion = Instant.parse("2026-11-12T00:00:00Z");
+        when(evidence.prepareRetrievalQueries("Find the best Python devs", "tenant-a"))
+                .thenReturn(List.of("Find the best Python devs", "Python development skills"));
+        when(semantic.search("tenant-a", "Find the best Python devs", List.of(), 50)).thenReturn(List.of(
+                // A broad semantic match must not outrank chunks that contain the recruiter's explicit technology.
+                new CvSemanticMatch(1L, 11L, null, "Java and Spring backend engineering", 0.79, sourceVersion),
+                new CvSemanticMatch(2L, 12L, null, "Built production services with Python", 0.29, sourceVersion)));
+        when(semantic.search("tenant-a", "Python development skills", List.of(), 50)).thenReturn(List.of(
+                new CvSemanticMatch(3L, 13L, null, "Python machine learning developer", 0.31, sourceVersion)));
+        when(semantic.searchExplicitTerms("tenant-a", List.of("python"), 200)).thenReturn(List.of(
+                // Candidate 4 was absent from both vector top-K result sets but is present in the indexed corpus.
+                new CvSemanticMatch(4L, 14L, null, "Python data platform", 0, sourceVersion)));
+        candidate(1L, "Generic semantic match", "Java Engineer");
+        candidate(2L, "Python candidate A", "Engineer");
+        candidate(3L, "Python candidate B", "Engineer");
+        candidate(4L, "Python candidate C", "Engineer");
+        document(1L, 11L, sourceVersion);
+        document(2L, 12L, sourceVersion);
+        document(3L, 13L, sourceVersion);
+        document(4L, 14L, sourceVersion);
+
+        var result = service.discover("Find the best Python devs", "tenant-a");
+
+        assertThat(result.candidates()).extracting(card -> card.id())
+                .startsWith(3L, 2L, 4L)
+                .endsWith(1L);
+        assertThat(properties.semanticMinSimilarity()).isEqualTo(0.35);
+    }
+
     private void candidate(long id, String name, String title) {
         Candidate candidate = new Candidate();
         candidate.setId(id);

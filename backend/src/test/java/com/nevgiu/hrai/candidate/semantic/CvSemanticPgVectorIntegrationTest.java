@@ -118,6 +118,21 @@ class CvSemanticPgVectorIntegrationTest {
     }
 
     @Test
+    void retrievesExplicitTermsOnlyFromTheRequestedTenant() {
+        transactions.executeWithoutResult(status -> {
+            repository.replace(source(101, 201, "tenant-a", "2026-10-28T00:00:00Z"),
+                    List.of(new CvSemanticChunk(0, 1, "Built production services with Python.")));
+            repository.replace(source(102, 202, "tenant-b", "2026-10-28T00:00:00Z"),
+                    List.of(new CvSemanticChunk(0, 1, "Python evidence in another tenant")));
+        });
+
+        List<CvSemanticMatch> matches = repository.searchExplicitTerms("tenant-a", List.of("python"), 200);
+
+        assertThat(matches).extracting(CvSemanticMatch::candidateId).containsExactly(101L);
+        assertThat(matches).extracting(CvSemanticMatch::documentId).doesNotContain(202L);
+    }
+
+    @Test
     void reconciliationSelectsMissingAndStaleDocumentsButNotTheCurrentIndex() {
         assertThat(repository.findPending(10)).contains(
                 new CvSemanticIndexTarget(201L, "tenant-a"), new CvSemanticIndexTarget(202L, "tenant-b"));

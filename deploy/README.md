@@ -316,6 +316,10 @@ binaries referenced by application database rows.
 Manual BDD dispatches are diagnostic only and never publish validation aliases. This prevents a manual run from
 authorizing the current source revision while staging is still serving a different commit.
 
+This release gate passed its first production acceptance on 16 November 2026: release `v0.40.0` resolved main revision
+`845df46`, required both exact-revision BDD aliases, deployed successfully, and passed production health and focused
+functional checks without rollback.
+
 CI also supports `workflow_dispatch`, which makes a **Run workflow** button available without requiring a placeholder source commit.
 
 ## Verify

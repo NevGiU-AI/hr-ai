@@ -51,14 +51,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Require staging validation aliases
+      - name: Require exact-revision BDD validation aliases
         shell: bash
         run: |
           revision='${{ steps.revision.outputs.sha }}'
           docker buildx imagetools inspect \
-            "$REGISTRY/$BACKEND_IMAGE_NAME:staging-validated-$revision"
+            "$REGISTRY/$BACKEND_IMAGE_NAME:bdd-validated-$revision"
           docker buildx imagetools inspect \
-            "$REGISTRY/$FRONTEND_IMAGE_NAME:staging-validated-$revision"
+            "$REGISTRY/$FRONTEND_IMAGE_NAME:bdd-validated-$revision"
 
   deploy:
     name: Promote to production
@@ -110,7 +110,7 @@ jobs:
             ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
               "docker login ghcr.io --username '$GHCR_USERNAME' --password-stdin"
 
-      - name: Deploy staging-validated images
+      - name: Deploy BDD-validated images
         id: deploy
         shell: bash
         run: |

@@ -148,22 +148,6 @@ jobs:
           curl --fail --show-error --silent --head --retry 12 --retry-delay 5 --retry-all-errors \
             https://staging-hr.nevgiuai.com/
 
-      - name: Mark images as staging validated
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish validation aliases
-        run: |
-          docker buildx imagetools create \
-            --tag "$REGISTRY/$BACKEND_IMAGE_NAME:staging-validated-$REVISION" \
-            "$REGISTRY/$BACKEND_IMAGE_NAME:$REVISION"
-          docker buildx imagetools create \
-            --tag "$REGISTRY/$FRONTEND_IMAGE_NAME:staging-validated-$REVISION" \
-            "$REGISTRY/$FRONTEND_IMAGE_NAME:$REVISION"
-
       - name: Summarize deployment
         run: |
           {
@@ -171,4 +155,5 @@ jobs:
             echo "- Commit: \`$REVISION\`"
             echo "- Frontend: https://staging-hr.nevgiuai.com"
             echo "- API: https://staging-api.hr.nevgiuai.com"
+            echo "- Production gate: pending successful browser BDD"
           } >> "$GITHUB_STEP_SUMMARY"

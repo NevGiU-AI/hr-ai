@@ -157,6 +157,8 @@ Behavior:
 7. Run smoke tests against the public staging URLs.
 8. Mark the deployment successful only after every check passes.
 9. Roll back to the previous digests if startup or smoke testing fails.
+10. Start protected browser behavior-driven development (BDD) for the exact deployed revision; only that successful
+    follow-up workflow may publish the aliases consumed by production promotion.
 
 Minimum staging smoke tests:
 
@@ -167,7 +169,8 @@ Minimum staging smoke tests:
 - A safe read-only candidates endpoint returns a valid response.
 - Database connectivity is confirmed indirectly through backend health and API checks.
 
-Live OpenAI smoke tests should be separate, opt-in, rate-limited tests. They should not run on every deployment because of cost and provider variability.
+Broad live-provider evaluations remain separate, opt-in, and rate-limited because of cost and provider variability.
+The protected browser gate deliberately makes one controlled provider request to prove grounded citation navigation.
 
 ### 4. Approved production promotion
 
@@ -188,6 +191,8 @@ Release readiness should require:
 
 - CI passed for the release commit.
 - The exact image digests were successfully deployed and smoke-tested in staging.
+- The protected non-destructive browser BDD suite passed for that exact revision and published both
+  `bdd-validated-<commit-sha>` aliases.
 - Product acceptance criteria for the release are met.
 - Database migration and rollback compatibility have been reviewed.
 - Backup freshness and restore procedures have been confirmed.
@@ -401,7 +406,7 @@ Required-reviewer availability depends on repository visibility and GitHub plan.
 
 ### Remote GHCR login returns `denied`
 
-The release-resolution job uses the workflow `GITHUB_TOKEN` to inspect staging-validated images, while the remote VPS
+The release-resolution job uses the workflow `GITHUB_TOKEN` to inspect exact-revision BDD-validated images, while the remote VPS
 login uses the affected environment's longer-lived `GHCR_TOKEN`. If image resolution passes but the remote
 `docker login ghcr.io` step returns `denied`:
 
@@ -581,7 +586,8 @@ The deployment pipeline can be built before these items are complete, but the en
 - [ ] Version and restore compatible Compose and Caddy configuration during application rollback.
 - [x] Exercise a controlled failed staging deployment and verify both rollback health and public availability.
 - [x] Publish deployment URL and commit in the workflow summary.
-- [x] Mark successfully smoke-tested images with staging-validation aliases.
+- [x] Run protected browser BDD after successful staging smoke tests and publish exact-revision validation aliases only
+  after every required non-destructive scenario passes.
 - [ ] Configure staging log rotation and retention limits for Docker and system services.
 - [ ] Validate that operators can retrieve staging logs and that candidate data, prompts, and secrets are redacted before logs are shared.
 
@@ -595,7 +601,7 @@ Validated on 4 August 2026: a controlled staging drill deliberately failed the p
 
 - [x] Configure the protected `production` environment and separate secrets.
 - [x] Trigger promotion from a semantic version GitHub Release.
-- [x] Require staging-validation aliases for the release commit.
+- [x] Require exact-revision `bdd-validated-*` backend and frontend aliases for the release commit.
 - [x] Require production approval where supported.
 - [x] Check backup readiness before deployment.
 - [x] Add production health checks, application rollback, and deployment summaries.

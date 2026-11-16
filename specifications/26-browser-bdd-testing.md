@@ -346,6 +346,28 @@ excluding destructive tests. `BDD_CANDIDATE_QUESTION` must describe a stable fac
 CV. It is protected alongside the other fixture values so a public workflow cannot silently replace the controlled
 evaluation input or spend provider capacity through arbitrary questions.
 
+## Production promotion gate
+
+The protected staging BDD workflow is part of release authorization, not merely reporting. Staging deployment publishes
+only immutable commit-SHA images and verifies public health. After all required non-destructive browser scenarios pass,
+the BDD workflow promotes those already-built images to `bdd-validated-<commit-sha>` aliases. It never rebuilds them.
+
+The production release workflow resolves the release tag to a commit and requires both backend and frontend aliases for
+that exact commit before it can access the production environment. Consequently, none of the following is sufficient:
+
+- CI success without deployment to staging;
+- staging health checks without browser acceptance;
+- a failed or missing BDD run;
+- a successful BDD run for an older or newer revision.
+
+The trusted BDD workflow receives `packages: write` solely to publish these GHCR aliases. Pull-request code cannot invoke
+that protected path with staging credentials, and the workflow receives no general repository-content write access.
+This permission does not enable Maven cache writes; dependency caching remains disabled for the post-deployment job.
+
+Only a BDD run triggered by the successful `Deploy staging` workflow may publish aliases. A manual dispatch can rerun
+the browser tests for diagnosis, but it cannot reliably prove that its checked-out revision is the revision currently
+serving on staging; it therefore never changes the production gate.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.

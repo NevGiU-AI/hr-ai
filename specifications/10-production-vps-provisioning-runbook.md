@@ -497,8 +497,8 @@ Validated on 16 August 2026 for release `v0.2.0`, commit `33d8a04`:
 - All four business-table `organization_id` columns were verified `NOT NULL`.
 - The former global `UNIQUE (sha256)` CV constraint was replaced with
   `UNIQUE (organization_id, sha256)`.
-- The release promoted the exact staging-validated images and passed the protected production deployment and public
-  smoke checks.
+- The release promoted the exact images accepted by the staging-validation mechanism in use at that time and passed
+  the protected production deployment and public smoke checks.
 - Release `v0.4.0` deployed Redis-backed account/IP login throttling, temporary lockout, and administrator unlock to
   production on 17 August 2026. Destructive threshold testing remains staging-only; production uses normal login and
   health smoke checks after promotion.

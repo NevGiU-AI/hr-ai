@@ -753,7 +753,8 @@ Validation completed:
 - The VPS authenticated to GHCR with a classic token limited to `read:packages`.
 - The deployment script initialized `.images.env`, retained previous images for rollback, and brought the stack to a healthy state.
 - GitHub smoke tests passed for the public frontend and backend health URLs.
-- The deployed images received staging-validation aliases.
+- The deployed images received the staging-validation aliases used by the release process at that time; the current
+  gate now publishes exact-revision `bdd-validated-*` aliases only after protected browser acceptance.
 - A human functional test successfully generated and approved a job offer, ingested CV data, and evaluated a candidate against the approved job.
 - Release `v0.4.0` deployed Redis-backed account/IP login throttling, temporary lockout, and administrator unlock to
   staging on 17 August 2026. Section 14A is the repeatable behavioral validation procedure.

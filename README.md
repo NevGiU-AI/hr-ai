@@ -523,6 +523,17 @@ acceptance layers. See the [browser BDD testing design](specifications/26-browse
 TypeScript alternatives considered, component relationships, scenario lifecycle, privacy rules, CI profiles, and
 initial Gherkin features.
 
+| BDD technology | Responsibility |
+| --- | --- |
+| Gherkin | Describes recruiter-visible behavior as readable `Given`/`When`/`Then` scenarios. |
+| Cucumber-JVM | Discovers feature files and binds each Gherkin step to executable Java code. |
+| JUnit Platform | Runs the Cucumber engine and integrates its results with the Java test lifecycle. |
+| PicoContainer | Creates scenario-scoped step and context objects without shared state between scenarios. |
+| Playwright for Java | Controls Chromium, isolates authenticated browser contexts, waits for rendered UI state, and performs browser/API assertions. |
+| AssertJ | Provides readable Java assertions for security and lifecycle outcomes. |
+| Maven Failsafe | Executes the deployed-system BDD suite during the integration-test and verify phases. |
+| GitHub Actions | Runs the protected staging suite and publishes exact-revision validation aliases only after success. |
+
 The four-scenario conversation lifecycle suite passed protected staging acceptance on 16 November 2026 after PR #193
 at main revision `90019b7`, covering owner isolation, explicit resume plus reload, provider-backed citation navigation,
 and deletion of the scenario-owned disposable conversation.

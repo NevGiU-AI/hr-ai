@@ -2,6 +2,8 @@
 
 Status: **Initial executable suite accepted in staging; expansion in progress**
 
+Behavior-driven development (BDD) expresses expected product behavior as executable, business-readable scenarios.
+
 ## Purpose
 
 The project has strong backend unit/integration tests, Flyway/Testcontainers schema checks, Angular component tests,

@@ -306,7 +306,8 @@ binaries referenced by application database rows.
 4. GitHub copies only the deployment bundle to the VPS and authenticates the VPS to GHCR with its read-only token.
 5. `deploy.sh` pulls the immutable images, starts the stack, and waits for health.
 6. GitHub smoke-tests both public HTTPS endpoints. Failure invokes application-image rollback and verifies the restored public endpoints while leaving the workflow failed.
-7. A successful staging deployment starts the protected Cucumber/Playwright workflow for the exact deployed commit.
+7. A successful staging deployment starts the protected Cucumber/Playwright behavior-driven development (BDD)
+   workflow for the exact deployed commit.
 8. Only after every required non-destructive BDD scenario passes do the immutable backend and frontend images receive
    `bdd-validated-<commit-sha>` aliases.
 9. Production promotion requires both exact-revision aliases. A health-only staging deployment, a failed/missing BDD

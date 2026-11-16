@@ -514,7 +514,7 @@ npm test -- --watch=false
 
 The test suites mock AI dependencies; they do not require an OpenAI key.
 
-The browser behavior-driven development layer uses Cucumber-JVM, JUnit Platform, PicoContainer, and Playwright for
+The browser behavior-driven development (BDD) layer uses Cucumber-JVM, JUnit Platform, PicoContainer, and Playwright for
 Java in a separate Maven project. It covers persisted CV-chat conversation resume, owner isolation, historical
 citation restoration, citation viewport navigation, and explicit conversation deletion. Successful protected staging
 BDD publishes exact-revision GHCR aliases required by production promotion. Browser BDD complements rather than

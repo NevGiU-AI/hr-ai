@@ -10,8 +10,9 @@ on:
 
 permissions:
   contents: read
-  # The trusted post-deployment job promotes already-built immutable images only after every required BDD scenario
-  # succeeds. It does not rebuild images or receive general repository write access.
+  # BDD means behavior-driven development. The trusted post-deployment job promotes already-built immutable images
+  # only after every required BDD scenario succeeds. It does not rebuild images or receive general repository write
+  # access.
   packages: write
 
 concurrency:

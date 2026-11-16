@@ -157,8 +157,8 @@ Behavior:
 7. Run smoke tests against the public staging URLs.
 8. Mark the deployment successful only after every check passes.
 9. Roll back to the previous digests if startup or smoke testing fails.
-10. Start protected browser BDD for the exact deployed revision; only that successful follow-up workflow may publish
-    the aliases consumed by production promotion.
+10. Start protected browser behavior-driven development (BDD) for the exact deployed revision; only that successful
+    follow-up workflow may publish the aliases consumed by production promotion.
 
 Minimum staging smoke tests:
 

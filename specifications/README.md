@@ -29,7 +29,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 23. [Encrypted paired backup and restore](./23-paired-backup-and-restore.md)
 24. [Candidate correction and document reprocessing](./24-candidate-correction-and-reprocessing.md)
 25. [CV OCR fallback](./25-cv-ocr.md)
-26. [Browser BDD testing with Cucumber and Playwright](./26-browser-bdd-testing.md)
+26. [Browser behavior-driven development (BDD) testing with Cucumber and Playwright](./26-browser-bdd-testing.md)
 
 ## Recommended delivery order
 

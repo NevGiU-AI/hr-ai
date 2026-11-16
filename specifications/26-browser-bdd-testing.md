@@ -1,6 +1,6 @@
 # Browser behavior-driven development testing
 
-Status: **Initial executable foundation implemented; expansion in progress**
+Status: **Initial executable suite accepted in staging; expansion in progress**
 
 ## Purpose
 
@@ -368,6 +368,21 @@ Only a BDD run triggered by the successful `Deploy staging` workflow may publish
 the browser tests for diagnosis, but it cannot reliably prove that its checked-out revision is the revision currently
 serving on staging; it therefore never changes the production gate.
 
+## Staging acceptance
+
+The initial lifecycle suite passed protected staging acceptance on 16 November 2026 after PR #193 at main revision
+`90019b7`. The accepted run exercised all four deployed-browser scenarios:
+
+- a same-organization administrator received an opaque `404` for a recruiter-owned conversation;
+- the recruiter left, explicitly resumed, and reloaded the same confirmed candidate scope;
+- the controlled provider-backed question produced a citation that navigated to the rendered CV document and scrolled
+  the target into the viewport;
+- the recruiter deleted the disposable conversation, the browser pointer cleared, and the deleted identifier returned
+  `404`.
+
+Scenario cleanup also completed without leaving disposable conversations. This acceptance validates PR #193's browser
+suite; the exact-revision production-alias gate is the separate follow-up implemented by the current CI/CD change.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.
@@ -435,15 +450,19 @@ Feature: CV-chat conversation ownership
 ### Explicit deletion
 
 ```gherkin
-@cv-chat @destructive
+@cv-chat @conversation @smoke
 Feature: CV-chat conversation deletion
 
-  Scenario: A recruiter deletes a disposable conversation
-    Given a recruiter owns a disposable conversation with persisted messages and citations
+  Scenario: A recruiter permanently deletes a conversation
+    Given a recruiter owns an active CV-chat conversation
     When the recruiter deletes that conversation
-    Then it is absent from recent conversations
-    And its conversation and history endpoints return 404
+    Then the deleted conversation is cleared from the active browser state
+    And the recruiter can no longer retrieve the deleted conversation
 ```
+
+This scenario is not tagged `@destructive`: it creates and removes only its own disposable conversation. Any scenario
+that erases shared candidates, CVs, jobs, accounts, or retention/legal-hold state must use `@destructive` and remains
+excluded from the automatic release gate.
 
 ## CI delivery sequence
 
@@ -453,8 +472,9 @@ Feature: CV-chat conversation deletion
 4. Automate persisted conversation resume and citation viewport visibility first.
 5. Add owner isolation and explicit deletion.
 6. Upload private traces/screenshots only on failure.
-7. Run deterministic smoke scenarios after successful staging deployments; consider pull-request execution only with
-   an ephemeral environment that does not expose protected staging credentials.
+7. Run required non-destructive scenarios after successful staging deployments, including the one controlled
+   provider-backed citation journey; consider pull-request execution only with an ephemeral environment that does not
+   expose protected staging credentials.
 8. Add Firefox/WebKit only for a documented compatibility risk; do not multiply every scenario by every browser by
    default.
 9. Add further critical workflows incrementally rather than reproducing every unit test through the browser.

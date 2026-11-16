@@ -523,6 +523,10 @@ acceptance layers. See the [browser BDD testing design](specifications/26-browse
 TypeScript alternatives considered, component relationships, scenario lifecycle, privacy rules, CI profiles, and
 initial Gherkin features.
 
+The four-scenario conversation lifecycle suite passed protected staging acceptance on 16 November 2026 after PR #193
+at main revision `90019b7`, covering owner isolation, explicit resume plus reload, provider-backed citation navigation,
+and deletion of the scenario-owned disposable conversation.
+
 ## Deployment
 
 | Environment | Frontend | Backend API |

@@ -32,4 +32,26 @@ public class CvSemanticSearchService {
         return repository.search(organizationId, query.trim(),
                 candidateIds == null ? List.of() : List.copyOf(candidateIds), limit);
     }
+
+    /**
+     * Complements approximate vector search with bounded literal-term retrieval for organization discovery.
+     * Terms are application-extracted professional criteria, while organization scope remains mandatory here.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
+    public List<CvSemanticMatch> searchExplicitTerms(String organizationId, List<String> terms, int limit) {
+        if (organizationId == null || organizationId.isBlank()) {
+            throw new IllegalArgumentException("Organization is required for explicit-term retrieval");
+        }
+        List<String> boundedTerms = terms == null ? List.of() : terms.stream()
+                .filter(term -> term != null && !term.isBlank())
+                .map(String::trim)
+                .distinct()
+                .limit(8)
+                .toList();
+        if (boundedTerms.isEmpty()) return List.of();
+        if (limit < 1 || limit > 200) {
+            throw new IllegalArgumentException("Explicit-term result limit must be between 1 and 200");
+        }
+        return repository.searchExplicitTerms(organizationId, boundedTerms, limit);
+    }
 }

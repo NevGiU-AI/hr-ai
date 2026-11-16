@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.ArrayList;
 
 /** Adapts domain chunks to Spring AI PgVectorStore documents with mandatory tenant filters. */
 @Repository
@@ -70,6 +71,32 @@ class CvSemanticIndexRepository {
         return vectorStore.similaritySearch(request).stream().map(this::match).toList();
     }
 
+    /**
+     * Retrieves chunks containing at least one explicit professional term without invoking the embedding provider.
+     * LIKE is only a coarse, parameterized prefilter; the chat layer performs complete-term matching before ranking.
+     */
+    List<CvSemanticMatch> searchExplicitTerms(String organizationId, List<String> terms, int limit) {
+        String predicates = String.join(" OR ", terms.stream()
+                .map(ignored -> "LOWER(content) LIKE ? ESCAPE E'\\\\'")
+                .toList());
+        String sql = """
+                SELECT candidate_id, document_id, page_number, content, source_version
+                FROM cv_semantic_chunks
+                WHERE organization_id = ?
+                  AND (%s)
+                ORDER BY indexed_at DESC, document_id, chunk_index
+                LIMIT ?
+                """.formatted(predicates);
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(organizationId);
+        terms.stream().map(this::likePattern).forEach(parameters::add);
+        parameters.add(limit);
+        return jdbc.query(sql, (result, row) -> new CvSemanticMatch(
+                result.getLong("candidate_id"), result.getLong("document_id"),
+                result.getObject("page_number", Integer.class), result.getString("content"), 0,
+                Instant.parse(result.getString("source_version"))), parameters.toArray());
+    }
+
     /** Finds missing or stale indexes without loading extracted text containing personally identifiable information. */
     List<CvSemanticIndexTarget> findPending(int limit) {
         return jdbc.query("""
@@ -113,6 +140,14 @@ class CvSemanticIndexRepository {
                 page == null ? null : Integer.valueOf(page.toString()), document.getText(),
                 document.getScore() == null ? 0 : document.getScore(),
                 Instant.parse(metadata.get("sourceVersion").toString()));
+    }
+
+    private String likePattern(String term) {
+        // Escape LIKE metacharacters even though values remain JDBC parameters; this preserves literal term meaning.
+        return "%" + term.toLowerCase(java.util.Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_") + "%";
     }
 
 }

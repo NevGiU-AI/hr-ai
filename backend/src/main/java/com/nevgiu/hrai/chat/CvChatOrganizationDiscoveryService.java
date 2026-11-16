@@ -25,6 +25,7 @@ import java.util.Map;
 @Service
 public class CvChatOrganizationDiscoveryService {
     private static final int RAW_MATCH_LIMIT = 50;
+    private static final int EXPLICIT_MATCH_LIMIT = 200;
     private static final int CANDIDATE_LIMIT = 10;
     private static final int REFERENCE_LIMIT = 3;
 
@@ -55,22 +56,38 @@ public class CvChatOrganizationDiscoveryService {
                     "Organization candidate discovery is unavailable");
         }
         List<String> queries = evidence.prepareRetrievalQueries(query, organizationId);
+        // Preserve explicit recruiter criteria independently from embedding similarity. Short named technologies such
+        // as "Python" can otherwise score below the global semantic threshold even when the retrieved chunk contains
+        // that exact technology. This signal applies only to organization discovery and does not weaken grounded chat.
+        List<String> explicitCriteria = CvChatExplicitCriteria.from(query);
         List<CvSemanticMatch> raw = new ArrayList<>();
         for (String retrievalQuery : queries) {
             raw.addAll(semanticSearch.search(organizationId, retrievalQuery, List.of(), RAW_MATCH_LIMIT));
         }
+        // Vector top-K is approximate and may omit a low-scoring but literal match. Add a bounded tenant-scoped
+        // lexical pass so an indexed Python chunk remains discoverable without reprocessing or lowering thresholds.
+        raw.addAll(semanticSearch.searchExplicitTerms(organizationId, explicitCriteria, EXPLICIT_MATCH_LIMIT));
 
         Map<Long, CandidateAccumulator> grouped = new LinkedHashMap<>();
         Map<Long, java.util.Optional<CurrentCandidate>> currentCandidates = new LinkedHashMap<>();
         raw.stream()
-                .filter(match -> match.similarity() >= properties.semanticMinSimilarity())
-                .sorted(Comparator.comparingDouble(CvSemanticMatch::similarity).reversed())
-                .forEach(match -> currentMatch(match, organizationId, currentCandidates).ifPresent(current ->
-                        grouped.computeIfAbsent(match.candidateId(), ignored -> new CandidateAccumulator(current.candidate()))
-                                .add(reference(match), match.similarity())));
+                .map(match -> new RankedMatch(match,
+                        CvChatExplicitCriteria.countMatches(match.content(), explicitCriteria)))
+                // Exact professional criteria rescue relevant raw matches below the semantic threshold. Boilerplate
+                // words are excluded by CvChatExplicitCriteria, so generic words such as "best" cannot do this.
+                .filter(ranked -> ranked.match().similarity() >= properties.semanticMinSimilarity()
+                        || ranked.explicitMatches() > 0)
+                .sorted(Comparator.comparingInt(RankedMatch::explicitMatches).reversed()
+                        .thenComparing(Comparator.comparingDouble(
+                                (RankedMatch ranked) -> ranked.match().similarity()).reversed()))
+                .forEach(ranked -> currentMatch(ranked.match(), organizationId, currentCandidates).ifPresent(current ->
+                        grouped.computeIfAbsent(ranked.match().candidateId(),
+                                        ignored -> new CandidateAccumulator(current.candidate()))
+                                .add(reference(ranked.match()), ranked.match().similarity(), ranked.explicitMatches())));
 
         List<CandidateEvidenceCard> cards = grouped.values().stream()
-                .sorted(Comparator.comparingDouble(CandidateAccumulator::topSimilarity).reversed())
+                .sorted(Comparator.comparingInt(CandidateAccumulator::explicitMatches).reversed()
+                        .thenComparing(Comparator.comparingDouble(CandidateAccumulator::topSimilarity).reversed()))
                 .limit(CANDIDATE_LIMIT)
                 .map(CandidateAccumulator::card)
                 .toList();
@@ -103,20 +120,24 @@ public class CvChatOrganizationDiscoveryService {
     }
 
     private record CurrentCandidate(Candidate candidate, Long documentId, Instant sourceVersion) { }
+    private record RankedMatch(CvSemanticMatch match, int explicitMatches) { }
 
     private static final class CandidateAccumulator {
         private final Candidate candidate;
         private final LinkedHashSet<String> references = new LinkedHashSet<>();
         private double topSimilarity;
+        private int explicitMatches;
 
         private CandidateAccumulator(Candidate candidate) { this.candidate = candidate; }
 
-        private void add(String reference, double similarity) {
+        private void add(String reference, double similarity, int matchCount) {
             if (references.size() < REFERENCE_LIMIT) references.add(reference);
             topSimilarity = Math.max(topSimilarity, similarity);
+            explicitMatches = Math.max(explicitMatches, matchCount);
         }
 
         private double topSimilarity() { return topSimilarity; }
+        private int explicitMatches() { return explicitMatches; }
 
         private CandidateEvidenceCard card() {
             return new CandidateEvidenceCard(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),

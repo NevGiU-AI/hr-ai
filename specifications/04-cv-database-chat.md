@@ -247,11 +247,30 @@ index remains independently controlled from query-time semantic retrieval.
 The tenant-scoped single-candidate retrieval path passed staging acceptance on 30 October 2026 after PR #98 was merged
 at main revision `990f0cb`. Retrieval remained dark during the initial health and legacy-chat smoke checks, then was
 enabled independently while indexing stayed active. Calibration used indexed facts from several question shapes rather
-than accepting a threshold from one successful request. The original `0.55` value rejected valid grounded evidence;
-`0.35` retained cited answers for exact company/technology facts, paraphrased technology experience, and indexed
-education evidence, while genuinely absent restaurant and salary information still returned the fixed
-insufficient-evidence response without citations. This value is the accepted initial deployment default, not a quality
-guarantee for every model, language, CV corpus, or future embedding change.
+than accepting a threshold from one successful request. The initial conservative `0.55` value rejected valid grounded
+evidence. Exact company/technology and paraphrased technology questions improved as the threshold was reduced, but an
+indexed education/certification question still failed at `0.40`. At `0.35`, all three positive question shapes returned
+cited answers, while genuinely absent restaurant and salary information still returned the fixed insufficient-evidence
+response without citations. `0.35` was therefore the highest reviewed value that satisfied this initial positive-recall
+and negative-safety set.
+
+The similarity value is an embedding-space ranking signal, not a probability, correctness percentage, model confidence,
+or hiring score. A score of `0.35` does not mean that evidence is 35 percent correct. Its meaning depends on the embedding
+model, query wording, normalization, chunk shape, language, and CV corpus. The application asks the vector store for
+candidate matches and then applies this minimum before evidence can reach the answer model; citations and controlled
+no-evidence behavior remain mandatory after a chunk crosses the threshold.
+
+One miss below the boundary is not sufficient evidence to lower the global threshold. For example, a top score of
+`0.3270` can safely fail while a score of `0.3665` passes under the reviewed policy. Lowering the value globally to rescue
+one document could admit unrelated chunks in every single-candidate and comparison request. Later recall corrections
+therefore improved constrained query normalization, neutral short-criterion expansion, or bounded workflow-specific
+literal retrieval while preserving the selected-candidate `0.35` semantic boundary.
+
+This value is the accepted initial deployment default, not a universal quality guarantee. Recalibration is required
+after a material embedding-model, chunking/overlap, query-normalization, language-distribution, or corpus change. That
+recalibration must use a labeled set of representative positive, paraphrased, multilingual, and genuinely unsupported
+questions; compare accepted/rejected score distributions and citation quality; and repeat provider, staging, and
+production acceptance. It must not be based on one successful or unsuccessful request.
 
 The pre-retrieval question-policy correction passed focused staging acceptance on 30 October 2026 after PR #103 was
 merged at main revision `87821a4`. The opt-in provider-backed evaluation classified all 21 synthetic, human-reviewed

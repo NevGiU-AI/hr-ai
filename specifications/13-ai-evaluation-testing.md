@@ -197,6 +197,13 @@ documents, expected references, required evidence terms, language markers, and t
 - deterministic response-language markers; and
 - Spring AI `RelevancyEvaluator` and `FactCheckingEvaluator` judgments for every repeated answer.
 
+The `0.35` value is a calibrated retrieval boundary rather than a probability or universal embedding constant. It was
+selected as the highest reviewed staging value that retained cited exact-fact, paraphrased-technology, and
+education/certification answers while unrelated restaurant and unavailable salary questions remained controlled
+no-evidence outcomes. The original `0.55` boundary caused false negatives, and `0.40` still missed the reviewed
+education case. A future evaluation must not lower the global value merely because one score falls just below it;
+workflow-specific normalization or bounded hybrid retrieval should be evaluated first.
+
 The multilingual-recall correction makes the fixture's KLx evidence resemble a real bounded chunk by surrounding the
 target fact with unrelated but plausible professional material. For every case, the provider test obtains a constrained
 English retrieval query, searches both the original and normalized wording with the same tenant/candidate filter,
@@ -218,6 +225,11 @@ live-model gate for the picker-first correction. Focused staging acceptance subs
 after PR #173 at revision `ceded13`.
 Production repeated the focused short picker-first comparison successfully in release `v0.37.0` at revision `657207f`.
 Any later normalizer prompt, embedding model, or similarity-policy change requires another fresh run.
+Changes to chunk size/overlap, supported-language distribution, or the representative CV corpus require the same
+recalibration discipline. A new threshold decision must compare a human-reviewed positive and negative dataset,
+accepted/rejected score distributions, expected-document retrieval, citation coverage, and unsupported-question safety,
+then pass provider-backed and environment acceptance. Similarity values must never be reported as correctness or model
+confidence percentages.
 
 The authorized live-provider run passed on 30 October 2026 in 27.91 seconds of test time. Results were:
 

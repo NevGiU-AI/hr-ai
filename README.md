@@ -238,10 +238,38 @@ Spring Boot 4 / Java 21
   |---- Tesseract OCR             (bounded local scanned-PDF extraction)
   |---- Private CV volume         (quarantined and clean original PDFs)
   `---- OpenAI through Spring AI  (job generation, evaluation, and bounded CV chat)
+
+Release validation path (separate from the runtime request path)
+
+GitHub Actions
+  |
+  v
+Maven Failsafe + JUnit Platform
+  |
+  v
+Cucumber-JVM + Gherkin + PicoContainer
+  |
+  v
+Playwright for Java + Chromium
+  |
+  v
+Protected staging frontend/API
+  |
+  v
+Exact-revision BDD validation aliases
+  |
+  v
+Production promotion gate
 ```
 
 Staging and production place Caddy in front of the frontend and API containers for TLS and routing. PostgreSQL, Redis,
-and ClamAV remain on the private Compose network.
+and ClamAV remain on the private Compose network. The BDD components are release-validation infrastructure, not
+application runtime dependencies: Cucumber binds recruiter-readable Gherkin scenarios to Java steps, PicoContainer
+isolates scenario state, JUnit Platform and Maven Failsafe execute the suite, and Playwright drives Chromium against
+the deployed protected staging environment. A successful protected run publishes aliases for the exact backend and
+frontend revision; production promotion rejects revisions without those aliases. The complete rationale, component
+relationships, privacy boundaries, and alternatives are documented in the
+[browser BDD testing design](specifications/26-browser-bdd-testing.md).
 
 ## Technology stack
 
@@ -253,6 +281,7 @@ and ClamAV remain on the private Compose network.
 - Redis 7.4
 - ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
+- Browser BDD: Gherkin, Cucumber-JVM, JUnit Platform, PicoContainer, Playwright for Java/Chromium, AssertJ, and Maven Failsafe
 
 Release `v0.34.0` established the Spring Boot 3.5.16 and Spring AI 1.1.8 maintenance baseline. The repository has since
 migrated to Spring Boot 4.1.2 and Spring AI 2.0.2 as a separate, reversible platform slice. That migration includes

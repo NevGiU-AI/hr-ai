@@ -216,6 +216,11 @@ Python comparison returned only the two selected candidates with citations for b
 similarity was `0.3270` continued to fail safely below the unchanged threshold. Five organization-discovery requests
 completed in 2.31–3.09 seconds (2.76-second observed average), with no timeout or backend/indexing error. The change
 requires no migration, environment override, or semantic reindex.
+Production repeated the focused acceptance successfully on 17 November 2026 in release `v0.41.0` at revision
+`47fb599`. The bounded Python discovery recovered current older and reprocessed CVs without reindexing, preserved
+explicit confirmation and tenant scope, returned grounded citations for the selected comparison, kept unsupported
+evidence below the unchanged threshold safely controlled, and introduced no deployment-health, retrieval, indexing,
+or environment-configuration regression.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

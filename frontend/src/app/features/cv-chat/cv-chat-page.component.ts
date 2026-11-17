@@ -34,6 +34,8 @@ export class CvChatPageComponent implements OnInit {
 
   conversation: CvChatConversation | null = null;
   recentConversations: CvChatConversation[] = [];
+  /** Pre-confirmation presentation only; durable history begins after explicit candidate confirmation. */
+  discoveryTimeline: CvChatTimelineMessage[] = [];
   timeline: CvChatTimelineMessage[] = [];
   selectedCandidates: CvChatCandidateOption[] = [];
   jobs: Job[] = [];
@@ -42,13 +44,13 @@ export class CvChatPageComponent implements OnInit {
   searchResults: CvChatCandidateOption[] = [];
   discoveryMode: 'NAMES' | 'ORGANIZATION' = 'NAMES';
   naturalRequest = '';
-  discoveryMessage = '';
   naturalResults: CvChatCandidateOption[] = [];
   naturalBusy = false;
   pendingQuestion = '';
   searchBusy = false;
   pageBusy = false;
   sendBusy = false;
+  scopeEditing = false;
   message = '';
   error = '';
 
@@ -77,8 +79,12 @@ export class CvChatPageComponent implements OnInit {
     if (request.length < 2 || request.length > 2000 || this.naturalBusy) return;
     this.naturalBusy = true;
     this.error = '';
-    this.discoveryMessage = '';
     this.naturalResults = [];
+    this.pendingQuestion = '';
+    // A new natural-language request starts a new proposed scope. Never carry unconfirmed cards from an older request
+    // into the next confirmation, because the recruiter could otherwise approve candidates they did not just ask for.
+    this.selectedCandidates = [];
+    this.discoveryTimeline = [...this.discoveryTimeline, { role: 'USER', content: request }];
     if (this.discoveryMode === 'ORGANIZATION') {
       this.chat.discoverOrganizationCandidates(request)
         .pipe(finalize(() => this.naturalBusy = false))
@@ -123,9 +129,16 @@ export class CvChatPageComponent implements OnInit {
         next: (conversation) => {
           this.conversation = conversation;
           this.timeline = [];
-          this.message = this.pendingQuestion;
           this.persistConversationId(conversation.id);
           this.upsertConversation(conversation);
+          const confirmedQuestion = this.pendingQuestion;
+          this.pendingQuestion = '';
+          this.discoveryTimeline = [];
+          this.naturalResults = [];
+          if (confirmedQuestion) {
+            this.message = confirmedQuestion;
+            this.send();
+          }
         },
         error: (error) => this.error = this.apiError(error, 'Conversation could not be created.'),
       });
@@ -174,6 +187,61 @@ export class CvChatPageComponent implements OnInit {
       },
       error: (error) => this.error = this.apiError(error, 'Conversation could not be deleted.'),
     });
+  }
+
+  beginScopeEdit(): void {
+    if (!this.conversation || this.pageBusy || this.sendBusy) return;
+    this.selectedCandidates = [...this.conversation.candidates];
+    this.selectedJobId = this.conversation.job?.id ?? null;
+    this.searchQuery = '';
+    this.searchResults = [];
+    this.error = '';
+    this.scopeEditing = true;
+  }
+
+  cancelScopeEdit(): void {
+    if (!this.conversation || this.pageBusy) return;
+    this.selectedCandidates = [...this.conversation.candidates];
+    this.selectedJobId = this.conversation.job?.id ?? null;
+    this.searchQuery = '';
+    this.searchResults = [];
+    this.scopeEditing = false;
+  }
+
+  saveScope(): void {
+    if (!this.conversation || !this.scopeEditing || !this.selectedCandidates.length
+        || !this.scopeHasChanges() || this.pageBusy) return;
+    const conversationId = this.conversation.id;
+    this.pageBusy = true;
+    this.error = '';
+    this.chat.replaceConversationScope(
+      conversationId,
+      this.conversation.version,
+      this.selectedCandidates.map((candidate) => candidate.id),
+      this.selectedJobId,
+    ).pipe(finalize(() => this.pageBusy = false)).subscribe({
+      next: (conversation) => {
+        if (this.conversation?.id !== conversationId) return;
+        this.conversation = conversation;
+        // The backend clears visible history and bounded model memory atomically with every scope replacement.
+        // Mirror that security boundary immediately so stale answers never remain under the newly displayed scope.
+        this.timeline = [];
+        this.selectedCandidates = [...conversation.candidates];
+        this.selectedJobId = conversation.job?.id ?? null;
+        this.scopeEditing = false;
+        this.upsertConversation(conversation);
+      },
+      error: (error) => this.error = this.apiError(error, 'Conversation scope could not be updated.'),
+    });
+  }
+
+  scopeHasChanges(): boolean {
+    if (!this.conversation) return false;
+    const persistedIds = this.conversation.candidates.map((candidate) => candidate.id);
+    const editedIds = this.selectedCandidates.map((candidate) => candidate.id);
+    return (this.conversation.job?.id ?? null) !== this.selectedJobId
+      || persistedIds.length !== editedIds.length
+      || persistedIds.some((candidateId, index) => candidateId !== editedIds[index]);
   }
 
   startAnother(): void {
@@ -232,7 +300,7 @@ export class CvChatPageComponent implements OnInit {
 
   private applyDiscovery(request: string, kind: string, message: string,
                          candidates: CvChatCandidateOption[]): void {
-    this.discoveryMessage = message;
+    this.discoveryTimeline = [...this.discoveryTimeline, { role: 'ASSISTANT', content: message }];
     if (kind !== 'CANDIDATE_CONFIRMATION_REQUIRED') return;
     this.naturalResults = [...new Map(candidates.map((candidate) => [candidate.id, candidate])).values()];
     this.pendingQuestion = request;
@@ -241,13 +309,14 @@ export class CvChatPageComponent implements OnInit {
   private resetLocalState(): void {
     this.conversation = null;
     this.timeline = [];
+    this.discoveryTimeline = [];
     this.selectedCandidates = [];
     this.selectedJobId = null;
     this.searchResults = [];
     this.naturalResults = [];
-    this.discoveryMessage = '';
     this.pendingQuestion = '';
     this.message = '';
+    this.scopeEditing = false;
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY);
     }

@@ -65,6 +65,18 @@ export class CvChatService {
     return this.http.post<CvChatConversation>(`${this.apiUrl}/chat/conversations`, body);
   }
 
+  /** Replaces the complete human-confirmed scope using optimistic versioning; message text cannot call this path. */
+  replaceConversationScope(
+    id: string,
+    version: number,
+    candidateIds: number[],
+    jobId: number | null,
+  ): Observable<CvChatConversation> {
+    const body: { version: number; candidateIds: number[]; jobId?: number } = { version, candidateIds };
+    if (jobId !== null) body.jobId = jobId;
+    return this.http.put<CvChatConversation>(`${this.apiUrl}/chat/conversations/${id}/scope`, body);
+  }
+
   listConversations(): Observable<CvChatConversation[]> {
     return this.http.get<CvChatConversation[]>(`${this.apiUrl}/chat/conversations`);
   }

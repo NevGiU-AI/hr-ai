@@ -204,6 +204,18 @@ conversation listing, persisted historical citation cards, active-conversation r
 post-render citation-scroll correction passed focused staging and production acceptance on 15 November 2026. The
 production result is release `v0.39.0` at revision `592b11b`. Language-first ambiguity cards on this page, controlled-
 response localization, speech input/playback, and the recruitment dashboard remain roadmap work.
+PR #196 corrected organization-wide evidence discovery without lowering the global `0.35` semantic threshold or
+requiring CV reprocessing. The bounded hybrid path preserves the original and normalized vector searches, adds a
+tenant-scoped literal lookup for at most eight explicit professional criteria, and ranks literal evidence before broad
+semantic matches while retaining current-document and source-version reauthorization. Focused staging acceptance
+passed on 17 November 2026 at main revision `8f1ca16`: `Find the best Python devs` returned ten current Python-backed
+candidate cards, reported additional matches through `truncated=true`, and recovered older indexed CVs without
+reprocessing. Case-insensitive criteria, Java complete-term behavior, conceptual semantic fallback, sensitive-request
+refusal, explicit card confirmation, tenant boundaries, and single-/multi-candidate regressions also passed. A grounded
+Python comparison returned only the two selected candidates with citations for both; a separate candidate whose top
+similarity was `0.3270` continued to fail safely below the unchanged threshold. Five organization-discovery requests
+completed in 2.31–3.09 seconds (2.76-second observed average), with no timeout or backend/indexing error. The change
+requires no migration, environment override, or semantic reindex.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the
@@ -226,10 +238,38 @@ Spring Boot 4 / Java 21
   |---- Tesseract OCR             (bounded local scanned-PDF extraction)
   |---- Private CV volume         (quarantined and clean original PDFs)
   `---- OpenAI through Spring AI  (job generation, evaluation, and bounded CV chat)
+
+Release validation path (separate from the runtime request path)
+
+GitHub Actions
+  |
+  v
+Maven Failsafe + JUnit Platform
+  |
+  v
+Cucumber-JVM + Gherkin + PicoContainer
+  |
+  v
+Playwright for Java + Chromium
+  |
+  v
+Protected staging frontend/API
+  |
+  v
+Exact-revision BDD validation aliases
+  |
+  v
+Production promotion gate
 ```
 
 Staging and production place Caddy in front of the frontend and API containers for TLS and routing. PostgreSQL, Redis,
-and ClamAV remain on the private Compose network.
+and ClamAV remain on the private Compose network. The BDD components are release-validation infrastructure, not
+application runtime dependencies: Cucumber binds recruiter-readable Gherkin scenarios to Java steps, PicoContainer
+isolates scenario state, JUnit Platform and Maven Failsafe execute the suite, and Playwright drives Chromium against
+the deployed protected staging environment. A successful protected run publishes aliases for the exact backend and
+frontend revision; production promotion rejects revisions without those aliases. The complete rationale, component
+relationships, privacy boundaries, and alternatives are documented in the
+[browser BDD testing design](specifications/26-browser-bdd-testing.md).
 
 ## Technology stack
 
@@ -241,6 +281,7 @@ and ClamAV remain on the private Compose network.
 - Redis 7.4
 - ClamAV 1.4 for fail-closed CV malware scanning
 - Docker Compose, Caddy, GitHub Actions, and GHCR
+- Browser BDD: Gherkin, Cucumber-JVM, JUnit Platform, PicoContainer, Playwright for Java/Chromium, AssertJ, and Maven Failsafe
 
 Release `v0.34.0` established the Spring Boot 3.5.16 and Spring AI 1.1.8 maintenance baseline. The repository has since
 migrated to Spring Boot 4.1.2 and Spring AI 2.0.2 as a separate, reversible platform slice. That migration includes

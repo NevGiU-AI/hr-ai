@@ -102,9 +102,11 @@ describe('CvChatPageComponent', () => {
 
     expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([8]);
     expect(component.pendingQuestion).toBe('Find strong AI developers in this organization');
+    expect(component.discoveryTimeline.map((item) => item.role)).toEqual(['USER', 'ASSISTANT']);
   });
 
   it('uses the reviewed name-discovery tools for natural-language candidate selection', () => {
+    component.selectedCandidates = [{ id: 99, name: 'Previous request', currentTitle: null }];
     component.naturalRequest = 'Compare Ada and Grace for Java';
     component.discoverNaturally();
 
@@ -120,6 +122,89 @@ describe('CvChatPageComponent', () => {
     });
 
     expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([7, 8]);
+    expect(component.selectedCandidates).toEqual([]);
+  });
+
+  it('submits the confirmed natural-language request after creating durable scope', () => {
+    component.naturalRequest = 'Compare Ada and Grace for Java';
+    component.pendingQuestion = component.naturalRequest;
+    component.selectedCandidates = [
+      { id: 7, name: 'Ada', currentTitle: 'Engineer' },
+      { id: 8, name: 'Grace', currentTitle: 'Architect' },
+    ];
+
+    component.createConversation();
+    http.expectOne(`${environment.apiUrl}/chat/conversations`).flush({
+      id: 'conversation-1', version: 0, candidates: component.selectedCandidates, job: null,
+      createdAt: '', updatedAt: '', expiresAt: '',
+    });
+
+    const question = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
+    expect(question.request.body).toEqual({ message: 'Compare Ada and Grace for Java' });
+    question.flush({
+      conversationId: 'conversation-1', version: 1, answer: 'Ada and Grace both use Java.',
+      candidates: component.selectedCandidates, job: null, citations: [], expiresAt: '',
+    });
+
+    expect(component.timeline.map((item) => item.role)).toEqual(['USER', 'ASSISTANT']);
+    expect(component.discoveryTimeline).toEqual([]);
+  });
+
+  it('replaces explicit conversation scope and clears the stale timeline', () => {
+    component.conversation = {
+      id: 'conversation-1', version: 3, candidates: [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }], job: null,
+      createdAt: '', updatedAt: '', expiresAt: '',
+    };
+    component.timeline = [{ role: 'ASSISTANT', content: 'Old scoped answer.' }];
+    component.jobs = [{ id: 12, title: 'Backend Engineer', level: 'Senior' } as never];
+
+    component.beginScopeEdit();
+    component.addCandidate({ id: 8, name: 'Grace', currentTitle: 'Architect' });
+    component.selectedJobId = 12;
+    component.saveScope();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/scope`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ version: 3, candidateIds: [7, 8], jobId: 12 });
+    request.flush({
+      ...component.conversation,
+      version: 4,
+      candidates: component.selectedCandidates,
+      job: { id: 12, title: 'Backend Engineer', level: 'Senior' },
+      updatedAt: '2026-11-18T00:00:00Z',
+    });
+
+    expect(component.conversation?.version).toBe(4);
+    expect(component.timeline).toEqual([]);
+    expect(component.scopeEditing).toBeFalse();
+  });
+
+  it('cancels scope editing without changing the persisted conversation', () => {
+    component.conversation = {
+      id: 'conversation-1', version: 3, candidates: [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }], job: null,
+      createdAt: '', updatedAt: '', expiresAt: '',
+    };
+
+    component.beginScopeEdit();
+    component.addCandidate({ id: 8, name: 'Grace', currentTitle: 'Architect' });
+    component.cancelScopeEdit();
+
+    expect(component.selectedCandidates.map((candidate) => candidate.id)).toEqual([7]);
+    expect(component.scopeEditing).toBeFalse();
+    http.expectNone(`${environment.apiUrl}/chat/conversations/conversation-1/scope`);
+  });
+
+  it('does not replace an unchanged scope because replacement clears conversation history', () => {
+    component.conversation = {
+      id: 'conversation-1', version: 3, candidates: [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }], job: null,
+      createdAt: '', updatedAt: '', expiresAt: '',
+    };
+
+    component.beginScopeEdit();
+    expect(component.scopeHasChanges()).toBeFalse();
+    component.saveScope();
+
+    http.expectNone(`${environment.apiUrl}/chat/conversations/conversation-1/scope`);
   });
 
 });

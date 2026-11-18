@@ -1,11 +1,14 @@
 package com.nevgiu.hrai.chat;
 
+import com.nevgiu.hrai.job.JobRepository;
+import com.nevgiu.hrai.job.Job;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,7 +24,8 @@ class CvChatServiceTest {
     private final CvChatEvidenceService evidenceService = mock(CvChatEvidenceService.class);
     private final CvChatQuestionPolicy questionPolicy = mock(CvChatQuestionPolicy.class);
     private final CvChatModel model = mock(CvChatModel.class);
-    private final CvChatService service = new CvChatService(evidenceService, questionPolicy, model);
+    private final JobRepository jobs = mock(JobRepository.class);
+    private final CvChatService service = new CvChatService(evidenceService, questionPolicy, model, jobs);
 
     CvChatServiceTest() {
         when(questionPolicy.classify(org.mockito.ArgumentMatchers.anyString()))
@@ -227,6 +231,49 @@ class CvChatServiceTest {
         verify(evidenceService).authorizeCandidate(7L, "tenant-a");
         verify(questionPolicy).classify(contextualQuestion);
         verify(evidenceService).find(7L, contextualQuestion, "tenant-a");
+    }
+
+    @Test
+    void groundsSingleCandidateSuitabilityAgainstTheReauthorizedApprovedJob() {
+        Job job = new Job();
+        job.setId(12L);
+        job.setOrganizationId("tenant-a");
+        job.setTitle("Senior Java Developer");
+        job.setLevel("Senior");
+        job.setRequiredQualifications("Java 17 and Spring Boot");
+        when(jobs.findByIdAndOrganizationId(12L, "tenant-a")).thenReturn(Optional.of(job));
+        CvChatEvidence evidence = new CvChatEvidence(
+                "CV-7", 7L, 7L, null, "Ada", "Java 17 and Spring Boot experience");
+        when(evidenceService.find(org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.contains("Java 17 and Spring Boot"),
+                org.mockito.ArgumentMatchers.eq("tenant-a"))).thenReturn(List.of(evidence));
+        when(model.answer(org.mockito.ArgumentMatchers.eq("Is the candidate adequate for this job?"),
+                org.mockito.ArgumentMatchers.eq(List.of(evidence)),
+                org.mockito.ArgumentMatchers.any(CvChatComparisonJobContext.class),
+                org.mockito.ArgumentMatchers.eq(List.of())))
+                .thenReturn("The candidate matches the Java requirement [CV-7].");
+
+        CvChatResponse response = service.ask(7L, "Is the candidate adequate for this job?",
+                12L, "tenant-a", List.of());
+
+        assertThat(response.answer()).contains("matches the Java requirement");
+        assertThat(response.citations()).singleElement()
+                .extracting(CvChatResponse.Citation::reference).isEqualTo("CV-7");
+        verify(jobs).findByIdAndOrganizationId(12L, "tenant-a");
+    }
+
+    @Test
+    void hidesMissingAndCrossTenantApprovedJobsBehindTheSameNotFoundResponse() {
+        when(jobs.findByIdAndOrganizationId(99L, "tenant-a")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.ask(7L, "Is the candidate suitable?",
+                99L, "tenant-a", List.of()))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Approved job not found")
+                .satisfies(error -> assertThat(((CvChatException) error).status()).isEqualTo(HttpStatus.NOT_FOUND));
+
+        verify(evidenceService).authorizeCandidate(7L, "tenant-a");
+        verifyNoInteractions(model);
     }
 
     @Test

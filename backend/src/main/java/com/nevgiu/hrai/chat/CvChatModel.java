@@ -26,4 +26,10 @@ interface CvChatModel {
     default String answer(String question, List<CvChatEvidence> evidence, List<Message> history) {
         return answer(question, evidence);
     }
+
+    /** Adds only the approved job that application code reauthorized from the persisted conversation scope. */
+    default String answer(String question, List<CvChatEvidence> evidence, CvChatComparisonJobContext jobContext,
+                          List<Message> history) {
+        return answer(question, evidence, history);
+    }
 }

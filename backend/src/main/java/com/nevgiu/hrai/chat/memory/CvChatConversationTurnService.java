@@ -37,7 +37,7 @@ class CvChatConversationTurnService {
         List<CvChatResponse.Citation> citations;
         if (scope.candidateIds().size() == 1) {
             CvChatResponse response = singleCandidateChat.ask(scope.candidateIds().getFirst(), normalizedMessage,
-                    scope.organizationId(), history);
+                    scope.jobId(), scope.organizationId(), history);
             answer = response.answer();
             citations = response.citations();
         } else {

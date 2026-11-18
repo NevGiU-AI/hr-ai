@@ -38,4 +38,23 @@ class SpringAiCvChatModelPromptTest {
                 .doesNotContain("\nCV-10\n")
                 .doesNotContain("\nCV-10-P2\n");
     }
+
+    @Test
+    void suppliesBoundedApprovedJobRequirementsWithoutTurningThemIntoCvEvidence() {
+        CvChatComparisonJobContext job = new CvChatComparisonJobContext(
+                12L, "Senior Java Developer", "Senior", null, null,
+                "Java 17 and Spring Boot", null, null);
+
+        String prompt = SpringAiCvChatModel.buildUserPrompt(
+                "Is this candidate adequate for this job?",
+                List.of(new CvChatEvidence("CV-10", 7L, 10L, null,
+                        "Ada Lovelace", "Java and Spring Boot")), job);
+
+        assertThat(prompt)
+                .contains("AUTHORIZED APPROVED JOB REQUIREMENTS")
+                .contains("APPROVED-JOB-12")
+                .contains("Required qualifications: Java 17 and Spring Boot")
+                .contains("AUTHORIZED CV EVIDENCE")
+                .contains("[CV-10]\nJava and Spring Boot");
+    }
 }

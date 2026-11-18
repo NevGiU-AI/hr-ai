@@ -33,7 +33,7 @@ class CvChatConversationTurnServiceTest {
                 new CvChatConversationService.ExecutionScope(
                         "conversation-1", 3, "tenant-a", List.of(7L), null));
         when(conversations.history("conversation-1")).thenReturn(history);
-        when(singleCandidateChat.ask(7L, "What about Spring?", "tenant-a", history)).thenReturn(
+        when(singleCandidateChat.ask(7L, "What about Spring?", null, "tenant-a", history)).thenReturn(
                 new CvChatResponse("Spring is listed [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-1", 3, "What about Spring?",
                 "Spring is listed [CV-7].", List.of(citation(7L)), actor)).thenReturn(conversationResponse(4));
@@ -68,6 +68,25 @@ class CvChatConversationTurnServiceTest {
         assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
                 .containsExactly(7L, 8L);
         verifyNoInteractions(singleCandidateChat);
+    }
+
+    @Test
+    void passesThePersistedJobScopeToSingleCandidateChat() {
+        AppUserPrincipal actor = actor();
+        when(conversations.executionScope("conversation-3", actor)).thenReturn(
+                new CvChatConversationService.ExecutionScope(
+                        "conversation-3", 2, "tenant-a", List.of(7L), 12L));
+        when(conversations.history("conversation-3")).thenReturn(List.of());
+        when(singleCandidateChat.ask(7L, "Is the candidate suitable?", 12L, "tenant-a", List.of()))
+                .thenReturn(new CvChatResponse("The candidate matches [CV-7].", List.of(citation(7L))));
+        when(conversations.appendTurn("conversation-3", 2, "Is the candidate suitable?",
+                "The candidate matches [CV-7].", List.of(citation(7L)), actor))
+                .thenReturn(conversationResponse(3));
+
+        service.ask("conversation-3", "Is the candidate suitable?", actor);
+
+        verify(singleCandidateChat).ask(7L, "Is the candidate suitable?", 12L, "tenant-a", List.of());
+        verifyNoInteractions(comparisonChat);
     }
 
     private CvChatConversationResponse conversationResponse(long version) {

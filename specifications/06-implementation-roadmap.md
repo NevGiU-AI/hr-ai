@@ -318,6 +318,8 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   slice provides explicit candidate search/selection, optional approved-job scope, an application-owned welcome
   bubble, one natural-language composer, a bounded message timeline, current-turn citations, active-conversation
   restoration, and explicit deletion. The candidate workspace remains available during migration. Conversation
+  turns with one confirmed candidate and one approved job now reauthorize and supply bounded job requirements to both
+  semantic retrieval and grounded answer generation; CV-only conversations retain their existing contract.
   listing and persisted citation metadata for reloaded turns are implemented through Flyway V8 and accepted in both
   environments through release `v0.39.0`. Language-first ambiguity confirmation on this page and editable scope
   replacement remain before this item is complete. The flexible-scope, organization-discovery,

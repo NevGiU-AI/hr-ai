@@ -511,6 +511,13 @@ scope, and optional approved job before reading memory. One confirmed candidate 
 path; two to five use the existing comparison path. Both paths preserve their question policy, retrieval, citation,
 and safe-control behavior.
 
+When a one-candidate conversation has an explicitly confirmed approved job, the single-candidate path now reloads
+that job through the same tenant-scoped repository boundary on every turn. Only bounded title, level, summary,
+responsibility, qualification, and soft-skill fields enter retrieval and answer generation. The job requirements help
+retrieve relevant CV evidence and define the suitability criteria, but they are untrusted data rather than model
+instructions. Candidate claims still require authorized CV citations. A conversation without a confirmed job keeps
+the established CV-only provider contract, and a missing or cross-tenant stored job returns the same opaque `404`.
+
 Provider I/O runs without an open database transaction. After generation, the application locks the conversation and
 checks the exact optimistic version used to authorize the request. A concurrent scope edit returns `409` and the stale
 turn is not written. Otherwise, the bounded Spring AI JDBC memory receives the recruiter and assistant messages and

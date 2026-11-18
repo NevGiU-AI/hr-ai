@@ -149,15 +149,30 @@ class CvChatServiceTest {
     }
 
     @Test
-    void stillRejectsArbitraryUncitedProviderText() {
+    void replacesArbitraryUncitedProviderTextWithControlledInsufficientEvidence() {
         stubEvidence("Summarize");
         when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn("This is an uncited provider answer.");
 
-        assertThatThrownBy(() -> service.ask(7L, "Summarize", "tenant-a"))
-                .isInstanceOf(CvChatException.class)
-                .hasMessage("CV chat provider returned an answer without evidence citations")
-                .satisfies(error -> assertThat(((CvChatException) error).status().value()).isEqualTo(502));
+        CvChatResponse response = service.ask(7L, "Summarize", "tenant-a");
+
+        assertThat(response.answer())
+                .isEqualTo("The available CV evidence does not provide enough information to answer this question.");
+        assertThat(response.answer()).doesNotContain("uncited provider answer");
+        assertThat(response.citations()).isEmpty();
+    }
+
+    @Test
+    void treatsProviderParaphraseOfInsufficientEvidenceAsControlledOutcome() {
+        stubEvidence("Is the candidate adequate for this job?");
+        when(model.answer(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn("The available CV evidence does not provide enough information to answer this question.");
+
+        CvChatResponse response = service.ask(7L, "Is the candidate adequate for this job?", "tenant-a");
+
+        assertThat(response.answer())
+                .isEqualTo("The available CV evidence does not provide enough information to answer this question.");
+        assertThat(response.citations()).isEmpty();
     }
 
     @Test

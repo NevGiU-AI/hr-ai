@@ -20,10 +20,12 @@ The first backend slice supports an imperative question about one explicitly sel
   loading has completed; slow provider calls therefore do not retain relational transactions or connections.
 - OCR documents contribute bounded page evidence such as `[CV-12-P2]`. Native extraction contributes document-level
   evidence such as `[CV-12]`.
-- Every returned answer must contain at least one supplied reference. Unknown, invented, or absent citations cause a
-  stable `502` response instead of returning an ungrounded answer. The only exceptions are exact, model-internal
-  `INSUFFICIENT_EVIDENCE` and `OUT_OF_SCOPE` control results. Java replaces those markers with fixed safe wording and
-  an empty citation list; arbitrary uncited model prose remains invalid.
+- Every grounded answer must contain at least one supplied reference. Unknown or invented citation-shaped references
+  cause a stable `502` response because they may be fabricated or outside the authorized scope. A completely
+  citationless provider answer is discarded in full and becomes the application-owned insufficient-evidence `200`
+  response with an empty citation list. This also safely contains provider paraphrases of the internal
+  `INSUFFICIENT_EVIDENCE` marker instead of intermittently exposing a `502`. Exact `INSUFFICIENT_EVIDENCE` and
+  `OUT_OF_SCOPE` controls continue to be replaced with fixed Java-owned wording.
 - Grounded answers are instructed to preserve the recruiter question's language even when the authorized CV evidence
   uses another language. The answer call uses temperature `0` to reduce avoidable wording/language variation; provider
   determinism is still measured through repeated evaluation rather than assumed.
@@ -208,7 +210,9 @@ for main revision `2f85ddc`. The accepted checks covered:
 - grounded native and OCR answers with backend-issued document or page citations;
 - fixed `200` responses with an empty citation list for job-relevant insufficient evidence and out-of-scope or
   sensitive questions;
-- continued rejection of unsupported answers rather than displaying arbitrary uncited provider prose;
+- continued containment of unsupported answers: arbitrary uncited provider prose was not displayed, and later
+  hardening maps a wholly citationless result to the controlled insufficient-evidence response while preserving `502`
+  rejection for unknown or fabricated citation-shaped references;
 - request validation, CSRF enforcement, authenticated role policy, generic missing/cross-tenant `404` behavior, and
   tenant-scoped candidate evidence;
 - privacy-safe logs without recruiter questions, CV excerpts, prompts, or provider responses.

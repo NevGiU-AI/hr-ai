@@ -29,10 +29,9 @@ final class CvChatCitations {
             }
             cited.putIfAbsent(item.reference(), item);
         }
-        if (cited.isEmpty()) {
-            throw new CvChatException(HttpStatus.BAD_GATEWAY,
-                    "CV chat provider returned an answer without evidence citations");
-        }
+        // No citation is an unusable grounding result, but it is safe to downgrade to application-owned
+        // insufficient evidence. Callers discard the complete provider answer. A citation-shaped reference that is
+        // not in authorized evidence still throws above because it may be fabricated or cross-scope.
         return cited.values().stream().map(item -> new CvChatResponse.Citation(item.reference(),
                 item.candidateId(), item.documentId(), item.pageNumber(), item.excerpt())).toList();
     }

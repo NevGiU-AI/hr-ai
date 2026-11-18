@@ -94,6 +94,15 @@ public class CvChatService {
                     candidateId, organizationId, "ANSWER_MODEL_POLICY");
             return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
         }
-        return new CvChatResponse(answer, CvChatCitations.fromAnswer(answer, evidence));
+        List<CvChatResponse.Citation> citations = CvChatCitations.fromAnswer(normalizedAnswer, evidence);
+        if (citations.isEmpty()) {
+            // Never expose uncited provider prose. A model may paraphrase the insufficient-evidence control token or
+            // produce another unsupported statement even at temperature zero. Treat every citationless result as the
+            // same safe application-owned outcome, while unsupported citation-shaped references still fail above.
+            LOGGER.info("CV chat answer rejected for candidateId={} organizationId={} stage={} citedReferenceCount={}",
+                    candidateId, organizationId, "CITATION_COVERAGE", 0);
+            return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
+        }
+        return new CvChatResponse(normalizedAnswer, citations);
     }
 }

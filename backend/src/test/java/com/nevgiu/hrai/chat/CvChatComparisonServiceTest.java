@@ -273,6 +273,24 @@ class CvChatComparisonServiceTest {
     }
 
     @Test
+    void returnsControlledResultWhenComparisonHasNoCitations() {
+        CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
+        CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Systems experience");
+        when(evidenceService.find(7L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(grace));
+        when(model.compare(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.isNull()))
+                .thenReturn("Ada appears stronger than Grace.");
+
+        CvChatComparisonResponse response = service.compare(
+                List.of(7L, 8L), "Compare backend experience", null, "tenant-a");
+
+        assertThat(response.answer()).contains("does not provide enough information");
+        assertThat(response.answer()).doesNotContain("appears stronger");
+        assertThat(response.citations()).isEmpty();
+    }
+
+    @Test
     void removesTrailingInsufficientEvidenceControlTokenFromGroundedComparison() {
         CvChatEvidence ada = evidence("CV-10", 7L, 10L, "Java experience");
         CvChatEvidence grace = evidence("CV-11", 8L, 11L, "Systems experience");

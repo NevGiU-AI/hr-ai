@@ -29,7 +29,23 @@ public class CvChatPage {
     }
 
     public void selectCandidate(String query, String exactCandidateName) {
-        page.getByPlaceholder("Search candidate by name").fill(query);
+        // Candidate search is now an optional fallback inside a collapsed <details> element because natural-language
+        // discovery is the primary UI. BDD deliberately exercises picker-first confirmation, so reveal that control
+        // instead of trying to fill the hidden input. Also leave any restored active conversation first: CI accounts
+        // are durable staging users and must not depend on an empty browser/account history.
+        Locator activeScope = page.getByLabel("Active conversation scope");
+        if (activeScope.isVisible()) {
+            page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("New chat").setExact(true)).click();
+        }
+        assertThat(page.getByRole(HEADING,
+                new Page.GetByRoleOptions().setName("Ask NevGiU").setExact(true))).isVisible();
+
+        Locator candidateSearch = page.getByPlaceholder("Search candidate by name");
+        if (!candidateSearch.isVisible()) {
+            page.locator("details.manual-search > summary").click();
+        }
+        assertThat(candidateSearch).isVisible();
+        candidateSearch.fill(query);
         page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Search").setExact(true)).click();
         Locator result = page.locator("button.result").filter(
                 new Locator.FilterOptions().setHas(page.getByText(exactCandidateName,
@@ -42,7 +58,7 @@ public class CvChatPage {
 
     public String startConversation() {
         page.getByRole(BUTTON,
-                new Page.GetByRoleOptions().setName("Start conversation").setExact(true)).click();
+                new Page.GetByRoleOptions().setName("Confirm scope and continue").setExact(true)).click();
         assertThat(page.getByLabel("Active conversation scope")).isVisible();
         Object storedId = page.evaluate("key => localStorage.getItem(key)", ACTIVE_CONVERSATION_KEY);
         if (!(storedId instanceof String id) || !id.matches("[0-9a-fA-F-]{36}")) {
@@ -55,7 +71,7 @@ public class CvChatPage {
         page.getByRole(BUTTON,
                 new Page.GetByRoleOptions().setName("Delete chat").setExact(true)).click();
         assertThat(page.getByRole(HEADING,
-                new Page.GetByRoleOptions().setName("Start a conversation").setExact(true))).isVisible();
+                new Page.GetByRoleOptions().setName("Ask NevGiU").setExact(true))).isVisible();
     }
 
     public void leaveActiveConversation() {
@@ -113,7 +129,7 @@ public class CvChatPage {
 
     public void assertNoActiveConversationPointer() {
         assertThat(page.getByRole(HEADING,
-                new Page.GetByRoleOptions().setName("Start a conversation").setExact(true))).isVisible();
+                new Page.GetByRoleOptions().setName("Ask NevGiU").setExact(true))).isVisible();
         Object storedId = page.evaluate("key => localStorage.getItem(key)", ACTIVE_CONVERSATION_KEY);
         if (storedId != null) {
             throw new AssertionError("Deleting a conversation must clear its browser-local active pointer");

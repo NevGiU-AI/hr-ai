@@ -57,4 +57,20 @@ class SpringAiCvChatModelPromptTest {
                 .contains("AUTHORIZED CV EVIDENCE")
                 .contains("[CV-10]\nJava and Spring Boot");
     }
+
+    @Test
+    void keepsBroadJobFitAssessmentQualifiedAndCandidateClaimsLocallyCited() {
+        String normalizedPrompt = SpringAiCvChatModel.SYSTEM_PROMPT.replaceAll("\\s+", " ");
+
+        assertThat(normalizedPrompt)
+                .contains("Approved-job requirements define assessment criteria and do not require CV citations")
+                .contains("which criteria the supplied CV evidence supports")
+                .contains("which criteria it does not demonstrate")
+                .contains("which criteria require recruiter judgment")
+                .contains("provide that qualified partial assessment instead of returning the insufficient-evidence control")
+                .contains("Never make the final hiring decision")
+                .contains("Every sentence or bullet that states a candidate fact must include an adjacent supplied CV reference")
+                .contains("Never convert an observable fact such as working with a team into an inferred personality trait")
+                .contains("Job criteria from the authorized approved-job block need no CV citation");
+    }
 }

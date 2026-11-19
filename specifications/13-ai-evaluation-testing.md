@@ -354,6 +354,28 @@ Operators found response time functionally acceptable during smoke testing, but 
 production duration or percentile distribution. Production p50/p95/p99 latency, provider cost, and concurrency remain
 explicit later performance measurements rather than inferred acceptance claims.
 
+#### Single-candidate approved-job fit
+
+`CvChatSingleCandidateJobFitProviderEvaluationTest` is an opt-in paid regression for broad questions such as
+`Is the candidate adequate for this job?`. It uses synthetic job criteria and synthetic CV evidence only. The test
+requires a qualified answer with an authorized CV citation, rejects the insufficient/out-of-scope controls for that
+answerable fixture, and checks that the provider neither makes a definitive hiring recommendation nor converts team
+collaboration into a claimed teamwork trait. Deterministic prompt tests separately enforce the distinction between
+uncited authorized job criteria and locally cited candidate claims.
+
+Run it from `backend` whenever this answer prompt or configured chat model changes:
+
+```powershell
+$env:RUN_AI_EVALUATIONS = "true"
+$env:OPENAI_API_KEY = "replace-with-the-evaluation-key"
+$env:AI_EVALUATION_CHAT_MODEL = "gpt-4o-mini"
+mvn -B "-Dtest=CvChatSingleCandidateJobFitProviderEvaluationTest" test
+Remove-Item Env:RUN_AI_EVALUATIONS, Env:OPENAI_API_KEY, Env:AI_EVALUATION_CHAT_MODEL
+```
+
+The ordinary pull-request build skips this provider call when `RUN_AI_EVALUATIONS` is absent. A green deterministic
+CI run therefore does not replace the live-provider gate before staging promotion.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

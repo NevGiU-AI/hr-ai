@@ -103,6 +103,20 @@ describe('CvChatPageComponent', () => {
     expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([8]);
     expect(component.pendingQuestion).toBe('Find strong AI developers in this organization');
     expect(component.discoveryTimeline.map((item) => item.role)).toEqual(['USER', 'ASSISTANT']);
+    expect(component.naturalRequest).toBe('');
+
+    fixture.detectChanges();
+    const confirmationCards = fixture.nativeElement.querySelector('[aria-label="Candidate confirmation cards"]');
+    expect(confirmationCards.textContent).toContain('Grace');
+    expect(fixture.nativeElement.querySelector('.discovery-composer .result')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.scope-confirmation')).toBeNull();
+    http.expectNone(`${environment.apiUrl}/chat/conversations`);
+
+    confirmationCards.querySelector('button.result').click();
+    fixture.detectChanges();
+    expect(component.selectedCandidates.map((candidate) => candidate.id)).toEqual([8]);
+    expect(fixture.nativeElement.querySelector('.scope-confirmation').textContent)
+      .toContain('Confirm conversation scope');
   });
 
   it('uses the reviewed name-discovery tools for natural-language candidate selection', () => {
@@ -123,6 +137,38 @@ describe('CvChatPageComponent', () => {
 
     expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([7, 8]);
     expect(component.selectedCandidates).toEqual([]);
+  });
+
+  it('keeps clarification in the timeline without creating or widening candidate scope', () => {
+    component.selectedCandidates = [{ id: 99, name: 'Previous request', currentTitle: null }];
+    component.naturalRequest = 'Compare them';
+    component.discoverNaturally();
+
+    http.expectOne(`${environment.apiUrl}/chat/tools/discover`).flush({
+      kind: 'CLARIFICATION_REQUIRED', message: 'Please name the candidates.', candidateScope: null,
+    });
+
+    fixture.detectChanges();
+    expect(component.selectedCandidates).toEqual([]);
+    expect(component.naturalResults).toEqual([]);
+    expect(component.pendingQuestion).toBe('');
+    expect(component.discoveryTimeline.at(-1)?.content).toBe('Please name the candidates.');
+    expect(fixture.nativeElement.querySelector('[aria-label="Candidate confirmation cards"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.scope-confirmation')).toBeNull();
+    http.expectNone(`${environment.apiUrl}/chat/conversations`);
+  });
+
+  it('restores the conversational request when discovery fails so the recruiter can retry', () => {
+    component.naturalRequest = 'Compare Ada and Grace';
+    component.discoverNaturally();
+
+    http.expectOne(`${environment.apiUrl}/chat/tools/discover`).flush(
+      { message: 'Provider unavailable' }, { status: 502, statusText: 'Bad Gateway' },
+    );
+
+    expect(component.naturalRequest).toBe('Compare Ada and Grace');
+    expect(component.error).toBe('Provider unavailable');
+    expect(component.pendingQuestion).toBe('');
   });
 
   it('submits the confirmed natural-language request after creating durable scope', () => {

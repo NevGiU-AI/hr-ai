@@ -85,13 +85,16 @@ export class CvChatPageComponent implements OnInit {
     // into the next confirmation, because the recruiter could otherwise approve candidates they did not just ask for.
     this.selectedCandidates = [];
     this.discoveryTimeline = [...this.discoveryTimeline, { role: 'USER', content: request }];
+    this.naturalRequest = '';
     if (this.discoveryMode === 'ORGANIZATION') {
       this.chat.discoverOrganizationCandidates(request)
         .pipe(finalize(() => this.naturalBusy = false))
         .subscribe({
           next: (response) => this.applyOrganizationDiscovery(request, response),
-          error: (error: HttpErrorResponse) =>
-            this.error = this.apiError(error, 'Candidate discovery could not complete.'),
+          error: (error: HttpErrorResponse) => {
+            this.naturalRequest = request;
+            this.error = this.apiError(error, 'Candidate discovery could not complete.');
+          },
         });
       return;
     }
@@ -99,8 +102,10 @@ export class CvChatPageComponent implements OnInit {
       .pipe(finalize(() => this.naturalBusy = false))
       .subscribe({
         next: (response) => this.applyNamedDiscovery(request, response),
-        error: (error: HttpErrorResponse) =>
-          this.error = this.apiError(error, 'Candidate discovery could not complete.'),
+        error: (error: HttpErrorResponse) => {
+          this.naturalRequest = request;
+          this.error = this.apiError(error, 'Candidate discovery could not complete.');
+        },
       });
   }
 

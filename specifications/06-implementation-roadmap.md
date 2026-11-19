@@ -321,8 +321,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   turns with one confirmed candidate and one approved job now reauthorize and supply bounded job requirements to both
   semantic retrieval and grounded answer generation; CV-only conversations retain their existing contract.
   listing and persisted citation metadata for reloaded turns are implemented through Flyway V8 and accepted in both
-  environments through release `v0.39.0`. Language-first ambiguity confirmation on this page and editable scope
-  replacement remain before this item is complete. The flexible-scope, organization-discovery,
+  environments through release `v0.39.0`. Language-first ambiguity confirmation and optimistic editable scope
+  replacement are implemented. The pre-confirmation presentation now uses one timeline for recruiter requests,
+  assistant clarification, and bounded candidate cards, while explicit scope confirmation remains required before any
+  CV evidence request. Manual picker-first search remains an optional fallback. The flexible-scope, organization-discovery,
   owning-candidate citation navigation, and readable `Display Name (CANDIDATE-ID)` output passed focused staging
   acceptance on 12 November 2026 at main revision `9002238`. Production repeated the focused checks successfully in
   release `v0.38.0` at revision `eea0a3a`. The single-candidate approved-job path and qualified broad job-fit contract

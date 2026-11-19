@@ -37,8 +37,7 @@ public class CvChatPage {
         if (activeScope.isVisible()) {
             page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("New chat").setExact(true)).click();
         }
-        assertThat(page.getByRole(HEADING,
-                new Page.GetByRoleOptions().setName("Ask NevGiU").setExact(true))).isVisible();
+        assertThat(page.getByLabel("Start a conversation")).isVisible();
 
         Locator candidateSearch = page.getByPlaceholder("Search candidate by name");
         if (!candidateSearch.isVisible()) {
@@ -70,8 +69,7 @@ public class CvChatPage {
     public void deleteActiveConversation() {
         page.getByRole(BUTTON,
                 new Page.GetByRoleOptions().setName("Delete chat").setExact(true)).click();
-        assertThat(page.getByRole(HEADING,
-                new Page.GetByRoleOptions().setName("Ask NevGiU").setExact(true))).isVisible();
+        assertThat(page.getByLabel("Start a conversation")).isVisible();
     }
 
     public void leaveActiveConversation() {
@@ -128,8 +126,7 @@ public class CvChatPage {
     }
 
     public void assertNoActiveConversationPointer() {
-        assertThat(page.getByRole(HEADING,
-                new Page.GetByRoleOptions().setName("Ask NevGiU").setExact(true))).isVisible();
+        assertThat(page.getByLabel("Start a conversation")).isVisible();
         Object storedId = page.evaluate("key => localStorage.getItem(key)", ACTIVE_CONVERSATION_KEY);
         if (storedId != null) {
             throw new AssertionError("Deleting a conversation must clear its browser-local active pointer");

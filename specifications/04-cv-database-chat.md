@@ -908,6 +908,22 @@ Production repeated the focused checks successfully on 19 November 2026 in relea
 regressions, controlled outcomes, conversation reload, owning-document citation navigation, and the BDD-gated release
 path passed without a Flyway migration, database change, Compose change, or new environment variable.
 
+### Conversational scope discovery
+
+The next dedicated-page slice removes the visual split between a welcome conversation and a separate setup card.
+Before durable scope exists, the same timeline now presents the recruiter request, assistant clarification, and bounded
+candidate confirmation cards. Candidate cards remain proposals only: selecting a card reveals a separate confirmation
+panel, and no conversation or CV-evidence request occurs until the recruiter explicitly confirms the visible candidate
+and optional approved-job scope. After confirmation, the existing application-owned flow creates durable scope and
+submits the pending recruiter question automatically.
+
+Natural-language named-candidate and organization-wide discovery continue to use their existing tenant-scoped
+endpoints and tool boundaries. Manual picker-first search remains available inside an explicit fallback. A new natural
+request clears any unconfirmed cards from the prior request; clarification creates no candidate scope; and a failed
+discovery restores the recruiter text for retry. This is a presentation/state correction only and introduces no API,
+schema, retrieval, authorization, model, or environment change. Environment and expanded browser-BDD acceptance remain
+required before this slice is marked deployed.
+
 ## Acceptance criteria
 
 - Follow-up questions retain the correct conversation context.

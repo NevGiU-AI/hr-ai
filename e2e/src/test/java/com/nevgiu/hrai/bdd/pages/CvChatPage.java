@@ -2,6 +2,7 @@ package com.nevgiu.hrai.bdd.pages;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.options.WaitForSelectorState;
 
 import java.net.URI;
@@ -116,12 +117,22 @@ public class CvChatPage {
 
         Locator target = page.locator("#" + fragment);
         assertThat(target).isVisible();
-        Boolean inViewport = (Boolean) target.evaluate("element => {"
-                + "const rect = element.getBoundingClientRect();"
-                + "return rect.bottom > 0 && rect.top < window.innerHeight;"
-                + "}");
-        if (!Boolean.TRUE.equals(inViewport)) {
-            throw new AssertionError("Citation target exists but was not scrolled into the viewport");
+        try {
+            // The document card can become visible just before Angular's deferred scrollIntoView callback runs.
+            // Poll the observable browser outcome instead of checking in the small race window between rendering
+            // and scrolling. The bounded timeout still fails when citation navigation genuinely does not scroll.
+            page.waitForFunction("fragment => {"
+                            + "const element = document.getElementById(fragment);"
+                            + "if (!element) return false;"
+                            + "const rect = element.getBoundingClientRect();"
+                            + "return rect.bottom > 0 && rect.top < window.innerHeight;"
+                            + "}",
+                    fragment,
+                    new Page.WaitForFunctionOptions()
+                            .setPollingInterval(50)
+                            .setTimeout(5_000));
+        } catch (TimeoutError error) {
+            throw new AssertionError("Citation target exists but was not scrolled into the viewport", error);
         }
     }
 

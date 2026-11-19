@@ -221,6 +221,15 @@ Production repeated the focused acceptance successfully on 17 November 2026 in r
 explicit confirmation and tenant scope, returned grounded citations for the selected comparison, kept unsupported
 evidence below the unchanged threshold safely controlled, and introduced no deployment-health, retrieval, indexing,
 or environment-configuration regression.
+Single-candidate approved-job conversations then passed focused staging and production acceptance on 19 November 2026
+through PRs #202–#204. The stored job remained reauthorized and visible, broad job-fit questions produced qualified
+evidence-backed technical assessments, unsupported or subjective criteria remained qualified for recruiter judgment,
+candidate facts retained owning-document citations, and controlled insufficient-evidence and sensitive-refusal paths
+remained intact. The synthetic live-provider job-fit evaluation passed before deployment. After the conversational UI
+had moved manual picker-first search into a collapsed fallback, PR #204 updated the four-scenario Cucumber/Playwright
+page object to reveal that control explicitly; the protected staging BDD suite then passed. Release `v0.42.0` at main
+revision `c0bff09` repeated the focused production health, job-context, conversation, citation, comparison, refusal,
+and BDD-gated promotion checks without a migration or environment change.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

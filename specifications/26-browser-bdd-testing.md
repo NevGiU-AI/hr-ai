@@ -391,6 +391,15 @@ exact-revision `bdd-validated-*` aliases published only after protected staging 
 immutable images, and passed production health and focused functional checks without rollback. This confirms that a
 successful exact-revision browser run is now an enforced release prerequisite rather than an informational follow-up.
 
+On 19 November 2026, the suite correctly blocked promotion after the conversational UI made natural-language discovery
+primary and moved manual picker-first search into a collapsed `<details>` fallback. All four scenarios failed in their
+shared Given step because the page object found the candidate-search input but attempted to fill it while hidden. PR
+#204 corrected the automation contract: it enters fresh-chat state, expands manual search explicitly, and uses the
+current `Confirm scope and continue` and `Ask NevGiU` labels. Java compilation and the Maven test build passed, then
+the complete protected staging BDD suite passed all four scenarios. Release `v0.42.0` at main revision `c0bff09`
+subsequently passed the BDD-gated production promotion and focused production checks. No application runtime,
+authorization, schema, or environment change was required for the page-object correction.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.

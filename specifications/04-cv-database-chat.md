@@ -882,6 +882,32 @@ requests were refused safely, insufficient evidence remained controlled, candida
 widen, and backend/frontend health and privacy-safe logs were correct. Production required no new environment
 variable, migration, database, Compose, or storage change.
 
+### Single-candidate approved-job staging and production acceptance
+
+PRs #202 and #203 completed the dedicated conversation path for one explicitly confirmed candidate plus one optional
+approved job. The application reauthorizes the stored candidate and job for every turn, supplies bounded job criteria
+to retrieval and answer generation, and retains the established CV-only contract when no job is confirmed. The
+synthetic `CvChatSingleCandidateJobFitProviderEvaluationTest` passed against the live provider before deployment.
+
+Focused staging acceptance passed on 19 November 2026. A broad question such as `Is the candidate adequate for this
+job?` returned a qualified technical assessment grounded in the authorized CV, while requirement-specific questions
+identified Java, Spring Boot, Angular, and Spring AI evidence with owning-document citations. A communication-skill
+probe distinguished observable collaboration/documentation facts from evidence that did not directly establish
+excellent communication and left the subjective criterion to recruiter judgment. Candidate-only chat, controlled
+insufficient evidence, sensitive refusal, comparison, persisted conversation restoration, and citation navigation
+remained functional. No raw control token, citationless `502`, scope widening, or unexpected provider/policy error was
+observed.
+
+The conversational UI had meanwhile moved manual picker-first search into a collapsed fallback. The protected BDD run
+therefore exposed a test-automation regression rather than a product failure: the page object located the input but
+attempted to fill it while hidden. PR #204 explicitly enters fresh-chat state, expands manual search, and uses the
+current confirmation and empty-state labels. All four staging BDD scenarios then passed.
+
+Production repeated the focused checks successfully on 19 November 2026 in release `v0.42.0` at main revision
+`c0bff09`. Backend/frontend health, broad and specific approved-job questions, candidate-only and comparison
+regressions, controlled outcomes, conversation reload, owning-document citation navigation, and the BDD-gated release
+path passed without a Flyway migration, database change, Compose change, or new environment variable.
+
 ## Acceptance criteria
 
 - Follow-up questions retain the correct conversation context.

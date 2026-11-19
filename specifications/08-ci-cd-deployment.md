@@ -621,6 +621,13 @@ behavior-driven development gate. Production resolution required backend and fro
 that exact commit, the immutable images deployed successfully, production health and focused functional checks passed,
 and no rollback was required.
 
+Validated on 19 November 2026: release `v0.43.0` promoted main revision `184e52a` only after the protected staging
+suite passed all four non-destructive Cucumber/Playwright scenarios and published the exact-revision validation aliases.
+The immutable images deployed successfully; conversational candidate discovery and explicit scope confirmation,
+grounded chat, citation navigation, comparison, refusal, persistence, backend/frontend health, and focused regression
+checks passed without rollback. The accompanying BDD change was test-only and required no schema, Compose, model, or
+environment update.
+
 ### Phase 5 - Operational hardening
 
 - [ ] Add uptime, resource, certificate, disk, container, and backup monitoring.

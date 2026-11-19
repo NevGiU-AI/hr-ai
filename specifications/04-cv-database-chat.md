@@ -921,8 +921,25 @@ Natural-language named-candidate and organization-wide discovery continue to use
 endpoints and tool boundaries. Manual picker-first search remains available inside an explicit fallback. A new natural
 request clears any unconfirmed cards from the prior request; clarification creates no candidate scope; and a failed
 discovery restores the recruiter text for retry. This is a presentation/state correction only and introduces no API,
-schema, retrieval, authorization, model, or environment change. Environment and expanded browser-BDD acceptance remain
-required before this slice is marked deployed.
+schema, retrieval, authorization, model, or environment change.
+
+Focused staging acceptance passed on 19 November 2026 after PR #206 at main revision `746609e`. Named and ambiguous
+discovery, clarification, organization-wide discovery, no-result and sensitive-request handling, explicit card and
+optional-job confirmation, automatic submission of the pending request, persistence, editable scope, picker-first
+fallback, grounded answers, and citation navigation retained their expected boundaries. A new request cleared stale
+unconfirmed cards, failed discovery restored the recruiter text for retry, and no durable conversation or CV-evidence
+request occurred before explicit confirmation.
+
+The first BDD rerun found no application defect: the correct cited document card existed and manual staging navigation
+scrolled successfully, but the page object read the viewport before Angular's deferred `scrollIntoView()` completed.
+PR #207 retained the URL and target assertions and added a bounded five-second condition wait rather than a fixed
+sleep. All four non-destructive Cucumber/Playwright scenarios and 23 steps then passed, including owner isolation,
+resume/reload, provider-backed citation viewport navigation, and explicit deletion.
+
+Production repeated the focused checks successfully on 19 November 2026 in release `v0.43.0` at main revision
+`184e52a`. The exact-revision BDD gate, backend/frontend health, conversational discovery and confirmation, grounded
+single- and multi-candidate answers, job context, controlled outcomes, persistence, and citation navigation passed
+without a Flyway migration, database change, Compose change, model change, or new environment variable.
 
 ## Acceptance criteria
 

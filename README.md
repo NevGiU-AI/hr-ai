@@ -230,11 +230,17 @@ had moved manual picker-first search into a collapsed fallback, PR #204 updated 
 page object to reveal that control explicitly; the protected staging BDD suite then passed. Release `v0.42.0` at main
 revision `c0bff09` repeated the focused production health, job-context, conversation, citation, comparison, refusal,
 and BDD-gated promotion checks without a migration or environment change.
-The next dedicated-page slice keeps the same application-owned authorization contracts while presenting
-pre-confirmation discovery as one conversation: recruiter requests, assistant clarification, and bounded candidate
-cards share the timeline; selected cards expose an explicit candidate/job confirmation panel; and only confirmation
-creates durable scope and submits the pending question. Manual picker-first search remains available as a fallback.
-This presentation slice requires staging, BDD, and production acceptance before it is marked deployed.
+PR #206 kept the same application-owned authorization contracts while presenting pre-confirmation discovery as one
+conversation: recruiter requests, assistant clarification, and bounded candidate cards share the timeline; selected
+cards expose an explicit candidate/job confirmation panel; and only confirmation creates durable scope and submits
+the pending question. Manual picker-first search remains available as a fallback. Focused staging checks accepted
+named, ambiguous, clarification, organization-wide, refusal, no-result, retry, job-context, persistence, editable-
+scope, citation-navigation, and picker-first paths. The first browser run exposed only an automation timing race:
+the cited document existed while Angular's deferred scroll was still completing. PR #207 replaced the immediate
+viewport read with a bounded condition wait; all four non-destructive Cucumber/Playwright scenarios then passed.
+Release `v0.43.0` at main revision `184e52a` passed the exact-revision BDD gate and focused production health,
+conversation, scope-confirmation, grounded-answer, citation, comparison, refusal, and regression checks on
+19 November 2026. No API, schema, retrieval, authorization, model, Compose, or environment change was required.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

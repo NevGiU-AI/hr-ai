@@ -400,6 +400,16 @@ the complete protected staging BDD suite passed all four scenarios. Release `v0.
 subsequently passed the BDD-gated production promotion and focused production checks. No application runtime,
 authorization, schema, or environment change was required for the page-object correction.
 
+PR #206 subsequently unified pre-confirmation candidate discovery into the conversational timeline without changing
+the durable scope or evidence boundary. The application passed focused staging checks, but a repeated local BDD run
+exposed a narrower synchronization race in citation navigation: the expected URL and rendered document card were
+already present while Angular's deferred `scrollIntoView()` had not yet completed. Manual staging navigation worked.
+PR #207 therefore changed only the Playwright page object, polling the actual viewport condition every 50 milliseconds
+for at most five seconds. It did not add an arbitrary sleep or weaken the URL, target-presence, or failure assertions.
+All four non-destructive scenarios and 23 steps then passed. Release `v0.43.0` promoted main revision `184e52a` through
+the exact-revision BDD gate and passed focused production checks on 19 November 2026 without an application runtime,
+authorization, schema, model, Compose, or environment change.
+
 ## Test-data and cleanup rules
 
 - Use a dedicated test organization and accounts; never assume production candidate IDs.

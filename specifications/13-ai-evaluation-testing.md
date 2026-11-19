@@ -376,6 +376,12 @@ Remove-Item Env:RUN_AI_EVALUATIONS, Env:OPENAI_API_KEY, Env:AI_EVALUATION_CHAT_M
 The ordinary pull-request build skips this provider call when `RUN_AI_EVALUATIONS` is absent. A green deterministic
 CI run therefore does not replace the live-provider gate before staging promotion.
 
+The focused live-provider run passed on 19 November 2026 before PR #203 was promoted. Staging subsequently confirmed
+the same broad approved-job behavior against authorized environment data, including cited technical criteria,
+qualified unsupported/subjective criteria, and recruiter judgment for communication evidence. Production repeated the
+focused behavior in release `v0.42.0`. The successful provider run is development validation; the staging and
+production records remain separate environment-acceptance evidence.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

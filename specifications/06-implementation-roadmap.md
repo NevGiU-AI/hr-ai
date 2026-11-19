@@ -325,12 +325,16 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   replacement remain before this item is complete. The flexible-scope, organization-discovery,
   owning-candidate citation navigation, and readable `Display Name (CANDIDATE-ID)` output passed focused staging
   acceptance on 12 November 2026 at main revision `9002238`. Production repeated the focused checks successfully in
-  release `v0.38.0` at revision `eea0a3a`.
-- [ ] Establish the browser behavior-driven development suite described in
+  release `v0.38.0` at revision `eea0a3a`. The single-candidate approved-job path and qualified broad job-fit contract
+  passed focused staging and production acceptance on 19 November 2026 through PRs #202–#204, with production release
+  `v0.42.0` at revision `c0bff09`.
+- [x] Establish the browser behavior-driven development suite described in
   [browser BDD testing](./26-browser-bdd-testing.md). Use Cucumber-JVM from the first slice, JUnit Platform,
   PicoContainer scenario state, and Playwright for Java. Automate persisted conversation resume, historical citation
   viewport navigation, same-organization owner isolation, and explicit deletion before expanding to other critical
-  recruitment workflows. Keep deterministic browser BDD separate from paid provider evaluations and destructive
+  recruitment workflows. The four-scenario protected staging suite and exact-revision production gate are operational.
+  PR #204 updated picker-first setup for the conversational UI; the complete suite passed before release `v0.42.0` at
+  revision `c0bff09`. Deterministic browser BDD remains separate from paid provider evaluations and destructive
   production execution.
 - [x] Build the bounded Angular candidate-chat interface with role visibility, loading/error states, safe responses,
   and document-linked citations.

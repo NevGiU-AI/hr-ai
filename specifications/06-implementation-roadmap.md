@@ -371,8 +371,10 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   explicit-technology rescue, cross-organization and stale-source rejection, exact ordering, the ten-card bound, and
   truncation. A separate opt-in provider harness now supplies synthetic EN/FR/PT discovery cases, real constrained
   query normalization, real embeddings, recall/precision floors, a cross-organization decoy, privacy-safe latency, and
-  ordinary-CI structural validation. Its live provider run remains required before acceptance. Generated-answer
-  groundedness/completeness, citation correctness, refusal quality, tool selection, and broader adversarial calibration
+  ordinary-CI structural validation. Its live provider run remains required before acceptance. The next test-only
+  slice adds a separately versioned synthetic answer-quality dataset, ordinary-CI schema review, exact controlled-
+  outcome checks, application citation validation, required-reference completeness, and opt-in Spring AI relevancy
+  and fact-checking judges. Its live provider run remains required; tool selection and broader adversarial calibration
   remain.
 - [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
   application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,

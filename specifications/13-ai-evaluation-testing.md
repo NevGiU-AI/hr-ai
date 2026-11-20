@@ -423,6 +423,51 @@ embeddings, paraphrases, latency/cost observations, and human-calibrated recall/
 embedding, prompt, threshold, or ranking-policy change is promoted. No production ranking, API, schema, model, or
 environment configuration changes are introduced by this dataset.
 
+#### Opt-in provider-backed organization-discovery harness
+
+The separate synthetic dataset at
+`backend/src/test/resources/ai-evaluations/cv-chat-candidate-discovery-provider-v1.json` adds five reviewed provider
+cases without weakening the deterministic `1.0.0` application baseline. It contains six synthetic documents: Python
+backend, Python machine-learning, Java/Spring, Python AI/RAG, an unrelated project-management record, and an overlapping
+Python/AI decoy in another organization. The cases cover English, French, and Portuguese Python discovery plus English
+AI/ML and Java/Spring discovery.
+
+`CvChatCandidateDiscoveryProviderEvaluationDatasetTest` runs in ordinary CI and validates versioning, unique synthetic
+documents/candidates/cases, language coverage, timestamps, reviewed relevant/required/forbidden sets, and metric gates.
+`CvChatCandidateDiscoveryProviderEvaluationTest` remains opt-in behind `RUN_AI_EVALUATIONS=true` because it makes paid
+external calls. It uses the configured chat model for the real constrained retrieval-query normalizer,
+`text-embedding-3-small` by default for real embeddings, `SimpleVectorStore` with an organization metadata filter, the
+application's bounded explicit-term pass, and the real `CvChatOrganizationDiscoveryService` for thresholding,
+reauthorization, grouping, ranking, and truncation.
+
+Every provider case requires recall@5 `1.0` so all reviewed relevant candidates must be available for confirmation.
+Initial precision@5 floors reflect the number of explicitly relevant candidates in a five-card interactive shortlist:
+`0.60` for the three Python candidates, `0.50` for two AI/ML candidates, and `0.25` for one Java/Spring candidate.
+These are regression floors, not correctness probabilities or candidate scores. The other-organization candidate is an
+absolute forbidden result in every case regardless of similarity, normalization, recall, or precision.
+
+Privacy-safe output includes only synthetic case ID, language, `k`, aggregate recall/precision, returned count, query
+count, elapsed milliseconds, and configured model names. It never prints questions, normalized queries, document text,
+embeddings, candidate names, prompts, or credentials. Index-construction time is excluded from per-case latency so the
+reported duration measures normalization plus interactive discovery; it is still a small synthetic benchmark rather
+than a production percentile claim.
+
+Run the provider-backed discovery gate from `backend` only with an approved evaluation key:
+
+```powershell
+$env:RUN_AI_EVALUATIONS = "true"
+$env:OPENAI_API_KEY = "replace-with-the-evaluation-key"
+$env:AI_EVALUATION_CHAT_MODEL = "gpt-4o-mini"
+$env:AI_EVALUATION_EMBEDDING_MODEL = "text-embedding-3-small"
+mvn -B "-Dtest=CvChatCandidateDiscoveryProviderEvaluationTest" test
+Remove-Item Env:RUN_AI_EVALUATIONS, Env:OPENAI_API_KEY, Env:AI_EVALUATION_CHAT_MODEL, Env:AI_EVALUATION_EMBEDDING_MODEL
+```
+
+These are test-process variables and must not be added to staging or production `.env` files. A successful run
+authorizes review of this provider baseline; it does not change runtime models, prompts, thresholds, or ranking and
+does not replace staging acceptance. Generated-answer groundedness, citation correctness/completeness, refusal quality,
+and tool-selection evaluation remain later slices.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

@@ -365,7 +365,12 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
 - [~] Add citations, clarification, tool-use explanations, injection defenses, and evaluation tests. Citations,
   clarification, refusal, privacy-safe tool diagnostics, versioned datasets, deterministic regressions, and opt-in
   provider gates exist; user-facing tool explanations and broader capability evaluation remain.
-- [ ] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection, and cross-organization attack resistance.
+- [~] Measure retrieval recall at `k`, groundedness, citation correctness, completeness, refusal quality, tool selection,
+  and cross-organization attack resistance. Candidate-discovery dataset `1.0.0` now runs deterministic recall and
+  precision gates at `k = 3`, `5`, and `10` through the real ranking/current-row reauthorization service. It covers
+  explicit-technology rescue, cross-organization and stale-source rejection, exact ordering, the ten-card bound, and
+  truncation. Provider-backed embedding/normalizer measurements, generated-answer groundedness/completeness,
+  citation correctness, refusal quality, tool selection, and broader adversarial calibration remain.
 - [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
   application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,
   French, and Portuguese, and retain the corrected French KLx paraphrase as a multilingual regression case.

@@ -580,6 +580,13 @@ npm test -- --watch=false
 
 The test suites mock AI dependencies; they do not require an OpenAI key.
 
+Organization-wide candidate discovery also has a versioned synthetic deterministic metric suite. Dataset
+`cv-chat-candidate-discovery-v1.json` measures reviewed recall and precision at `k = 3`, `5`, and `10` while asserting
+required candidates, zero forbidden candidates, current-document/tenant reauthorization, stable ordering, and the
+ten-card truncation contract. It exercises the real application ranking service with mocked external search and
+repository boundaries, requires no provider key, and changes no runtime ranking policy. Provider-backed embedding and
+normalizer measurement remains a separate opt-in evaluation slice.
+
 The browser behavior-driven development (BDD) layer uses Cucumber-JVM, JUnit Platform, PicoContainer, and Playwright for
 Java in a separate Maven project. It covers persisted CV-chat conversation resume, owner isolation, historical
 citation restoration, citation viewport navigation, and explicit conversation deletion. Successful protected staging

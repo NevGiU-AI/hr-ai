@@ -382,6 +382,47 @@ qualified unsupported/subjective criteria, and recruiter judgment for communicat
 focused behavior in release `v0.42.0`. The successful provider run is development validation; the staging and
 production records remain separate environment-acceptance evidence.
 
+#### Deterministic organization-discovery metrics foundation
+
+The versioned synthetic dataset at
+`backend/src/test/resources/ai-evaluations/cv-chat-candidate-discovery-v1.json` establishes the first executable
+organization-discovery metric baseline. Version `1.0.0` contains no real candidate data and covers three application
+behaviors:
+
+- explicit Python evidence recovered through the bounded lexical pass even when vector similarity is below `0.35`;
+- rejection of a cross-organization vector result and an obsolete source-version result during current-row
+  reauthorization; and
+- deterministic ranking and truncation when twelve relevant candidates compete for the ten-card response limit.
+
+`CvChatCandidateDiscoveryEvaluationDatasetTest` validates the semantic dataset version, unique synthetic identifiers,
+organization labels, candidate/document references, retrieval-query/result alignment, source-version timestamps,
+reviewed relevant/required/forbidden sets, exact expected order, and metric values at `k = 3`, `5`, and `10`.
+
+`CvChatCandidateDiscoveryMetricsTest` runs on every ordinary build without an API key. It invokes the real
+`CvChatOrganizationDiscoveryService` while mocking only its semantic-search, query-preparation, and repository
+boundaries. The service still performs its production threshold/explicit-term filtering, current candidate/document
+reauthorization, grouping, ranking, reference construction, ten-card limit, and truncation decision. The test asserts
+the exact reviewed order, every required hit, zero forbidden hits, and the versioned recall/precision values. Output is
+limited to synthetic case identifiers, `k`, aggregate recall/precision, and returned counts; questions and evidence
+text are not logged.
+
+The initial deterministic baseline is:
+
+| Case | Recall@3 | Precision@3 | Recall@5 | Precision@5 | Recall@10 | Precision@10 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `python-explicit-recall` | `1.0000` | `1.0000` | `1.0000` | `0.7500` | `1.0000` | `0.7500` |
+| `tenant-and-current-document-boundary` | `1.0000` | `1.0000` | `1.0000` | `1.0000` | `1.0000` | `1.0000` |
+| `bounded-top-ten` | `0.2500` | `1.0000` | `0.4167` | `1.0000` | `0.8333` | `1.0000` |
+
+The bounded case intentionally cannot reach recall `1.0` at `k = 10` because twelve candidates are labelled relevant
+and the product contract returns at most ten cards. This is expected capacity behavior, not a quality failure.
+
+This first slice measures deterministic application ranking and security invariants; it does not measure embedding or
+normalizer quality because the semantic matches are reviewed fixtures. A separate opt-in provider slice must add real
+embeddings, paraphrases, latency/cost observations, and human-calibrated recall/precision gates before a model,
+embedding, prompt, threshold, or ranking-policy change is promoted. No production ranking, API, schema, model, or
+environment configuration changes are introduced by this dataset.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

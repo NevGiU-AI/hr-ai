@@ -1,0 +1,114 @@
+{
+  "version": "1.0.0",
+  "description": "Synthetic organization-discovery ranking, recall, tenant-isolation, current-document, and truncation cases with no real candidate data.",
+  "candidates": [
+    {"id":1,"organizationId":"tenant-a","name":"Synthetic Java Engineer","currentTitle":"Backend Engineer","documentId":11,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":2,"organizationId":"tenant-a","name":"Synthetic Python Engineer A","currentTitle":"Software Engineer","documentId":12,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":3,"organizationId":"tenant-a","name":"Synthetic Python Engineer B","currentTitle":"Machine Learning Engineer","documentId":13,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":4,"organizationId":"tenant-a","name":"Synthetic Python Engineer C","currentTitle":"Data Engineer","documentId":14,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":7,"organizationId":"tenant-a","name":"Synthetic Current Candidate A","currentTitle":"AI Engineer","documentId":17,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":8,"organizationId":"tenant-a","name":"Synthetic Current Candidate B","currentTitle":"ML Engineer","documentId":18,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":9,"organizationId":"tenant-a","name":"Synthetic Stale Candidate","currentTitle":"Engineer","documentId":19,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":90,"organizationId":"tenant-b","name":"Synthetic Cross Tenant Decoy","currentTitle":"Engineer","documentId":190,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":100,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 100","currentTitle":"Engineer","documentId":200,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":101,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 101","currentTitle":"Engineer","documentId":201,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":102,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 102","currentTitle":"Engineer","documentId":202,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":103,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 103","currentTitle":"Engineer","documentId":203,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":104,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 104","currentTitle":"Engineer","documentId":204,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":105,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 105","currentTitle":"Engineer","documentId":205,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":106,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 106","currentTitle":"Engineer","documentId":206,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":107,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 107","currentTitle":"Engineer","documentId":207,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":108,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 108","currentTitle":"Engineer","documentId":208,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":109,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 109","currentTitle":"Engineer","documentId":209,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":110,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 110","currentTitle":"Engineer","documentId":210,"sourceVersion":"2026-11-20T00:00:00Z"},
+    {"id":111,"organizationId":"tenant-a","name":"Synthetic Ranked Candidate 111","currentTitle":"Engineer","documentId":211,"sourceVersion":"2026-11-20T00:00:00Z"}
+  ],
+  "cases": [
+    {
+      "id":"python-explicit-recall",
+      "organizationId":"tenant-a",
+      "query":"Find the best Python devs",
+      "retrievalQueries":["Find the best Python devs","Python development skills"],
+      "semanticResults":[
+        {"query":"Find the best Python devs","matches":[
+          {"candidateId":1,"documentId":11,"content":"Java and Spring backend engineering","similarity":0.79,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":2,"documentId":12,"content":"Built production services with Python","similarity":0.29,"sourceVersion":"2026-11-20T00:00:00Z"}
+        ]},
+        {"query":"Python development skills","matches":[
+          {"candidateId":3,"documentId":13,"content":"Python machine learning developer","similarity":0.31,"sourceVersion":"2026-11-20T00:00:00Z"}
+        ]}
+      ],
+      "explicitMatches":[
+        {"candidateId":4,"documentId":14,"content":"Python data platform","similarity":0.0,"sourceVersion":"2026-11-20T00:00:00Z"}
+      ],
+      "relevantCandidateIds":[2,3,4],
+      "requiredCandidateIds":[2,3,4],
+      "forbiddenCandidateIds":[],
+      "expectedCandidateOrder":[3,2,4,1],
+      "expectedMetrics":[
+        {"k":3,"recall":1.0,"precision":1.0},
+        {"k":5,"recall":1.0,"precision":0.75},
+        {"k":10,"recall":1.0,"precision":0.75}
+      ],
+      "expectedTruncated":false
+    },
+    {
+      "id":"tenant-and-current-document-boundary",
+      "organizationId":"tenant-a",
+      "query":"Find AI engineers",
+      "retrievalQueries":["Find AI engineers"],
+      "semanticResults":[
+        {"query":"Find AI engineers","matches":[
+          {"candidateId":90,"documentId":190,"content":"AI engineer from another tenant","similarity":0.99,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":9,"documentId":19,"content":"Stale AI engineering evidence","similarity":0.95,"sourceVersion":"2026-11-19T00:00:00Z"},
+          {"candidateId":7,"documentId":17,"content":"Current AI engineering evidence","similarity":0.80,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":8,"documentId":18,"content":"Current machine learning evidence","similarity":0.70,"sourceVersion":"2026-11-20T00:00:00Z"}
+        ]}
+      ],
+      "explicitMatches":[],
+      "relevantCandidateIds":[7,8],
+      "requiredCandidateIds":[7,8],
+      "forbiddenCandidateIds":[9,90],
+      "expectedCandidateOrder":[7,8],
+      "expectedMetrics":[
+        {"k":3,"recall":1.0,"precision":1.0},
+        {"k":5,"recall":1.0,"precision":1.0},
+        {"k":10,"recall":1.0,"precision":1.0}
+      ],
+      "expectedTruncated":false
+    },
+    {
+      "id":"bounded-top-ten",
+      "organizationId":"tenant-a",
+      "query":"Find platform engineers",
+      "retrievalQueries":["Find platform engineers"],
+      "semanticResults":[
+        {"query":"Find platform engineers","matches":[
+          {"candidateId":100,"documentId":200,"content":"Platform engineering evidence 100","similarity":0.90,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":101,"documentId":201,"content":"Platform engineering evidence 101","similarity":0.89,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":102,"documentId":202,"content":"Platform engineering evidence 102","similarity":0.88,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":103,"documentId":203,"content":"Platform engineering evidence 103","similarity":0.87,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":104,"documentId":204,"content":"Platform engineering evidence 104","similarity":0.86,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":105,"documentId":205,"content":"Platform engineering evidence 105","similarity":0.85,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":106,"documentId":206,"content":"Platform engineering evidence 106","similarity":0.84,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":107,"documentId":207,"content":"Platform engineering evidence 107","similarity":0.83,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":108,"documentId":208,"content":"Platform engineering evidence 108","similarity":0.82,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":109,"documentId":209,"content":"Platform engineering evidence 109","similarity":0.81,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":110,"documentId":210,"content":"Platform engineering evidence 110","similarity":0.80,"sourceVersion":"2026-11-20T00:00:00Z"},
+          {"candidateId":111,"documentId":211,"content":"Platform engineering evidence 111","similarity":0.79,"sourceVersion":"2026-11-20T00:00:00Z"}
+        ]}
+      ],
+      "explicitMatches":[],
+      "relevantCandidateIds":[100,101,102,103,104,105,106,107,108,109,110,111],
+      "requiredCandidateIds":[100,101,102,103,104,105,106,107,108,109],
+      "forbiddenCandidateIds":[],
+      "expectedCandidateOrder":[100,101,102,103,104,105,106,107,108,109],
+      "expectedMetrics":[
+        {"k":3,"recall":0.25,"precision":1.0},
+        {"k":5,"recall":0.4166666667,"precision":1.0},
+        {"k":10,"recall":0.8333333333,"precision":1.0}
+      ],
+      "expectedTruncated":true
+    }
+  ]
+}

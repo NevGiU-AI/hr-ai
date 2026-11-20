@@ -585,7 +585,9 @@ Organization-wide candidate discovery also has a versioned synthetic determinist
 required candidates, zero forbidden candidates, current-document/tenant reauthorization, stable ordering, and the
 ten-card truncation contract. It exercises the real application ranking service with mocked external search and
 repository boundaries, requires no provider key, and changes no runtime ranking policy. Provider-backed embedding and
-normalizer measurement remains a separate opt-in evaluation slice.
+normalizer measurement is implemented as a separate opt-in evaluation slice with synthetic EN/FR/PT queries, real
+OpenAI embeddings, reviewed recall/precision floors, a cross-organization decoy, and privacy-safe latency output. Its
+live test must be explicitly enabled and does not add deployment environment variables.
 
 The browser behavior-driven development (BDD) layer uses Cucumber-JVM, JUnit Platform, PicoContainer, and Playwright for
 Java in a separate Maven project. It covers persisted CV-chat conversation resume, owner isolation, historical

@@ -1,0 +1,123 @@
+{
+  "version": "1.0.0",
+  "description": "Synthetic multilingual organization-discovery documents and reviewed provider metric gates with no real candidate data.",
+  "documents": [
+    {
+      "id": "provider-python-backend",
+      "organizationId": "tenant-a",
+      "candidateId": 201,
+      "candidateName": "Synthetic Python Backend Engineer",
+      "currentTitle": "Backend Engineer",
+      "documentId": 301,
+      "sourceVersion": "2026-11-20T00:00:00Z",
+      "text": "Backend software engineer with professional experience building production web APIs using Python, Django, FastAPI, PostgreSQL, pytest, and Docker. Designed REST services and maintained Python backend systems."
+    },
+    {
+      "id": "provider-python-ml",
+      "organizationId": "tenant-a",
+      "candidateId": 202,
+      "candidateName": "Synthetic Machine Learning Engineer",
+      "currentTitle": "Machine Learning Engineer",
+      "documentId": 302,
+      "sourceVersion": "2026-11-20T00:00:00Z",
+      "text": "Machine learning engineer using Python, PyTorch, scikit-learn, pandas, and data pipelines. Trained models and deployed machine learning inference services."
+    },
+    {
+      "id": "provider-java-backend",
+      "organizationId": "tenant-a",
+      "candidateId": 203,
+      "candidateName": "Synthetic Java Backend Engineer",
+      "currentTitle": "Java Engineer",
+      "documentId": 303,
+      "sourceVersion": "2026-11-20T00:00:00Z",
+      "text": "Java backend engineer building enterprise services with Java 21, Spring Boot, Maven, JUnit, and PostgreSQL. Designed REST APIs and maintained Spring applications."
+    },
+    {
+      "id": "provider-python-ai",
+      "organizationId": "tenant-a",
+      "candidateId": 204,
+      "candidateName": "Synthetic AI Engineer",
+      "currentTitle": "AI Engineer",
+      "documentId": 304,
+      "sourceVersion": "2026-11-20T00:00:00Z",
+      "text": "AI engineer building retrieval augmented generation services with Python, LangChain, vector databases, Hugging Face models, and evaluation pipelines."
+    },
+    {
+      "id": "provider-project-manager",
+      "organizationId": "tenant-a",
+      "candidateId": 205,
+      "candidateName": "Synthetic Project Manager",
+      "currentTitle": "Project Manager",
+      "documentId": 305,
+      "sourceVersion": "2026-11-20T00:00:00Z",
+      "text": "Project manager coordinating delivery schedules, budgets, stakeholder communication, and operational planning for construction programs."
+    },
+    {
+      "id": "provider-cross-tenant-python",
+      "organizationId": "tenant-b",
+      "candidateId": 290,
+      "candidateName": "Synthetic Cross Tenant Python Decoy",
+      "currentTitle": "Principal Python Engineer",
+      "documentId": 390,
+      "sourceVersion": "2026-11-20T00:00:00Z",
+      "text": "Principal Python developer with extensive Django, FastAPI, machine learning, artificial intelligence, and cloud platform experience."
+    }
+  ],
+  "cases": [
+    {
+      "id": "en-python-discovery",
+      "language": "en",
+      "query": "Find the strongest Python developers in this organization",
+      "organizationId": "tenant-a",
+      "relevantCandidateIds": [201, 202, 204],
+      "requiredCandidateIds": [201, 202, 204],
+      "forbiddenCandidateIds": [290],
+      "minimumRecallAt5": 1.0,
+      "minimumPrecisionAt5": 0.6
+    },
+    {
+      "id": "fr-python-discovery",
+      "language": "fr",
+      "query": "Trouve les meilleurs développeurs Python de cette organisation",
+      "organizationId": "tenant-a",
+      "relevantCandidateIds": [201, 202, 204],
+      "requiredCandidateIds": [201, 202, 204],
+      "forbiddenCandidateIds": [290],
+      "minimumRecallAt5": 1.0,
+      "minimumPrecisionAt5": 0.6
+    },
+    {
+      "id": "pt-python-discovery",
+      "language": "pt",
+      "query": "Encontre os melhores programadores Python desta organização",
+      "organizationId": "tenant-a",
+      "relevantCandidateIds": [201, 202, 204],
+      "requiredCandidateIds": [201, 202, 204],
+      "forbiddenCandidateIds": [290],
+      "minimumRecallAt5": 1.0,
+      "minimumPrecisionAt5": 0.6
+    },
+    {
+      "id": "en-ai-ml-discovery",
+      "language": "en",
+      "query": "Find AI and machine learning engineers",
+      "organizationId": "tenant-a",
+      "relevantCandidateIds": [202, 204],
+      "requiredCandidateIds": [202, 204],
+      "forbiddenCandidateIds": [290],
+      "minimumRecallAt5": 1.0,
+      "minimumPrecisionAt5": 0.5
+    },
+    {
+      "id": "en-java-spring-discovery",
+      "language": "en",
+      "query": "Find Java 21 and Spring Boot developers",
+      "organizationId": "tenant-a",
+      "relevantCandidateIds": [203],
+      "requiredCandidateIds": [203],
+      "forbiddenCandidateIds": [290],
+      "minimumRecallAt5": 1.0,
+      "minimumPrecisionAt5": 0.25
+    }
+  ]
+}

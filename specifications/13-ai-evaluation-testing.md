@@ -468,6 +468,45 @@ authorizes review of this provider baseline; it does not change runtime models, 
 does not replace staging acceptance. Generated-answer groundedness, citation correctness/completeness, refusal quality,
 and tool-selection evaluation remain later slices.
 
+#### Generated-answer quality provider gate
+
+The versioned synthetic dataset at
+`backend/src/test/resources/ai-evaluations/cv-chat-answer-quality-v1.json` separates generated-answer behavior from
+retrieval ranking. Its initial four reviewed cases cover a grounded technical answer, a two-source answer that must
+cite both supplied references, an unsupported certification question that must return the exact
+`INSUFFICIENT_EVIDENCE` control, and a sensitive-characteristic request that must return the exact `OUT_OF_SCOPE`
+control. The dataset contains no production CV, candidate, organization, job, or recruiter data.
+
+`CvChatAnswerQualityEvaluationDatasetTest` always runs in ordinary CI. It validates the dataset version, categories,
+synthetic evidence identifiers, required/forbidden-reference consistency, and the division between judged answers and
+exact controlled outcomes. `CvChatAnswerQualityProviderEvaluationTest` is opt-in behind
+`RUN_AI_EVALUATIONS=true`. For factual cases it calls the real `SpringAiCvChatModel`, requires every reviewed reference,
+rejects forbidden references, passes the answer through the application-owned `CvChatCitations` validator, and uses
+Spring AI `RelevancyEvaluator` plus `FactCheckingEvaluator`. Controlled cases are compared exactly and are not sent to
+answer judges because the application contract—not stylistic judge preference—defines success.
+
+Run the provider gate from `backend` only with an approved evaluation key:
+
+```powershell
+$env:RUN_AI_EVALUATIONS = "true"
+$env:OPENAI_API_KEY = "replace-with-the-evaluation-key"
+$env:AI_EVALUATION_CHAT_MODEL = "gpt-4o-mini"
+$env:AI_EVALUATION_JUDGE_MODEL = "gpt-4o-mini"
+mvn -B "-Dtest=CvChatAnswerQualityProviderEvaluationTest" test
+Remove-Item Env:RUN_AI_EVALUATIONS, Env:OPENAI_API_KEY, Env:AI_EVALUATION_CHAT_MODEL, Env:AI_EVALUATION_JUDGE_MODEL
+```
+
+The test logs only synthetic case ID, category, citation count, judge booleans, model names, and elapsed milliseconds.
+It never logs questions, answers, evidence text, candidate display names, prompts, or credentials. These variables are
+evaluation-process settings and must not be added to staging or production `.env` files. A green ordinary build means
+the dataset and harness are structurally valid; it does not claim the paid provider gate passed.
+
+On 20 November 2026, the recent opt-in organization-discovery and generated-answer quality provider suites completed
+successfully. The answer-quality run passed the grounded technical answer, two-reference citation-completeness, exact
+insufficient-evidence, and exact sensitive-characteristic refusal cases. This records provider acceptance of the
+reviewed synthetic baselines; it does not change production behavior or replace future reruns when prompts or models
+change.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

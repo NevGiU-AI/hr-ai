@@ -344,8 +344,9 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
    tenant-scoped persistence, and the first dedicated message-style page consumes that scope. Next complete its
    language-first ambiguity confirmation and editable scope; then broaden deterministic/provider-backed evaluation
    and localize controlled outcomes. Organization-wide discovery now has deterministic and opt-in provider recall and
-   precision harnesses, and the next test-only answer-quality gate covers grounding, required-reference citation
-   completeness, and exact refusal/insufficient-evidence controls. The conversation index, historical citation
+   precision harnesses. The separate test-only answer-quality gate covers grounding, required-reference citation
+   completeness, and exact refusal/insufficient-evidence controls; the recent opt-in discovery and answer-quality
+   provider suites passed on 20 November 2026. The conversation index, historical citation
    metadata, and asynchronous citation
    navigation passed staging and production acceptance through release `v0.39.0`. The implemented picker-
    and language-first flows

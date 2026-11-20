@@ -501,6 +501,12 @@ It never logs questions, answers, evidence text, candidate display names, prompt
 evaluation-process settings and must not be added to staging or production `.env` files. A green ordinary build means
 the dataset and harness are structurally valid; it does not claim the paid provider gate passed.
 
+On 20 November 2026, the recent opt-in organization-discovery and generated-answer quality provider suites completed
+successfully. The answer-quality run passed the grounded technical answer, two-reference citation-completeness, exact
+insufficient-evidence, and exact sensitive-characteristic refusal cases. This records provider acceptance of the
+reviewed synthetic baselines; it does not change production behavior or replace future reruns when prompts or models
+change.
+
 ### Spring AI tools
 
 - Test correct tool selection, structured arguments, trusted context injection, authorization, result minimization, and final-answer faithfulness to tool results.

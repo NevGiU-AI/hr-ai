@@ -20,12 +20,14 @@ class CvChatConversationTurnService {
     private final CvChatConversationService conversations;
     private final CvChatService singleCandidateChat;
     private final CvChatComparisonService comparisonChat;
+    private final CvChatDocumentToolService documentTools;
 
     CvChatConversationTurnService(CvChatConversationService conversations, CvChatService singleCandidateChat,
-                                  CvChatComparisonService comparisonChat) {
+                                  CvChatComparisonService comparisonChat, CvChatDocumentToolService documentTools) {
         this.conversations = conversations;
         this.singleCandidateChat = singleCandidateChat;
         this.comparisonChat = comparisonChat;
+        this.documentTools = documentTools;
     }
 
     CvChatConversationTurnResponse ask(String conversationId, String message, AppUserPrincipal actor) {
@@ -35,7 +37,17 @@ class CvChatConversationTurnService {
 
         String answer;
         List<CvChatResponse.Citation> citations;
-        if (scope.candidateIds().size() == 1) {
+        // Document processing state is application data, not evidence extracted from the CV. Route it before the
+        // semantic RAG services so questions about OCR, import, reprocessing, or warnings do not search CV chunks and
+        // cannot produce fabricated CV citations. Optional.empty() means this is a normal professional question and
+        // preserves the existing single-candidate/comparison paths unchanged.
+        var operationalAnswer = documentTools.answer(normalizedMessage, scope.candidateIds());
+        if (operationalAnswer.isPresent()) {
+            answer = operationalAnswer.get();
+            // CV citations prove claims from extracted candidate evidence. An operational status answer instead comes
+            // from tenant-authorized database fields, so attaching a CV citation would misrepresent its provenance.
+            citations = List.of();
+        } else if (scope.candidateIds().size() == 1) {
             CvChatResponse response = singleCandidateChat.ask(scope.candidateIds().getFirst(), normalizedMessage,
                     scope.jobId(), scope.organizationId(), history);
             answer = response.answer();
@@ -47,6 +59,8 @@ class CvChatConversationTurnService {
             citations = response.citations();
         }
 
+        // Persist operational and grounded turns through the same optimistic version check. A concurrent candidate or
+        // job-scope edit therefore cannot attach either kind of answer to an obsolete authorization snapshot.
         CvChatConversationResponse updated = conversations.appendTurn(
                 conversationId, scope.version(), normalizedMessage, answer, citations, actor);
         return new CvChatConversationTurnResponse(updated.id(), updated.version(), answer, updated.candidates(),

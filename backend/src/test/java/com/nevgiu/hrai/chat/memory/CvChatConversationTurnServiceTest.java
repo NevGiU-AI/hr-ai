@@ -22,8 +22,9 @@ class CvChatConversationTurnServiceTest {
     private final CvChatConversationService conversations = mock(CvChatConversationService.class);
     private final CvChatService singleCandidateChat = mock(CvChatService.class);
     private final CvChatComparisonService comparisonChat = mock(CvChatComparisonService.class);
+    private final CvChatDocumentToolService documentTools = mock(CvChatDocumentToolService.class);
     private final CvChatConversationTurnService service = new CvChatConversationTurnService(
-            conversations, singleCandidateChat, comparisonChat);
+            conversations, singleCandidateChat, comparisonChat, documentTools);
 
     @Test
     void reusesAuthorizedSingleCandidateScopeAndPersistsTheCompletedTurn() {
@@ -33,6 +34,7 @@ class CvChatConversationTurnServiceTest {
                 new CvChatConversationService.ExecutionScope(
                         "conversation-1", 3, "tenant-a", List.of(7L), null));
         when(conversations.history("conversation-1")).thenReturn(history);
+        when(documentTools.answer("What about Spring?", List.of(7L))).thenReturn(java.util.Optional.empty());
         when(singleCandidateChat.ask(7L, "What about Spring?", null, "tenant-a", history)).thenReturn(
                 new CvChatResponse("Spring is listed [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-1", 3, "What about Spring?",
@@ -55,6 +57,8 @@ class CvChatConversationTurnServiceTest {
                 new CvChatConversationService.ExecutionScope(
                         "conversation-2", 5, "tenant-a", List.of(7L, 8L), 12L));
         when(conversations.history("conversation-2")).thenReturn(List.of());
+        when(documentTools.answer("Who better matches it?", List.of(7L, 8L)))
+                .thenReturn(java.util.Optional.empty());
         when(comparisonChat.compare(List.of(7L, 8L), "Who better matches it?", 12L, "tenant-a", List.of()))
                 .thenReturn(new CvChatComparisonResponse("Candidate 7 matches [CV-7] and 8 [CV-8].",
                         List.of(), List.of(citation(7L), citation(8L))));
@@ -77,6 +81,8 @@ class CvChatConversationTurnServiceTest {
                 new CvChatConversationService.ExecutionScope(
                         "conversation-3", 2, "tenant-a", List.of(7L), 12L));
         when(conversations.history("conversation-3")).thenReturn(List.of());
+        when(documentTools.answer("Is the candidate suitable?", List.of(7L)))
+                .thenReturn(java.util.Optional.empty());
         when(singleCandidateChat.ask(7L, "Is the candidate suitable?", 12L, "tenant-a", List.of()))
                 .thenReturn(new CvChatResponse("The candidate matches [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-3", 2, "Is the candidate suitable?",
@@ -87,6 +93,28 @@ class CvChatConversationTurnServiceTest {
 
         verify(singleCandidateChat).ask(7L, "Is the candidate suitable?", 12L, "tenant-a", List.of());
         verifyNoInteractions(comparisonChat);
+    }
+
+    @Test
+    void persistsOperationalToolAnswerWithoutRunningCvRetrieval() {
+        AppUserPrincipal actor = actor();
+        when(conversations.executionScope("conversation-4", actor)).thenReturn(
+                new CvChatConversationService.ExecutionScope(
+                        "conversation-4", 4, "tenant-a", List.of(7L), null));
+        when(conversations.history("conversation-4")).thenReturn(List.of());
+        when(documentTools.answer("Was this CV processed with OCR?", List.of(7L)))
+                .thenReturn(java.util.Optional.of(
+                        "CANDIDATE-7: Current document status is IMPORTED. Text extraction used OCR."));
+        when(conversations.appendTurn("conversation-4", 4, "Was this CV processed with OCR?",
+                "CANDIDATE-7: Current document status is IMPORTED. Text extraction used OCR.",
+                List.of(), actor)).thenReturn(conversationResponse(5));
+
+        CvChatConversationTurnResponse response = service.ask(
+                "conversation-4", "Was this CV processed with OCR?", actor);
+
+        assertThat(response.answer()).contains("Text extraction used OCR");
+        assertThat(response.citations()).isEmpty();
+        verifyNoInteractions(singleCandidateChat, comparisonChat);
     }
 
     private CvChatConversationResponse conversationResponse(long version) {

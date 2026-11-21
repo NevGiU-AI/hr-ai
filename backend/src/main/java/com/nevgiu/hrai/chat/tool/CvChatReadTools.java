@@ -55,6 +55,7 @@ public class CvChatReadTools {
     private final CvChatToolScope scope;
     private final CvChatToolDiscoveryState discoveryState;
     private final CvChatToolPlanningState planningState;
+    private final CvChatDocumentToolState documentToolState;
     private final CvChatOrganizationDiscoveryService organizationDiscovery;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
@@ -62,6 +63,7 @@ public class CvChatReadTools {
                            EvaluationHistoryService evaluationHistory,
                            CvChatToolExecutionGuard executionGuard, CvChatToolScope scope,
                            CvChatToolDiscoveryState discoveryState, CvChatToolPlanningState planningState,
+                           CvChatDocumentToolState documentToolState,
                            CvChatOrganizationDiscoveryService organizationDiscovery) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
@@ -72,6 +74,7 @@ public class CvChatReadTools {
         this.scope = scope;
         this.discoveryState = discoveryState;
         this.planningState = planningState;
+        this.documentToolState = documentToolState;
         this.organizationDiscovery = organizationDiscovery;
     }
 
@@ -186,7 +189,12 @@ public class CvChatReadTools {
         AppUserPrincipal actor = currentChatActor();
         scope.requireConfirmed(candidateId);
         CvDocument document = executionGuard.execute(() -> currentDocument(candidateId, actor.organizationId()));
-        return new DocumentStatusResult(candidateId, document == null ? null : documentStatus(document));
+        DocumentStatusResult result = new DocumentStatusResult(
+                candidateId, document == null ? null : documentStatus(document));
+        // Record only after the authorized repository read completes successfully. Failed, forbidden, or timed-out
+        // calls must not satisfy the conversational service's exact-execution postcondition.
+        documentToolState.record(result);
+        return result;
     }
 
     @Tool(name = "get_ingestion_warnings", description = "Return application-owned processing warning codes for "
@@ -196,7 +204,7 @@ public class CvChatReadTools {
             @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
         AppUserPrincipal actor = currentChatActor();
         scope.requireConfirmed(candidateId);
-        return executionGuard.execute(() -> {
+        IngestionWarningsResult result = executionGuard.execute(() -> {
             CvDocument document = currentDocument(candidateId, actor.organizationId());
             if (document == null) {
                 return new IngestionWarningsResult(candidateId, null,
@@ -217,6 +225,9 @@ public class CvChatReadTools {
             }
             return new IngestionWarningsResult(candidateId, document.getId(), warnings);
         });
+        // As with document status, the request-local record is written only after successful guarded execution.
+        documentToolState.record(result);
+        return result;
     }
 
     private CvDocument currentDocument(Long candidateId, String organizationId) {

@@ -191,6 +191,8 @@ public class CvChatReadTools {
         CvDocument document = executionGuard.execute(() -> currentDocument(candidateId, actor.organizationId()));
         DocumentStatusResult result = new DocumentStatusResult(
                 candidateId, document == null ? null : documentStatus(document));
+        // Record only after the authorized repository read completes successfully. Failed, forbidden, or timed-out
+        // calls must not satisfy the conversational service's exact-execution postcondition.
         documentToolState.record(result);
         return result;
     }
@@ -223,6 +225,7 @@ public class CvChatReadTools {
             }
             return new IngestionWarningsResult(candidateId, document.getId(), warnings);
         });
+        // As with document status, the request-local record is written only after successful guarded execution.
         documentToolState.record(result);
         return result;
     }

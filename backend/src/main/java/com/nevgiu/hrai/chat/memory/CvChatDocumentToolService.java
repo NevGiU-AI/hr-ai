@@ -37,20 +37,28 @@ class CvChatDocumentToolService {
     }
 
     Optional<String> answer(String message, List<Long> candidateIds) {
+        // Conversation scope has already been reauthorized from the database. Reinstall it in this request-local tool
+        // boundary because a model-generated tool argument is never authorization by itself.
         toolScope.confirm(candidateIds);
         CvChatDocumentToolOutcome outcome;
         try {
+            // Supply only the two reviewed operational callbacks. Candidate search, CV summaries, job requirements,
+            // and evaluation history are intentionally unavailable to this routing call.
             outcome = model.respond(message, candidateIds, toolRegistry.documentStatusCallbacks());
         } catch (RuntimeException failure) {
             LOGGER.warn("CV chat document-tool routing failed candidateCount={} failureType={}",
                     candidateIds.size(), failure.getClass().getSimpleName());
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV document status service is unavailable");
         }
+        // The model's structured kind describes its intended route, but it does not prove that callbacks ran. The
+        // request-local snapshot below records the real Java tool results and call counts independently.
         var snapshot = state.snapshot();
         if (outcome == null || outcome.kind() == null) {
             throw unavailable(candidateIds.size(), "MALFORMED_OUTCOME");
         }
         if (outcome.kind() == CvChatDocumentToolOutcome.Kind.NOT_APPLICABLE) {
+            // A model must not inspect operational data speculatively and then claim this is a normal RAG question.
+            // Such a mismatch is a postcondition failure instead of silently discarding an unauthorized extra read.
             if (!snapshot.statuses().isEmpty() || !snapshot.warnings().isEmpty()) {
                 throw unavailable(candidateIds.size(), "UNEXPECTED_TOOL_CALL");
             }
@@ -60,6 +68,8 @@ class CvChatDocumentToolService {
                 || outcome.kind() == CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS_AND_WARNINGS;
         boolean needsWarnings = outcome.kind() == CvChatDocumentToolOutcome.Kind.INGESTION_WARNINGS
                 || outcome.kind() == CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS_AND_WARNINGS;
+        // Validate results and counts rather than trusting the provider's outcome. This proves that every confirmed
+        // candidate was read exactly once by every required tool and that no unrequested tool category executed.
         if (!covers(snapshot.statuses(), snapshot.statusCalls(), candidateIds, needsStatus)
                 || !covers(snapshot.warnings(), snapshot.warningCalls(), candidateIds, needsWarnings)) {
             throw unavailable(candidateIds.size(), "INCOMPLETE_TOOL_CALLS");
@@ -71,6 +81,8 @@ class CvChatDocumentToolService {
 
     private boolean covers(Map<Long, ?> results, Map<Long, Integer> calls,
                            List<Long> candidateIds, boolean required) {
+        // Map values alone cannot detect duplicate calls because a later result replaces the earlier value. Separate
+        // counters retain that evidence and let this check reject retries or recursion even when IDs are identical.
         if (!required) return results.isEmpty() && calls.isEmpty();
         Set<Long> expected = Set.copyOf(candidateIds);
         return results.keySet().equals(expected) && calls.keySet().equals(expected)
@@ -79,6 +91,8 @@ class CvChatDocumentToolService {
 
     private String render(List<Long> candidateIds, CvChatDocumentToolState.Snapshot snapshot,
                           boolean includeStatus, boolean includeWarnings) {
+        // Never display provider-written presentation text or raw entity fields. Render the closed safe DTOs in the
+        // application-confirmed order so the response remains deterministic and auditable.
         return candidateIds.stream().map(candidateId -> {
             StringBuilder line = new StringBuilder("CANDIDATE-").append(candidateId).append(": ");
             if (includeStatus) appendStatus(line, snapshot.statuses().get(candidateId));
@@ -104,6 +118,8 @@ class CvChatDocumentToolService {
     }
 
     private void appendWarnings(StringBuilder answer, IngestionWarningsResult result) {
+        // Warning enums are application-owned disclosure categories. Raw ingestionError text is deliberately absent
+        // because it can contain parser/provider internals, filenames, or other unsafe diagnostic material.
         List<IngestionWarning> warnings = result.warnings();
         if (warnings.isEmpty()) {
             answer.append("No ingestion warnings are recorded.");

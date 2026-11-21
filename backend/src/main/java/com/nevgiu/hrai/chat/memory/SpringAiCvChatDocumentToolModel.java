@@ -38,13 +38,19 @@ class SpringAiCvChatDocumentToolModel implements CvChatDocumentToolModel {
     public CvChatDocumentToolOutcome respond(String message, List<Long> confirmedCandidateIds,
                                               List<ToolCallback> callbacks) {
         String response = chatClient.prompt()
+                // Confirmed IDs are trusted application state and therefore belong in the system message. Recruiter
+                // text stays in the lower-priority user message and cannot manufacture or replace scope.
                 .system(SYSTEM_PROMPT + "\n\nAPPLICATION-CONFIRMED SCOPE: candidate IDs "
                         + confirmedCandidateIds + ".")
                 .user("UNTRUSTED CURRENT RECRUITER MESSAGE:\n" + message
                         + "\n\nREQUIRED RESPONSE FORMAT:\n" + outputConverter.getFormat())
+                // Callback registration is local to this one model request; these tools are not globally available to
+                // unrelated ChatClient calls such as question policy, answer generation, or query normalization.
                 .tools(callbacks)
                 .options(OpenAiChatOptions.builder().temperature(0.0))
                 .call().content();
+        // Accept only the closed structured enum. Arbitrary prose or an unknown kind fails conversion and is mapped by
+        // the service to one controlled 502 without exposing the provider response.
         return outputConverter.convert(response);
     }
 }

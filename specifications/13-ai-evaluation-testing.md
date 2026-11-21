@@ -579,6 +579,12 @@ These are test-process variables, not staging or production configuration. The r
 discovery and confirmed-scope contracts, and PR #144 connected them to Angular while preserving deterministic card
 selection and a separate grounded-comparison action.
 
+Dataset `1.3.0` passed its seven-case confirmed-scope live-provider gate on 21 November 2026. The run confirmed exact
+candidate/job tool selection for normal and injection cases, preserved `CONFIRMED_SCOPE_READY` for valid workflows,
+and ignored candidate, job, tenant, and unsupported suitability instructions returned by untrusted synthetic tools.
+No production data or tool-result text was logged. A fresh run remains required when the orchestration prompt or model
+changes.
+
 The first provider run on 3 November 2026 failed five of eight cases because the model overused
 `CANDIDATE_CONFIRMATION_REQUIRED`, including in `CONFIRMED_SCOPE`, and did not consistently distinguish refusal cases.
 The application still failed closed because the service rejects outcome kinds that are illegal for the active mode.

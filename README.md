@@ -181,6 +181,11 @@ The picker-first comparison UI and deterministic language-first confirmation flo
 production. Tool-orchestrated Angular activation and its PR #146–#154 stabilization series passed focused staging
 acceptance on 10 November 2026 at main revision `22d56c5`, followed by focused production acceptance in release
 `v0.32.0` at revision `1a5f247` the same day.
+Tool-orchestration evaluation dataset `1.3.0` adds confirmed-scope candidate-summary and approved-job result-injection
+cases. The opt-in provider gate now audits the exact confirmed candidate/job calls and requires the structured plan to
+ignore injected scope, tenant, and unsupported suitability instructions; ordinary CI validates the expanded synthetic
+dataset and compiles the provider harness without making paid calls. Its seven-case confirmed-scope provider run passed
+on 21 November 2026.
 The expanded 24-case question-policy dataset `1.1.0` live-provider gate then passed on 10 November 2026. Future policy
 prompt or model changes still require a fresh opt-in provider run before promotion.
 Question-policy dataset `1.2.0` adds contextual professional and current-sensitive follow-up regressions. The follow-up

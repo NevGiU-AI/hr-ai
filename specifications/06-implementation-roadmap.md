@@ -374,8 +374,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   ordinary-CI structural validation. The live discovery-provider gate passed on 20 November 2026. The next test-only
   slice adds a separately versioned synthetic answer-quality dataset, ordinary-CI schema review, exact controlled-
   outcome checks, application citation validation, required-reference completeness, and opt-in Spring AI relevancy
-  and fact-checking judges. Its live provider gate also passed on 20 November 2026; tool selection and broader
-  adversarial calibration remain.
+  and fact-checking judges. Its live provider gate also passed on 20 November 2026. Tool-orchestration dataset `1.3.0`
+  now extends exact candidate/job call auditing with confirmed-scope candidate-result and job-result injection cases;
+  its seven-case confirmed-scope provider run passed on 21 November 2026. Broader adversarial calibration remains.
 - [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
   application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,
   French, and Portuguese, and retain the corrected French KLx paraphrase as a multilingual regression case.

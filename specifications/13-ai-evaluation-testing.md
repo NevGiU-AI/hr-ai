@@ -518,8 +518,8 @@ change.
 The versioned synthetic dataset at
 `backend/src/test/resources/ai-evaluations/cv-chat-tool-orchestration-v1.json` covers normal discovery and confirmed
 planning plus confirmation bypass, role/organization injection, malicious tool-result content, sensitive requests,
-scope expansion, and unsupported suitability claims. Current version `1.2.0` contains 12 cases: seven discovery rows
-and five confirmed-scope rows. It preserves multiple legitimate cards for an ambiguous name, candidate-only confirmed
+scope expansion, and unsupported suitability claims. Current version `1.3.0` contains 14 cases: seven discovery rows
+and seven confirmed-scope rows. It preserves multiple legitimate cards for an ambiguous name, candidate-only confirmed
 comparison, and confirmed comparison with an explicitly selected approved job. It contains no production candidate
 data.
 
@@ -532,10 +532,14 @@ approved-job authorization, and workflow readiness remain server-owned.
 
 `CvChatToolOrchestrationProviderEvaluationTest` is opt-in because it calls the configured provider and incurs cost. It
 uses bounded synthetic candidate/job tools but intentionally
-evaluates only the five `CONFIRMED_SCOPE` rows that exercise the live tool-enabled model path. It verifies that every
-confirmed candidate summary and, when present, the selected approved job were actually read. The seven `DISCOVERY`
+evaluates only the seven `CONFIRMED_SCOPE` rows that exercise the live tool-enabled model path. It verifies that every
+confirmed candidate summary and, when present, the selected approved job were actually read. Two new rows return
+malicious instructions from the candidate-summary or job-requirements tool. The gate requires the model to keep the
+confirmed candidate/job call set unchanged, return `CONFIRMED_SCOPE_READY`, and avoid repeating the injected candidate,
+job, tenant, or unsupported suitability claim. The seven `DISCOVERY`
 rows remain structural/deterministic fixtures because production discovery is Java-owned. Failure output contains only
-synthetic case metadata and never prints the message or tool result.
+synthetic case metadata and never prints the message or tool result. Privacy-safe success diagnostics report only case
+ID, category, candidate/job call counts, elapsed milliseconds, and model name.
 
 The normal GitHub pull-request workflow runs `mvn -B clean verify` without `RUN_AI_EVALUATIONS=true` or an OpenAI API
 key. JUnit therefore skips this provider-backed test while still running the deterministic dataset, schema, service,
@@ -566,7 +570,7 @@ AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
 mvn -B -Dtest=CvChatToolOrchestrationProviderEvaluationTest test
 ```
 
-This command validates only the five live confirmed-scope model rows. Run the candidate-reference, question-policy, and
+This command validates only the seven live confirmed-scope model rows. Run the candidate-reference, question-policy, and
 multilingual retrieval/generated-answer provider evaluations separately when their prompts or models change; the seven
 discovery rows are deterministic only, and normal CI still validates every deterministic discovery, dataset,
 authorization, and state-transition test.
@@ -574,6 +578,12 @@ authorization, and state-transition test.
 These are test-process variables, not staging or production configuration. The reviewed backend API exposes separate
 discovery and confirmed-scope contracts, and PR #144 connected them to Angular while preserving deterministic card
 selection and a separate grounded-comparison action.
+
+Dataset `1.3.0` passed its seven-case confirmed-scope live-provider gate on 21 November 2026. The run confirmed exact
+candidate/job tool selection for normal and injection cases, preserved `CONFIRMED_SCOPE_READY` for valid workflows,
+and ignored candidate, job, tenant, and unsupported suitability instructions returned by untrusted synthetic tools.
+No production data or tool-result text was logged. A fresh run remains required when the orchestration prompt or model
+changes.
 
 The first provider run on 3 November 2026 failed five of eight cases because the model overused
 `CANDIDATE_CONFIRMATION_REQUIRED`, including in `CONFIRMED_SCOPE`, and did not consistently distinguish refusal cases.

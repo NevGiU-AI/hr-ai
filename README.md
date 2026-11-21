@@ -343,36 +343,28 @@ staging and production acceptance in release `v0.14.0`. Candidate details and do
 and production acceptance on 21 October 2026. Correction/reprocessing passed staging and production acceptance on
 22 October 2026; encrypted paired backup acceptance remains incomplete. The next delivery sequence is:
 
-1. Complete the remaining CV-chat foundation. The bounded `get_evaluation_evidence`, `get_document_status`, and
-   `get_ingestion_warnings` read-tool foundations are implemented; connect each one only to a future answer path that
-   consumes its result. Recruiter-confirmed candidate IDs and the optional approved job now have owner- and
-   tenant-scoped persistence, and the first dedicated message-style page consumes that scope. Next complete its
-   language-first ambiguity confirmation and editable scope; then broaden deterministic/provider-backed evaluation
-   and localize controlled outcomes. Organization-wide discovery now has deterministic and opt-in provider recall and
-   precision harnesses. The separate test-only answer-quality gate covers grounding, required-reference citation
-   completeness, and exact refusal/insufficient-evidence controls; the recent opt-in discovery and answer-quality
-   provider suites passed on 20 November 2026. The conversation index, historical citation
-   metadata, and asynchronous citation
-   navigation passed staging and production acceptance through release `v0.39.0`. The implemented picker-
-   and language-first flows
-   already resolve candidate names or UI selections to verified tenant-scoped IDs, require explicit ambiguity
-   confirmation, and produce cited two-to-five-candidate comparisons with optional tenant-authorized approved-job
-   context.
-2. Add editable speech-to-text input, then optional text-to-speech playback.
-3. Build the final recruitment dashboard and drill-down workflows.
-4. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
+1. Complete the authoritative
+   [13-step pre-dashboard sequence](specifications/06-implementation-roadmap.md#ordered-pre-dashboard-completion-sequence):
+   connect document-status/warning tools, then evaluation-evidence tools; harden all user-visible tool paths; complete
+   the conversational page; add structured outcomes and EN/FR/PT localization; broaden AI evaluation and protected
+   browser BDD; establish privacy-safe performance/observability targets; add editable speech-to-text and optional
+   text-to-speech; evaluate speech; and record final staging/production acceptance. The bounded tool foundations,
+   persisted scope/timeline, picker- and language-first flows, organization-wide discovery, citations, deterministic
+   and provider-backed evaluation baselines, and production-gated BDD foundation are already implemented.
+2. Build the final recruitment dashboard and drill-down workflows only after that pre-dashboard exit gate passes.
+3. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
    transactions, integrations, and business rules.
-5. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
-6. Benchmark bounded concurrency and Java virtual threads in staging.
-7. Install and validate encrypted paired backup/restore in staging.
-8. Install and validate paired backup/restore in production after staging acceptance.
-9. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version
-    metadata after production backup/restore acceptance.
-10. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
-11. Move original files to private object storage.
-12. Consider horizontal or multi-host scaling.
-13. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
-14. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
+4. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
+5. Benchmark bounded concurrency and Java virtual threads in staging.
+6. Install and validate encrypted paired backup/restore in staging.
+7. Install and validate paired backup/restore in production after staging acceptance.
+8. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version
+   metadata after production backup/restore acceptance.
+9. Complete cross-cutting security, privacy, AI quality, performance, accessibility, and usability validation.
+10. Move original files to private object storage.
+11. Consider horizontal or multi-host scaling.
+12. Add Telegram/WhatsApp after web chat, speech controls, and documented APIs are stable.
+13. Evaluate optional image generation, then video generation, behind separate value and compliance gates.
 
 For the first dedicated-chat version, confirmed scope belongs to the application rather than the model. Flyway V7
 persists a generated conversation ID, owning user, organization, one-to-five explicitly confirmed candidate IDs, and

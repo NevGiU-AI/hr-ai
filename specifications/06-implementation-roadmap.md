@@ -377,14 +377,60 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   and fact-checking judges. Its live provider gate also passed on 20 November 2026. Tool-orchestration dataset `1.3.0`
   now extends exact candidate/job call auditing with confirmed-scope candidate-result and job-result injection cases;
   its seven-case confirmed-scope provider run passed on 21 November 2026. Broader adversarial calibration remains.
-- [ ] Immediately before the dashboard, add structured chat outcomes and explicit response-language metadata, localize
-  application-owned out-of-scope/insufficient-evidence messages and the Angular controlled-response labels for English,
-  French, and Portuguese, and retain the corrected French KLx paraphrase as a multilingual regression case.
-- [ ] Add push-to-talk speech input with a visible, editable transcript before submission.
-- [ ] Delete raw voice input after transcription by default and document any approved retention exception.
-- [ ] Add optional text-to-speech playback with pause, speed, accessibility, and privacy controls.
-- [ ] Measure transcription accuracy, speech latency, playback usage, and modality-specific cost.
-- [ ] Prohibit voice identification, accent or fluency ranking, emotion inference, personality inference, and candidate scoring from audio.
+
+### Ordered pre-dashboard completion sequence
+
+Complete the following slices in order. Each implementation slice requires deterministic tests, applicable opt-in
+provider evaluation, focused staging acceptance, the protected exact-revision browser BDD gate, production promotion,
+focused production checks, and recorded acceptance before the next dependent slice is treated as complete.
+
+1. **Connect document-processing tools to conversational chat.** Consume `get_document_status` and
+   `get_ingestion_warnings` for natural questions about import state, OCR, reprocessing, manual review, and processing
+   warnings. Require an application-confirmed candidate and authenticated tenant. Return structured operational facts,
+   not CV evidence, and never expose filenames, raw parser/provider errors, storage keys, hashes, or CV content.
+2. **Connect persisted evaluation evidence to conversational chat.** Consume `get_evaluation_evidence` for questions
+   about recent evaluation scores, approved-job context, timestamps, and current/stale state. Keep generated rationale
+   and personal data excluded, distinguish evaluation history from CV-source evidence, and never present scores as
+   objective truth or an autonomous hiring decision.
+3. **Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments, call-count and
+   recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation, prompt/tool-result injection,
+   conversation-memory isolation, deterministic postconditions, and provider-backed result faithfulness. Apply the
+   existing privacy-safe logging boundary to every new diagnostic.
+4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
+   picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
+   clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent
+   message timeline. The UI must not require recruiters to understand internal endpoint or tool phases.
+5. **Add structured chat outcomes.** Return explicit application-owned metadata for answer, insufficient evidence,
+   out-of-scope refusal, clarification, candidate confirmation, tool status, and provider unavailability. Angular must
+   render the structured outcome rather than infer state by comparing English message text. The `kind` field is an
+   application API contract, not a Spring AI convention.
+6. **Add response-language metadata and localization.** Preserve the recruiter question language and localize
+   application-owned controlled responses, errors, clarification labels, and Angular presentation for English, French,
+   and Portuguese. Retain the corrected French KLx paraphrase as a regression case.
+7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
+   multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
+   answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool
+   selection/faithfulness, repeated-run stability, latency, and cost. Keep paid provider gates separate from ordinary CI.
+8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
+   multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
+   controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging
+   BDD remains mandatory for production promotion.
+9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
+   retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
+   Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV
+   content, names, questions, prompts, or credentials, and never place them in metric labels.
+10. **Add editable speech-to-text.** Provide push-to-talk, visible recording state, cancellation/retry, microphone
+    permission and accessibility handling, and an editable transcript before submission. Delete raw audio after
+    transcription by default unless a separately approved retention exception is documented.
+11. **Add optional text-to-speech.** Provide explicit play, pause, stop, and speed controls with no automatic playback,
+    accessible interaction, privacy-safe handling, and graceful provider failure.
+12. **Evaluate speech and add BDD coverage.** Measure transcription accuracy, recruiter correction rate, transcription
+    and playback latency, failures, usage, and cost. Prohibit voice identification, accent/fluency ranking, emotion or
+    personality inference, protected-characteristic inference, and candidate scoring from audio.
+13. **Run final pre-dashboard acceptance.** Run complete backend/frontend suites, deterministic AI datasets, relevant
+    paid provider gates, protected staging BDD, focused staging checks, exact-revision production promotion, and focused
+    production checks. Record staging and production acceptance, environment/migration impact, final architecture, and
+    the updated roadmap before starting dashboard metric semantics or aggregate APIs.
 
 **Exit condition:** Authorized users can reliably find and compare candidates through typed or spoken queries, with editable transcripts, evidence-backed answers, and optional accessible playback.
 

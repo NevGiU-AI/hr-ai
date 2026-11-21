@@ -68,6 +68,7 @@ class CvChatReadToolRegistryTest {
                 mock(CvChatCandidateResolutionService.class), mock(CandidateRepository.class),
                 mock(CvDocumentRepository.class), mock(JobRepository.class), mock(EvaluationHistoryService.class),
                 mock(CvChatToolExecutionGuard.class), mock(CvChatToolScope.class), mock(CvChatToolDiscoveryState.class),
-                mock(CvChatToolPlanningState.class), mock(CvChatOrganizationDiscoveryService.class));
+                mock(CvChatToolPlanningState.class), new CvChatDocumentToolState(),
+                mock(CvChatOrganizationDiscoveryService.class));
     }
 }

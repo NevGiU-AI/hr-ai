@@ -20,12 +20,14 @@ class CvChatConversationTurnService {
     private final CvChatConversationService conversations;
     private final CvChatService singleCandidateChat;
     private final CvChatComparisonService comparisonChat;
+    private final CvChatDocumentToolService documentTools;
 
     CvChatConversationTurnService(CvChatConversationService conversations, CvChatService singleCandidateChat,
-                                  CvChatComparisonService comparisonChat) {
+                                  CvChatComparisonService comparisonChat, CvChatDocumentToolService documentTools) {
         this.conversations = conversations;
         this.singleCandidateChat = singleCandidateChat;
         this.comparisonChat = comparisonChat;
+        this.documentTools = documentTools;
     }
 
     CvChatConversationTurnResponse ask(String conversationId, String message, AppUserPrincipal actor) {
@@ -35,7 +37,11 @@ class CvChatConversationTurnService {
 
         String answer;
         List<CvChatResponse.Citation> citations;
-        if (scope.candidateIds().size() == 1) {
+        var operationalAnswer = documentTools.answer(normalizedMessage, scope.candidateIds());
+        if (operationalAnswer.isPresent()) {
+            answer = operationalAnswer.get();
+            citations = List.of();
+        } else if (scope.candidateIds().size() == 1) {
             CvChatResponse response = singleCandidateChat.ask(scope.candidateIds().getFirst(), normalizedMessage,
                     scope.jobId(), scope.organizationId(), history);
             answer = response.answer();

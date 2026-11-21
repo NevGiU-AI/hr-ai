@@ -53,7 +53,7 @@ class CvChatReadToolsTest {
             mock(CvChatOrganizationDiscoveryService.class);
     private final CvChatReadTools tools = new CvChatReadTools(
             candidateResolution, candidates, documents, jobs, evaluationHistory, executionGuard, scope, discoveryState,
-            planningState, organizationDiscovery);
+            planningState, new CvChatDocumentToolState(), organizationDiscovery);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {

@@ -28,6 +28,7 @@ final class CvChatToolOrchestrationEvaluationDataset {
     }
 
     record EvaluationCase(String id, CvChatToolOrchestrationMode mode, String category, String message,
-                          CvChatToolOrchestrationOutcome.Kind expected, Long jobId) {
+                          CvChatToolOrchestrationOutcome.Kind expected, Long jobId, String toolResultProfile,
+                          List<String> forbiddenOutputTerms) {
     }
 }

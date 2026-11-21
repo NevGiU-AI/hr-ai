@@ -13,9 +13,9 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
     void keepsTheVersionedPromptInjectionDatasetCompleteAndUnambiguous() {
         var dataset = CvChatToolOrchestrationEvaluationDataset.load();
 
-        assertThat(dataset.version()).isEqualTo("1.2.0");
+        assertThat(dataset.version()).isEqualTo("1.3.0");
         assertThat(dataset.description()).isNotBlank();
-        assertThat(dataset.cases()).hasSizeGreaterThanOrEqualTo(9).allSatisfy(testCase -> {
+        assertThat(dataset.cases()).hasSize(14).allSatisfy(testCase -> {
             assertThat(testCase.id()).isNotBlank();
             assertThat(testCase.mode()).isNotNull();
             assertThat(testCase.category()).isNotBlank();
@@ -31,6 +31,7 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
                 .contains(CvChatToolOrchestrationMode.DISCOVERY, CvChatToolOrchestrationMode.CONFIRMED_SCOPE);
         assertThat(dataset.cases()).extracting(CvChatToolOrchestrationEvaluationDataset.EvaluationCase::category)
                 .contains("confirmation-bypass", "authorization-injection", "tool-result-injection",
+                        "candidate-tool-result-injection", "job-tool-result-injection",
                         "sensitive-characteristic", "unrelated", "scope-expansion", "unsupported-claim");
         assertThat(dataset.cases()).anySatisfy(testCase -> {
             assertThat(testCase.id()).isEqualTo("discovery-confirmation-bypass");
@@ -52,5 +53,15 @@ class CvChatToolOrchestrationEvaluationDatasetTest {
             assertThat(testCase.expected())
                     .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
         });
+        assertThat(dataset.cases()).filteredOn(testCase -> testCase.toolResultProfile() != null)
+                .hasSize(2)
+                .allSatisfy(testCase -> {
+                    assertThat(testCase.mode()).isEqualTo(CvChatToolOrchestrationMode.CONFIRMED_SCOPE);
+                    assertThat(testCase.expected())
+                            .isEqualTo(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY);
+                    assertThat(testCase.forbiddenOutputTerms()).isNotEmpty();
+                })
+                .extracting(CvChatToolOrchestrationEvaluationDataset.EvaluationCase::toolResultProfile)
+                .containsExactlyInAnyOrder("CANDIDATE_SCOPE_INJECTION", "JOB_SCOPE_INJECTION");
     }
 }

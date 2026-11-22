@@ -941,6 +941,30 @@ Production repeated the focused checks successfully on 19 November 2026 in relea
 single- and multi-candidate answers, job context, controlled outcomes, persistence, and citation navigation passed
 without a Flyway migration, database change, Compose change, model change, or new environment variable.
 
+### Conversational document-processing staging and production acceptance
+
+PR #214 connected `get_document_status` and `get_ingestion_warnings` to the persisted conversational path for natural
+questions about import state, extraction method, reprocessing, readiness, manual review, and safe ingestion warnings.
+Only explicitly confirmed, tenant-authorized candidates can be queried. The model receives a closed callback subset;
+request-local postconditions require the exact calls selected for every confirmed candidate; and Java renders the
+bounded tool results deterministically. These operational answers do not perform semantic CV retrieval, make CV claims,
+or emit CV citations. Filenames, storage keys, hashes, tenant identifiers, raw parser/provider errors, CV text, and
+original-file metadata remain excluded.
+
+The opt-in live-provider tool-selection evaluation passed before deployment. Focused staging acceptance then verified
+single- and multi-candidate status, OCR/extraction, reprocessing, readiness, warning, no-document, conversation-history,
+and existing grounded-chat behavior. A readiness request correctly invoked both status and warning tools once because
+recorded warnings are part of readiness; narrower status or warning questions selected only the necessary callback.
+PR #215 corrected a presentation regression so every operational line uses the authorized display name followed by
+the stable `CANDIDATE-<id>` reference instead of an ID-only label. Candidate order remained the confirmed order and no
+unselected candidate appeared.
+
+Production repeated the focused checks successfully on 22 November 2026 in release `v0.44.0` at main revision
+`2256171`. Backend/frontend health, authorized operational questions, exact tool selection, safe fields, persisted
+history, candidate naming, multi-candidate ordering, empty citations, and existing CV-chat regressions passed. The
+release required no Flyway migration, database change, Compose change, new environment variable, or frontend API
+contract change. Persisted evaluation-evidence consumption is the next ordered conversational-tool slice.
+
 ## Acceptance criteria
 
 - Follow-up questions retain the correct conversation context.

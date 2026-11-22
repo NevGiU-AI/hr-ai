@@ -147,6 +147,22 @@ real-callback tests cover scope rejection, tenant filtering, newest-document sel
 schemas, raw-error omission, and the closed callback allow list. No environment, Flyway, database, Compose, or frontend
 change is required.
 
+PR #214 connected this callback subset to the persisted conversational endpoint without registering it in discovery,
+confirmed-scope preflight, or ordinary RAG. A dedicated operational router classifies only supported processing-status
+questions, Spring AI may call only the two document callbacks, request-scoped state audits the exact per-candidate
+calls, and Java renders the minimized records deterministically. A readiness question may require both status and
+warning calls; narrower OCR/status or warning questions require only the applicable tool. `NOT_APPLICABLE` continues
+through the existing grounded CV-evidence path. Operational responses are persisted in the conversation timeline and
+have an empty citation list because document-processing metadata is not CV-source evidence.
+
+The opt-in provider evaluation and focused staging checks passed on 22 November 2026. PR #215 then corrected the
+operational presentation so authorized candidate display names are paired with stable `CANDIDATE-<id>` references;
+names never come from model arguments or tool output. The protected exact-revision BDD gate and focused production
+checks passed in release `v0.44.0` at revision `2256171`. Single- and multi-candidate operational questions, exact tool
+selection, confirmed-order rendering, warning-free and warning-bearing readiness, history reload, privacy-safe output,
+and existing grounded chat all passed without a schema, environment, Compose, or frontend contract change. The next
+ordered tool slice is user-visible consumption of `get_evaluation_evidence`.
+
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job
 is looked up inside the authenticated organization before its ID enters the immutable request scope. The callback is

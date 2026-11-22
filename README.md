@@ -345,12 +345,14 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 
 1. Complete the authoritative
    [13-step pre-dashboard sequence](specifications/06-implementation-roadmap.md#ordered-pre-dashboard-completion-sequence):
-   connect document-status/warning tools, then evaluation-evidence tools; harden all user-visible tool paths; complete
+   connect evaluation-evidence tools; harden all user-visible tool paths; complete
    the conversational page; add structured outcomes and EN/FR/PT localization; broaden AI evaluation and protected
    browser BDD; establish privacy-safe performance/observability targets; add editable speech-to-text and optional
    text-to-speech; evaluate speech; and record final staging/production acceptance. The bounded tool foundations,
    persisted scope/timeline, picker- and language-first flows, organization-wide discovery, citations, deterministic
-   and provider-backed evaluation baselines, and production-gated BDD foundation are already implemented.
+   and provider-backed evaluation baselines, production-gated BDD foundation, and conversational document-status and
+   ingestion-warning tools are already implemented. The latter passed staging and production acceptance in release
+   `v0.44.0` at revision `2256171`.
 2. Build the final recruitment dashboard and drill-down workflows only after that pre-dashboard exit gate passes.
 3. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
    transactions, integrations, and business rules.

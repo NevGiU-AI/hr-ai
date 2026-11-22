@@ -22,8 +22,8 @@ import java.util.function.Supplier;
 public class CvChatToolExecutionGuard {
     // Discovery supports up to five explicitly referenced candidates, so one request must permit five bounded
     // searches. Calls beyond that reviewed product limit are rejected before more work reaches repositories.
-    // Confirmed planning may read five candidate summaries plus one explicitly selected approved job.
-    private static final int MAX_CALLS_PER_REQUEST = 6;
+    // A document-processing question may legitimately call both reviewed tools for five confirmed candidates.
+    private static final int MAX_CALLS_PER_REQUEST = 10;
     // Organization-wide evidence discovery includes one bounded provider normalization call and up to two pgvector
     // searches. Keep its latency budget separate so lightweight repository tools retain the executor's 3-second cap.
     private static final Duration SEMANTIC_DISCOVERY_TIMEOUT = Duration.ofSeconds(20);

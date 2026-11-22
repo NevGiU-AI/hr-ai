@@ -21,13 +21,11 @@ class CvChatToolExecutionGuardTest {
                 .thenAnswer(invocation -> invocation.<java.util.function.Supplier<Integer>>getArgument(0).get());
         CvChatToolExecutionGuard guard = new CvChatToolExecutionGuard(executor);
 
-        assertThat(guard.execute(() -> 1)).isEqualTo(1);
-        assertThat(guard.execute(() -> 2)).isEqualTo(2);
-        assertThat(guard.execute(() -> 3)).isEqualTo(3);
-        assertThat(guard.execute(() -> 4)).isEqualTo(4);
-        assertThat(guard.execute(() -> 5)).isEqualTo(5);
-        assertThat(guard.execute(() -> 6)).isEqualTo(6);
-        assertThatThrownBy(() -> guard.execute(() -> 7))
+        for (int call = 1; call <= 10; call++) {
+            int expected = call;
+            assertThat(guard.execute(() -> expected)).isEqualTo(expected);
+        }
+        assertThatThrownBy(() -> guard.execute(() -> 11))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV chat tool call limit exceeded");
     }

@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.candidate.CandidateIdentity;
 import com.nevgiu.hrai.candidate.CvExtractionMethod;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatException;
@@ -38,7 +39,7 @@ class CvChatDocumentToolServiceTest {
         when(model.respond(eq("Does the candidate know Java?"), eq(List.of(7L)), anyList()))
                 .thenReturn(new CvChatDocumentToolOutcome(CvChatDocumentToolOutcome.Kind.NOT_APPLICABLE));
 
-        Optional<String> answer = service.answer("Does the candidate know Java?", List.of(7L));
+        Optional<String> answer = service.answer("Does the candidate know Java?", candidates(7L, "Ada"));
 
         assertThat(answer).isEmpty();
         verify(scope).confirm(List.of(7L));
@@ -57,10 +58,11 @@ class CvChatDocumentToolServiceTest {
                     CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS_AND_WARNINGS);
         }).when(model).respond(eq("Is this CV ready and are there warnings?"), eq(List.of(7L)), anyList());
 
-        String answer = service.answer("Is this CV ready and are there warnings?", List.of(7L)).orElseThrow();
+        String answer = service.answer("Is this CV ready and are there warnings?",
+                candidates(7L, "  Ada   Lovelace  ")).orElseThrow();
 
         assertThat(answer)
-                .contains("CANDIDATE-7", "NEEDS_REVIEW", "OCR", "Last reprocessed at",
+                .contains("Ada Lovelace (CANDIDATE-7)", "NEEDS_REVIEW", "OCR", "Last reprocessed at",
                         "MANUAL_REVIEW_REQUIRED")
                 .doesNotContain("filename", "storage", "raw");
     }
@@ -73,8 +75,30 @@ class CvChatDocumentToolServiceTest {
             return new CvChatDocumentToolOutcome(CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS);
         }).when(model).respond(eq("Are these CVs imported?"), eq(List.of(7L, 8L)), anyList());
 
-        assertThatThrownBy(() -> service.answer("Are these CVs imported?", List.of(7L, 8L)))
+        assertThatThrownBy(() -> service.answer("Are these CVs imported?",
+                List.of(new CandidateIdentity(7L, "Ada", null), new CandidateIdentity(8L, "Grace", null))))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV document status service is unavailable");
+    }
+
+    @Test
+    void preservesConfirmedOrderAndNamesEveryCandidate() {
+        when(registry.documentStatusCallbacks()).thenReturn(List.of());
+        doAnswer(invocation -> {
+            state.record(new DocumentStatusResult(8L, null));
+            state.record(new DocumentStatusResult(7L, null));
+            return new CvChatDocumentToolOutcome(CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS);
+        }).when(model).respond(eq("Are these CVs imported?"), eq(List.of(8L, 7L)), anyList());
+
+        String answer = service.answer("Are these CVs imported?", List.of(
+                new CandidateIdentity(8L, "Grace Hopper", null),
+                new CandidateIdentity(7L, "Ada Lovelace", null))).orElseThrow();
+
+        assertThat(answer).startsWith("Grace Hopper (CANDIDATE-8):")
+                .contains("\nAda Lovelace (CANDIDATE-7):");
+    }
+
+    private List<CandidateIdentity> candidates(Long id, String name) {
+        return List.of(new CandidateIdentity(id, name, null));
     }
 }

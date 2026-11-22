@@ -41,7 +41,7 @@ class CvChatConversationTurnService {
         // semantic RAG services so questions about OCR, import, reprocessing, or warnings do not search CV chunks and
         // cannot produce fabricated CV citations. Optional.empty() means this is a normal professional question and
         // preserves the existing single-candidate/comparison paths unchanged.
-        var operationalAnswer = documentTools.answer(normalizedMessage, scope.candidateIds());
+        var operationalAnswer = documentTools.answer(normalizedMessage, scope.candidates());
         if (operationalAnswer.isPresent()) {
             answer = operationalAnswer.get();
             // CV citations prove claims from extracted candidate evidence. An operational status answer instead comes

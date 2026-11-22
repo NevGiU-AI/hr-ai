@@ -115,12 +115,9 @@ content, so bounding its length would not make it appropriate tool context. Comp
 the planned persistence of prompts, model configuration, weights, source-document/text fingerprints, and metric-level
 evidence references.
 
-The registry exposes this operation through an explicit `evaluationEvidenceCallbacks()` subset. It is deliberately not
-part of the current confirmed-scope preflight: that preflight validates that the provider can read confirmed candidate
-summaries and an optional confirmed job, then discards the provider-written response before the separate grounded
-comparison runs. Registering evaluation history there would add database reads, provider context, and tool calls
-without changing the user-visible comparison. A future evaluation-aware conversational answer path must opt into this
-dedicated subset and consume its minimized result explicitly.
+The registry exposes this operation through an explicit `evaluationEvidenceCallbacks()` subset and through the closed
+three-tool conversational operational subset. It remains deliberately absent from confirmed-scope preflight: that
+preflight validates candidate/job reads, discards provider prose, and must not perform unrelated history reads.
 
 Focused staging acceptance completed on 10 November 2026 at main revision `5455b32` after PR #157. The deployed
 backend remained healthy; a same-tenant candidate with persisted evaluations returned bounded history with job IDs,
@@ -129,7 +126,8 @@ retained the generic `404` boundary; and existing single- and multi-candidate ch
 callback tests additionally cover the five-row bound and truncation probe, confirmed-scope enforcement, tenant
 consistency across candidate/job/evaluation records, privacy-minimized projection, and omission of generated rationale.
 This is acceptance of the read-tool foundation and its supporting domain contract only. The current chat path does not
-register or consume this callback subset, so user-visible evaluation-aware chat has not yet been accepted. No Flyway,
+register or consume this callback subset in that accepted release, so user-visible evaluation-aware chat was not part
+of that acceptance. No Flyway,
 Compose, frontend, or runtime environment-variable change was required. Production repeated the focused backend
 health, tenant-boundary, persisted-history, current/stale-state, missing/cross-tenant, and existing-chat regression
 checks successfully on 10 November 2026. The production result has the same boundary: it validates the deployed tool
@@ -162,6 +160,24 @@ checks passed in release `v0.44.0` at revision `2256171`. Single- and multi-cand
 selection, confirmed-order rendering, warning-free and warning-bearing readiness, history reload, privacy-safe output,
 and existing grounded chat all passed without a schema, environment, Compose, or frontend contract change. The next
 ordered tool slice is user-visible consumption of `get_evaluation_evidence`.
+
+The next implementation now connects `get_evaluation_evidence` to persisted conversation turns by extending the same
+operational router used for document status. This avoids two sequential model classifiers on ordinary CV questions.
+The router returns one closed kind: document status, ingestion warnings, both document categories, evaluation history,
+or `NOT_APPLICABLE`. Only `get_document_status`, `get_ingestion_warnings`, and `get_evaluation_evidence` are registered;
+candidate discovery, CV summaries, and job tools remain unavailable. Evaluation selection requires exactly one
+successful callback for every confirmed candidate and no document callback. A request-local evaluation state records
+actual results and counts so missing, duplicate, mixed-category, or out-of-scope calls fail before rendering.
+
+Java renders up to five newest persisted rows in confirmed candidate order. It names candidates using authorized
+conversation scope, identifies the evaluation and job, labels rows `CURRENT` or `STALE`, includes creation and optional
+invalidation timestamps, and prints each persisted score with its scale. Generated rationale, personal/contact data,
+CV text, prompts, model/provider settings, tenant/storage/hash data, and unbounded history remain absent. The response
+has no CV citations because metric-level source references are not persisted; it explicitly describes scores as
+AI-assisted decision-support context for human review, not objective truth or an autonomous hiring decision. No-history
+is an explicit safe result. The turn uses the existing optimistic persistence boundary, so a concurrent scope edit
+cannot attach history to obsolete authorization. The complete deterministic backend suite and the expanded opt-in
+live-provider operational-tool selection gate pass. Staging, protected BDD, and production acceptance remain pending.
 
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job

@@ -39,6 +39,10 @@ class CvChatReadToolRegistryTest {
         assertThat(registry.documentStatusCallbacks())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactlyInAnyOrder("get_document_status", "get_ingestion_warnings");
+        assertThat(registry.conversationalOperationalCallbacks())
+                .extracting(callback -> callback.getToolDefinition().name())
+                .containsExactlyInAnyOrder("get_evaluation_evidence", "get_document_status",
+                        "get_ingestion_warnings");
         assertThat(registry.organizationDiscoveryCallbacks())
                 .extracting(callback -> callback.getToolDefinition().name())
                 .containsExactly("search_candidates_by_evidence");
@@ -68,7 +72,7 @@ class CvChatReadToolRegistryTest {
                 mock(CvChatCandidateResolutionService.class), mock(CandidateRepository.class),
                 mock(CvDocumentRepository.class), mock(JobRepository.class), mock(EvaluationHistoryService.class),
                 mock(CvChatToolExecutionGuard.class), mock(CvChatToolScope.class), mock(CvChatToolDiscoveryState.class),
-                mock(CvChatToolPlanningState.class), new CvChatDocumentToolState(),
+                mock(CvChatToolPlanningState.class), new CvChatDocumentToolState(), new CvChatEvaluationToolState(),
                 mock(CvChatOrganizationDiscoveryService.class));
     }
 }

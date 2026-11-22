@@ -56,6 +56,7 @@ public class CvChatReadTools {
     private final CvChatToolDiscoveryState discoveryState;
     private final CvChatToolPlanningState planningState;
     private final CvChatDocumentToolState documentToolState;
+    private final CvChatEvaluationToolState evaluationToolState;
     private final CvChatOrganizationDiscoveryService organizationDiscovery;
 
     public CvChatReadTools(CvChatCandidateResolutionService candidateResolution, CandidateRepository candidates,
@@ -63,7 +64,7 @@ public class CvChatReadTools {
                            EvaluationHistoryService evaluationHistory,
                            CvChatToolExecutionGuard executionGuard, CvChatToolScope scope,
                            CvChatToolDiscoveryState discoveryState, CvChatToolPlanningState planningState,
-                           CvChatDocumentToolState documentToolState,
+                           CvChatDocumentToolState documentToolState, CvChatEvaluationToolState evaluationToolState,
                            CvChatOrganizationDiscoveryService organizationDiscovery) {
         this.candidateResolution = candidateResolution;
         this.candidates = candidates;
@@ -75,6 +76,7 @@ public class CvChatReadTools {
         this.discoveryState = discoveryState;
         this.planningState = planningState;
         this.documentToolState = documentToolState;
+        this.evaluationToolState = evaluationToolState;
         this.organizationDiscovery = organizationDiscovery;
     }
 
@@ -178,7 +180,11 @@ public class CvChatReadTools {
                 .limit(MAX_EVALUATION_RESULTS)
                 .map(this::evaluationEvidence)
                 .toList();
-        return new EvaluationEvidenceResult(candidateId, boundedHistory, truncated);
+        EvaluationEvidenceResult result = new EvaluationEvidenceResult(candidateId, boundedHistory, truncated);
+        // Record only a successfully authorized and completed read. The conversational service uses this request-local
+        // proof to reject missing, duplicate, or out-of-scope provider tool calls before rendering any history.
+        evaluationToolState.record(result);
+        return result;
     }
 
     @Tool(name = "get_document_status", description = "Return minimized processing state for the newest CV document "

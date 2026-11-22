@@ -36,6 +36,8 @@ public class CvChatReadToolRegistry {
     private static final Set<String> EVALUATION_EVIDENCE_TOOL_NAMES = Set.of("get_evaluation_evidence");
     private static final Set<String> DOCUMENT_STATUS_TOOL_NAMES = Set.of(
             "get_document_status", "get_ingestion_warnings");
+    private static final Set<String> CONVERSATIONAL_OPERATIONAL_TOOL_NAMES = Set.of(
+            "get_evaluation_evidence", "get_document_status", "get_ingestion_warnings");
     private final List<ToolCallback> callbacks;
 
     public CvChatReadToolRegistry(CvChatReadTools tools) {
@@ -90,6 +92,12 @@ public class CvChatReadToolRegistry {
     public List<ToolCallback> documentStatusCallbacks() {
         // Keep operational state out of the current confirmed-scope preflight, which discards provider output.
         return matching(callback -> DOCUMENT_STATUS_TOOL_NAMES.contains(callback.getToolDefinition().name()));
+    }
+
+    /** One conversational routing call may choose one reviewed operational category without a second model call. */
+    public List<ToolCallback> conversationalOperationalCallbacks() {
+        return matching(callback -> CONVERSATIONAL_OPERATIONAL_TOOL_NAMES.contains(
+                callback.getToolDefinition().name()));
     }
 
     /** Exposes only tenant-wide professional discovery to a future model-directed discovery phase. */

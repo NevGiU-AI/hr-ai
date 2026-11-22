@@ -273,12 +273,16 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   covers the deployed foundation and supporting contract, not user-visible evaluation-aware answers. Production
   repeated the focused deployment-health, tenant-isolation, persisted-history, current/stale-state, and existing-chat
   regression checks successfully on 10 November 2026; no environment, schema, migration, Compose, or frontend change
-  was required. The foundational `get_document_status` and `get_ingestion_warnings` tools now expose the newest
+  was required. The foundational `get_document_status` and `get_ingestion_warnings` tools expose the newest
   confirmed candidate document's minimized processing state and application-owned warning codes through a dedicated
   callback subset. They repeat tenant authorization and omit raw errors, filenames, CV text, tenant/storage/hash data,
-  and original-file metadata. The current comparison preflight does not register them because it discards tool output.
-  Dashboard tools, user-visible evaluation/document-status integration, and complete evaluation reproducibility/
-  evidence persistence remain pending.
+  and original-file metadata. PR #214 connected them to the persisted conversational path through a dedicated
+  operational router, exact per-candidate tool-call postconditions, and deterministic safe rendering that bypasses
+  semantic CV retrieval and returns no CV citations. PR #215 corrected the presentation to use each authorized display
+  name together with its stable `CANDIDATE-<id>` reference. The opt-in provider evaluation, focused staging checks,
+  protected BDD gate, and focused production checks passed on 22 November 2026 in release `v0.44.0` at revision
+  `2256171`; no schema, environment, Compose, or frontend contract change was required. User-visible evaluation
+  evidence, dashboard tools, and complete evaluation reproducibility/evidence persistence remain pending.
 - [x] Inject authenticated user and organization context outside model-controlled tool arguments for the implemented
   read-tool/orchestration slice; repeat this invariant for every future tool.
 - [~] Enforce tool-call count, recursion, time, payload, result, concurrency, and provider limits. The current read-tool
@@ -384,10 +388,12 @@ Complete the following slices in order. Each implementation slice requires deter
 provider evaluation, focused staging acceptance, the protected exact-revision browser BDD gate, production promotion,
 focused production checks, and recorded acceptance before the next dependent slice is treated as complete.
 
-1. **Connect document-processing tools to conversational chat.** Consume `get_document_status` and
+1. **[Completed] Connect document-processing tools to conversational chat.** Consume `get_document_status` and
    `get_ingestion_warnings` for natural questions about import state, OCR, reprocessing, manual review, and processing
    warnings. Require an application-confirmed candidate and authenticated tenant. Return structured operational facts,
-   not CV evidence, and never expose filenames, raw parser/provider errors, storage keys, hashes, or CV content.
+   not CV evidence, and never expose filenames, raw parser/provider errors, storage keys, hashes, or CV content. PRs
+   #214 and #215 passed staging and production acceptance in release `v0.44.0` at revision `2256171` on 22 November
+   2026. Step 2 is now the active implementation slice.
 2. **Connect persisted evaluation evidence to conversational chat.** Consume `get_evaluation_evidence` for questions
    about recent evaluation scores, approved-job context, timestamps, and current/stale state. Keep generated rationale
    and personal data excluded, distinguish evaluation history from CV-source evidence, and never present scores as

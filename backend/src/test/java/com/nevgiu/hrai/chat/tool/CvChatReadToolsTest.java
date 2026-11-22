@@ -49,11 +49,12 @@ class CvChatReadToolsTest {
     private final CvChatToolScope scope = mock(CvChatToolScope.class);
     private final CvChatToolDiscoveryState discoveryState = mock(CvChatToolDiscoveryState.class);
     private final CvChatToolPlanningState planningState = mock(CvChatToolPlanningState.class);
+    private final CvChatEvaluationToolState evaluationToolState = new CvChatEvaluationToolState();
     private final CvChatOrganizationDiscoveryService organizationDiscovery =
             mock(CvChatOrganizationDiscoveryService.class);
     private final CvChatReadTools tools = new CvChatReadTools(
             candidateResolution, candidates, documents, jobs, evaluationHistory, executionGuard, scope, discoveryState,
-            planningState, new CvChatDocumentToolState(), organizationDiscovery);
+            planningState, new CvChatDocumentToolState(), evaluationToolState, organizationDiscovery);
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {

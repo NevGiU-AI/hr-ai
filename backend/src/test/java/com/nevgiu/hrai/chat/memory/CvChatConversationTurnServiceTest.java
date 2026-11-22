@@ -122,6 +122,29 @@ class CvChatConversationTurnServiceTest {
         verifyNoInteractions(singleCandidateChat, comparisonChat);
     }
 
+    @Test
+    void persistsEvaluationHistoryWithoutRunningDocumentOrCvRetrieval() {
+        AppUserPrincipal actor = actor();
+        when(conversations.executionScope("conversation-5", actor)).thenReturn(
+                new CvChatConversationService.ExecutionScope(
+                        "conversation-5", 1, "tenant-a", List.of(candidate(7L, "Ada Lovelace")), null));
+        when(conversations.history("conversation-5")).thenReturn(List.of());
+        when(documentTools.answer("What was the latest evaluation?",
+                List.of(candidate(7L, "Ada Lovelace"))))
+                .thenReturn(java.util.Optional.of("Ada Lovelace (CANDIDATE-7): Persisted AI-assisted evaluation "
+                        + "history: Evaluation 9 is CURRENT."));
+        when(conversations.appendTurn("conversation-5", 1, "What was the latest evaluation?",
+                "Ada Lovelace (CANDIDATE-7): Persisted AI-assisted evaluation history: Evaluation 9 is CURRENT.",
+                List.of(), actor)).thenReturn(conversationResponse(2));
+
+        CvChatConversationTurnResponse response = service.ask(
+                "conversation-5", "What was the latest evaluation?", actor);
+
+        assertThat(response.answer()).contains("Persisted AI-assisted evaluation history");
+        assertThat(response.citations()).isEmpty();
+        verifyNoInteractions(singleCandidateChat, comparisonChat);
+    }
+
     private CvChatConversationResponse conversationResponse(long version) {
         Instant now = Instant.parse("2026-11-11T22:00:00Z");
         return new CvChatConversationResponse("conversation-1", version,

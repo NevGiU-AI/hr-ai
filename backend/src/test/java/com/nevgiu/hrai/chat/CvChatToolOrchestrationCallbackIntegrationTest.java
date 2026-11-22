@@ -9,6 +9,7 @@ import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
 import com.nevgiu.hrai.chat.tool.CvChatReadTools;
 import com.nevgiu.hrai.chat.tool.CvChatDocumentToolState;
+import com.nevgiu.hrai.chat.tool.CvChatEvaluationToolState;
 import com.nevgiu.hrai.chat.tool.CvChatToolDiscoveryState;
 import com.nevgiu.hrai.chat.tool.CvChatToolExecutionGuard;
 import com.nevgiu.hrai.chat.tool.CvChatToolPlanningState;
@@ -74,6 +75,7 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
             CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class), candidates,
                     documents, jobs, mock(EvaluationHistoryService.class), executorFixture.guard(), scope,
                     new CvChatToolDiscoveryState(), planningState, new CvChatDocumentToolState(),
+                    new CvChatEvaluationToolState(),
                     mock(CvChatOrganizationDiscoveryService.class));
             CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
             CvChatToolOrchestrationModel callbackDispatchingModel = (message, mode, callbacks, candidateIds, jobId) -> {
@@ -121,7 +123,7 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
             CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
                     mock(CandidateRepository.class), mock(CvDocumentRepository.class), mock(JobRepository.class),
                     evaluationHistory, executorFixture.guard(), scope, new CvChatToolDiscoveryState(),
-                    new CvChatToolPlanningState(), new CvChatDocumentToolState(),
+                    new CvChatToolPlanningState(), new CvChatDocumentToolState(), new CvChatEvaluationToolState(),
                     mock(CvChatOrganizationDiscoveryService.class));
             CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
 
@@ -150,7 +152,7 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
             CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
                     mock(CandidateRepository.class), mock(CvDocumentRepository.class), mock(JobRepository.class),
                     evaluationHistory, executorFixture.guard(), scope, new CvChatToolDiscoveryState(),
-                    new CvChatToolPlanningState(), new CvChatDocumentToolState(),
+                    new CvChatToolPlanningState(), new CvChatDocumentToolState(), new CvChatEvaluationToolState(),
                     mock(CvChatOrganizationDiscoveryService.class));
             CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
             ToolCallback callback = callback(registry.evaluationEvidenceCallbacks(), "get_evaluation_evidence");
@@ -187,7 +189,7 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
             CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class), candidates,
                     documents, mock(JobRepository.class), mock(EvaluationHistoryService.class),
                     executorFixture.guard(), scope, new CvChatToolDiscoveryState(), new CvChatToolPlanningState(),
-                    new CvChatDocumentToolState(),
+                    new CvChatDocumentToolState(), new CvChatEvaluationToolState(),
                     mock(CvChatOrganizationDiscoveryService.class));
             CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
 

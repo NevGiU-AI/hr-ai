@@ -161,13 +161,22 @@ selection, confirmed-order rendering, warning-free and warning-bearing readiness
 and existing grounded chat all passed without a schema, environment, Compose, or frontend contract change. The next
 ordered tool slice is user-visible consumption of `get_evaluation_evidence`.
 
-The next implementation now connects `get_evaluation_evidence` to persisted conversation turns by extending the same
-operational router used for document status. This avoids two sequential model classifiers on ordinary CV questions.
-The router returns one closed kind: document status, ingestion warnings, both document categories, evaluation history,
-or `NOT_APPLICABLE`. Only `get_document_status`, `get_ingestion_warnings`, and `get_evaluation_evidence` are registered;
-candidate discovery, CV summaries, and job tools remain unavailable. Evaluation selection requires exactly one
-successful callback for every confirmed candidate and no document callback. A request-local evaluation state records
-actual results and counts so missing, duplicate, mixed-category, or out-of-scope calls fail before rendering.
+PR #217 connected `get_evaluation_evidence` to persisted conversation turns through the same operational path used for
+document status. Initial staging checks exposed why the language model must not own mandatory operational iteration:
+the same explicit evaluation question could be classified differently between runs, and a five-candidate OCR question
+could omit one or more required reads and fail the exact-call postcondition. The correction therefore classifies a
+narrow set of explicit document/evaluation phrases deterministically and invokes the existing reviewed `@Tool` methods
+once for every application-confirmed candidate in Java. Ambiguous, mixed-category, sensitive, or workflow-override
+language still follows the existing policy/provider path; ordinary professional questions still fall through to RAG.
+This preserves Spring AI tool schemas for model-selected ambiguous requests without making provider behavior an
+authorization, completeness, or availability dependency for explicit operational questions.
+
+Only `get_document_status`, `get_ingestion_warnings`, and `get_evaluation_evidence` are available to the operational
+path; candidate discovery, CV summaries, and job tools remain unavailable. Direct orchestration reuses those same tool
+methods rather than repositories, so confirmed scope, tenant and role authorization, execution budgets/timeouts,
+bounded results, and request-local call auditing still apply. Evaluation selection requires exactly one successful
+read for every confirmed candidate and no document read. Missing, duplicate, mixed-category, or out-of-scope calls
+still fail before rendering.
 
 Java renders up to five newest persisted rows in confirmed candidate order. It names candidates using authorized
 conversation scope, identifies the evaluation and job, labels rows `CURRENT` or `STALE`, includes creation and optional

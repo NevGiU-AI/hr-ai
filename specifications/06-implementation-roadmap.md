@@ -398,12 +398,14 @@ focused production checks, and recorded acceptance before the next dependent sli
    Consume `get_evaluation_evidence` for questions
    about recent evaluation scores, approved-job context, timestamps, and current/stale state. Keep generated rationale
    and personal data excluded, distinguish evaluation history from CV-source evidence, and never present scores as
-   objective truth or an autonomous hiring decision. The implementation extends the existing one-call operational
-   router rather than adding a second model classification to every chat turn. It installs only the three reviewed
-   document/evaluation callbacks, requires exactly one evaluation read per confirmed candidate when selected, records
-   successful callback results in request-local state, and renders the bounded persisted rows deterministically with
-   no CV citations. Deterministic backend coverage and the expanded live-provider operational-tool selection gate
-   pass; staging, protected BDD, and production acceptance remain before this step is complete.
+   objective truth or an autonomous hiring decision. The implementation installs only the three reviewed
+   document/evaluation tools, requires exactly one applicable read per confirmed candidate, records successful results
+   in request-local state, and renders bounded persisted rows deterministically with no CV citations. Initial staging
+   validation found provider variation on repeated explicit evaluation wording and incomplete iteration for a
+   five-candidate OCR request. The follow-up correction makes narrow explicit operational intent and per-candidate
+   iteration application-owned while retaining the provider route for ambiguous language and reusing the same guarded,
+   tenant-scoped `@Tool` methods. Deterministic backend coverage and the expanded live-provider operational-tool
+   selection gate pass; corrected staging, protected BDD, and production acceptance remain before this step is complete.
 3. **Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments, call-count and
    recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation, prompt/tool-result injection,
    conversation-memory isolation, deterministic postconditions, and provider-backed result faithfulness. Apply the

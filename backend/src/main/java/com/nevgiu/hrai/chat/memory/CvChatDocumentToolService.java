@@ -6,6 +6,7 @@ import com.nevgiu.hrai.chat.tool.CurrentDocumentStatus;
 import com.nevgiu.hrai.chat.tool.CvChatDocumentToolState;
 import com.nevgiu.hrai.chat.tool.CvChatEvaluationToolState;
 import com.nevgiu.hrai.chat.tool.CvChatReadToolRegistry;
+import com.nevgiu.hrai.chat.tool.CvChatReadTools;
 import com.nevgiu.hrai.chat.tool.CvChatToolScope;
 import com.nevgiu.hrai.chat.tool.DocumentStatusResult;
 import com.nevgiu.hrai.chat.tool.IngestionWarning;
@@ -30,15 +31,17 @@ class CvChatDocumentToolService {
     private static final Logger LOGGER = LoggerFactory.getLogger(CvChatDocumentToolService.class);
     private final CvChatToolScope toolScope;
     private final CvChatReadToolRegistry toolRegistry;
+    private final CvChatReadTools readTools;
     private final CvChatDocumentToolState state;
     private final CvChatEvaluationToolState evaluationState;
     private final CvChatDocumentToolModel model;
 
-    CvChatDocumentToolService(CvChatToolScope toolScope, CvChatReadToolRegistry toolRegistry,
+    CvChatDocumentToolService(CvChatToolScope toolScope, CvChatReadToolRegistry toolRegistry, CvChatReadTools readTools,
                               CvChatDocumentToolState state, CvChatEvaluationToolState evaluationState,
                               CvChatDocumentToolModel model) {
         this.toolScope = toolScope;
         this.toolRegistry = toolRegistry;
+        this.readTools = readTools;
         this.state = state;
         this.evaluationState = evaluationState;
         this.model = model;
@@ -51,10 +54,14 @@ class CvChatDocumentToolService {
         toolScope.confirm(candidateIds);
         CvChatDocumentToolOutcome outcome;
         try {
-            // One closed operational subset avoids sequential routing calls. Candidate search, CV summaries, and job
-            // requirements remain unavailable; the provider can choose only document state, warnings, or evaluation
-            // history for the already confirmed candidate IDs.
-            outcome = model.respond(message, candidateIds, toolRegistry.conversationalOperationalCallbacks());
+            CvChatOperationalIntent.Kind explicitIntent = CvChatOperationalIntent.classify(message);
+            if (explicitIntent == CvChatOperationalIntent.Kind.AMBIGUOUS) {
+                // Only genuinely ambiguous language reaches the provider. Explicit operational requests use the
+                // deterministic path below so mandatory per-candidate execution cannot vary by wording or model run.
+                outcome = model.respond(message, candidateIds, toolRegistry.conversationalOperationalCallbacks());
+            } else {
+                outcome = executeExplicit(explicitIntent, candidateIds);
+            }
         } catch (RuntimeException failure) {
             LOGGER.warn("CV chat document-tool routing failed candidateCount={} failureType={}",
                     candidateIds.size(), failure.getClass().getSimpleName());
@@ -93,6 +100,31 @@ class CvChatDocumentToolService {
                 evaluationSnapshot.results().size());
         if (needsEvaluations) return Optional.of(renderEvaluations(candidates, evaluationSnapshot));
         return Optional.of(render(candidates, snapshot, needsStatus, needsWarnings));
+    }
+
+    private CvChatDocumentToolOutcome executeExplicit(CvChatOperationalIntent.Kind intent, List<Long> candidateIds) {
+        // Reuse the same @Tool methods as Spring AI callbacks. They independently enforce confirmed scope, tenant and
+        // role authorization, guarded timeouts/call budgets, result bounds, and request-local execution evidence.
+        for (Long candidateId : candidateIds) {
+            if (intent == CvChatOperationalIntent.Kind.DOCUMENT_STATUS
+                    || intent == CvChatOperationalIntent.Kind.DOCUMENT_STATUS_AND_WARNINGS) {
+                readTools.getDocumentStatus(candidateId);
+            }
+            if (intent == CvChatOperationalIntent.Kind.INGESTION_WARNINGS
+                    || intent == CvChatOperationalIntent.Kind.DOCUMENT_STATUS_AND_WARNINGS) {
+                readTools.getIngestionWarnings(candidateId);
+            }
+            if (intent == CvChatOperationalIntent.Kind.EVALUATION_HISTORY) {
+                readTools.getEvaluationEvidence(candidateId);
+            }
+        }
+        return new CvChatDocumentToolOutcome(switch (intent) {
+            case DOCUMENT_STATUS -> CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS;
+            case INGESTION_WARNINGS -> CvChatDocumentToolOutcome.Kind.INGESTION_WARNINGS;
+            case DOCUMENT_STATUS_AND_WARNINGS -> CvChatDocumentToolOutcome.Kind.DOCUMENT_STATUS_AND_WARNINGS;
+            case EVALUATION_HISTORY -> CvChatDocumentToolOutcome.Kind.EVALUATION_HISTORY;
+            case AMBIGUOUS -> throw new IllegalStateException("Ambiguous intent cannot be executed deterministically");
+        });
     }
 
     private boolean covers(Map<Long, ?> results, Map<Long, Integer> calls,

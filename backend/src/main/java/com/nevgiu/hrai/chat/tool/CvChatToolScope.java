@@ -36,7 +36,7 @@ public class CvChatToolScope {
         }
         LinkedHashSet<Long> distinct = new LinkedHashSet<>(candidateIds);
         if (candidateIds.isEmpty() || candidateIds.size() > 5 || distinct.size() != candidateIds.size()
-                || distinct.contains(null)) {
+                || distinct.contains(null) || distinct.stream().anyMatch(id -> id <= 0)) {
             throw new CvChatException(HttpStatus.BAD_REQUEST, "Confirm between 1 and 5 distinct candidates");
         }
         Set<Long> requested = Set.copyOf(distinct);

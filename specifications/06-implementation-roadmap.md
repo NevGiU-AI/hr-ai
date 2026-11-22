@@ -411,10 +411,15 @@ focused production checks, and recorded acceptance before the next dependent sli
    history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
    workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
    environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
-3. **[Active] Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments,
+3. **[~ Active] Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments,
    call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
    prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
-   result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic.
+   result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic. The first hardening
+   slice adds an application-owned validator for all model-generated read-tool arguments: query text is normalized and
+   limited to 2–2,000 characters, record IDs must be positive, invalid confirmed candidate scopes are rejected, and
+   rejected values are never echoed. Direct unit tests and real Spring AI callback tests prove malformed arguments stop
+   before execution guards, repositories, embeddings, providers, or request-local result state. Concurrency limits,
+   broader adversarial calibration, provider-result faithfulness, and environment acceptance remain.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

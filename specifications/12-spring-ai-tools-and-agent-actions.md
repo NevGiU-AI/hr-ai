@@ -363,10 +363,16 @@ The main responsibilities are:
 - `CvChatReadToolRegistry` converts `@Tool` methods into Spring AI callbacks, verifies an exact closed allow list, and
   returns explicit callback subsets for confirmed candidates, confirmed candidates plus a job, and the foundational
   evaluation-history capability. The evaluation subset is not registered in the current comparison preflight.
-- `CvChatReadTools` implements the four model-facing read operations. Each operation independently authenticates,
-  enforces tenant and confirmed-record scope, delegates to deterministic services/repositories, and minimizes output.
+- `CvChatReadTools` implements the seven model-facing read operations. Each operation independently authenticates,
+  validates model-generated arguments, enforces tenant and confirmed-record scope, delegates to deterministic
+  services/repositories, and minimizes output.
   The evaluation operation queries through `EvaluationHistoryService`, caps history at five items, and omits generated
   rationale and metric-level evidence that is not safely available in the current persistence model.
+- `CvChatToolArguments` applies one privacy-safe argument boundary before guarded repository, embedding, or provider
+  work. Search text must contain 2 to 2,000 characters before normalization; missing or non-positive IDs and missing,
+  short, or oversized queries are rejected without echoing their content. Normalized whitespace is the only
+  transformation. This limit is independent of HTTP request validation because model-generated callback arguments do
+  not originate in the HTTP payload and may be larger or malformed even when the recruiter message was valid.
 - `CvChatToolDiscoveryState` records request-local search-call, distinct-success, and empty-result counts without
   exposing queries or candidate data. It is new for every HTTP request and cannot leak discovery state between users.
 - `CvChatToolDiscoveryDecision` converts authorized discovery facts into application-owned postconditions: at least
@@ -424,6 +430,8 @@ CVs, chat messages, OCR text, transcripts, and external messages are untrusted i
   keep the model prompt and provider evaluation as additional defenses rather than the primary boundary.
 - Search each named candidate separately. Never pass a complete multi-candidate recruiter sentence as one partial-name
   tool argument, and let the deterministic Angular card picker resolve one-to-many identity matches.
+- Validate every model-generated argument before consuming execution budget or reaching a repository, embedding model,
+  chat provider, or request-local postcondition state. Do not echo rejected values in exceptions or logs.
 - Limit tool-call count, recursion depth, result count, execution time, payload size, and returned fields.
 - Apply timeouts, circuit breakers, provider rate limits, bulkheads or semaphores, cancellation, and safe retry policies.
 - Prevent arbitrary queries, unrestricted exports, generic URLs, shell commands, code execution, and filesystem paths.

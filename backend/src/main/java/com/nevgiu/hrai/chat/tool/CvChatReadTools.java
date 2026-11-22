@@ -85,12 +85,13 @@ public class CvChatReadTools {
             + "never pass the full recruiter sentence or combine multiple names. Returns bounded minimal cards for "
             + "explicit recruiter selection; never select a candidate automatically when multiple cards are returned.")
     public CandidateSearchResult searchCandidates(
-            @ToolParam(description = "At least two characters from the candidate's name") String query) {
+            @ToolParam(description = "2 to 2000 characters from the candidate's name") String query) {
         // Resolve and authorize the principal on the HTTP request thread. Spring Security context is thread-local and
         // must not be looked up later inside the executor's virtual thread.
         AppUserPrincipal actor = currentChatActor();
+        String validatedQuery = CvChatToolArguments.requireBoundedQuery(query);
         CvChatCandidateSearchResponse response = executionGuard.execute(
-                () -> candidateResolution.search(query, actor.organizationId()));
+                () -> candidateResolution.search(validatedQuery, actor.organizationId()));
         List<CandidateCard> cards = response.candidates().stream().limit(MAX_SEARCH_RESULTS)
                 .map(candidate -> new CandidateCard(candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
@@ -98,7 +99,7 @@ public class CvChatReadTools {
         // fact. Record this authorized outcome so Java can prevent a later provider REFUSED result from hiding valid
         // cards—or prevent confirmation when one requested person was not found. This does not select any candidate.
         // Record counts only for deterministic postconditions; do not log or persist the query or returned cards.
-        discoveryState.record(query, cards.size());
+        discoveryState.record(validatedQuery, cards.size());
         return new CandidateSearchResult(cards,
                 response.truncated() || response.candidates().size() > MAX_SEARCH_RESULTS);
     }
@@ -108,10 +109,11 @@ public class CvChatReadTools {
             + "cards with evidence references for explicit recruiter confirmation. Never treats ranking as an "
             + "autonomous hiring decision and never searches another organization.")
     public CandidateEvidenceSearchResult searchCandidatesByEvidence(
-            @ToolParam(description = "Job-relevant skills, experience, education, or professional criteria") String query) {
+            @ToolParam(description = "2 to 2000 characters of job-relevant professional criteria") String query) {
         AppUserPrincipal actor = currentChatActor();
+        String validatedQuery = CvChatToolArguments.requireBoundedQuery(query);
         return executionGuard.executeSemanticDiscovery(
-                () -> organizationDiscovery.discover(query, actor.organizationId()));
+                () -> organizationDiscovery.discover(validatedQuery, actor.organizationId()));
     }
 
     @Tool(name = "get_candidate_summary", description = "Return a minimized, tenant-authorized summary for one "
@@ -122,21 +124,22 @@ public class CvChatReadTools {
         // Capture only the trusted tenant identifier before crossing the virtual-thread execution boundary. The model
         // supplies candidateId, but can never supply or replace actor.organizationId().
         AppUserPrincipal actor = currentChatActor();
+        Long validatedCandidateId = CvChatToolArguments.requirePositiveId(candidateId);
         // Prompt instructions are not an authorization boundary. Reject any model-supplied ID that was not explicitly
         // authorized and installed into this request's confirmed scope by the orchestrator.
-        scope.requireConfirmed(candidateId);
+        scope.requireConfirmed(validatedCandidateId);
         CandidateSummary summary = executionGuard.execute(() -> {
-            Candidate candidate = candidates.findByIdAndOrganizationId(candidateId, actor.organizationId())
+            Candidate candidate = candidates.findByIdAndOrganizationId(validatedCandidateId, actor.organizationId())
                     // Missing and cross-tenant IDs intentionally share one response to prevent tenant enumeration.
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
             CvDocument currentDocument = documents
-                    .findAllByCandidateIdAndOrganizationId(candidateId, actor.organizationId())
+                    .findAllByCandidateIdAndOrganizationId(validatedCandidateId, actor.organizationId())
                     .stream().findFirst().orElse(null);
             CurrentDocumentStatus documentStatus = currentDocument == null ? null : documentStatus(currentDocument);
             return new CandidateSummary(candidate.getId(), candidate.getName(), candidate.getCurrentTitle(),
                     candidate.getYearsExperience(), documentStatus);
         });
-        planningState.recordCandidateSummary(candidateId);
+        planningState.recordCandidateSummary(validatedCandidateId);
         return summary;
     }
 
@@ -146,18 +149,19 @@ public class CvChatReadTools {
     public JobRequirements getJobRequirements(
             @ToolParam(description = "Explicitly selected approved job database ID") Long jobId) {
         AppUserPrincipal actor = currentChatActor();
+        Long validatedJobId = CvChatToolArguments.requirePositiveId(jobId);
         // Tenant authorization alone is insufficient: require the application-owned human-confirmed job scope before
         // allowing a model-generated tool argument to reach the repository.
-        scope.requireConfirmedJob(jobId);
+        scope.requireConfirmedJob(validatedJobId);
         JobRequirements requirements = executionGuard.execute(() -> {
-            Job job = jobs.findByIdAndOrganizationId(jobId, actor.organizationId())
+            Job job = jobs.findByIdAndOrganizationId(validatedJobId, actor.organizationId())
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
             return new JobRequirements(job.getId(), bounded(job.getTitle()), bounded(job.getLevel()),
                     bounded(job.getSummary()), bounded(job.getResponsibilities()),
                     bounded(job.getRequiredQualifications()), bounded(job.getPreferredQualifications()),
                     bounded(job.getSoftSkills()));
         });
-        planningState.recordJobRequirements(jobId);
+        planningState.recordJobRequirements(validatedJobId);
         return requirements;
     }
 
@@ -169,18 +173,19 @@ public class CvChatReadTools {
     public EvaluationEvidenceResult getEvaluationEvidence(
             @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
         AppUserPrincipal actor = currentChatActor();
+        Long validatedCandidateId = CvChatToolArguments.requirePositiveId(candidateId);
         // Evaluation history is candidate data. Knowing an ID or receiving it from the model never authorizes access;
         // the application must first install that exact recruiter-confirmed ID in this request's scope.
-        scope.requireConfirmed(candidateId);
+        scope.requireConfirmed(validatedCandidateId);
         List<EvaluationEvidenceSnapshot> history = executionGuard.execute(() ->
                 evaluationHistory.findRecentEvidenceForCandidate(
-                        candidateId, actor.organizationId(), MAX_EVALUATION_RESULTS + 1));
+                        validatedCandidateId, actor.organizationId(), MAX_EVALUATION_RESULTS + 1));
         boolean truncated = history.size() > MAX_EVALUATION_RESULTS;
         List<EvaluationEvidenceItem> boundedHistory = history.stream()
                 .limit(MAX_EVALUATION_RESULTS)
                 .map(this::evaluationEvidence)
                 .toList();
-        EvaluationEvidenceResult result = new EvaluationEvidenceResult(candidateId, boundedHistory, truncated);
+        EvaluationEvidenceResult result = new EvaluationEvidenceResult(validatedCandidateId, boundedHistory, truncated);
         // Record only a successfully authorized and completed read. The conversational service uses this request-local
         // proof to reject missing, duplicate, or out-of-scope provider tool calls before rendering any history.
         evaluationToolState.record(result);
@@ -193,10 +198,12 @@ public class CvChatReadTools {
     public DocumentStatusResult getDocumentStatus(
             @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
         AppUserPrincipal actor = currentChatActor();
-        scope.requireConfirmed(candidateId);
-        CvDocument document = executionGuard.execute(() -> currentDocument(candidateId, actor.organizationId()));
+        Long validatedCandidateId = CvChatToolArguments.requirePositiveId(candidateId);
+        scope.requireConfirmed(validatedCandidateId);
+        CvDocument document = executionGuard.execute(
+                () -> currentDocument(validatedCandidateId, actor.organizationId()));
         DocumentStatusResult result = new DocumentStatusResult(
-                candidateId, document == null ? null : documentStatus(document));
+                validatedCandidateId, document == null ? null : documentStatus(document));
         // Record only after the authorized repository read completes successfully. Failed, forbidden, or timed-out
         // calls must not satisfy the conversational service's exact-execution postcondition.
         documentToolState.record(result);
@@ -209,11 +216,12 @@ public class CvChatReadTools {
     public IngestionWarningsResult getIngestionWarnings(
             @ToolParam(description = "Explicitly selected candidate database ID") Long candidateId) {
         AppUserPrincipal actor = currentChatActor();
-        scope.requireConfirmed(candidateId);
+        Long validatedCandidateId = CvChatToolArguments.requirePositiveId(candidateId);
+        scope.requireConfirmed(validatedCandidateId);
         IngestionWarningsResult result = executionGuard.execute(() -> {
-            CvDocument document = currentDocument(candidateId, actor.organizationId());
+            CvDocument document = currentDocument(validatedCandidateId, actor.organizationId());
             if (document == null) {
-                return new IngestionWarningsResult(candidateId, null,
+                return new IngestionWarningsResult(validatedCandidateId, null,
                         List.of(IngestionWarning.NO_DOCUMENT_AVAILABLE));
             }
             List<IngestionWarning> warnings = new ArrayList<>();
@@ -229,7 +237,7 @@ public class CvChatReadTools {
                     && warnings.isEmpty()) {
                 warnings.add(IngestionWarning.PROCESSING_WARNING_RECORDED);
             }
-            return new IngestionWarningsResult(candidateId, document.getId(), warnings);
+            return new IngestionWarningsResult(validatedCandidateId, document.getId(), warnings);
         });
         // As with document status, the request-local record is written only after successful guarded execution.
         documentToolState.record(result);

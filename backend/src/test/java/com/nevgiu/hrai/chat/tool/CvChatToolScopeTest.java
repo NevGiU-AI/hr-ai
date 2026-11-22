@@ -35,6 +35,10 @@ class CvChatToolScopeTest {
                 .isInstanceOf(CvChatException.class);
         assertThatThrownBy(() -> scope.confirm(java.util.Arrays.asList(7L, null)))
                 .isInstanceOf(CvChatException.class);
+        assertThatThrownBy(() -> scope.confirm(List.of(0L)))
+                .isInstanceOf(CvChatException.class);
+        assertThatThrownBy(() -> scope.confirm(List.of(-1L)))
+                .isInstanceOf(CvChatException.class);
         assertThatThrownBy(() -> scope.confirm(List.of(1L, 2L, 3L, 4L, 5L, 6L)))
                 .isInstanceOf(CvChatException.class);
     }

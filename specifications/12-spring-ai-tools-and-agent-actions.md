@@ -185,8 +185,17 @@ CV text, prompts, model/provider settings, tenant/storage/hash data, and unbound
 has no CV citations because metric-level source references are not persisted; it explicitly describes scores as
 AI-assisted decision-support context for human review, not objective truth or an autonomous hiring decision. No-history
 is an explicit safe result. The turn uses the existing optimistic persistence boundary, so a concurrent scope edit
-cannot attach history to obsolete authorization. The complete deterministic backend suite and the expanded opt-in
-live-provider operational-tool selection gate pass. Staging, protected BDD, and production acceptance remain pending.
+cannot attach history to obsolete authorization. The complete deterministic backend suite and expanded opt-in
+live-provider operational-tool selection gate passed before deployment.
+
+PR #218 passed corrected staging acceptance, the protected exact-revision browser BDD gate, and focused production
+acceptance in release `v0.45.0` at revision `415c210` on 22 November 2026. The accepted checks covered stable repeated
+wording, one- and five-candidate OCR/status reads, warnings and combined status/warning reads, persisted evaluation
+scores and job context, exact confirmed-order call coverage, explicit no-history results, professional-question RAG
+fallback, sensitive and workflow-override refusal, conversation reload, and existing grounded citation behavior. No
+`INCOMPLETE_TOOL_CALLS` regression occurred. No API, frontend, schema, Flyway, environment, Compose, or provider-
+configuration change was required. The evaluation-evidence conversational slice is complete; the next ordered slice
+hardens every user-visible tool path.
 
 The approved-job callback returns bounded title, level, summary, responsibility, qualification, and soft-skill fields.
 It deliberately excludes organization identifiers, salary, benefits, tone, and job-generation metadata. A selected job

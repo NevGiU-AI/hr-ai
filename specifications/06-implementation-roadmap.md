@@ -393,8 +393,8 @@ focused production checks, and recorded acceptance before the next dependent sli
    warnings. Require an application-confirmed candidate and authenticated tenant. Return structured operational facts,
    not CV evidence, and never expose filenames, raw parser/provider errors, storage keys, hashes, or CV content. PRs
    #214 and #215 passed staging and production acceptance in release `v0.44.0` at revision `2256171` on 22 November
-   2026. Step 2 is now the active implementation slice.
-2. **[Implemented; environment acceptance pending] Connect persisted evaluation evidence to conversational chat.**
+   2026.
+2. **[Completed] Connect persisted evaluation evidence to conversational chat.**
    Consume `get_evaluation_evidence` for questions
    about recent evaluation scores, approved-job context, timestamps, and current/stale state. Keep generated rationale
    and personal data excluded, distinguish evaluation history from CV-source evidence, and never present scores as
@@ -405,11 +405,16 @@ focused production checks, and recorded acceptance before the next dependent sli
    five-candidate OCR request. The follow-up correction makes narrow explicit operational intent and per-candidate
    iteration application-owned while retaining the provider route for ambiguous language and reusing the same guarded,
    tenant-scoped `@Tool` methods. Deterministic backend coverage and the expanded live-provider operational-tool
-   selection gate pass; corrected staging, protected BDD, and production acceptance remain before this step is complete.
-3. **Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments, call-count and
-   recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation, prompt/tool-result injection,
-   conversation-memory isolation, deterministic postconditions, and provider-backed result faithfulness. Apply the
-   existing privacy-safe logging boundary to every new diagnostic.
+   selection gate passed before deployment. PR #218 then passed corrected staging acceptance, the protected browser BDD
+   gate, and focused production acceptance in release `v0.45.0` at revision `415c210` on 22 November 2026. The accepted
+   checks covered repeatable one- and five-candidate OCR/status reads, warning-only and combined reads, evaluation
+   history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
+   workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
+   environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
+3. **[Active] Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments,
+   call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
+   prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
+   result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

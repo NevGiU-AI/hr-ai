@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.candidate.CandidateIdentity;
 import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.chat.tool.CurrentDocumentStatus;
 import com.nevgiu.hrai.chat.tool.CvChatDocumentToolState;
@@ -36,7 +37,8 @@ class CvChatDocumentToolService {
         this.model = model;
     }
 
-    Optional<String> answer(String message, List<Long> candidateIds) {
+    Optional<String> answer(String message, List<CandidateIdentity> candidates) {
+        List<Long> candidateIds = candidates.stream().map(CandidateIdentity::id).toList();
         // Conversation scope has already been reauthorized from the database. Reinstall it in this request-local tool
         // boundary because a model-generated tool argument is never authorization by itself.
         toolScope.confirm(candidateIds);
@@ -76,7 +78,7 @@ class CvChatDocumentToolService {
         }
         LOGGER.info("CV chat document tools completed candidateCount={} statusCalls={} warningCalls={}",
                 candidateIds.size(), snapshot.statuses().size(), snapshot.warnings().size());
-        return Optional.of(render(candidateIds, snapshot, needsStatus, needsWarnings));
+        return Optional.of(render(candidates, snapshot, needsStatus, needsWarnings));
     }
 
     private boolean covers(Map<Long, ?> results, Map<Long, Integer> calls,
@@ -89,17 +91,26 @@ class CvChatDocumentToolService {
                 && calls.values().stream().allMatch(count -> count == 1);
     }
 
-    private String render(List<Long> candidateIds, CvChatDocumentToolState.Snapshot snapshot,
+    private String render(List<CandidateIdentity> candidates, CvChatDocumentToolState.Snapshot snapshot,
                           boolean includeStatus, boolean includeWarnings) {
         // Never display provider-written presentation text or raw entity fields. Render the closed safe DTOs in the
         // application-confirmed order so the response remains deterministic and auditable.
-        return candidateIds.stream().map(candidateId -> {
-            StringBuilder line = new StringBuilder("CANDIDATE-").append(candidateId).append(": ");
+        return candidates.stream().map(candidate -> {
+            Long candidateId = candidate.id();
+            StringBuilder line = new StringBuilder(candidateLabel(candidate)).append(": ");
             if (includeStatus) appendStatus(line, snapshot.statuses().get(candidateId));
             if (includeStatus && includeWarnings) line.append(' ');
             if (includeWarnings) appendWarnings(line, snapshot.warnings().get(candidateId));
             return line.toString();
         }).collect(Collectors.joining("\n"));
+    }
+
+    /** Uses the same first-mention convention as grounded single- and multi-candidate answers. */
+    private String candidateLabel(CandidateIdentity candidate) {
+        String name = candidate.name() == null || candidate.name().isBlank()
+                ? "Candidate #" + candidate.id()
+                : candidate.name().replaceAll("\\s+", " ").trim();
+        return name + " (CANDIDATE-" + candidate.id() + ")";
     }
 
     private void appendStatus(StringBuilder answer, DocumentStatusResult result) {

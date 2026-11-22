@@ -1,6 +1,7 @@
 package com.nevgiu.hrai.chat.memory;
 
 import com.nevgiu.hrai.candidate.Candidate;
+import com.nevgiu.hrai.candidate.CandidateIdentity;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.chat.CvChatResponse;
@@ -89,7 +90,9 @@ class CvChatConversationService {
         var selected = loadCandidates(conversation);
         var job = loadJob(conversation);
         return new ExecutionScope(conversation.getId(), conversation.getVersion(), conversation.getOrganizationId(),
-                selected.stream().map(Candidate::getId).toList(), job == null ? null : job.getId());
+                selected.stream().map(candidate -> new CandidateIdentity(
+                        candidate.getId(), candidate.getName(), candidate.getCurrentTitle())).toList(),
+                job == null ? null : job.getId());
     }
 
     List<Message> history(String id) {
@@ -253,6 +256,9 @@ class CvChatConversationService {
     }
 
     record ExecutionScope(String conversationId, long version, String organizationId,
-                          List<Long> candidateIds, Long jobId) {
+                          List<CandidateIdentity> candidates, Long jobId) {
+        List<Long> candidateIds() {
+            return candidates.stream().map(CandidateIdentity::id).toList();
+        }
     }
 }

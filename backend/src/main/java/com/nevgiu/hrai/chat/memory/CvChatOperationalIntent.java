@@ -4,7 +4,13 @@ import java.text.Normalizer;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-/** Deterministic routing for explicit operational requests; ambiguous language remains model-classified. */
+/**
+ * Deterministic routing for explicit operational requests; ambiguous language remains model-classified.
+ *
+ * <p>This class deliberately recognizes only a narrow vocabulary. It is not a general natural-language parser and it
+ * does not decide authorization. Its purpose is to prevent an already explicit request such as an OCR-status question
+ * from depending on a provider to repeat the same mandatory tool call for every confirmed candidate.</p>
+ */
 final class CvChatOperationalIntent {
     enum Kind { AMBIGUOUS, DOCUMENT_STATUS, INGESTION_WARNINGS, DOCUMENT_STATUS_AND_WARNINGS, EVALUATION_HISTORY }
 
@@ -28,8 +34,19 @@ final class CvChatOperationalIntent {
     private CvChatOperationalIntent() { }
 
     static Kind classify(String message) {
+        // Recruiter input can contain visually ordinary text represented by different Unicode code points. NFKC
+        // converts compatibility forms to stable equivalents before the regular expressions run. For example,
+        // full-width "ＯＣＲ" becomes "OCR" and the single-character "ﬁ" ligature becomes "fi". This prevents
+        // presentation-oriented Unicode variants from accidentally changing the selected application route.
         String normalized = Normalizer.normalize(message, Normalizer.Form.NFKC)
-                .toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
+                // Locale.ROOT makes casing deterministic. Using the server's default locale could produce different
+                // lowercase text on different machines, most notably for variants of the letter I.
+                .toLowerCase(Locale.ROOT)
+                // Folding all whitespace to one ordinary space lets the patterns behave consistently with tabs, line
+                // breaks, non-breaking spaces normalized by NFKC, or repeated spaces. trim() removes irrelevant outer
+                // whitespace. Punctuation is preserved: this normalizes matching input, not the recruiter's message.
+                .replaceAll("\\s+", " ").trim();
+
         // Mixed sensitive or workflow-override requests must continue through the existing policy path. Routing them
         // deterministically would disclose operational data before that policy can refuse the unsafe part.
         if (UNSAFE_MIXED.matcher(normalized).find()) return Kind.AMBIGUOUS;

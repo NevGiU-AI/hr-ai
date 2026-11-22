@@ -170,6 +170,39 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
     }
 
     @Test
+    void callbacksRejectOversizedQueriesAndNonPositiveIdsBeforeDownstreamWork() throws Exception {
+        authenticate();
+        CvChatOrganizationDiscoveryService organizationDiscovery = mock(CvChatOrganizationDiscoveryService.class);
+        EvaluationHistoryService evaluationHistory = mock(EvaluationHistoryService.class);
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirm(List.of(1L));
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
+                    mock(CandidateRepository.class), mock(CvDocumentRepository.class), mock(JobRepository.class),
+                    evaluationHistory, executorFixture.guard(), scope, new CvChatToolDiscoveryState(),
+                    new CvChatToolPlanningState(), new CvChatDocumentToolState(), new CvChatEvaluationToolState(),
+                    organizationDiscovery);
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+
+            Throwable oversizedQuery = catchThrowable(() -> callback(
+                    registry.organizationDiscoveryCallbacks(), "search_candidates_by_evidence")
+                    .call("{\"query\":\"" + "x".repeat(2_001) + "\"}"));
+            Throwable invalidId = catchThrowable(() -> callback(
+                    registry.evaluationEvidenceCallbacks(), "get_evaluation_evidence")
+                    .call("{\"candidateId\":0}"));
+
+            assertThat(rootCause(oversizedQuery)).isInstanceOf(CvChatException.class)
+                    .hasMessage("CV chat tool query must contain between 2 and 2000 characters");
+            assertThat(rootCause(invalidId)).isInstanceOf(CvChatException.class)
+                    .hasMessage("CV chat tool ID must be a positive number");
+            verifyNoInteractions(organizationDiscovery, evaluationHistory);
+        } finally {
+            executorFixture.close();
+        }
+    }
+
+    @Test
     void documentCallbacksUseConfirmedTenantScopeAndHideRawProcessingDetails() throws Exception {
         authenticate();
         CandidateRepository candidates = mock(CandidateRepository.class);

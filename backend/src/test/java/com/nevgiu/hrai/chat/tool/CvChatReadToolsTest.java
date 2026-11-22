@@ -97,6 +97,39 @@ class CvChatReadToolsTest {
     }
 
     @Test
+    void validatesModelGeneratedQueriesBeforeGuardedOrDownstreamWork() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+
+        assertThatThrownBy(() -> tools.searchCandidates("A"))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool query must contain between 2 and 2000 characters");
+        assertThatThrownBy(() -> tools.searchCandidatesByEvidence("x".repeat(2_001)))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool query must contain between 2 and 2000 characters");
+
+        verifyNoInteractions(candidateResolution, organizationDiscovery, executionGuard, discoveryState);
+    }
+
+    @Test
+    void validatesEveryModelGeneratedIdBeforeScopeOrDataAccess() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+
+        assertThatThrownBy(() -> tools.getCandidateSummary(null)).isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool ID must be a positive number");
+        assertThatThrownBy(() -> tools.getJobRequirements(0L)).isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool ID must be a positive number");
+        assertThatThrownBy(() -> tools.getEvaluationEvidence(-1L)).isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool ID must be a positive number");
+        assertThatThrownBy(() -> tools.getDocumentStatus(0L)).isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool ID must be a positive number");
+        assertThatThrownBy(() -> tools.getIngestionWarnings(null)).isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool ID must be a positive number");
+
+        verifyNoInteractions(scope, candidates, documents, jobs, evaluationHistory, executionGuard,
+                planningState);
+    }
+
+    @Test
     void returnsMinimizedCurrentCandidateAndDocumentState() {
         authenticate("tenant-a", "ROLE_REVIEWER");
         Candidate candidate = new Candidate();

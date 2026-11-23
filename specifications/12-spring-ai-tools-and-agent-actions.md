@@ -394,6 +394,36 @@ The main responsibilities are:
   The model-facing organization-discovery boundary independently reapplies the maximum of ten candidate cards and
   three evidence references per card, even though the underlying discovery service already enforces those limits.
 
+### Why organization discovery has a second result boundary
+
+An organization-wide request such as `Find the best Python developers in this organization` can match many indexed
+candidates and several relevant semantic chunks for each candidate. The internal discovery service ranks that larger
+set and already limits its result to ten minimal candidate cards with three evidence references per card. The Spring
+AI tool deliberately applies the same limits again before its result enters model context.
+
+For example, discovery might internally find 27 eligible candidates and eight relevant references for its strongest
+candidate. The model-facing result contains only the ten highest-ranked cards, and that candidate contains at most
+three references such as `CV-24-P1`, `CV-24-P2`, and `CV-24-P4`. The result sets `truncated` to `true` when either
+additional candidate cards or additional per-candidate references were removed. That flag tells application code that
+the returned shortlist is bounded; it does not authorize the model to request or infer the omitted records.
+
+This duplicate enforcement is intentional defense in depth. The discovery service owns ranking and normally returns
+an already bounded result. The tool boundary owns what may be disclosed to the model. If a future internal refactor or
+regression makes the service return 50 cards or 20 references per card, the callback still prevents that expanded data
+from reaching the provider.
+
+The second boundary provides several protections:
+
+- predictable model-context size, latency, and provider cost;
+- reduced candidate-metadata disclosure;
+- resistance to oversized or adversarial tool results consuming the context window;
+- preservation of the product workflow: discovery proposes a small shortlist, and the recruiter must explicitly
+  confirm no more than five candidates before candidate-specific evidence is retrieved.
+
+The returned references are bounded evidence identifiers, not complete CV text. They show why a minimal card appeared
+in the shortlist but do not replace confirmed-scope authorization, grounded CV retrieval, answer citation checks, or
+human selection.
+
 The diagram ends at confirmed-scope readiness intentionally. `CvChatComparisonService` is the later, separate evidence
 boundary: it reauthorizes candidate IDs and the optional job, applies the comparison question policy, retrieves bounded
 CV evidence, calls `CvChatComparisonModel`, and validates complete citations. Tool preflight cannot bypass or replace

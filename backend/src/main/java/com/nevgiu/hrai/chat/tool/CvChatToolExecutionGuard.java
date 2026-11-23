@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
 import java.time.Duration;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -28,30 +30,45 @@ public class CvChatToolExecutionGuard {
     // searches. Keep its latency budget separate so lightweight repository tools retain the executor's 3-second cap.
     private static final Duration SEMANTIC_DISCOVERY_TIMEOUT = Duration.ofSeconds(20);
     private final AtomicInteger callCount = new AtomicInteger();
+    private final Map<CvChatToolCapability, AtomicInteger> capabilityCallCounts;
     private final CvChatToolExecutor executor;
 
     CvChatToolExecutionGuard(CvChatToolExecutor executor) {
         // The guard is request-scoped, but the stateless executor is intentionally a singleton. Each request receives
         // its own call budget while all requests safely reuse the common timeout/virtual-thread execution mechanism.
         this.executor = executor;
+        // Populate every counter before callbacks can run. Atomic values then support concurrent increments without
+        // mutating the EnumMap structure if a provider dispatches more than one tool call at the same time.
+        EnumMap<CvChatToolCapability, AtomicInteger> counters = new EnumMap<>(CvChatToolCapability.class);
+        for (CvChatToolCapability capability : CvChatToolCapability.values()) {
+            counters.put(capability, new AtomicInteger());
+        }
+        this.capabilityCallCounts = counters;
     }
 
-    <T> T execute(Supplier<T> action) {
+    <T> T execute(CvChatToolCapability capability, Supplier<T> action) {
         // Increment before execution so failed and timed-out calls still consume budget; otherwise a model could retry
         // a failing operation indefinitely without reaching the limit.
-        consumeCallBudget();
+        consumeCallBudget(capability);
         return executor.execute(action);
     }
 
     /** Applies the same request call budget but the reviewed semantic-discovery latency budget. */
     <T> T executeSemanticDiscovery(Supplier<T> action) {
-        consumeCallBudget();
+        consumeCallBudget(CvChatToolCapability.ORGANIZATION_DISCOVERY);
         return executor.execute(action, SEMANTIC_DISCOVERY_TIMEOUT);
     }
 
-    private void consumeCallBudget() {
+    private void consumeCallBudget(CvChatToolCapability capability) {
+        // The global ceiling bounds total work for mixed-tool requests. The capability budget independently prevents
+        // retries or recursive calls from spending that entire allowance on a tool whose product flow permits fewer
+        // calls. Both counters are request-local because this guard is request-scoped.
         if (callCount.incrementAndGet() > MAX_CALLS_PER_REQUEST) {
             throw new CvChatException(HttpStatus.TOO_MANY_REQUESTS, "CV chat tool call limit exceeded");
+        }
+        int capabilityCalls = capabilityCallCounts.get(capability).incrementAndGet();
+        if (capabilityCalls > capability.maxCallsPerRequest()) {
+            throw new CvChatException(HttpStatus.TOO_MANY_REQUESTS, "CV chat tool capability call limit exceeded");
         }
     }
 }

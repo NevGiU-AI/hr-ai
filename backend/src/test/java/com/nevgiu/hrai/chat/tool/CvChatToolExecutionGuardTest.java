@@ -21,13 +21,30 @@ class CvChatToolExecutionGuardTest {
                 .thenAnswer(invocation -> invocation.<java.util.function.Supplier<Integer>>getArgument(0).get());
         CvChatToolExecutionGuard guard = new CvChatToolExecutionGuard(executor);
 
-        for (int call = 1; call <= 10; call++) {
+        for (int call = 1; call <= 5; call++) {
             int expected = call;
-            assertThat(guard.execute(() -> expected)).isEqualTo(expected);
+            assertThat(guard.execute(CvChatToolCapability.DOCUMENT_STATUS, () -> expected)).isEqualTo(expected);
         }
-        assertThatThrownBy(() -> guard.execute(() -> 11))
+        for (int call = 6; call <= 10; call++) {
+            int expected = call;
+            assertThat(guard.execute(CvChatToolCapability.INGESTION_WARNINGS, () -> expected)).isEqualTo(expected);
+        }
+        assertThatThrownBy(() -> guard.execute(CvChatToolCapability.CANDIDATE_SEARCH, () -> 11))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV chat tool call limit exceeded");
+    }
+
+    @Test
+    void rejectsRepeatedCapabilityCallsBeforeTheGlobalLimit() {
+        CvChatToolExecutor executor = mock(CvChatToolExecutor.class);
+        when(executor.execute(org.mockito.ArgumentMatchers.<Supplier<Integer>>any()))
+                .thenAnswer(invocation -> invocation.<Supplier<Integer>>getArgument(0).get());
+        CvChatToolExecutionGuard guard = new CvChatToolExecutionGuard(executor);
+
+        assertThat(guard.execute(CvChatToolCapability.JOB_REQUIREMENTS, () -> 1)).isEqualTo(1);
+        assertThatThrownBy(() -> guard.execute(CvChatToolCapability.JOB_REQUIREMENTS, () -> 2))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool capability call limit exceeded");
     }
 
     @Test

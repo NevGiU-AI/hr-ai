@@ -381,10 +381,48 @@ The main responsibilities are:
 - `CvChatToolPlanningState` records only the authorized candidate/job IDs whose minimized tools completed during this
   HTTP request. The service uses it as a postcondition; it stores no names, CV text, job text, prompts, or tool results.
 - `CvChatToolScope` holds immutable human-confirmed candidate and optional job IDs for the current HTTP request.
-- `CvChatToolExecutionGuard` gives each request a separate call budget, while the singleton `CvChatToolExecutor` runs
-  approved work on virtual threads with a timeout. It contains no tenant or authorization state.
+- `CvChatToolCapability` defines reviewed per-request budgets for every exposed read capability. Candidate-scoped
+  searches and reads allow at most five calls, while organization discovery and approved-job requirements allow one.
+  These capability limits prevent retries or recursive model calls from consuming the full mixed-tool allowance.
+- `CvChatToolExecutionGuard` enforces both those capability budgets and the ten-call global request ceiling before
+  downstream work begins. Failed, timed-out, and rejected repeated attempts still consume budget. Its counters are
+  initialized before callbacks run and use atomic values so concurrent callback attempts cannot bypass a limit.
+  The singleton `CvChatToolExecutor` runs approved work on virtual threads with a three-second default timeout and the
+  reviewed twenty-second semantic-discovery timeout. Neither component contains tenant or authorization state.
 - `CandidateCard`, `CandidateSearchResult`, `CandidateSummary`, `CurrentDocumentStatus`, and `JobRequirements` are
   bounded transfer records. They define what may cross from deterministic application code into the model context.
+  The model-facing organization-discovery boundary independently reapplies the maximum of ten candidate cards and
+  three evidence references per card, even though the underlying discovery service already enforces those limits.
+
+### Why organization discovery has a second result boundary
+
+An organization-wide request such as `Find the best Python developers in this organization` can match many indexed
+candidates and several relevant semantic chunks for each candidate. The internal discovery service ranks that larger
+set and already limits its result to ten minimal candidate cards with three evidence references per card. The Spring
+AI tool deliberately applies the same limits again before its result enters model context.
+
+For example, discovery might internally find 27 eligible candidates and eight relevant references for its strongest
+candidate. The model-facing result contains only the ten highest-ranked cards, and that candidate contains at most
+three references such as `CV-24-P1`, `CV-24-P2`, and `CV-24-P4`. The result sets `truncated` to `true` when either
+additional candidate cards or additional per-candidate references were removed. That flag tells application code that
+the returned shortlist is bounded; it does not authorize the model to request or infer the omitted records.
+
+This duplicate enforcement is intentional defense in depth. The discovery service owns ranking and normally returns
+an already bounded result. The tool boundary owns what may be disclosed to the model. If a future internal refactor or
+regression makes the service return 50 cards or 20 references per card, the callback still prevents that expanded data
+from reaching the provider.
+
+The second boundary provides several protections:
+
+- predictable model-context size, latency, and provider cost;
+- reduced candidate-metadata disclosure;
+- resistance to oversized or adversarial tool results consuming the context window;
+- preservation of the product workflow: discovery proposes a small shortlist, and the recruiter must explicitly
+  confirm no more than five candidates before candidate-specific evidence is retrieved.
+
+The returned references are bounded evidence identifiers, not complete CV text. They show why a minimal card appeared
+in the shortlist but do not replace confirmed-scope authorization, grounded CV retrieval, answer citation checks, or
+human selection.
 
 The diagram ends at confirmed-scope readiness intentionally. `CvChatComparisonService` is the later, separate evidence
 boundary: it reauthorizes candidate IDs and the optional job, applies the comparison question policy, retrieves bounded

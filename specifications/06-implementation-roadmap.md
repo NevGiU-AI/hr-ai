@@ -418,17 +418,24 @@ focused production checks, and recorded acceptance before the next dependent sli
    slice adds an application-owned validator for all model-generated read-tool arguments: query text is normalized and
    limited to 2–2,000 characters, record IDs must be positive, invalid confirmed candidate scopes are rejected, and
    rejected values are never echoed. Direct unit tests and real Spring AI callback tests prove malformed arguments stop
-   before execution guards, repositories, embeddings, providers, or request-local result state. Concurrency limits,
+   before execution guards, repositories, embeddings, providers, or request-local result state.
    **Completed first slice:** application-owned tool-argument validation and oversized conversation-input rejection.
    PR #220 passed focused staging and
    production acceptance on 23 November 2026. Both environments rejected a 2,001-character conversation message with
    HTTP 400 at the documented 2,000-character boundary, preserved the existing conversation version and timeline, and
    performed no downstream tool or provider execution. The same acceptance retained valid authenticated conversation
    access and owner-scoped state. No schema, Flyway, frontend, Compose, or environment change was required.
-   **Remaining before Step 3 is complete:** call-count and recursion budgets, timeout behavior, result-size limits,
-   broader tenant/scope and conversation-memory isolation attacks, prompt/tool-result injection coverage, concurrency
-   limits, adversarial calibration, deterministic postconditions across every tool path, and provider-result
-   faithfulness.
+   **Implemented second slice, pending environment acceptance:** capability-specific request budgets now complement the
+   ten-call global ceiling. Candidate search, summary, evaluation, status, and warning capabilities allow no more than
+   five calls; organization discovery and approved-job requirements allow one. Repeated calls are rejected before a
+   second downstream read. Atomic preinitialized counters preserve the boundary under concurrent callback attempts.
+   The model-facing organization-discovery boundary also independently caps results at ten cards and three evidence
+   references per card. Existing three-second default and twenty-second semantic-discovery timeouts remain enforced.
+   Focused tests, real Spring AI callback integration, and the complete 404-test backend suite pass locally.
+   **Remaining before Step 3 is complete:** environment acceptance of this slice, timeout failure propagation across
+   user-visible paths, broader tenant/scope and conversation-memory isolation attacks, prompt/tool-result injection
+   coverage, downstream concurrency limits, adversarial calibration, deterministic postconditions across every tool
+   path, and provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

@@ -203,6 +203,38 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
     }
 
     @Test
+    void repeatedSingleCallCapabilityStopsBeforeASecondRepositoryRead() throws Exception {
+        authenticate();
+        JobRepository jobs = mock(JobRepository.class);
+        Job job = new Job();
+        job.setId(21L);
+        job.setTitle("Backend Engineer");
+        when(jobs.findByIdAndOrganizationId(21L, "tenant-a")).thenReturn(Optional.of(job));
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirmJob(21L);
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
+                    mock(CandidateRepository.class), mock(CvDocumentRepository.class), jobs,
+                    mock(EvaluationHistoryService.class), executorFixture.guard(), scope,
+                    new CvChatToolDiscoveryState(), new CvChatToolPlanningState(), new CvChatDocumentToolState(),
+                    new CvChatEvaluationToolState(), mock(CvChatOrganizationDiscoveryService.class));
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+            ToolCallback callback = callback(registry.confirmedScopeCallbacksWithJob(), "get_job_requirements");
+
+            String firstResult = callback.call("{\"jobId\":21}");
+            Throwable repeatedCall = catchThrowable(() -> callback.call("{\"jobId\":21}"));
+
+            assertThat(firstResult).contains("\"id\":21", "Backend Engineer");
+            assertThat(rootCause(repeatedCall)).isInstanceOf(CvChatException.class)
+                    .hasMessage("CV chat tool capability call limit exceeded");
+            verify(jobs).findByIdAndOrganizationId(21L, "tenant-a");
+        } finally {
+            executorFixture.close();
+        }
+    }
+
+    @Test
     void documentCallbacksUseConfirmedTenantScopeAndHideRawProcessingDetails() throws Exception {
         authenticate();
         CandidateRepository candidates = mock(CandidateRepository.class);

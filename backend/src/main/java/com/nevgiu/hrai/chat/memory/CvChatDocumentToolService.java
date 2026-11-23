@@ -148,7 +148,9 @@ class CvChatDocumentToolService {
             if (includeStatus && includeWarnings) line.append(' ');
             if (includeWarnings) appendWarnings(line, snapshot.warnings().get(candidateId));
             return line.toString();
-        }).collect(Collectors.joining("\n"));
+        // A blank line makes each candidate a distinct paragraph in both Angular renderers. They preserve backend
+        // whitespace, so a single newline technically separated records but still produced a visually dense block.
+        }).collect(Collectors.joining("\n\n"));
     }
 
     /** Uses the same first-mention convention as grounded single- and multi-candidate answers. */
@@ -170,7 +172,9 @@ class CvChatDocumentToolService {
             return candidateLabel(candidate) + ": Persisted AI-assisted evaluation history: " + rows
                     + (result.truncated() ? " Additional older evaluations are not shown." : "")
                     + " Scores are decision-support context for human review, not an autonomous hiring decision.";
-        }).collect(Collectors.joining("\n"));
+        // Evaluation histories can be long. Keep each confirmed candidate in a separate paragraph so one candidate's
+        // scores and stale/current state cannot visually run into the next candidate's record.
+        }).collect(Collectors.joining("\n\n"));
     }
 
     private String renderEvaluation(EvaluationEvidenceItem item) {

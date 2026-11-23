@@ -105,7 +105,7 @@ class CvChatDocumentToolServiceTest {
                 new CandidateIdentity(7L, "Ada Lovelace", null))).orElseThrow();
 
         assertThat(answer).startsWith("Grace Hopper (CANDIDATE-8):")
-                .contains("\nAda Lovelace (CANDIDATE-7):");
+                .contains("\n\nAda Lovelace (CANDIDATE-7):");
         verifyNoInteractions(model);
     }
 
@@ -157,6 +157,25 @@ class CvChatDocumentToolServiceTest {
         assertThat(answer).contains("Ada Lovelace (CANDIDATE-7)", "Evaluation 9", "CURRENT", "Evaluation 8",
                         "STALE", "Invalidated at", "overall fit 80/100", "human review")
                 .doesNotContain("explanation", "CV text", "provider");
+        verifyNoInteractions(model);
+    }
+
+    @Test
+    void separatesCandidateEvaluationHistoriesIntoParagraphs() {
+        doAnswer(invocation -> {
+            Long candidateId = invocation.getArgument(0);
+            EvaluationEvidenceResult result = new EvaluationEvidenceResult(candidateId, List.of(), false);
+            evaluationState.record(result);
+            return result;
+        }).when(readTools).getEvaluationEvidence(anyLong());
+
+        String answer = service.answer("Show the evaluation history for each selected candidate", List.of(
+                new CandidateIdentity(8L, "Grace Hopper", null),
+                new CandidateIdentity(7L, "Ada Lovelace", null))).orElseThrow();
+
+        assertThat(answer).isEqualTo(
+                "Grace Hopper (CANDIDATE-8): No persisted AI-assisted evaluation is available.\n\n"
+                        + "Ada Lovelace (CANDIDATE-7): No persisted AI-assisted evaluation is available.");
         verifyNoInteractions(model);
     }
 

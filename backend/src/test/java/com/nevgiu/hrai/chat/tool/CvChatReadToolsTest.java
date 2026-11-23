@@ -58,8 +58,8 @@ class CvChatReadToolsTest {
 
     @BeforeEach
     void executeGuardedActionsSynchronously() {
-        when(executionGuard.execute(any())).thenAnswer(invocation ->
-                ((Supplier<?>) invocation.getArgument(0)).get());
+        when(executionGuard.execute(any(CvChatToolCapability.class), any())).thenAnswer(invocation ->
+                ((Supplier<?>) invocation.getArgument(1)).get());
         when(executionGuard.executeSemanticDiscovery(any())).thenAnswer(invocation ->
                 ((Supplier<?>) invocation.getArgument(0)).get());
     }
@@ -94,6 +94,24 @@ class CvChatReadToolsTest {
 
         assertThat(result).isEqualTo(expected);
         verify(organizationDiscovery).discover("Java and Spring experience", "tenant-a");
+    }
+
+    @Test
+    void independentlyBoundsOrganizationDiscoveryToolResults() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        List<CandidateEvidenceCard> oversized = java.util.stream.LongStream.rangeClosed(1, 11)
+                .mapToObj(id -> new CandidateEvidenceCard(id, "Candidate " + id, "Engineer",
+                        List.of("CV-" + id + "-P1", "CV-" + id + "-P2", "CV-" + id + "-P3",
+                                "CV-" + id + "-P4")))
+                .toList();
+        when(organizationDiscovery.discover("Python experience", "tenant-a"))
+                .thenReturn(new CandidateEvidenceSearchResult(oversized, false));
+
+        CandidateEvidenceSearchResult result = tools.searchCandidatesByEvidence("Python experience");
+
+        assertThat(result.candidates()).hasSize(10);
+        assertThat(result.candidates()).allSatisfy(card -> assertThat(card.evidenceReferences()).hasSize(3));
+        assertThat(result.truncated()).isTrue();
     }
 
     @Test

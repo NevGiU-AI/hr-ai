@@ -30,6 +30,7 @@ This directory translates `FD - Hackathon KLX 2025.docx` into implementation-ori
 24. [Candidate correction and document reprocessing](./24-candidate-correction-and-reprocessing.md)
 25. [CV OCR fallback](./25-cv-ocr.md)
 26. [Browser behavior-driven development (BDD) testing with Cucumber and Playwright](./26-browser-bdd-testing.md)
+27. [Bug resolution log](./27-bug-resolution-log.md)
 
 ## Recommended delivery order
 

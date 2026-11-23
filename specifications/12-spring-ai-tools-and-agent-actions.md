@@ -389,6 +389,25 @@ The main responsibilities are:
   initialized before callbacks run and use atomic values so concurrent callback attempts cannot bypass a limit.
   The singleton `CvChatToolExecutor` runs approved work on virtual threads with a three-second default timeout and the
   reviewed twenty-second semantic-discovery timeout. Neither component contains tenant or authorization state.
+- Required user-visible tool failures preserve the reviewed `CvChatException` contract end to end. Deterministic
+  operational routing rethrows those failures unchanged, and the application-provided Spring AI
+  `ToolExecutionExceptionProcessor` rethrows the same reviewed exception from model-selected callbacks instead of
+  exposing it to the model as tool-result text. A timeout therefore reaches the API as HTTP `504` with the
+  privacy-safe `CV chat tool execution timed out` message; interruption, budget, authorization, and validation statuses
+  are preserved in the same way. Unknown callback exceptions retain Spring AI's default handling and are still reduced
+  to application-owned generic failures before reaching a client.
+  The concrete response owners are deliberately separated: `CvChatToolExecutor` creates the `504` timeout and `503`
+  interruption outcomes; `CvChatToolExecutionGuard` creates the `429` global and capability-budget outcomes;
+  `CvChatReadTools` creates authentication and role-access outcomes; `CvChatToolScope` creates confirmed candidate/job
+  authorization and scope-conflict outcomes; and `CvChatToolArguments` creates malformed model-generated ID and query
+  validation outcomes. `CvChatDocumentToolService` preserves them, `CvChatToolFailureConfiguration` carries them across
+  Spring AI callback execution, and `ApiExceptionHandler` renders the retained status and safe message at the HTTP
+  boundary.
+- The confirmed-scope advisory preflight is intentionally different: it does not answer an operational question and is
+  not authorization evidence. If that optional planning call is incomplete or unavailable, deterministic application
+  code independently reauthorizes the submitted scope and may return `CONFIRMED_SCOPE_READY`. This fallback must not be
+  copied to document status, ingestion warning, evaluation evidence, discovery, or grounded-answer paths whose tool
+  result is required to fulfill the recruiter's request.
 - `CandidateCard`, `CandidateSearchResult`, `CandidateSummary`, `CurrentDocumentStatus`, and `JobRequirements` are
   bounded transfer records. They define what may cross from deterministic application code into the model context.
   The model-facing organization-discovery boundary independently reapplies the maximum of ten candidate cards and

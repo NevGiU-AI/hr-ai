@@ -17,6 +17,7 @@ import com.nevgiu.hrai.chat.tool.EvaluationEvidenceItem;
 import com.nevgiu.hrai.chat.tool.EvaluationEvidenceResult;
 import com.nevgiu.hrai.chat.tool.EvaluationScores;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -203,6 +204,33 @@ class CvChatDocumentToolServiceTest {
                 new CandidateIdentity(7L, "Ada", null), new CandidateIdentity(8L, "Grace", null))))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("CV operational data service is unavailable");
+    }
+
+    @Test
+    void preservesReviewedTimeoutFromDeterministicOperationalTool() {
+        when(readTools.getDocumentStatus(7L)).thenThrow(
+                new CvChatException(HttpStatus.GATEWAY_TIMEOUT, "CV chat tool execution timed out"));
+
+        assertThatThrownBy(() -> service.answer("Was this CV processed with OCR?", candidates(7L, "Ada")))
+                .isInstanceOfSatisfying(CvChatException.class, failure -> {
+                    assertThat(failure.status()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+                    assertThat(failure).hasMessage("CV chat tool execution timed out");
+                });
+        verifyNoInteractions(model);
+    }
+
+    @Test
+    void preservesReviewedTimeoutRethrownBySpringAiOperationalCallback() {
+        when(registry.conversationalOperationalCallbacks()).thenReturn(List.of());
+        when(model.respond(eq("Could you check its processing state?"), eq(List.of(7L)), anyList()))
+                .thenThrow(new CvChatException(HttpStatus.GATEWAY_TIMEOUT,
+                        "CV chat tool execution timed out"));
+
+        assertThatThrownBy(() -> service.answer("Could you check its processing state?", candidates(7L, "Ada")))
+                .isInstanceOfSatisfying(CvChatException.class, failure -> {
+                    assertThat(failure.status()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+                    assertThat(failure).hasMessage("CV chat tool execution timed out");
+                });
     }
 
     private EvaluationEvidenceItem evaluation(Long id, boolean current, Instant invalidatedAt) {

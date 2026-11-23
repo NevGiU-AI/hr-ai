@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
 import com.nevgiu.hrai.web.ApiExceptionHandler;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
@@ -108,6 +110,26 @@ class CvChatConversationControllerTest {
                     .andExpect(jsonPath("$.answer").value("Grounded answer [CV-7]."))
                     .andExpect(jsonPath("$.candidates[0].id").value(7))
                     .andExpect(jsonPath("$.citations[0].candidateId").value(7));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    void returnsGatewayTimeoutWhenARequiredChatToolTimesOut() throws Exception {
+        var actor = actor();
+        when(turns.ask(any(), any(), any())).thenThrow(new CvChatException(
+                HttpStatus.GATEWAY_TIMEOUT, "CV chat tool execution timed out"));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/conversations/conversation-1/messages")
+                            .contentType("application/json")
+                            .content("{\"message\":\"Was this CV processed with OCR?\"}"))
+                    .andExpect(status().isGatewayTimeout())
+                    .andExpect(jsonPath("$.message").value("CV chat tool execution timed out"))
+                    .andExpect(jsonPath("$.path")
+                            .value("/api/chat/conversations/conversation-1/messages"));
         } finally {
             SecurityContextHolder.clearContext();
         }

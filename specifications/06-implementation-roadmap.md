@@ -411,15 +411,24 @@ focused production checks, and recorded acceptance before the next dependent sli
    history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
    workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
    environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
-3. **[~ Active] Harden every user-visible tool path.** Test exact tool selection, bounded and malformed arguments,
-   call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
+3. **[~ Active — first slice completed] Harden every user-visible tool path.** Test exact tool selection, bounded and
+   malformed arguments, call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
    prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
    result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic. The first hardening
    slice adds an application-owned validator for all model-generated read-tool arguments: query text is normalized and
    limited to 2–2,000 characters, record IDs must be positive, invalid confirmed candidate scopes are rejected, and
    rejected values are never echoed. Direct unit tests and real Spring AI callback tests prove malformed arguments stop
    before execution guards, repositories, embeddings, providers, or request-local result state. Concurrency limits,
-   broader adversarial calibration, provider-result faithfulness, and environment acceptance remain.
+   **Completed first slice:** application-owned tool-argument validation and oversized conversation-input rejection.
+   PR #220 passed focused staging and
+   production acceptance on 23 November 2026. Both environments rejected a 2,001-character conversation message with
+   HTTP 400 at the documented 2,000-character boundary, preserved the existing conversation version and timeline, and
+   performed no downstream tool or provider execution. The same acceptance retained valid authenticated conversation
+   access and owner-scoped state. No schema, Flyway, frontend, Compose, or environment change was required.
+   **Remaining before Step 3 is complete:** call-count and recursion budgets, timeout behavior, result-size limits,
+   broader tenant/scope and conversation-memory isolation attacks, prompt/tool-result injection coverage, concurrency
+   limits, adversarial calibration, deterministic postconditions across every tool path, and provider-result
+   faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

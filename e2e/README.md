@@ -51,9 +51,13 @@ mvn -Pbdd "-Dcucumber.filter.tags=not @destructive" verify
 
 The suite creates conversations through the recruiter UI and covers owner isolation, explicit resume after leaving the
 active chat, reload restoration, grounded citation navigation, and permanent deletion. Cleanup deletes any disposable
-conversation left by a scenario. The citation scenario makes one provider-backed request; the configured question and
-fixture must remain synthetic and stable. It is excluded from the default local run but included by protected staging
-CI. Reports are written under `target/` and are ignored by Git.
+conversation left by a scenario. It then attempts an explicit UI logout for each authenticated test identity before
+closing its isolated browser context. Logout is best effort so an unavailable cleanup endpoint cannot hide the real
+scenario result; context closure still prevents browser state from crossing scenario boundaries. Explicit logout
+normally removes the server-side Spring Sessions immediately and prevents dedicated BDD accounts from accumulating
+sessions or producing misleading concurrent-session audit events. The citation scenario makes one provider-backed
+request; the configured question and fixture must remain synthetic and stable. It is excluded from the default local
+run but included by protected staging CI. Reports are written under `target/` and are ignored by Git.
 
 ## Staging CI
 

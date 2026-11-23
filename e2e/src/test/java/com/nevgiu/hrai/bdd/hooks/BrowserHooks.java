@@ -1,12 +1,18 @@
 package com.nevgiu.hrai.bdd.hooks;
 
 import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.PlaywrightException;
 import com.nevgiu.hrai.bdd.context.ScenarioContext;
 import com.nevgiu.hrai.bdd.pages.CvChatPage;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
+
+import java.net.URI;
+
+import static com.microsoft.playwright.options.AriaRole.BUTTON;
 
 /** Owns browser resources and cleanup for exactly one Cucumber scenario. */
 public class BrowserHooks {
@@ -33,6 +39,12 @@ public class BrowserHooks {
             }
             deleteDisposableConversation();
         } finally {
+            // Closing a browser context discards its cookies locally but does not invalidate the server-side Spring
+            // Session. Explicit logout keeps repeated local and CI runs from accumulating sessions for the dedicated
+            // BDD accounts and prevents misleading SESSION_LIMIT_ENFORCED audit events. It remains best effort so an
+            // unavailable logout endpoint cannot replace the scenario's real result during cleanup.
+            logoutQuietly(context.administratorPage());
+            logoutQuietly(context.recruiterPage());
             closeQuietly(context.administratorBrowserContext());
             closeQuietly(context.recruiterBrowserContext());
             if (context.browser() != null) context.browser().close();
@@ -51,6 +63,20 @@ public class BrowserHooks {
         chat.open();
         chat.deleteActiveConversation();
         context.conversationId(null);
+    }
+
+    private static void logoutQuietly(Page page) {
+        if (page == null || page.isClosed()) return;
+        try {
+            var signOut = page.getByRole(BUTTON,
+                    new Page.GetByRoleOptions().setName("Sign out").setExact(true));
+            if (!signOut.isVisible()) return;
+            signOut.click();
+            page.waitForURL(url -> URI.create(url).getPath().equals("/login"));
+        } catch (PlaywrightException | IllegalArgumentException ignored) {
+            // Cleanup is deliberately non-destructive and best effort. Context closure below still guarantees that
+            // browser cookies and storage cannot leak into the next PicoContainer-scoped Cucumber scenario.
+        }
     }
 
     private static void closeQuietly(com.microsoft.playwright.BrowserContext browserContext) {

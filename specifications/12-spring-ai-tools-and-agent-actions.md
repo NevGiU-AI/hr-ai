@@ -396,6 +396,13 @@ The main responsibilities are:
   privacy-safe `CV chat tool execution timed out` message; interruption, budget, authorization, and validation statuses
   are preserved in the same way. Unknown callback exceptions retain Spring AI's default handling and are still reduced
   to application-owned generic failures before reaching a client.
+  The concrete response owners are deliberately separated: `CvChatToolExecutor` creates the `504` timeout and `503`
+  interruption outcomes; `CvChatToolExecutionGuard` creates the `429` global and capability-budget outcomes;
+  `CvChatReadTools` creates authentication and role-access outcomes; `CvChatToolScope` creates confirmed candidate/job
+  authorization and scope-conflict outcomes; and `CvChatToolArguments` creates malformed model-generated ID and query
+  validation outcomes. `CvChatDocumentToolService` preserves them, `CvChatToolFailureConfiguration` carries them across
+  Spring AI callback execution, and `ApiExceptionHandler` renders the retained status and safe message at the HTTP
+  boundary.
 - The confirmed-scope advisory preflight is intentionally different: it does not answer an operational question and is
   not authorization evidence. If that optional planning call is incomplete or unavailable, deterministic application
   code independently reauthorizes the submitted scope and may return `CONFIRMED_SCOPE_READY`. This fallback must not be

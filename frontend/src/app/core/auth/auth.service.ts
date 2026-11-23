@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, catchError, exhaustMap, filter, fromEvent, map, merge, of, switchMap, tap, throwError, timer } from 'rxjs';
 import { environment } from '../../../environments/environments';
@@ -37,9 +37,17 @@ export class AuthService {
       switchMap(() => this.http.get<AuthUser>(`${this.apiUrl}/auth/me`)),
       tap((user) => this.session.authenticate(user)),
       map(() => true),
-      catchError(() => {
-        this.session.expire(false, false);
-        return of(false);
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401) {
+          this.session.expire(false, false);
+          return of(false);
+        }
+        // A deployment can briefly make CSRF or /auth/me return a network/5xx error while the Redis-backed session
+        // remains valid. Keep an already authenticated SPA session usable so that transient infrastructure failure is
+        // not presented as a logout. With no cached identity (for example, a fresh browser load), propagate the error:
+        // the guard must not invent an authenticated user that the backend has not confirmed.
+        if (this.session.user !== null) return of(true);
+        return throwError(() => error);
       }),
     );
   }

@@ -246,6 +246,10 @@ viewport read with a bounded condition wait; all four non-destructive Cucumber/P
 Release `v0.43.0` at main revision `184e52a` passed the exact-revision BDD gate and focused production health,
 conversation, scope-confirmation, grounded-answer, citation, comparison, refusal, and regression checks on
 19 November 2026. No API, schema, retrieval, authorization, model, Compose, or environment change was required.
+The first user-visible tool-hardening slice then passed focused staging and production acceptance after PR #220 on
+23 November 2026. A 2,001-character conversation message was rejected with HTTP 400 at the 2,000-character limit in
+both environments; the conversation version and timeline remained unchanged, and validation stopped the request
+before tool or provider execution. No schema, Flyway, frontend, Compose, or environment change was required.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

@@ -62,6 +62,11 @@ class CvChatDocumentToolService {
             } else {
                 outcome = executeExplicit(explicitIntent, candidateIds);
             }
+        } catch (CvChatException failure) {
+            // Read-tool failures already carry a reviewed status and privacy-safe message. Preserve timeout (504),
+            // interruption (503), call-budget (429), and authorization/validation outcomes instead of flattening every
+            // failure to a misleading provider-style 502.
+            throw failure;
         } catch (RuntimeException failure) {
             LOGGER.warn("CV chat document-tool routing failed candidateCount={} failureType={}",
                     candidateIds.size(), failure.getClass().getSimpleName());

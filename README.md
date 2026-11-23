@@ -250,6 +250,13 @@ The first user-visible tool-hardening slice then passed focused staging and prod
 23 November 2026. A 2,001-character conversation message was rejected with HTTP 400 at the 2,000-character limit in
 both environments; the conversation version and timeline remained unchanged, and validation stopped the request
 before tool or provider execution. No schema, Flyway, frontend, Compose, or environment change was required.
+The second tool-hardening slice and its answer-spacing follow-up passed focused staging and production acceptance in
+release `v0.47.0` at main revision `c7aa1bd` on 23 November 2026. PR #222 validated capability-specific call budgets,
+per-request counter reset, the valid combined ten-call operational path, bounded organization discovery, and the
+application-owned confirmed-scope fallback when advisory provider calls were incomplete. PR #223 made multi-candidate
+operational and evaluation-history answers readable by separating candidates with blank lines. Normal grounded RAG,
+citations, refusals, tenant scope, and confirmation remained intact, with no schema, Flyway, frontend, Compose,
+environment, or provider-configuration change.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

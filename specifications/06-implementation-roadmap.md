@@ -411,7 +411,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
    workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
    environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
-3. **[~ Active — first slice completed] Harden every user-visible tool path.** Test exact tool selection, bounded and
+3. **[~ Active — first two slices completed] Harden every user-visible tool path.** Test exact tool selection, bounded and
    malformed arguments, call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
    prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
    result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic. The first hardening
@@ -425,14 +425,25 @@ focused production checks, and recorded acceptance before the next dependent sli
    HTTP 400 at the documented 2,000-character boundary, preserved the existing conversation version and timeline, and
    performed no downstream tool or provider execution. The same acceptance retained valid authenticated conversation
    access and owner-scoped state. No schema, Flyway, frontend, Compose, or environment change was required.
-   **Implemented second slice, pending environment acceptance:** capability-specific request budgets now complement the
+   **Completed second slice:** capability-specific request budgets now complement the
    ten-call global ceiling. Candidate search, summary, evaluation, status, and warning capabilities allow no more than
    five calls; organization discovery and approved-job requirements allow one. Repeated calls are rejected before a
    second downstream read. Atomic preinitialized counters preserve the boundary under concurrent callback attempts.
    The model-facing organization-discovery boundary also independently caps results at ten cards and three evidence
    references per card. Existing three-second default and twenty-second semantic-discovery timeouts remain enforced.
-   Focused tests, real Spring AI callback integration, and the complete 404-test backend suite pass locally.
-   **Remaining before Step 3 is complete:** environment acceptance of this slice, timeout failure propagation across
+   Focused tests, real Spring AI callback integration, and the complete 405-test backend suite passed before merge.
+   PR #222 then passed focused staging and production acceptance in release `v0.47.0` at revision `c7aa1bd` on
+   23 November 2026. Acceptance covered five distinct candidate searches, five-candidate document-status, warning,
+   and evaluation reads, request-local budget reset across repeated requests, the valid ten-call combined
+   status-and-warning boundary, the ten-card/three-reference discovery limits, and five candidates plus an optional
+   approved job. When the advisory provider made no preflight calls and returned clarification, the application-owned
+   fallback safely reauthorized the same scope and returned `CONFIRMED_SCOPE_READY`. No erroneous call-limit or timeout
+   response occurred, and grounded RAG, citations, controlled refusal, tenant scope, and confirmation remained intact.
+   PR #223 in the same release added paragraph separation between candidates in operational and evaluation-history
+   answers; focused staging and production acceptance confirmed readable multi-candidate output without changing the
+   tool data, API, persistence, authorization, or citation contracts. Neither PR required schema, Flyway, frontend,
+   Compose, environment, or provider-configuration changes.
+   **Remaining before Step 3 is complete:** timeout failure propagation across
    user-visible paths, broader tenant/scope and conversation-memory isolation attacks, prompt/tool-result injection
    coverage, downstream concurrency limits, adversarial calibration, deterministic postconditions across every tool
    path, and provider-result faithfulness.

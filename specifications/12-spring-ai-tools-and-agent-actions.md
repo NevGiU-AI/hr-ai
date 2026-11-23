@@ -424,6 +424,25 @@ The returned references are bounded evidence identifiers, not complete CV text. 
 in the shortlist but do not replace confirmed-scope authorization, grounded CV retrieval, answer citation checks, or
 human selection.
 
+### Tool-limit and presentation acceptance
+
+PRs #222 and #223 passed focused staging and production acceptance in release `v0.47.0` at revision `c7aa1bd` on
+23 November 2026. The accepted checks exercised all five allowed candidate searches; five-candidate document-status,
+ingestion-warning, and persisted-evaluation reads; the valid combined ten-call status-and-warning request; repeated
+requests proving that budgets reset per HTTP request; the ten-card and three-reference organization-discovery result
+limits; and five confirmed candidates with an optional approved job.
+
+The confirmed-scope advisory preflight also demonstrated its intended application fallback. In one provider run the
+model returned clarification without calling either summary or job tools. The service did not treat that advisory
+omission as authorization evidence: it independently reauthorized the submitted candidates and job, then returned
+`CONFIRMED_SCOPE_READY`. The subsequent grounded question still used the normal evidence and citation boundary.
+
+No accepted request produced an erroneous call-limit or timeout response. Tenant scope, explicit confirmation,
+controlled refusal, normal CV retrieval, and citation checks remained intact. PR #223 additionally confirmed that
+multi-candidate document-status and evaluation-history answers render one blank line between candidates. That
+presentation correction changes neither tool results nor authorization, persistence, API, or citation semantics.
+Neither PR required a schema, Flyway, frontend, Compose, environment, or provider-configuration change.
+
 The diagram ends at confirmed-scope readiness intentionally. `CvChatComparisonService` is the later, separate evidence
 boundary: it reauthorizes candidate IDs and the optional job, applies the comparison question policy, retrieves bounded
 CV evidence, calls `CvChatComparisonModel`, and validates complete citations. Tool preflight cannot bypass or replace

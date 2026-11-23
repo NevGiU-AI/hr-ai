@@ -13,7 +13,7 @@ candidate content, personal data, complete HAR files, or other secrets.
 **Discovered:** 23 November 2026  
 **Affected surface:** Angular authentication revalidation during staging deployment  
 **Correction:** PR #226, commit `6c06829`  
-**Status:** correction merged and deployed; next-deployment acceptance pending
+**Status:** corrected and accepted in staging
 
 ### Symptom
 
@@ -113,6 +113,31 @@ deployment:
 5. confirm the application does not redirect to login;
 6. confirm a genuine HTTP 401 still clears the session and redirects; and
 7. confirm no unexpected logout or session-limit audit event is recorded for the human test identity.
+
+### Staging acceptance
+
+The next staging deployment completed the meaningful rollout test on 23 November 2026. The browser was already running
+the corrected `main-RH33N3PR.js` bundle and remained on the protected CV ingestion and evaluation page throughout the
+backend replacement. A privacy-minimized HAR review recorded this sequence:
+
+```text
+19:24:31  GET /api/auth/me  200
+19:24:32  GET /api/auth/me  502
+19:24:36  GET /api/auth/me  502
+19:24:37  GET /api/auth/me  502
+19:24:41  GET /api/auth/me  502
+19:24:46  GET /api/auth/me  502
+19:24:51  GET /api/auth/me  200
+19:24:56  GET /api/auth/me  200
+```
+
+Candidate and job requests also returned HTTP 502 during the same short outage. Angular displayed its temporary service
+unavailability message while preserving the signed-in header and protected page. When the backend recovered,
+`/api/auth/me` returned repeated HTTP 200 responses without a new login. No cookies, headers, session identifiers,
+request bodies, account addresses, or candidate data were copied from the HAR into this record.
+
+This acceptance confirms the intended separation: transient infrastructure failure may temporarily prevent business
+data from loading, but it no longer destroys the browser's confirmed authentication state or masquerades as logout.
 
 ### Prevention rule
 

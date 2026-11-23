@@ -13,7 +13,7 @@ candidate content, personal data, complete HAR files, or other secrets.
 **Discovered:** 23 November 2026  
 **Affected surface:** Angular authentication revalidation during staging deployment  
 **Correction:** PR #226, commit `6c06829`  
-**Status:** corrected and accepted in staging
+**Status:** corrected and accepted in staging and production
 
 ### Symptom
 
@@ -138,6 +138,13 @@ request bodies, account addresses, or candidate data were copied from the HAR in
 
 This acceptance confirms the intended separation: transient infrastructure failure may temporarily prevent business
 data from loading, but it no longer destroys the browser's confirmed authentication state or masquerades as logout.
+
+### Production acceptance
+
+PRs #225–#228 were promoted together in release `v0.48.0` at main revision `a882042` on 23 November 2026. Focused
+production tests passed for the BDD session-cleanup correction and transient authentication-revalidation behavior. The
+dedicated BDD identities retained explicit best-effort logout, while the application continued to distinguish genuine
+authentication rejection from temporary service unavailability. No rollback was required.
 
 ### Prevention rule
 

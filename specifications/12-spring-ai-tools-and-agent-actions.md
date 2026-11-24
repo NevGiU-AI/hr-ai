@@ -354,6 +354,8 @@ The main responsibilities are:
 - `CvChatToolRequestPolicy` detects explicit attempts to weaken protected workflow controls. A matching request is
   refused before semantic classification, provider access, or callback execution. It is intentionally narrow and
   complements rather than replaces multilingual semantic policy evaluation and adversarial tests.
+  Unicode NFKC compatibility normalization and locale-independent lowercasing first make presentation variants such
+  as full-width Latin text equivalent without broadening the protected action or boundary vocabulary.
 - `CvChatQuestionPolicy` supplies the sensitive-question boundary before any tool reads. Its evidence-oriented
   `OUT_OF_SCOPE` result is handled by the later grounded chat/comparison service rather than this scope-management
   phase, preventing a second provider classification from randomly refusing an otherwise authorized transition.

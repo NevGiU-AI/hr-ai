@@ -4,20 +4,32 @@ WORKDIR /app
 
 COPY pom.xml .
 RUN set -eu; \
-    for attempt in 1 2 3 4; do \
+    for attempt in 1 2 3 4 5; do \
       mvn -B -ntp -Dmaven.wagon.http.retryHandler.count=3 dependency:go-offline && break; \
-      if [ "$attempt" -eq 4 ]; then exit 1; fi; \
-      echo "Maven Central download failed; retrying dependency resolution (attempt $((attempt + 1))/4)"; \
-      sleep $((attempt * 5)); \
+      if [ "$attempt" -eq 5 ]; then exit 1; fi; \
+      case "$attempt" in \
+        1) retry_delay=15 ;; \
+        2) retry_delay=30 ;; \
+        3) retry_delay=60 ;; \
+        *) retry_delay=120 ;; \
+      esac; \
+      echo "Maven Central download failed; retrying dependency resolution in ${retry_delay}s (attempt $((attempt + 1))/5)"; \
+      sleep "$retry_delay"; \
     done
 
 COPY src ./src
 RUN set -eu; \
-    for attempt in 1 2 3; do \
+    for attempt in 1 2 3 4 5; do \
       mvn -B -ntp -Dmaven.wagon.http.retryHandler.count=3 clean package -DskipTests && break; \
-      if [ "$attempt" -eq 3 ]; then exit 1; fi; \
-      echo "Maven build dependency download failed; retrying (attempt $((attempt + 1))/3)"; \
-      sleep $((attempt * 5)); \
+      if [ "$attempt" -eq 5 ]; then exit 1; fi; \
+      case "$attempt" in \
+        1) retry_delay=15 ;; \
+        2) retry_delay=30 ;; \
+        3) retry_delay=60 ;; \
+        *) retry_delay=120 ;; \
+      esac; \
+      echo "Maven build dependency download failed; retrying in ${retry_delay}s (attempt $((attempt + 1))/5)"; \
+      sleep "$retry_delay"; \
     done
 
 FROM eclipse-temurin:21-jre

@@ -4,6 +4,7 @@ import com.nevgiu.hrai.chat.CvChatException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +63,35 @@ class CvChatToolExecutionGuardTest {
             })).isInstanceOf(CvChatException.class)
                     .hasMessage("CV chat tool execution timed out");
         } finally {
+            executor.shutdown();
+        }
+    }
+
+    @Test
+    void preservesCallerInterruptionAsReviewedServiceUnavailable() {
+        CvChatToolExecutor executor = new CvChatToolExecutor(Duration.ofSeconds(5));
+        CountDownLatch keepToolRunning = new CountDownLatch(1);
+        try {
+            Thread.currentThread().interrupt();
+
+            assertThatThrownBy(() -> executor.execute(() -> {
+                try {
+                    keepToolRunning.await();
+                    return "unexpected";
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return "interrupted";
+                }
+            })).isInstanceOfSatisfying(CvChatException.class, failure -> {
+                assertThat(failure.status()).isEqualTo(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
+                assertThat(failure).hasMessage("CV chat tool execution interrupted");
+            });
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            // CvChatToolExecutor correctly restores the caller's interrupt flag. Clear it so this JUnit worker can run
+            // later tests normally, then release/cancel any virtual-thread work owned by this focused test.
+            Thread.interrupted();
+            keepToolRunning.countDown();
             executor.shutdown();
         }
     }

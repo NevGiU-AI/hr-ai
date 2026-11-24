@@ -85,6 +85,19 @@ class CvChatConversationServiceTest {
     }
 
     @Test
+    void rejectsAnotherOwnersExecutionScopeBeforeLoadingCandidatesJobsOrMemory() {
+        when(conversations.findByIdAndOrganizationIdAndOwnerUserIdAndExpiresAtAfter(
+                org.mockito.ArgumentMatchers.eq("conversation"), org.mockito.ArgumentMatchers.eq("tenant-a"),
+                org.mockito.ArgumentMatchers.eq(2L), any())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.executionScope("conversation", actor(2L, "tenant-a")))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Conversation not found");
+
+        verifyNoInteractions(scopeCandidates, candidates, jobs, memory, messages, messageCitations);
+    }
+
+    @Test
     void listsOnlyTheAuthenticatedOwnersActiveConversations() {
         when(conversations.findAllByOrganizationIdAndOwnerUserIdAndExpiresAtAfterOrderByUpdatedAtDesc(
                 org.mockito.ArgumentMatchers.eq("tenant-a"), org.mockito.ArgumentMatchers.eq(1L),

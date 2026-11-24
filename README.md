@@ -257,6 +257,13 @@ application-owned confirmed-scope fallback when advisory provider calls were inc
 operational and evaluation-history answers readable by separating candidates with blank lines. Normal grounded RAG,
 citations, refusals, tenant scope, and confirmation remained intact, with no schema, Flyway, frontend, Compose,
 environment, or provider-configuration change.
+The third tool-hardening slice passed focused staging and production acceptance in release `v0.49.0` at main revision
+`64f8fa8` on 24 November 2026. PR #230 preserved reviewed tool failures across deterministic routing, Spring AI
+callbacks, and the HTTP boundary, including the HTTP 504 timeout contract, without changing normal operational or
+grounded chat behavior. PR #231 added deterministic caller-interruption coverage for cancellation, interrupt-flag
+restoration, Spring AI propagation, and the HTTP 503 response. Its focused 14-test set and complete 413-test backend
+suite passed, with eight opt-in provider tests skipped. Neither PR required schema, Flyway, frontend, Compose,
+environment, provider-configuration, or semantic-index changes.
 Production repeated the focused question-policy
 checks successfully on 30 October 2026 in release `v0.22.0`. The paired backup tooling is implemented,
 but its staging and production installation plus isolated restore acceptance are deliberately scheduled after the

@@ -462,6 +462,21 @@ multi-candidate document-status and evaluation-history answers render one blank 
 presentation correction changes neither tool results nor authorization, persistence, API, or citation semantics.
 Neither PR required a schema, Flyway, frontend, Compose, environment, or provider-configuration change.
 
+### Reviewed failure-propagation acceptance
+
+PRs #230 and #231 passed focused staging and production acceptance in release `v0.49.0` at revision `64f8fa8` on
+24 November 2026. PR #230 preserved reviewed `CvChatException` outcomes across deterministic operational routing,
+Spring AI callback execution, and the HTTP boundary. Deterministic fault injection verified the required-tool timeout
+contract as HTTP `504` with `CV chat tool execution timed out`; normal document-status, ingestion-warning,
+evaluation-history, grounded RAG, citation, confirmed-scope, and controlled-refusal paths remained healthy.
+
+PR #231 completed the interruption coverage without changing runtime code. A `CountDownLatch` keeps virtual-thread tool
+work active while the caller is deliberately interrupted. The regression verifies cancellation, restoration of the
+caller's interrupt flag, Spring AI rethrow of the exact reviewed failure, and HTTP `503` with
+`CV chat tool execution interrupted`. The focused 14-test set and complete 413-test backend suite passed with eight
+existing opt-in provider tests skipped. Neither PR required a schema, Flyway, frontend, Compose, environment,
+provider-configuration, or semantic-index change.
+
 The diagram ends at confirmed-scope readiness intentionally. `CvChatComparisonService` is the later, separate evidence
 boundary: it reauthorizes candidate IDs and the optional job, applies the comparison question policy, retrieves bounded
 CV evidence, calls `CvChatComparisonModel`, and validates complete citations. Tool preflight cannot bypass or replace

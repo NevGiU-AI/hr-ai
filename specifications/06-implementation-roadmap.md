@@ -411,7 +411,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
    workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
    environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
-3. **[~ Active — first three slices implemented] Harden every user-visible tool path.** Test exact tool selection, bounded and
+3. **[~ Active — first three slices completed] Harden every user-visible tool path.** Test exact tool selection, bounded and
    malformed arguments, call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
    prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
    result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic. The first hardening
@@ -443,7 +443,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    answers; focused staging and production acceptance confirmed readable multi-candidate output without changing the
    tool data, API, persistence, authorization, or citation contracts. Neither PR required schema, Flyway, frontend,
    Compose, environment, or provider-configuration changes.
-   **Implemented third slice, pending environment acceptance:** reviewed tool failures now retain their application-owned
+   **Completed third slice:** reviewed tool failures now retain their application-owned
    status and privacy-safe message across both deterministic calls and Spring AI callbacks. In particular, a required
    tool timeout reaches the conversation HTTP boundary as `504 CV chat tool execution timed out` instead of being
    flattened into a generic `502` or converted to model-readable tool-result text. Spring AI continues its default
@@ -451,6 +451,15 @@ focused production checks, and recorded acceptance before the next dependent sli
    rethrown. The optional confirmed-scope advisory preflight remains best-effort and may still use the independently
    authorized application fallback because its result is neither a required operational answer nor an authorization
    decision. Unit, callback-processor, service, and controller tests cover both propagation paths and the HTTP contract.
+   PR #230 passed focused staging and production acceptance in release `v0.49.0` at revision `64f8fa8` on
+   24 November 2026. Normal document-status, warning, evaluation-history, grounded RAG, citation, scope, and refusal
+   behavior remained healthy, while deterministic fault injection verified that required timeouts retain HTTP `504`
+   rather than becoming generic `502` responses. PR #231 added the previously missing caller-interruption regression:
+   the test blocks virtual-thread work with a one-use latch, interrupts the caller, verifies cancellation and restoration
+   of the interrupt flag, carries the reviewed failure through Spring AI, and asserts HTTP `503` with the safe
+   `CV chat tool execution interrupted` message. Its focused 14-test set and complete 413-test backend suite passed;
+   eight opt-in provider tests remained skipped. PR #231 changed tests and comments only. Neither PR required schema,
+   Flyway, frontend, Compose, environment, provider-configuration, or semantic-index changes.
    **Remaining before Step 3 is complete:** broader tenant/scope and conversation-memory isolation attacks, prompt/tool-result injection
    coverage, downstream concurrency limits, adversarial calibration, deterministic postconditions across every tool
    path, and provider-result faithfulness.

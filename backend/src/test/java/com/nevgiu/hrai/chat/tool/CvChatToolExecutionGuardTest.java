@@ -70,12 +70,20 @@ class CvChatToolExecutionGuardTest {
     @Test
     void preservesCallerInterruptionAsReviewedServiceUnavailable() {
         CvChatToolExecutor executor = new CvChatToolExecutor(Duration.ofSeconds(5));
+        // A CountDownLatch is a one-use gate. Its initial count of one keeps the tool's virtual thread blocked in
+        // await() until this test explicitly calls countDown(). This is more deterministic than sleeping: the tool
+        // cannot finish before Future.get observes that the calling JUnit thread has been interrupted.
         CountDownLatch keepToolRunning = new CountDownLatch(1);
         try {
+            // Interrupt the caller, not the virtual thread running the tool. Future.get must convert this condition to
+            // the reviewed 503 response while also restoring the interrupt flag expected by cooperative Java code.
             Thread.currentThread().interrupt();
 
             assertThatThrownBy(() -> executor.execute(() -> {
                 try {
+                    // This await runs on the executor's virtual thread. Cancellation interrupts it after the caller's
+                    // Future.get fails, while countDown() in cleanup guarantees the gate is open even if cancellation
+                    // behavior changes or the assertion fails early.
                     keepToolRunning.await();
                     return "unexpected";
                 } catch (InterruptedException interrupted) {

@@ -170,6 +170,69 @@ class CvChatToolOrchestrationCallbackIntegrationTest {
     }
 
     @Test
+    void everyCandidateSpecificCallbackRejectsUnconfirmedIdsBeforeAnyRepositoryRead() throws Exception {
+        authenticate();
+        CandidateRepository candidates = mock(CandidateRepository.class);
+        CvDocumentRepository documents = mock(CvDocumentRepository.class);
+        EvaluationHistoryService evaluationHistory = mock(EvaluationHistoryService.class);
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirm(List.of(1L));
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class), candidates,
+                    documents, mock(JobRepository.class), evaluationHistory, executorFixture.guard(), scope,
+                    new CvChatToolDiscoveryState(), new CvChatToolPlanningState(), new CvChatDocumentToolState(),
+                    new CvChatEvaluationToolState(), mock(CvChatOrganizationDiscoveryService.class));
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+            List<ToolCallback> callbacks = List.of(
+                    callback(registry.confirmedScopeCallbacks(), "get_candidate_summary"),
+                    callback(registry.evaluationEvidenceCallbacks(), "get_evaluation_evidence"),
+                    callback(registry.documentStatusCallbacks(), "get_document_status"),
+                    callback(registry.documentStatusCallbacks(), "get_ingestion_warnings"));
+
+            callbacks.forEach(unconfirmedCallback -> {
+                Throwable failure = catchThrowable(() -> unconfirmedCallback.call("{\"candidateId\":2}"));
+                assertThat(rootCause(failure))
+                        .isInstanceOf(CvChatException.class)
+                        .hasMessage("Candidate is outside the confirmed chat scope");
+            });
+
+            verifyNoInteractions(candidates, documents, evaluationHistory);
+        } finally {
+            executorFixture.close();
+        }
+    }
+
+    @Test
+    void jobCallbackRejectsAnUnconfirmedIdBeforeAnyRepositoryRead() throws Exception {
+        authenticate();
+        JobRepository jobs = mock(JobRepository.class);
+        CvChatToolScope scope = new CvChatToolScope();
+        scope.confirm(List.of(1L));
+        scope.confirmJob(21L);
+        ExecutorFixture executorFixture = executorFixture();
+        try {
+            CvChatReadTools tools = new CvChatReadTools(mock(CvChatCandidateResolutionService.class),
+                    mock(CandidateRepository.class), mock(CvDocumentRepository.class), jobs,
+                    mock(EvaluationHistoryService.class), executorFixture.guard(), scope,
+                    new CvChatToolDiscoveryState(), new CvChatToolPlanningState(), new CvChatDocumentToolState(),
+                    new CvChatEvaluationToolState(), mock(CvChatOrganizationDiscoveryService.class));
+            CvChatReadToolRegistry registry = new CvChatReadToolRegistry(tools);
+
+            Throwable failure = catchThrowable(() -> callback(
+                    registry.confirmedScopeCallbacksWithJob(), "get_job_requirements")
+                    .call("{\"jobId\":22}"));
+
+            assertThat(rootCause(failure))
+                    .isInstanceOf(CvChatException.class)
+                    .hasMessage("Approved job is outside the confirmed chat scope");
+            verifyNoInteractions(jobs);
+        } finally {
+            executorFixture.close();
+        }
+    }
+
+    @Test
     void callbacksRejectOversizedQueriesAndNonPositiveIdsBeforeDownstreamWork() throws Exception {
         authenticate();
         CvChatOrganizationDiscoveryService organizationDiscovery = mock(CvChatOrganizationDiscoveryService.class);

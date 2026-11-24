@@ -411,7 +411,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
    workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
    environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
-3. **[~ Active — first three slices completed] Harden every user-visible tool path.** Test exact tool selection, bounded and
+3. **[~ Active — first three slices completed, fourth implemented] Harden every user-visible tool path.** Test exact tool selection, bounded and
    malformed arguments, call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
    prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
    result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic. The first hardening
@@ -460,9 +460,17 @@ focused production checks, and recorded acceptance before the next dependent sli
    `CV chat tool execution interrupted` message. Its focused 14-test set and complete 413-test backend suite passed;
    eight opt-in provider tests remained skipped. PR #231 changed tests and comments only. Neither PR required schema,
    Flyway, frontend, Compose, environment, provider-configuration, or semantic-index changes.
-   **Remaining before Step 3 is complete:** broader tenant/scope and conversation-memory isolation attacks, prompt/tool-result injection
-   coverage, downstream concurrency limits, adversarial calibration, deterministic postconditions across every tool
-   path, and provider-result faithfulness.
+   **Implemented fourth slice, pending merge:** expanded deterministic isolation coverage proves another owner cannot
+   load an execution scope, candidate/job scope, memory, messages, or citations; an ownership failure stops before
+   history, operational tools, RAG, comparison, or provider work; and malicious prior history cannot replace the
+   persisted tenant, candidate, or approved-job scope. Real Spring AI callbacks for candidate summary, document status,
+   ingestion warnings, evaluation evidence, and job requirements now all reject unconfirmed IDs before repository
+   access. Existing schema tests continue to prove that model-controlled arguments contain no tenant, organization,
+   role, or authorization fields, while deterministic/provider datasets retain candidate/job tool-result injection,
+   confirmation-bypass, and scope-expansion cases. The focused isolation suite passed 50 tests and the complete backend
+   suite passed 418 tests with eight existing opt-in provider tests skipped.
+   **Remaining before Step 3 is complete:** downstream concurrency limits, broader prompt/tool-result adversarial
+   calibration, deterministic postconditions across every tool path, and provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

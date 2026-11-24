@@ -478,7 +478,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    that ignores interruption continues holding capacity until it actually exits. Deterministic latch-based tests prove
    saturation, zero rejected downstream work, permit recovery, Spring AI rethrow, and the HTTP contract without timing
    sleeps. The conservative limit aligns with the default ten-connection JDBC pool pending the later measured
-   concurrency benchmark; no tenant, request, prompt, or candidate state is stored in the singleton executor.
+   concurrency benchmark; no tenant, request, prompt, or candidate state is stored in the singleton executor. The
+   existing `CvChatToolOrchestrationProviderEvaluationTest` and `CvChatDocumentToolProviderEvaluationTest` live-provider
+   gate also passed, confirming normal-capacity tool selection and bounded result faithfulness.
    **Remaining before Step 3 is complete:** broader prompt/tool-result adversarial calibration, deterministic
    postconditions across every tool path, and provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,

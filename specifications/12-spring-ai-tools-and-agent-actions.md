@@ -427,7 +427,9 @@ above the reviewed ceiling. Normal completion, application exceptions, and inter
 
 The deterministic saturation regression uses one-use latches rather than sleeps: one action demonstrably holds the
 only test permit, a second action is rejected without executing, and a third succeeds after release. Separate tests
-carry the same reviewed failure through Spring AI's callback processor and render the exact HTTP `503` contract.
+carry the same reviewed failure through Spring AI's callback processor and render the exact HTTP `503` contract. The
+existing orchestration and document-tool live-provider evaluation suites also passed, confirming normal-capacity tool
+selection and bounded result faithfulness; deterministic tests remain the authority for forced saturation behavior.
 - The confirmed-scope advisory preflight is intentionally different: it does not answer an operational question and is
   not authorization evidence. If that optional planning call is incomplete or unavailable, deterministic application
   code independently reauthorizes the submitted scope and may return `CONFIRMED_SCOPE_READY`. This fallback must not be

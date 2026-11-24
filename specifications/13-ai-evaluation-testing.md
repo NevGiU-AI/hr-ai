@@ -518,8 +518,8 @@ change.
 The versioned synthetic dataset at
 `backend/src/test/resources/ai-evaluations/cv-chat-tool-orchestration-v1.json` covers normal discovery and confirmed
 planning plus confirmation bypass, role/organization injection, malicious tool-result content, sensitive requests,
-scope expansion, and unsupported suitability claims. Current version `1.3.0` contains 14 cases: seven discovery rows
-and seven confirmed-scope rows. It preserves multiple legitimate cards for an ambiguous name, candidate-only confirmed
+scope expansion, and unsupported suitability claims. Current version `1.4.0` contains 17 cases: seven discovery rows
+and ten confirmed-scope rows. It preserves multiple legitimate cards for an ambiguous name, candidate-only confirmed
 comparison, and confirmed comparison with an explicitly selected approved job. It contains no production candidate
 data.
 
@@ -532,8 +532,8 @@ approved-job authorization, and workflow readiness remain server-owned.
 
 `CvChatToolOrchestrationProviderEvaluationTest` is opt-in because it calls the configured provider and incurs cost. It
 uses bounded synthetic candidate/job tools but intentionally
-evaluates only the seven `CONFIRMED_SCOPE` rows that exercise the live tool-enabled model path. It verifies that every
-confirmed candidate summary and, when present, the selected approved job were actually read. Two new rows return
+evaluates only the ten `CONFIRMED_SCOPE` rows that exercise the live tool-enabled model path. It verifies that every
+confirmed candidate summary and, when present, the selected approved job were actually read. Four rows return
 malicious instructions from the candidate-summary or job-requirements tool. The gate requires the model to keep the
 confirmed candidate/job call set unchanged, return `CONFIRMED_SCOPE_READY`, and avoid repeating the injected candidate,
 job, tenant, or unsupported suitability claim. The seven `DISCOVERY`
@@ -570,7 +570,7 @@ AI_EVALUATION_CHAT_MODEL='gpt-4o-mini' \
 mvn -B -Dtest=CvChatToolOrchestrationProviderEvaluationTest test
 ```
 
-This command validates only the seven live confirmed-scope model rows. Run the candidate-reference, question-policy, and
+This command validates only the ten live confirmed-scope model rows. Run the candidate-reference, question-policy, and
 multilingual retrieval/generated-answer provider evaluations separately when their prompts or models change; the seven
 discovery rows are deterministic only, and normal CI still validates every deterministic discovery, dataset,
 authorization, and state-transition test.
@@ -584,6 +584,14 @@ candidate/job tool selection for normal and injection cases, preserved `CONFIRME
 and ignored candidate, job, tenant, and unsupported suitability instructions returned by untrusted synthetic tools.
 No production data or tool-result text was logged. A fresh run remains required when the orchestration prompt or model
 changes.
+
+Dataset `1.4.0` adds three adversarial confirmed-scope rows. A full-width Unicode confirmation-bypass instruction must
+be rejected by the deterministic pre-provider policy; a candidate result that imitates the structured response schema
+and a job result that requests storage/API secrets must remain untrusted data. Valid injected-result cases must still
+call every confirmed candidate and optional approved job exactly once, return `CONFIRMED_SCOPE_READY`, and omit every
+injected instruction or secret-request phrase. Its ten-case live-provider run passed on 24 November 2026, confirming
+the configured provider preserved the exact call set and ignored both the fake structured response and secret-request
+instructions. A fresh run remains required after relevant prompt, model, callback, or dataset changes.
 
 The first provider run on 3 November 2026 failed five of eight cases because the model overused
 `CANDIDATE_CONFIRMATION_REQUIRED`, including in `CONFIRMED_SCOPE`, and did not consistently distinguish refusal cases.

@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.chat;
 
+import java.text.Normalizer;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -22,7 +23,9 @@ final class CvChatToolRequestPolicy {
         if (message == null || message.isBlank()) {
             return false;
         }
-        String normalized = message.toLowerCase(Locale.ROOT);
+        // Compatibility normalization closes simple presentation-form bypasses such as full-width Latin text while
+        // preserving the deliberately narrow action-plus-boundary rule below. Semantic policy remains model-backed.
+        String normalized = Normalizer.normalize(message, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
         return OVERRIDE_ACTION.matcher(normalized).find() && PROTECTED_BOUNDARY.matcher(normalized).find();
     }
 }

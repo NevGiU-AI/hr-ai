@@ -186,6 +186,10 @@ cases. The opt-in provider gate now audits the exact confirmed candidate/job cal
 ignore injected scope, tenant, and unsupported suitability instructions; ordinary CI validates the expanded synthetic
 dataset and compiles the provider harness without making paid calls. Its seven-case confirmed-scope provider run passed
 on 21 November 2026.
+Dataset `1.4.0` extends that reviewed gate with a full-width Unicode workflow-override attempt, a candidate tool result
+that imitates the structured response schema, and a job tool result that requests secret disclosure. Compatibility
+normalization closes the presentation-form bypass before provider or tool execution while retaining the narrow
+action-plus-protected-boundary rule. The expanded ten-case confirmed-scope provider gate passed on 24 November 2026.
 The expanded 24-case question-policy dataset `1.1.0` live-provider gate then passed on 10 November 2026. Future policy
 prompt or model changes still require a fresh opt-in provider run before promotion.
 Question-policy dataset `1.2.0` adds contextual professional and current-sensitive follow-up regressions. The follow-up

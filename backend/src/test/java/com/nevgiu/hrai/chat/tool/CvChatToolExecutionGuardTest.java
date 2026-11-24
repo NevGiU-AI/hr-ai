@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -116,5 +118,108 @@ class CvChatToolExecutionGuardTest {
 
         verify(executor).execute(org.mockito.ArgumentMatchers.<Supplier<Integer>>any(),
                 org.mockito.ArgumentMatchers.eq(Duration.ofSeconds(20)));
+    }
+
+    @Test
+    void rejectsSaturatedConcurrencyBeforeRunningMoreDownstreamWorkAndRecoversCapacity() throws Exception {
+        CvChatToolExecutor executor = new CvChatToolExecutor(
+                Duration.ofSeconds(5), 1, Duration.ofMillis(20));
+        CountDownLatch firstActionStarted = new CountDownLatch(1);
+        CountDownLatch releaseFirstAction = new CountDownLatch(1);
+        AtomicReference<String> firstResult = new AtomicReference<>();
+        AtomicReference<Throwable> firstFailure = new AtomicReference<>();
+        AtomicBoolean rejectedActionRan = new AtomicBoolean();
+
+        Thread firstCaller = Thread.ofVirtual().start(() -> {
+            try {
+                firstResult.set(executor.execute(() -> {
+                    firstActionStarted.countDown();
+                    try {
+                        releaseFirstAction.await();
+                        return "first";
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        throw new AssertionError("First action was unexpectedly interrupted", interrupted);
+                    }
+                }));
+            } catch (Throwable failure) {
+                firstFailure.set(failure);
+            }
+        });
+
+        try {
+            // The latch proves that the sole permit is held before the second call attempts acquisition; no sleeps or
+            // scheduler timing assumptions are needed for this saturation regression.
+            firstActionStarted.await();
+
+            assertThatThrownBy(() -> executor.execute(() -> {
+                rejectedActionRan.set(true);
+                return "unexpected";
+            })).isInstanceOfSatisfying(CvChatException.class, failure -> {
+                assertThat(failure.status()).isEqualTo(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
+                assertThat(failure).hasMessage("CV chat tool execution capacity is unavailable");
+            });
+            assertThat(rejectedActionRan).isFalse();
+
+            releaseFirstAction.countDown();
+            firstCaller.join();
+            assertThat(firstFailure).hasValue(null);
+            assertThat(firstResult).hasValue("first");
+
+            // Completion returns the permit, so saturation is temporary rather than a permanent executor leak.
+            assertThat(executor.execute(() -> "after-release")).isEqualTo("after-release");
+        } finally {
+            releaseFirstAction.countDown();
+            firstCaller.join();
+            executor.shutdown();
+        }
+    }
+
+    @Test
+    void timedOutWorkKeepsItsPermitUntilTheUnderlyingActionActuallyExits() throws Exception {
+        CvChatToolExecutor executor = new CvChatToolExecutor(
+                Duration.ofMillis(50), 1, Duration.ofMillis(20));
+        CountDownLatch actionStarted = new CountDownLatch(1);
+        CountDownLatch cancellationObserved = new CountDownLatch(1);
+        CountDownLatch allowActionExit = new CountDownLatch(1);
+        AtomicBoolean concurrentActionRan = new AtomicBoolean();
+
+        try {
+            assertThatThrownBy(() -> executor.execute(() -> {
+                actionStarted.countDown();
+                // Simulate downstream code that notices cancellation but cannot stop immediately. The executor must
+                // keep this action inside the concurrency ceiling until the dependency call really returns.
+                boolean interrupted = false;
+                while (true) {
+                    try {
+                        allowActionExit.await();
+                        break;
+                    } catch (InterruptedException cancellation) {
+                        interrupted = true;
+                        cancellationObserved.countDown();
+                    }
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+                return "eventually-finished";
+            })).isInstanceOf(CvChatException.class)
+                    .hasMessage("CV chat tool execution timed out");
+
+            actionStarted.await();
+            cancellationObserved.await();
+            assertThatThrownBy(() -> executor.execute(() -> {
+                concurrentActionRan.set(true);
+                return "unexpected";
+            })).isInstanceOf(CvChatException.class)
+                    .hasMessage("CV chat tool execution capacity is unavailable");
+            assertThat(concurrentActionRan).isFalse();
+
+            allowActionExit.countDown();
+            assertThat(executor.execute(() -> "after-real-exit")).isEqualTo("after-real-exit");
+        } finally {
+            allowActionExit.countDown();
+            executor.shutdown();
+        }
     }
 }

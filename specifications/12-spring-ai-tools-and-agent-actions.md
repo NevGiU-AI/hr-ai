@@ -388,21 +388,48 @@ The main responsibilities are:
   downstream work begins. Failed, timed-out, and rejected repeated attempts still consume budget. Its counters are
   initialized before callbacks run and use atomic values so concurrent callback attempts cannot bypass a limit.
   The singleton `CvChatToolExecutor` runs approved work on virtual threads with a three-second default timeout and the
-  reviewed twenty-second semantic-discovery timeout. Neither component contains tenant or authorization state.
+  reviewed twenty-second semantic-discovery timeout. A separate fair ten-permit semaphore bounds active tool actions
+  across concurrent HTTP requests; a virtual thread waits at most 100 ms for capacity before the request receives the
+  reviewed privacy-safe `503` saturation response. Neither component contains tenant or authorization state.
 - Required user-visible tool failures preserve the reviewed `CvChatException` contract end to end. Deterministic
   operational routing rethrows those failures unchanged, and the application-provided Spring AI
   `ToolExecutionExceptionProcessor` rethrows the same reviewed exception from model-selected callbacks instead of
   exposing it to the model as tool-result text. A timeout therefore reaches the API as HTTP `504` with the
-  privacy-safe `CV chat tool execution timed out` message; interruption, budget, authorization, and validation statuses
-  are preserved in the same way. Unknown callback exceptions retain Spring AI's default handling and are still reduced
-  to application-owned generic failures before reaching a client.
+  privacy-safe `CV chat tool execution timed out` message; interruption, concurrency saturation, budget, authorization,
+  and validation statuses are preserved in the same way. Unknown callback exceptions retain Spring AI's default
+  handling and are still reduced to application-owned generic failures before reaching a client.
   The concrete response owners are deliberately separated: `CvChatToolExecutor` creates the `504` timeout and `503`
-  interruption outcomes; `CvChatToolExecutionGuard` creates the `429` global and capability-budget outcomes;
+  interruption/concurrency outcomes; `CvChatToolExecutionGuard` creates the `429` global and capability-budget outcomes;
   `CvChatReadTools` creates authentication and role-access outcomes; `CvChatToolScope` creates confirmed candidate/job
   authorization and scope-conflict outcomes; and `CvChatToolArguments` creates malformed model-generated ID and query
   validation outcomes. `CvChatDocumentToolService` preserves them, `CvChatToolFailureConfiguration` carries them across
   Spring AI callback execution, and `ApiExceptionHandler` renders the retained status and safe message at the HTTP
   boundary.
+
+### Downstream concurrency bulkhead
+
+Virtual threads make blocking orchestration inexpensive, but an unbounded virtual-thread-per-task executor does not
+make PostgreSQL connections, provider quotas, or other downstream resources unlimited. `CvChatToolExecutor` therefore
+uses a singleton fair semaphore to admit no more than ten active guarded tool actions across all requests. The number
+is a conservative pre-benchmark ceiling aligned with the default ten-connection Hikari pool; the later concurrency
+milestone must measure database and provider capacity independently before tuning or splitting this limit.
+
+Capacity acquisition occurs inside the submitted virtual thread. Request/platform threads do not block while waiting,
+and the existing three- or twenty-second caller timeout includes that wait. When all permits remain occupied for
+100 ms, the executor raises `503 CV chat tool execution capacity is unavailable`; the rejected supplier is never
+invoked. Spring AI receives no tool-result text to reinterpret because the reviewed `CvChatException` is rethrown to
+the HTTP boundary.
+
+Permit lifetime follows actual downstream work, not caller patience. A timeout cancels and interrupts the virtual
+thread, but the permit is released only from the action wrapper's `finally` block. If a JDBC driver or provider client
+temporarily ignores interruption, that work continues consuming its permit and cannot silently push real concurrency
+above the reviewed ceiling. Normal completion, application exceptions, and interruption all release exactly once.
+
+The deterministic saturation regression uses one-use latches rather than sleeps: one action demonstrably holds the
+only test permit, a second action is rejected without executing, and a third succeeds after release. Separate tests
+carry the same reviewed failure through Spring AI's callback processor and render the exact HTTP `503` contract. The
+existing orchestration and document-tool live-provider evaluation suites also passed, confirming normal-capacity tool
+selection and bounded result faithfulness; deterministic tests remain the authority for forced saturation behavior.
 - The confirmed-scope advisory preflight is intentionally different: it does not answer an operational question and is
   not authorization evidence. If that optional planning call is incomplete or unavailable, deterministic application
   code independently reauthorizes the submitted scope and may return `CONFIRMED_SCOPE_READY`. This fallback must not be

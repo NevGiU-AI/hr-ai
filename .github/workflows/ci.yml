@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
 
 permissions:
@@ -69,11 +69,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
       - name: Build backend image
-        run: docker build -t hr-ai-backend:ci ./backend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          load: true
+          tags: hr-ai-backend:ci
+          cache-from: type=gha,scope=ci-backend
+          # Cache export is an optimization. A transient GitHub cache write
+          # failure must not turn an otherwise valid image build red.
+          cache-to: type=gha,mode=max,scope=ci-backend,ignore-error=true
 
       - name: Build frontend image
-        run: docker build -t hr-ai-frontend:ci ./frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          load: true
+          tags: hr-ai-frontend:ci
+          cache-from: type=gha,scope=ci-frontend
+          cache-to: type=gha,mode=max,scope=ci-frontend,ignore-error=true
 
       - name: Validate deployment model
         env:

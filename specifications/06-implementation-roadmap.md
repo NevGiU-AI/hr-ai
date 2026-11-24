@@ -380,7 +380,9 @@ self-explanatory code are explicitly out of scope. OpenAPI publication begins on
   outcome checks, application citation validation, required-reference completeness, and opt-in Spring AI relevancy
   and fact-checking judges. Its live provider gate also passed on 20 November 2026. Tool-orchestration dataset `1.3.0`
   now extends exact candidate/job call auditing with confirmed-scope candidate-result and job-result injection cases;
-  its seven-case confirmed-scope provider run passed on 21 November 2026. Broader adversarial calibration remains.
+  its seven-case confirmed-scope provider run passed on 21 November 2026. Dataset `1.4.0` adds a Unicode
+  compatibility-form workflow-override regression plus fake-structured-response and secret-request tool-result
+  injections. Its expanded ten-case confirmed-scope provider run passed on 24 November 2026.
 
 ### Ordered pre-dashboard completion sequence
 
@@ -487,8 +489,12 @@ focused production checks, and recorded acceptance before the next dependent sli
    Accepted normal paths covered organization discovery, one- and five-candidate operational/evaluation questions,
    grounded comparison and citations, conversation resume/navigation, and post-test backend health. No schema, Flyway,
    frontend, Compose, environment, provider-configuration, or semantic-index change was required.
-   **Remaining before Step 3 is complete:** broader prompt/tool-result adversarial calibration, deterministic
-   postconditions across every tool path, and provider-result faithfulness.
+   Broader prompt/tool-result adversarial calibration is now complete for the current callback set: Unicode
+   compatibility forms are normalized before the narrow application-owned override guard, and synthetic candidate/job
+   results test fake structured outcomes and secret requests while preserving exact confirmed calls. Dataset `1.4.0`'s
+   ten-case provider gate passed on 24 November 2026.
+   **Remaining before Step 3 is complete:** deterministic postconditions across every tool path and broader
+   provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

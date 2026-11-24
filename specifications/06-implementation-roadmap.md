@@ -471,7 +471,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    suite passed 418 tests with eight existing opt-in provider tests skipped. The separately enabled
    `CvChatToolOrchestrationProviderEvaluationTest` and `CvChatDocumentToolProviderEvaluationTest` live-provider gate
    also passed before merge, confirming bounded scope and tool-result faithfulness against the configured provider.
-   **Implemented fifth slice, pending merge:** the singleton virtual-thread executor now applies a fair ten-permit
+   **Completed fifth slice:** the singleton virtual-thread executor now applies a fair ten-permit
    bulkhead before any guarded tool action reaches a repository or provider. A virtual thread waits at most 100 ms for
    capacity, then returns HTTP `503` with the privacy-safe `CV chat tool execution capacity is unavailable` response;
    the rejected action never runs. A caller timeout requests cancellation but does not release the permit early: work
@@ -480,7 +480,13 @@ focused production checks, and recorded acceptance before the next dependent sli
    sleeps. The conservative limit aligns with the default ten-connection JDBC pool pending the later measured
    concurrency benchmark; no tenant, request, prompt, or candidate state is stored in the singleton executor. The
    existing `CvChatToolOrchestrationProviderEvaluationTest` and `CvChatDocumentToolProviderEvaluationTest` live-provider
-   gate also passed, confirming normal-capacity tool selection and bounded result faithfulness.
+   gate also passed, confirming normal-capacity tool selection and bounded result faithfulness. PR #235 then passed
+   focused staging acceptance, controlled staging saturation/recovery validation, and the protected non-destructive BDD
+   gate before the exact accepted revision was promoted. Release `v0.50.0` at revision `d654eb6` passed focused
+   production acceptance on 24 November 2026 without running the intentional saturation load against production.
+   Accepted normal paths covered organization discovery, one- and five-candidate operational/evaluation questions,
+   grounded comparison and citations, conversation resume/navigation, and post-test backend health. No schema, Flyway,
+   frontend, Compose, environment, provider-configuration, or semantic-index change was required.
    **Remaining before Step 3 is complete:** broader prompt/tool-result adversarial calibration, deterministic
    postconditions across every tool path, and provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,

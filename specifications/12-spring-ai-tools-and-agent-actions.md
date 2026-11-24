@@ -430,6 +430,20 @@ only test permit, a second action is rejected without executing, and a third suc
 carry the same reviewed failure through Spring AI's callback processor and render the exact HTTP `503` contract. The
 existing orchestration and document-tool live-provider evaluation suites also passed, confirming normal-capacity tool
 selection and bounded result faithfulness; deterministic tests remain the authority for forced saturation behavior.
+
+### Downstream concurrency acceptance
+
+PR #235 passed focused staging acceptance, a controlled staging saturation/recovery check, and the protected
+non-destructive BDD gate before promotion. The checks retained normal organization discovery, one- and five-candidate
+document-status/warning/evaluation answers, grounded comparison and citations, conversation resume/navigation, and
+healthy service recovery after concurrent load. Saturation failures, when produced by the controlled check, retained
+the application-owned HTTP `503` contract; the deterministic latch tests remain the authoritative proof because
+ordinary concurrent requests are not guaranteed to reach the semaphore simultaneously.
+
+The exact accepted revision was promoted as release `v0.50.0` at `d654eb6` and passed focused production acceptance on
+24 November 2026. The intentional saturation load was not run against production. No schema, Flyway, frontend,
+Compose, environment, provider-configuration, or semantic-index change was required.
+
 - The confirmed-scope advisory preflight is intentionally different: it does not answer an operational question and is
   not authorization evidence. If that optional planning call is incomplete or unavailable, deterministic application
   code independently reauthorizes the submitted scope and may return `CONFIRMED_SCOPE_READY`. This fallback must not be

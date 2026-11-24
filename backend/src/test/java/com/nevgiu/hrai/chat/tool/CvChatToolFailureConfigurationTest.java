@@ -23,4 +23,19 @@ class CvChatToolFailureConfigurationTest {
                 .isInstanceOfSatisfying(CvChatException.class,
                         failure -> assertThat(failure.status()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT));
     }
+
+    @Test
+    void rethrowsReviewedInterruptionInsteadOfReturningItToTheModel() {
+        var expected = new CvChatException(HttpStatus.SERVICE_UNAVAILABLE,
+                "CV chat tool execution interrupted");
+        var processor = new CvChatToolFailureConfiguration().toolExecutionExceptionProcessor();
+        var springAiFailure = new ToolExecutionException(mock(ToolDefinition.class), expected);
+
+        assertThatThrownBy(() -> processor.process(springAiFailure))
+                .isSameAs(expected)
+                .isInstanceOfSatisfying(CvChatException.class, failure -> {
+                    assertThat(failure.status()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(failure).hasMessage("CV chat tool execution interrupted");
+                });
+    }
 }

@@ -3,7 +3,8 @@ package com.nevgiu.hrai.chat.tool;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,24 +16,29 @@ import java.util.Set;
 @Component
 @RequestScope
 public class CvChatToolPlanningState {
-    private final Set<Long> summarizedCandidateIds = new LinkedHashSet<>();
-    private final Set<Long> loadedJobIds = new LinkedHashSet<>();
+    private final Map<Long, Integer> summarizedCandidateCalls = new LinkedHashMap<>();
+    private final Map<Long, Integer> loadedJobCalls = new LinkedHashMap<>();
 
     public synchronized void recordCandidateSummary(Long candidateId) {
-        summarizedCandidateIds.add(candidateId);
+        summarizedCandidateCalls.merge(candidateId, 1, Integer::sum);
     }
 
     public synchronized void recordJobRequirements(Long jobId) {
-        loadedJobIds.add(jobId);
+        loadedJobCalls.merge(jobId, 1, Integer::sum);
     }
 
     public synchronized boolean covers(Set<Long> expectedCandidateIds, Long expectedJobId) {
-        return summarizedCandidateIds.containsAll(expectedCandidateIds)
-                && (expectedJobId == null || loadedJobIds.contains(expectedJobId));
+        boolean exactCandidateCalls = summarizedCandidateCalls.keySet().equals(expectedCandidateIds)
+                && summarizedCandidateCalls.values().stream().allMatch(count -> count == 1);
+        boolean exactJobCalls = expectedJobId == null
+                ? loadedJobCalls.isEmpty()
+                : loadedJobCalls.keySet().equals(Set.of(expectedJobId))
+                && loadedJobCalls.get(expectedJobId) == 1;
+        return exactCandidateCalls && exactJobCalls;
     }
 
     public synchronized Snapshot snapshot() {
-        return new Snapshot(summarizedCandidateIds.size(), loadedJobIds.size());
+        return new Snapshot(summarizedCandidateCalls.size(), loadedJobCalls.size());
     }
 
     public record Snapshot(int summarizedCandidateCount, int loadedJobCount) { }

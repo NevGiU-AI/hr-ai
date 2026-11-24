@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -93,6 +94,13 @@ public class CvChatReadTools {
         String validatedQuery = CvChatToolArguments.requireBoundedQuery(query);
         CvChatCandidateSearchResponse response = executionGuard.execute(CvChatToolCapability.CANDIDATE_SEARCH,
                 () -> candidateResolution.search(validatedQuery, actor.organizationId()));
+        if (response == null || response.candidates() == null
+                || response.candidates().stream().anyMatch(candidate -> candidate == null
+                || candidate.id() == null || candidate.id() <= 0)
+                || hasDuplicateIds(response.candidates().stream().map(CvChatCandidateSearchResponse.CandidateOption::id)
+                .toList())) {
+            throw invalidToolResult();
+        }
         List<CandidateCard> cards = response.candidates().stream().limit(MAX_SEARCH_RESULTS)
                 .map(candidate -> new CandidateCard(candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
@@ -115,6 +123,12 @@ public class CvChatReadTools {
         String validatedQuery = CvChatToolArguments.requireBoundedQuery(query);
         CandidateEvidenceSearchResult result = executionGuard.executeSemanticDiscovery(
                 () -> organizationDiscovery.discover(validatedQuery, actor.organizationId()));
+        if (result == null || result.candidates() == null
+                || result.candidates().stream().anyMatch(card -> card == null || card.id() == null || card.id() <= 0
+                || card.evidenceReferences() == null)
+                || hasDuplicateIds(result.candidates().stream().map(CandidateEvidenceCard::id).toList())) {
+            throw invalidToolResult();
+        }
         // The discovery service already applies these limits. Repeat them at the model-facing boundary so a future
         // internal service change cannot silently enlarge the callback result exposed to the provider.
         List<CandidateEvidenceCard> boundedCards = result.candidates().stream()
@@ -146,6 +160,9 @@ public class CvChatReadTools {
             Candidate candidate = candidates.findByIdAndOrganizationId(validatedCandidateId, actor.organizationId())
                     // Missing and cross-tenant IDs intentionally share one response to prevent tenant enumeration.
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Candidate not found"));
+            if (!validatedCandidateId.equals(candidate.getId())) {
+                throw invalidToolResult();
+            }
             CvDocument currentDocument = documents
                     .findAllByCandidateIdAndOrganizationId(validatedCandidateId, actor.organizationId())
                     .stream().findFirst().orElse(null);
@@ -170,6 +187,9 @@ public class CvChatReadTools {
         JobRequirements requirements = executionGuard.execute(CvChatToolCapability.JOB_REQUIREMENTS, () -> {
             Job job = jobs.findByIdAndOrganizationId(validatedJobId, actor.organizationId())
                     .orElseThrow(() -> new CvChatException(HttpStatus.NOT_FOUND, "Approved job not found"));
+            if (!validatedJobId.equals(job.getId())) {
+                throw invalidToolResult();
+            }
             return new JobRequirements(job.getId(), bounded(job.getTitle()), bounded(job.getLevel()),
                     bounded(job.getSummary()), bounded(job.getResponsibilities()),
                     bounded(job.getRequiredQualifications()), bounded(job.getPreferredQualifications()),
@@ -292,6 +312,14 @@ public class CvChatReadTools {
             return value;
         }
         return value.substring(0, maximumCharacters);
+    }
+
+    private boolean hasDuplicateIds(List<Long> ids) {
+        return new HashSet<>(ids).size() != ids.size();
+    }
+
+    private CvChatException invalidToolResult() {
+        return new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat tool result is unavailable");
     }
 
     private AppUserPrincipal currentChatActor() {

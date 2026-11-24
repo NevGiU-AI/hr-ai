@@ -4,6 +4,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
 import java.util.Locale;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,22 +29,38 @@ public class CvChatToolDiscoveryState {
     private final AtomicInteger searchCalls = new AtomicInteger();
     private final AtomicInteger emptySearches = new AtomicInteger();
     private final Set<String> successfulQueries = ConcurrentHashMap.newKeySet();
+    private final Map<String, AtomicInteger> queryCalls = new ConcurrentHashMap<>();
 
     public void record(String query, int resultCount) {
         // Count every invocation so orchestration can distinguish "the model never searched" from "the model
         // searched but found nothing". Those situations require different workflow outcomes.
         searchCalls.incrementAndGet();
+        String normalizedQuery = normalize(query);
+        queryCalls.computeIfAbsent(normalizedQuery, ignored -> new AtomicInteger()).incrementAndGet();
         if (resultCount <= 0) {
             emptySearches.incrementAndGet();
             return;
         }
         // Keep normalized queries only long enough to avoid treating repeated calls for one person as two resolved
         // candidates. Snapshot deliberately exposes the set size, never its values.
-        successfulQueries.add(query == null ? "" : query.strip().toLowerCase(Locale.ROOT));
+        successfulQueries.add(normalizedQuery);
+    }
+
+    /** Proves Java invoked one search for every extracted reference and no additional or repeated search. */
+    public boolean coversExactly(List<String> expectedQueries) {
+        Set<String> expected = expectedQueries.stream().map(this::normalize)
+                .collect(java.util.stream.Collectors.toSet());
+        return expected.size() == expectedQueries.size()
+                && queryCalls.keySet().equals(expected)
+                && queryCalls.values().stream().allMatch(count -> count.get() == 1);
     }
 
     public Snapshot snapshot() {
         return new Snapshot(searchCalls.get(), successfulQueries.size(), emptySearches.get());
+    }
+
+    private String normalize(String query) {
+        return query == null ? "" : query.strip().toLowerCase(Locale.ROOT);
     }
 
     public record Snapshot(int searchCalls, int distinctSuccessfulSearches, int emptySearches) {

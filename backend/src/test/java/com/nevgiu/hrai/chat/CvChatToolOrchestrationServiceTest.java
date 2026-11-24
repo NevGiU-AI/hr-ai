@@ -43,6 +43,7 @@ class CvChatToolOrchestrationServiceTest {
     void allowOrdinaryJobRelevantRequests() {
         when(questionPolicy.classify(anyString())).thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
         when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(0, 0, 0));
+        when(discoveryState.coversExactly(org.mockito.ArgumentMatchers.anyList())).thenReturn(true);
         when(readTools.searchCandidates(anyString())).thenAnswer(invocation -> new CandidateSearchResult(
                 List.of(new CandidateCard(7L, invocation.getArgument(0), "Engineer")), false));
         when(toolRegistry.confirmedScopeCallbacks()).thenReturn(List.of());
@@ -93,6 +94,22 @@ class CvChatToolOrchestrationServiceTest {
         verify(readTools).searchCandidates("Grace");
         verifyNoInteractions(evidence);
         verify(questionPolicy).classify("Find Ada and Grace");
+        verify(discoveryState).coversExactly(List.of("Ada", "Grace"));
+    }
+
+    @Test
+    void rejectsDiscoveryWhenExactSearchPostconditionIsIncomplete() {
+        when(referenceExtractor.extract("Find Ada and Grace")).thenReturn(List.of("Ada", "Grace"));
+        when(discoveryState.snapshot()).thenReturn(new CvChatToolDiscoveryState.Snapshot(1, 1, 0));
+        when(discoveryState.coversExactly(List.of("Ada", "Grace"))).thenReturn(false);
+
+        assertThatThrownBy(() -> service.discover("Find Ada and Grace"))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("Candidate discovery service is unavailable");
+
+        verify(readTools).searchCandidates("Ada");
+        verify(readTools).searchCandidates("Grace");
+        verifyNoInteractions(evidence, model, planningState);
     }
 
     @Test

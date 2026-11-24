@@ -377,11 +377,21 @@ The main responsibilities are:
   not originate in the HTTP payload and may be larger or malformed even when the recruiter message was valid.
 - `CvChatToolDiscoveryState` records request-local search-call, distinct-success, and empty-result counts without
   exposing queries or candidate data. It is new for every HTTP request and cannot leak discovery state between users.
+  Its exact postcondition requires one normalized search for every extracted reference, with no duplicate or additional
+  query; a mismatch fails with a privacy-safe `502` instead of returning incomplete confirmation cards.
 - `CvChatToolDiscoveryDecision` converts authorized discovery facts into application-owned postconditions: at least
   two distinct successful searches with no missing person require candidate confirmation, while any empty search
   requires clarification. Sensitive and workflow-override requests are rejected before this state can be populated.
 - `CvChatToolPlanningState` records only the authorized candidate/job IDs whose minimized tools completed during this
-  HTTP request. The service uses it as a postcondition; it stores no names, CV text, job text, prompts, or tool results.
+  HTTP request. Separate per-ID counters require exact candidate/job key sets and exactly one completed call per ID;
+  missing, duplicate, extra, or unrequested reads cannot satisfy the postcondition. The state stores no names, CV text,
+  job text, prompts, or tool results.
+- Every read callback validates successful result identity and structure before recording completion. Candidate search
+  and organization discovery reject null collections, invalid IDs, and duplicate candidate IDs; candidate-summary and
+  job-requirement reads reject an entity whose returned ID differs from the authorized argument. Operational document
+  and evaluation paths independently require exact result/call maps for every confirmed candidate and reject any
+  unrequested category. Organization-wide evidence discovery is called once directly by Java rather than delegated to
+  iterative model orchestration, and its result is independently bounded at the callback boundary.
 - `CvChatToolScope` holds immutable human-confirmed candidate and optional job IDs for the current HTTP request.
 - `CvChatToolCapability` defines reviewed per-request budgets for every exposed read capability. Candidate-scoped
   searches and reads allow at most five calls, while organization discovery and approved-job requirements allow one.

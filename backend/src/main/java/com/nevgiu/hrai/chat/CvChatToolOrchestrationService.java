@@ -254,6 +254,11 @@ public class CvChatToolOrchestrationService {
                 .map(reference -> candidateReference(reference, readTools.searchCandidates(reference)))
                 .toList();
         CvChatToolDiscoveryState.Snapshot searches = discoveryState.snapshot();
+        if (!discoveryState.coversExactly(references)) {
+            LOGGER.warn("CV chat deterministic discovery postcondition failed expectedSearches={} actualSearches={} "
+                            + "stage=INCOMPLETE_TOOL_CALLS", references.size(), searches.searchCalls());
+            throw new CvChatException(HttpStatus.BAD_GATEWAY, "Candidate discovery service is unavailable");
+        }
         CvChatToolOrchestrationOutcome outcome = CvChatToolDiscoveryDecision.decide(searches);
         LOGGER.info("CV chat deterministic discovery completed searchCalls={} distinctSuccessfulSearches={} "
                         + "emptySearches={} outcome={}", searches.searchCalls(), searches.distinctSuccessfulSearches(),

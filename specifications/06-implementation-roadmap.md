@@ -493,8 +493,12 @@ focused production checks, and recorded acceptance before the next dependent sli
    compatibility forms are normalized before the narrow application-owned override guard, and synthetic candidate/job
    results test fake structured outcomes and secret requests while preserving exact confirmed calls. Dataset `1.4.0`'s
    ten-case provider gate passed on 24 November 2026.
-   **Remaining before Step 3 is complete:** deterministic postconditions across every tool path and broader
-   provider-result faithfulness.
+   Deterministic postconditions now cover every registered read-tool path. Name discovery requires one search for each
+   extracted reference; confirmed-scope planning requires exact candidate/job IDs and exactly one completed call per
+   ID; document/evaluation routing retains exact per-candidate and per-category maps; organization discovery is a
+   single Java-owned invocation with independent callback result bounds. Malformed, duplicate-ID, and identity-
+   mismatched results fail before successful completion is recorded.
+   **Remaining before Step 3 is complete:** broader provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

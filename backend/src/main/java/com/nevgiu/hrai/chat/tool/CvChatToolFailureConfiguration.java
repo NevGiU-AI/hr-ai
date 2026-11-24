@@ -16,8 +16,9 @@ class CvChatToolFailureConfiguration {
     ToolExecutionExceptionProcessor toolExecutionExceptionProcessor() {
         // Spring AI normally turns a callback exception into text that the model may inspect and continue from. A
         // CvChatException already contains the application-reviewed HTTP status and privacy-safe message, so return it
-        // to the HTTP boundary instead. This is essential for 504 timeouts and also prevents a model from retrying or
-        // reinterpreting application-owned authorization, validation, and call-budget failures.
+        // to the HTTP boundary instead. This is essential for 504 timeouts and 503 interruption/concurrency outcomes,
+        // and also prevents a model from retrying or reinterpreting application-owned authorization, validation, and
+        // call-budget failures.
         return DefaultToolExecutionExceptionProcessor.builder()
                 .rethrowExceptions(List.of(CvChatException.class))
                 .build();

@@ -156,6 +156,26 @@ class CvChatConversationControllerTest {
     }
 
     @Test
+    void returnsServiceUnavailableWhenToolConcurrencyCapacityIsExhausted() throws Exception {
+        var actor = actor();
+        when(turns.ask(any(), any(), any())).thenThrow(new CvChatException(
+                HttpStatus.SERVICE_UNAVAILABLE, "CV chat tool execution capacity is unavailable"));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
+        try {
+            mvc.perform(post("/api/chat/conversations/conversation-1/messages")
+                            .contentType("application/json")
+                            .content("{\"message\":\"Was this CV processed with OCR?\"}"))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.message").value("CV chat tool execution capacity is unavailable"))
+                    .andExpect(jsonPath("$.path")
+                            .value("/api/chat/conversations/conversation-1/messages"));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
     void returnsTheAuthorizedBoundedTimeline() throws Exception {
         var actor = actor();
         when(service.history("conversation-1", actor)).thenReturn(new CvChatConversationHistoryResponse(List.of(

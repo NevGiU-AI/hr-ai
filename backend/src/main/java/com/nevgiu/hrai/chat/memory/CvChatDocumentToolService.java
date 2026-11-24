@@ -64,10 +64,10 @@ class CvChatDocumentToolService {
             }
         } catch (CvChatException failure) {
             // Read-tool failures already carry a reviewed status and privacy-safe message. CvChatToolExecutor creates
-            // the 504 timeout and 503 interruption responses; CvChatToolExecutionGuard creates the 429 global and
-            // capability-budget responses; CvChatReadTools enforces authentication and role access; CvChatToolScope
-            // enforces confirmed candidate/job authorization; and CvChatToolArguments rejects malformed model-generated
-            // IDs and queries. Preserve those outcomes instead of flattening them to a misleading provider-style 502.
+            // the 504 timeout and 503 interruption/concurrency responses; CvChatToolExecutionGuard creates the 429
+            // global and capability-budget responses; CvChatReadTools enforces authentication and role access;
+            // CvChatToolScope enforces confirmed candidate/job authorization; and CvChatToolArguments rejects malformed
+            // model-generated IDs and queries. Preserve those outcomes instead of flattening them to a misleading 502.
             throw failure;
         } catch (RuntimeException failure) {
             LOGGER.warn("CV chat document-tool routing failed candidateCount={} failureType={}",

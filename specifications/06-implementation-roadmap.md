@@ -411,7 +411,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    history and persisted-job questions, exact per-candidate counts, professional-question RAG fallback, sensitive and
    workflow-override refusal, timeline reload, and existing grounded citations. No API, frontend, schema, Flyway,
    environment, Compose, or provider-configuration change was required. Step 3 is now the active implementation slice.
-3. **[~ Active — first three slices completed, fourth implemented] Harden every user-visible tool path.** Test exact tool selection, bounded and
+3. **[~ Active — first four slices completed, fifth implemented] Harden every user-visible tool path.** Test exact tool selection, bounded and
    malformed arguments, call-count and recursion limits, timeouts, result-size limits, tenant and confirmed-scope isolation,
    prompt/tool-result injection, conversation-memory isolation, deterministic postconditions, and provider-backed
    result faithfulness. Apply the existing privacy-safe logging boundary to every new diagnostic. The first hardening
@@ -460,7 +460,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    `CV chat tool execution interrupted` message. Its focused 14-test set and complete 413-test backend suite passed;
    eight opt-in provider tests remained skipped. PR #231 changed tests and comments only. Neither PR required schema,
    Flyway, frontend, Compose, environment, provider-configuration, or semantic-index changes.
-   **Implemented fourth slice, pending merge:** expanded deterministic isolation coverage proves another owner cannot
+   **Completed fourth slice:** expanded deterministic isolation coverage proves another owner cannot
    load an execution scope, candidate/job scope, memory, messages, or citations; an ownership failure stops before
    history, operational tools, RAG, comparison, or provider work; and malicious prior history cannot replace the
    persisted tenant, candidate, or approved-job scope. Real Spring AI callbacks for candidate summary, document status,
@@ -471,8 +471,16 @@ focused production checks, and recorded acceptance before the next dependent sli
    suite passed 418 tests with eight existing opt-in provider tests skipped. The separately enabled
    `CvChatToolOrchestrationProviderEvaluationTest` and `CvChatDocumentToolProviderEvaluationTest` live-provider gate
    also passed before merge, confirming bounded scope and tool-result faithfulness against the configured provider.
-   **Remaining before Step 3 is complete:** downstream concurrency limits, broader prompt/tool-result adversarial
-   calibration, deterministic postconditions across every tool path, and provider-result faithfulness.
+   **Implemented fifth slice, pending merge:** the singleton virtual-thread executor now applies a fair ten-permit
+   bulkhead before any guarded tool action reaches a repository or provider. A virtual thread waits at most 100 ms for
+   capacity, then returns HTTP `503` with the privacy-safe `CV chat tool execution capacity is unavailable` response;
+   the rejected action never runs. A caller timeout requests cancellation but does not release the permit early: work
+   that ignores interruption continues holding capacity until it actually exits. Deterministic latch-based tests prove
+   saturation, zero rejected downstream work, permit recovery, Spring AI rethrow, and the HTTP contract without timing
+   sleeps. The conservative limit aligns with the default ten-connection JDBC pool pending the later measured
+   concurrency benchmark; no tenant, request, prompt, or candidate state is stored in the singleton executor.
+   **Remaining before Step 3 is complete:** broader prompt/tool-result adversarial calibration, deterministic
+   postconditions across every tool path, and provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

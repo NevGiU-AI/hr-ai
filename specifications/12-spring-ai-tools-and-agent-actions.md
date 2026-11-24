@@ -491,7 +491,9 @@ ordering to the confirmed approved-job ID. Generated schemas continue to exclude
 authorization arguments, so the model cannot submit trusted context in the first place. Existing deterministic and
 opt-in provider datasets separately retain tool-result instruction, confirmation-bypass, and scope-expansion attacks.
 The focused isolation suite passed 50 tests and the complete backend suite passed 418 tests with eight existing opt-in
-provider tests skipped.
+provider tests skipped. The separately enabled `CvChatToolOrchestrationProviderEvaluationTest` and
+`CvChatDocumentToolProviderEvaluationTest` live-provider gate also passed before merge, exercising the established
+injection, scope-preservation, and bounded tool-result expectations against the configured provider.
 
 The diagram ends at confirmed-scope readiness intentionally. `CvChatComparisonService` is the later, separate evidence
 boundary: it reauthorizes candidate IDs and the optional job, applies the comparison question policy, retrieves bounded

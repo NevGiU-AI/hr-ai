@@ -468,7 +468,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    access. Existing schema tests continue to prove that model-controlled arguments contain no tenant, organization,
    role, or authorization fields, while deterministic/provider datasets retain candidate/job tool-result injection,
    confirmation-bypass, and scope-expansion cases. The focused isolation suite passed 50 tests and the complete backend
-   suite passed 418 tests with eight existing opt-in provider tests skipped.
+   suite passed 418 tests with eight existing opt-in provider tests skipped. The separately enabled
+   `CvChatToolOrchestrationProviderEvaluationTest` and `CvChatDocumentToolProviderEvaluationTest` live-provider gate
+   also passed before merge, confirming bounded scope and tool-result faithfulness against the configured provider.
    **Remaining before Step 3 is complete:** downstream concurrency limits, broader prompt/tool-result adversarial
    calibration, deterministic postconditions across every tool path, and provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,

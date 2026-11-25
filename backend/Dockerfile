@@ -32,7 +32,8 @@ RUN set -eu; \
       sleep "$retry_delay"; \
     done
 
-FROM eclipse-temurin:21-jre
+# Share runtime dependencies, health check, and entrypoint across both packaging paths.
+FROM eclipse-temurin:21-jre AS runtime-base
 
 WORKDIR /app
 
@@ -45,11 +46,17 @@ RUN apt-get update \
        tesseract-ocr-por \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/target/*.jar app.jar
-
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl --fail --silent http://localhost:8080/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# CI and staging use the executable JAR produced by CI's Maven verify.
+FROM runtime-base AS prebuilt-runtime
+COPY target/*.jar app.jar
+
+# Keep this stage last so plain docker build compiles from source without a prebuilt JAR.
+FROM runtime-base AS runtime
+COPY --from=build /app/target/*.jar app.jar

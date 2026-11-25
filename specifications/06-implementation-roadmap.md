@@ -498,6 +498,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    ID; document/evaluation routing retains exact per-candidate and per-category maps; organization discovery is a
    single Java-owned invocation with independent callback result bounds. Malformed, duplicate-ID, and identity-
    mismatched results fail before successful completion is recorded.
+   PR #238 passed focused staging checks, protected staging BDD, and production smoke tests after promotion.
    **Remaining before Step 3 is complete:** broader provider-result faithfulness.
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,

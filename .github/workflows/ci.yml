@@ -33,6 +33,16 @@ jobs:
         working-directory: backend
         run: mvn -B clean verify
 
+      - name: Upload verified backend JAR
+        # Publish the output of verify, not a second Maven build. Both container CI
+        # and staging consume this artifact so they package the same bytes.
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar-${{ github.sha }}
+          path: backend/target/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
   frontend:
     name: Frontend tests
     runs-on: ubuntu-latest
@@ -69,6 +79,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Download verified backend JAR
+        # Without a run-id, download-artifact reads from this run, where the
+        # backend job already produced the JAR.
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar-${{ github.sha }}
+          path: backend/target
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -76,12 +94,18 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./backend
+          # Match staging's target. It copies the JAR without entering the Maven build stage.
+          target: prebuilt-runtime
           load: true
           tags: hr-ai-backend:ci
           cache-from: type=gha,scope=ci-backend
           # Cache export is an optimization. A transient GitHub cache write
           # failure must not turn an otherwise valid image build red.
           cache-to: type=gha,mode=max,scope=ci-backend,ignore-error=true
+
+      - name: Smoke-test packaged backend JAR
+        # Check that Java can load the executable JAR in the runtime image without needing database credentials.
+        run: docker run --rm --entrypoint java hr-ai-backend:ci -Djarmode=tools -jar app.jar list-layers
 
       - name: Build frontend image
         uses: docker/build-push-action@v7

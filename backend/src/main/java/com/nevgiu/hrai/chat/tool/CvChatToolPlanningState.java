@@ -11,11 +11,14 @@ import java.util.Set;
  * Privacy-safe postcondition state for one confirmed-scope planning request.
  *
  * <p>The state records only IDs already authorized by Java. It never records tool results, CV text, recruiter text,
- * names, or job content. Request scope prevents concurrent users or tenants from sharing planning state.</p>
+ * names, or job content. Request scope keeps separate HTTP requests from sharing state; it does not serialize access
+ * within one request. All reads and writes use the same instance lock, so neither map can change during a coverage
+ * check. The maps themselves do not need to be concurrent.</p>
  */
 @Component
 @RequestScope
 public class CvChatToolPlanningState {
+    // A set would hide repeated callbacks. Keep counts so the check can distinguish one call from several.
     private final Map<Long, Integer> summarizedCandidateCalls = new LinkedHashMap<>();
     private final Map<Long, Integer> loadedJobCalls = new LinkedHashMap<>();
 
@@ -28,6 +31,7 @@ public class CvChatToolPlanningState {
     }
 
     public synchronized boolean covers(Set<Long> expectedCandidateIds, Long expectedJobId) {
+        // Key equality rejects missing and extra IDs; the counts reject duplicates. Insertion order is irrelevant.
         boolean exactCandidateCalls = summarizedCandidateCalls.keySet().equals(expectedCandidateIds)
                 && summarizedCandidateCalls.values().stream().allMatch(count -> count == 1);
         boolean exactJobCalls = expectedJobId == null
@@ -37,6 +41,7 @@ public class CvChatToolPlanningState {
         return exactCandidateCalls && exactJobCalls;
     }
 
+    /** Counts distinct IDs for diagnostics only; use {@link #covers} to check for duplicate calls. */
     public synchronized Snapshot snapshot() {
         return new Snapshot(summarizedCandidateCalls.size(), loadedJobCalls.size());
     }

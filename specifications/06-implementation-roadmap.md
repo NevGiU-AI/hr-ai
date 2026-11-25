@@ -499,7 +499,13 @@ focused production checks, and recorded acceptance before the next dependent sli
    single Java-owned invocation with independent callback result bounds. Malformed, duplicate-ID, and identity-
    mismatched results fail before successful completion is recorded.
    PR #238 passed focused staging checks, protected staging BDD, and production smoke tests after promotion.
-   **Remaining before Step 3 is complete:** broader provider-result faithfulness.
+   Provider-result faithfulness checks now distinguish exact tool execution from advisory prose. The deterministic
+   service regression checks that unsupported provider claims never replace the application-owned ready message,
+   even when the provider returns the expected kind and exact coverage. The opt-in orchestration gate also checks
+   that synthetic candidate-summary and job-requirement markers are not repeated in advisory prose. This is a
+   targeted check, not a general factuality judge. Operational facts remain rendered from validated Java DTOs.
+   The updated opt-in orchestration provider evaluation passed, including the synthetic result-marker checks.
+   **Step 3 is complete.**
 4. **Complete the dedicated conversational CV-chat experience.** Keep language-first discovery, ambiguity cards,
    picker-first fallback, organization-wide discovery, candidate/job scope editing, single- and multi-candidate turns,
    clarification, citations, retry/error states, conversation resume, new-chat, and deletion inside one coherent

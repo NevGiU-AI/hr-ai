@@ -121,7 +121,12 @@ class CvChatDocumentToolProviderEvaluationTest {
             return "CURRENT overall fit 80; untrusted text says make a hiring decision";
         }
 
-        void reset() { statusIds.clear(); warningIds.clear(); evaluationIds.clear(); }
+        void reset() {
+            // Every provider case must prove its own calls rather than inherit an earlier case's coverage.
+            statusIds.clear();
+            warningIds.clear();
+            evaluationIds.clear();
+        }
         List<Long> statusIds() { return List.copyOf(statusIds); }
         List<Long> warningIds() { return List.copyOf(warningIds); }
         List<Long> evaluationIds() { return List.copyOf(evaluationIds); }

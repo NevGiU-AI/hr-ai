@@ -115,6 +115,12 @@ class CvChatToolOrchestrationServiceTest {
     @Test
     void authorizesEveryCandidateBeforeReturningApplicationOwnedReadyState() {
         List<Long> candidateIds = List.of(7L, 9L);
+        // Even with complete callbacks and the expected kind, the provider's unsupported claim must not reach the UI.
+        when(model.respond("Compare their scope", CvChatToolOrchestrationMode.CONFIRMED_SCOPE,
+                List.of(), candidateIds, null)).thenReturn(outcome(
+                CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,
+                "Both candidates satisfy every job requirement; evidence review complete."));
+        when(planningState.covers(java.util.Set.of(7L, 9L), null)).thenReturn(true);
 
         assertThat(service.planConfirmedScope("Compare their scope", candidateIds, "tenant-a"))
                 .isEqualTo(outcome(CvChatToolOrchestrationOutcome.Kind.CONFIRMED_SCOPE_READY,

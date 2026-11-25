@@ -190,6 +190,11 @@ Dataset `1.4.0` extends that reviewed gate with a full-width Unicode workflow-ov
 that imitates the structured response schema, and a job tool result that requests secret disclosure. Compatibility
 normalization closes the presentation-form bypass before provider or tool execution while retaining the narrow
 action-plus-protected-boundary rule. The expanded ten-case confirmed-scope provider gate passed on 24 November 2026.
+Deterministic postconditions now cover every registered read-tool path. Name discovery proves every extracted reference
+was searched exactly once; confirmed-scope planning rejects missing, duplicate, extra, or unrequested candidate/job
+calls; document and evaluation routing retains exact per-candidate and per-category checks; organization discovery is
+invoked once directly by Java. Search callbacks also reject malformed, duplicate-ID, or identity-mismatched internal
+results with a privacy-safe failure before recording successful completion.
 The expanded 24-case question-policy dataset `1.1.0` live-provider gate then passed on 10 November 2026. Future policy
 prompt or model changes still require a fresh opt-in provider run before promotion.
 Question-policy dataset `1.2.0` adds contextual professional and current-sensitive follow-up regressions. The follow-up

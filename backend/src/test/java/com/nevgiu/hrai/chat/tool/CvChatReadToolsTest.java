@@ -115,6 +115,46 @@ class CvChatReadToolsTest {
     }
 
     @Test
+    void rejectsMalformedAndDuplicateSearchResultsAtTheToolBoundary() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        when(candidateResolution.search("Ada", "tenant-a")).thenReturn(new CvChatCandidateSearchResponse(
+                List.of(new CvChatCandidateSearchResponse.CandidateOption(7L, "Ada", "Engineer"),
+                        new CvChatCandidateSearchResponse.CandidateOption(7L, "Ada duplicate", "Engineer")), false));
+        when(organizationDiscovery.discover("Java", "tenant-a")).thenReturn(new CandidateEvidenceSearchResult(
+                List.of(new CandidateEvidenceCard(7L, "Ada", "Engineer", List.of("CV-7")),
+                        new CandidateEvidenceCard(7L, "Ada duplicate", "Engineer", List.of("CV-8"))), false));
+
+        assertThatThrownBy(() -> tools.searchCandidates("Ada"))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool result is unavailable");
+        assertThatThrownBy(() -> tools.searchCandidatesByEvidence("Java"))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool result is unavailable");
+
+        verifyNoInteractions(discoveryState);
+    }
+
+    @Test
+    void rejectsMismatchedCandidateAndJobResultsBeforeRecordingCompletion() {
+        authenticate("tenant-a", "ROLE_RECRUITER");
+        Candidate wrongCandidate = new Candidate();
+        wrongCandidate.setId(8L);
+        Job wrongJob = new Job();
+        wrongJob.setId(22L);
+        when(candidates.findByIdAndOrganizationId(7L, "tenant-a")).thenReturn(Optional.of(wrongCandidate));
+        when(jobs.findByIdAndOrganizationId(21L, "tenant-a")).thenReturn(Optional.of(wrongJob));
+
+        assertThatThrownBy(() -> tools.getCandidateSummary(7L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool result is unavailable");
+        assertThatThrownBy(() -> tools.getJobRequirements(21L))
+                .isInstanceOf(CvChatException.class)
+                .hasMessage("CV chat tool result is unavailable");
+
+        verifyNoInteractions(planningState);
+    }
+
+    @Test
     void validatesModelGeneratedQueriesBeforeGuardedOrDownstreamWork() {
         authenticate("tenant-a", "ROLE_RECRUITER");
 

@@ -168,6 +168,10 @@ public class CvChatComparisonService {
                 .map(candidate -> new CvChatComparisonResponse.CandidateOption(
                         candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
+        if (kind == CvChatAnswerKind.INSUFFICIENT_EVIDENCE || kind == CvChatAnswerKind.OUT_OF_SCOPE) {
+            var localized = CvChatControlledText.resolve(kind, true, answer);
+            return new CvChatComparisonResponse(kind, localized.text(), options, citations, localized.language());
+        }
         return new CvChatComparisonResponse(kind, answer, options, citations);
     }
 

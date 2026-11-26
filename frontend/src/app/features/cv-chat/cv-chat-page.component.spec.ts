@@ -289,7 +289,18 @@ describe('CvChatPageComponent', () => {
 
     component.beginScopeEdit();
     component.addCandidate({ id: 8, name: 'Grace', currentTitle: 'Architect' });
+    component.message = 'Draft question';
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.querySelector('.scope-editor')?.textContent).toContain('Save scope and clear history');
+    expect(page.querySelector<HTMLButtonElement>('.composer button[type="submit"]')?.disabled).toBeTrue();
+    component.send();
+    http.expectNone(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
+
     component.cancelScopeEdit();
+    fixture.detectChanges();
+    expect(component.message).toBe('Draft question');
+    expect(page.querySelector<HTMLButtonElement>('.composer button[type="submit"]')?.disabled).toBeFalse();
 
     expect(component.selectedCandidates.map((candidate) => candidate.id)).toEqual([7]);
     expect(component.scopeEditing).toBeFalse();

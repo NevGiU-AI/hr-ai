@@ -17,6 +17,7 @@ import {
 } from '../cv-ingestion/models/cv-chat.models';
 import { CvChatService } from '../cv-ingestion/services/cv-chat.service';
 import { CvIngestionService } from '../cv-ingestion/services/cv-ingestion.service';
+import { cvChatInterfaceCopy } from './cv-chat-interface-copy';
 
 @Component({
   selector: 'app-cv-chat-page',
@@ -26,6 +27,8 @@ import { CvIngestionService } from '../cv-ingestion/services/cv-ingestion.servic
   styleUrl: './cv-chat-page.component.scss',
 })
 export class CvChatPageComponent implements OnInit {
+  readonly copy = cvChatInterfaceCopy(typeof navigator === 'undefined' ? 'en' : navigator.language);
+
   /** Presentation-only greeting; it is never submitted to or persisted by the chat backend. */
   readonly welcomeMessage = "Hey! I'm NevGiU—short for ‘Never Give Up.’ "
     + "I'll always do my best to help you. 😊 How can I help with your candidates today?";
@@ -195,8 +198,8 @@ export class CvChatPageComponent implements OnInit {
         // A transport or server error does not prove the write failed. Never replay the POST automatically.
         this.sendNeedsHistoryCheck = error.status === 0 || error.status === 408 || error.status >= 500;
         this.sendFeedback = this.sendNeedsHistoryCheck
-          ? 'We could not confirm whether your message was saved. Check chat history before sending it again.'
-          : this.apiError(error, 'Message could not be sent.');
+          ? this.copy.uncertainSend
+          : this.apiError(error, this.copy.sendFailed);
       },
     });
   }
@@ -309,15 +312,15 @@ export class CvChatPageComponent implements OnInit {
           this.upsertConversation(conversation);
           if (checkingSend) {
             this.sendNeedsHistoryCheck = false;
-            this.sendFeedback = 'History refreshed. If your message is already in the chat, do not send it again.';
+            this.sendFeedback = this.copy.historyRefreshed;
           }
         },
         error: (error) => {
           if (checkingSend) {
             if (this.conversation?.id !== id) return;
             this.sendFeedback = error.status === 404
-              ? 'This chat is no longer available. Start a new chat if you want to ask this question again.'
-              : 'Chat history could not be checked. Your draft is still here; try checking again.';
+              ? this.copy.historyMissing
+              : this.copy.historyCheckFailed;
             return;
           }
           if (error.status === 404) {
@@ -328,16 +331,16 @@ export class CvChatPageComponent implements OnInit {
             }
             this.unavailableConversationIds.add(id);
             this.recentConversations = this.recentConversations.filter((item) => item.id !== id);
-            this.resumeError = 'This conversation is no longer available. Choose another chat or start a new one.';
+            this.resumeError = this.copy.resumeMissing;
             return;
           }
           // Retry only the read requests. Do not discard the saved ID or anything already on screen.
           if (error.status === 0 || error.status === 429 || error.status >= 500) {
             this.retryConversationId = id;
-            this.resumeError = 'The conversation could not be loaded right now.';
+            this.resumeError = this.copy.resumeTemporary;
             return;
           }
-          this.resumeError = this.apiError(error, 'The conversation could not be loaded.');
+          this.resumeError = this.apiError(error, this.copy.resumeFailed);
         },
       });
   }

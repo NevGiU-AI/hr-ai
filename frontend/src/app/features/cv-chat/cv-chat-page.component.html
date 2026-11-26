@@ -18,7 +18,7 @@
   <div class="alert alert-danger" role="alert" *ngIf="resumeError && !conversation">
     {{ resumeError }}
     <button *ngIf="canRetryResume" class="btn btn-outline-secondary" type="button"
-            (click)="retryResume()" [disabled]="pageBusy">Retry loading conversation</button>
+            (click)="retryResume()" [disabled]="pageBusy">{{ copy.retryResume }}</button>
   </div>
 
   <section class="timeline welcome-only" aria-live="polite" aria-label="Candidate discovery conversation"
@@ -200,9 +200,9 @@
                [class.assistant]="item.role === 'ASSISTANT'">
         <p class="message-role">{{ item.role === 'USER' ? 'You' : 'NevGiU' }}</p>
         <ng-container [ngSwitch]="item.kind">
-          <p class="message-outcome" *ngSwitchCase="'INSUFFICIENT_EVIDENCE'">Insufficient evidence</p>
-          <p class="message-outcome" *ngSwitchCase="'OUT_OF_SCOPE'">Outside CV chat scope</p>
-          <p class="message-outcome" *ngSwitchCase="'TOOL_STATUS'">Operational information</p>
+          <p class="message-outcome" *ngSwitchCase="'INSUFFICIENT_EVIDENCE'">{{ copy.insufficient }}</p>
+          <p class="message-outcome" *ngSwitchCase="'OUT_OF_SCOPE'">{{ copy.outOfScope }}</p>
+          <p class="message-outcome" *ngSwitchCase="'TOOL_STATUS'">{{ copy.operational }}</p>
         </ng-container>
         <p class="message-content">{{ item.content }}</p>
         <div class="citations" *ngIf="item.citations?.length">
@@ -219,7 +219,7 @@
       <div *ngIf="sendFeedback" role="status">
         {{ sendFeedback }}
         <button *ngIf="sendNeedsHistoryCheck" type="button" class="btn btn-outline-secondary"
-                (click)="checkHistoryAfterSend()" [disabled]="pageBusy || scopeEditing">Check chat history</button>
+                (click)="checkHistoryAfterSend()" [disabled]="pageBusy || scopeEditing">{{ copy.checkHistory }}</button>
       </div>
       <label for="chat-message" class="form-label">Message</label>
       <textarea id="chat-message" name="message" class="form-control" [(ngModel)]="message" maxlength="2000"

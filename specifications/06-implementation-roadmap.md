@@ -545,6 +545,16 @@ focused production checks, and recorded acceptance before the next dependent sli
    Dedicated CV-chat outcome labels and recovery controls use the browser's preferred language (English, French,
    or Portuguese, with English fallback). This is independent of the reply-language selector and does not
    translate saved answers or backend error details.
+   PR #252 passed staging acceptance, protected staging BDD, and production smoke tests.
+
+   **Proposed reply-language precedence for the remaining Step 6 work:** use an explicit supported reply
+   selection first, then the current question's language when it can be identified reliably as English, French,
+   or Portuguese, then the browser locale, and finally English. For example, a clear French question in an
+   English browser receives a French controlled reply in automatic mode; an explicit Portuguese selection wins.
+   Short or ambiguous questions fall back to the browser locale instead of guessing. Rename the current
+   “Browser default” option to “Automatic” if that behavior changes. Keep interface language independent and
+   preserve saved wording on resume. Report language metadata only when known. This precedence is proposed,
+   not implemented by PR #252.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

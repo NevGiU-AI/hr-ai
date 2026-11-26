@@ -176,6 +176,30 @@ describe('CvChatPageComponent', () => {
       .toBe('/candidates/import?candidateId=7#cv-document-7');
   });
 
+  it('sends the selected controlled response language without changing the question payload', () => {
+    component.conversation = {
+      id: 'conversation-1', version: 0, candidates: [{ id: 7, name: 'Ada', currentTitle: null }], job: null,
+      createdAt: '', updatedAt: '', expiresAt: '',
+    };
+    fixture.detectChanges();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#cv-chat-response-language');
+    select.selectedIndex = 2;
+    select.dispatchEvent(new Event('change'));
+
+    component.message = 'Does the CV document Kubernetes certification?';
+    component.send();
+
+    const request = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
+    expect(request.request.headers.get('Accept-Language')).toBe('fr');
+    expect(request.request.body).toEqual({ message: 'Does the CV document Kubernetes certification?' });
+    request.flush({
+      conversationId: 'conversation-1', version: 1, kind: 'INSUFFICIENT_EVIDENCE',
+      answer: 'Les éléments disponibles ne suffisent pas.', responseLanguage: 'fr',
+      candidates: component.conversation.candidates, job: null, citations: [], expiresAt: '',
+    });
+    expect(component.timeline.at(-1)?.kind).toBe('INSUFFICIENT_EVIDENCE');
+  });
+
   it('uses natural language to discover organization candidates before confirmation', () => {
     component.discoveryMode = 'ORGANIZATION';
     component.naturalRequest = 'Find strong AI developers in this organization';

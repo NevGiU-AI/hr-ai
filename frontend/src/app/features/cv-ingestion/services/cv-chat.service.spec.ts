@@ -118,6 +118,7 @@ describe('CvChatService', () => {
     const ask = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
     expect(ask.request.method).toBe('POST');
     expect(ask.request.body).toEqual({ message: 'Which one has stronger Java evidence?' });
+    expect(ask.request.headers.has('Accept-Language')).toBeFalse();
     ask.flush({ answer: 'Grounded answer' });
   });
 

@@ -50,6 +50,8 @@ export class CvChatPageComponent implements OnInit {
   searchBusy = false;
   pageBusy = false;
   sendBusy = false;
+  sendFeedback = '';
+  sendNeedsHistoryCheck = false;
   scopeEditing = false;
   message = '';
   error = '';
@@ -159,9 +161,11 @@ export class CvChatPageComponent implements OnInit {
   send(): void {
     const content = this.message.trim();
     // The editor shows a draft scope, not the scope the server would use for a message.
-    if (!this.conversation || !content || content.length > 2000 || this.sendBusy || this.scopeEditing) return;
+    if (!this.conversation || !content || content.length > 2000 || this.sendBusy || this.scopeEditing
+        || this.sendNeedsHistoryCheck) return;
     const conversationId = this.conversation.id;
     this.sendBusy = true;
+    this.sendFeedback = '';
     this.error = '';
     this.timeline = [...this.timeline, { role: 'USER', content }];
     this.message = '';
@@ -182,11 +186,21 @@ export class CvChatPageComponent implements OnInit {
         this.upsertConversation(this.conversation);
       },
       error: (error) => {
+        if (this.conversation?.id !== conversationId) return;
         this.timeline = this.timeline.slice(0, -1);
         this.message = content;
-        this.error = this.apiError(error, 'Message could not be sent.');
+        // A transport or server error does not prove the write failed. Never replay the POST automatically.
+        this.sendNeedsHistoryCheck = error.status === 0 || error.status === 408 || error.status >= 500;
+        this.sendFeedback = this.sendNeedsHistoryCheck
+          ? 'We could not confirm whether your message was saved. Check chat history before sending it again.'
+          : this.apiError(error, 'Message could not be sent.');
       },
     });
+  }
+
+  checkHistoryAfterSend(): void {
+    if (!this.conversation || !this.sendNeedsHistoryCheck || this.pageBusy || this.scopeEditing) return;
+    this.loadConversation(this.conversation.id, true);
   }
 
   deleteConversation(): void {
@@ -203,7 +217,7 @@ export class CvChatPageComponent implements OnInit {
   }
 
   beginScopeEdit(): void {
-    if (!this.conversation || this.pageBusy || this.sendBusy) return;
+    if (!this.conversation || this.pageBusy || this.sendBusy || this.sendNeedsHistoryCheck) return;
     this.selectedCandidates = [...this.conversation.candidates];
     this.selectedJobId = this.conversation.job?.id ?? null;
     this.searchQuery = '';
@@ -275,7 +289,7 @@ export class CvChatPageComponent implements OnInit {
     return citation.documentId === null ? 'candidate-details-title' : `cv-document-${citation.documentId}`;
   }
 
-  private loadConversation(id: string): void {
+  private loadConversation(id: string, checkingSend = false): void {
     this.pageBusy = true;
     this.resumeError = '';
     this.retryConversationId = null;
@@ -283,14 +297,26 @@ export class CvChatPageComponent implements OnInit {
       .pipe(finalize(() => this.pageBusy = false))
       .subscribe({
         next: ({ conversation, history }) => {
+          if (checkingSend && this.conversation?.id !== id) return;
           this.conversation = conversation;
           this.timeline = history.messages;
           this.selectedCandidates = conversation.candidates;
           this.selectedJobId = conversation.job?.id ?? null;
           this.persistConversationId(conversation.id);
           this.upsertConversation(conversation);
+          if (checkingSend) {
+            this.sendNeedsHistoryCheck = false;
+            this.sendFeedback = 'History refreshed. If your message is already in the chat, do not send it again.';
+          }
         },
         error: (error) => {
+          if (checkingSend) {
+            if (this.conversation?.id !== id) return;
+            this.sendFeedback = error.status === 404
+              ? 'This chat is no longer available. Start a new chat if you want to ask this question again.'
+              : 'Chat history could not be checked. Your draft is still here; try checking again.';
+            return;
+          }
           if (error.status === 404) {
             // A missing conversation should not be restored again on refresh. Leave other drafts and IDs alone.
             if (typeof localStorage !== 'undefined'
@@ -360,6 +386,8 @@ export class CvChatPageComponent implements OnInit {
     this.naturalResultGroups = [];
     this.pendingQuestion = '';
     this.message = '';
+    this.sendFeedback = '';
+    this.sendNeedsHistoryCheck = false;
     this.scopeEditing = false;
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY);

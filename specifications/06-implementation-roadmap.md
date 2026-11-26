@@ -512,6 +512,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    message timeline. The UI must not require recruiters to understand internal endpoint or tool phases.
    PR #241 passed staging acceptance, protected staging BDD, and production smoke tests for saved-chat recovery.
    PR #242 passed production smoke tests for grouped named discovery.
+   PR #243 passed production smoke tests for scope-edit clarity and history-reset warning.
 5. **Add structured chat outcomes.** Return explicit application-owned metadata for answer, insufficient evidence,
    out-of-scope refusal, clarification, candidate confirmation, tool status, and provider unavailability. Angular must
    render the structured outcome rather than infer state by comparing English message text. The `kind` field is an

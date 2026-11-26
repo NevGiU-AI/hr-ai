@@ -130,7 +130,7 @@
       </div>
       <div class="scope-actions">
         <button class="btn btn-sm btn-outline-primary" type="button" (click)="beginScopeEdit()"
-                [disabled]="pageBusy || sendBusy || scopeEditing">Edit scope</button>
+                [disabled]="pageBusy || sendBusy || scopeEditing || sendNeedsHistoryCheck">Edit scope</button>
         <button class="btn btn-sm btn-outline-secondary" type="button" (click)="startAnother()">New chat</button>
         <button class="btn btn-sm btn-outline-danger" type="button" (click)="deleteConversation()"
                 [disabled]="pageBusy">Delete chat</button>
@@ -202,6 +202,11 @@
     </section>
 
     <form class="composer" (ngSubmit)="send()">
+      <div *ngIf="sendFeedback" role="status">
+        {{ sendFeedback }}
+        <button *ngIf="sendNeedsHistoryCheck" type="button" class="btn btn-outline-secondary"
+                (click)="checkHistoryAfterSend()" [disabled]="pageBusy || scopeEditing">Check chat history</button>
+      </div>
       <label for="chat-message" class="form-label">Message</label>
       <textarea id="chat-message" name="message" class="form-control" [(ngModel)]="message" maxlength="2000"
                 rows="3" [disabled]="sendBusy || scopeEditing"
@@ -210,7 +215,8 @@
       <p id="scope-edit-composer-hint" *ngIf="scopeEditing">Save or cancel scope changes before sending a message.</p>
       <div class="composer-footer">
         <span>{{ message.length }}/2,000</span>
-        <button class="btn btn-primary" type="submit" [disabled]="!message.trim() || sendBusy || scopeEditing">Send</button>
+        <button class="btn btn-primary" type="submit"
+                [disabled]="!message.trim() || sendBusy || scopeEditing || pageBusy || sendNeedsHistoryCheck">Send</button>
       </div>
     </form>
   </ng-container>

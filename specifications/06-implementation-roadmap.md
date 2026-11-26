@@ -541,6 +541,7 @@ focused production checks, and recorded acceptance before the next dependent sli
    PR #249 passed staging acceptance, protected staging BDD, and production smoke tests.
    Dedicated CV chat can override the browser locale for new controlled replies with a page-level selector;
    it does not change saved wording, grounded answers, operational replies, or the Angular UI language.
+   PR #250 passed staging acceptance, protected staging BDD, and production smoke tests.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

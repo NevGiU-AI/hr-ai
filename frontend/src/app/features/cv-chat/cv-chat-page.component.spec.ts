@@ -10,8 +10,10 @@ describe('CvChatPageComponent', () => {
   let fixture: ComponentFixture<CvChatPageComponent>;
   let component: CvChatPageComponent;
   let http: HttpTestingController;
+  let browserLanguage: jasmine.Spy;
 
   beforeEach(async () => {
+    browserLanguage = spyOnProperty(navigator, 'language', 'get').and.returnValue('en-GB');
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [CvChatPageComponent],
@@ -26,6 +28,23 @@ describe('CvChatPageComponent', () => {
   });
 
   afterEach(() => { http.verify(); localStorage.clear(); });
+
+  it('uses the browser locale for recovery even when a different reply language is selected', () => {
+    browserLanguage.and.returnValue('fr-FR');
+    const frenchFixture = TestBed.createComponent(CvChatPageComponent);
+    const frenchPage = frenchFixture.componentInstance;
+    frenchPage.controlledResponseLanguage = 'pt';
+    frenchPage.resumeConversation('conversation-fr');
+    const url = `${environment.apiUrl}/chat/conversations/conversation-fr`;
+    http.expectOne(`${url}/messages`);
+    http.expectOne(url).flush(null, { status: 502, statusText: 'Bad Gateway' });
+    frenchFixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/jobs`).flush([]);
+    http.expectOne(`${environment.apiUrl}/chat/conversations`).flush([]);
+    const alert: HTMLElement = frenchFixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert.textContent).toContain('Impossible de charger la conversation pour le moment.');
+    expect(alert.querySelector('button')?.textContent).toContain('Réessayer de charger la conversation');
+  });
 
   it('shows the application-owned NevGiU welcome before a conversation is created', () => {
     expect(fixture.nativeElement.querySelector('.welcome-message').textContent)

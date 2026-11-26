@@ -542,6 +542,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    Dedicated CV chat can override the browser locale for new controlled replies with a page-level selector;
    it does not change saved wording, grounded answers, operational replies, or the Angular UI language.
    PR #250 passed staging acceptance, protected staging BDD, and production smoke tests.
+   Dedicated CV-chat outcome labels and recovery controls use the browser's preferred language (English, French,
+   or Portuguese, with English fallback). This is independent of the reply-language selector and does not
+   translate saved answers or backend error details.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

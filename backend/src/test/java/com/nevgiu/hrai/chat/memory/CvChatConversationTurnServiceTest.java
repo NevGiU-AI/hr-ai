@@ -43,7 +43,7 @@ class CvChatConversationTurnServiceTest {
         when(documentTools.answer("What about Spring?", List.of(candidate(7L, "Ada"))))
                 .thenReturn(java.util.Optional.empty());
         when(singleCandidateChat.ask(7L, "What about Spring?", null, "tenant-a", history)).thenReturn(
-                new CvChatResponse("Spring is listed [CV-7].", List.of(citation(7L))));
+                new CvChatResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Spring is listed [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-1", 3, "What about Spring?",
                 "Spring is listed [CV-7].", List.of(citation(7L)), actor)).thenReturn(conversationResponse(4));
 
@@ -69,7 +69,7 @@ class CvChatConversationTurnServiceTest {
                 List.of(candidate(7L, "Ada"), candidate(8L, "Grace"))))
                 .thenReturn(java.util.Optional.empty());
         when(comparisonChat.compare(List.of(7L, 8L), "Who better matches it?", 12L, "tenant-a", List.of()))
-                .thenReturn(new CvChatComparisonResponse("Candidate 7 matches [CV-7] and 8 [CV-8].",
+                .thenReturn(new CvChatComparisonResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Candidate 7 matches [CV-7] and 8 [CV-8].",
                         List.of(), List.of(citation(7L), citation(8L))));
         when(conversations.appendTurn("conversation-2", 5, "Who better matches it?",
                 "Candidate 7 matches [CV-7] and 8 [CV-8].", List.of(citation(7L), citation(8L)), actor))
@@ -93,7 +93,7 @@ class CvChatConversationTurnServiceTest {
         when(documentTools.answer("Is the candidate suitable?", List.of(candidate(7L, "Ada"))))
                 .thenReturn(java.util.Optional.empty());
         when(singleCandidateChat.ask(7L, "Is the candidate suitable?", 12L, "tenant-a", List.of()))
-                .thenReturn(new CvChatResponse("The candidate matches [CV-7].", List.of(citation(7L))));
+                .thenReturn(new CvChatResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "The candidate matches [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-3", 2, "Is the candidate suitable?",
                 "The candidate matches [CV-7].", List.of(citation(7L)), actor))
                 .thenReturn(conversationResponse(3));
@@ -177,7 +177,7 @@ class CvChatConversationTurnServiceTest {
         when(documentTools.answer("Which requirements are supported?", List.of(candidate(7L, "Ada"))))
                 .thenReturn(java.util.Optional.empty());
         when(singleCandidateChat.ask(7L, "Which requirements are supported?", 12L, "tenant-a", untrustedHistory))
-                .thenReturn(new CvChatResponse("Java is supported [CV-7].", List.of(citation(7L))));
+                .thenReturn(new CvChatResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Java is supported [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-6", 6, "Which requirements are supported?",
                 "Java is supported [CV-7].", List.of(citation(7L)), actor)).thenReturn(conversationResponse(7));
 

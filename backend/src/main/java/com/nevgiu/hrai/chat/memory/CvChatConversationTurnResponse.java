@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
 import com.nevgiu.hrai.chat.CvChatResponse;
 
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.util.List;
 record CvChatConversationTurnResponse(
         String conversationId,
         long version,
+        CvChatAnswerKind kind,
         String answer,
         List<CvChatConversationResponse.CandidateCard> candidates,
         CvChatConversationResponse.JobCard job,

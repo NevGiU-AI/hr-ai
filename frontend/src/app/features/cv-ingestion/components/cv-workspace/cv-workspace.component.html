@@ -287,7 +287,8 @@
                *ngIf="comparisonResponse as response" aria-live="polite">
         <h4 class="h5">Comparison</h4>
         <p>{{ response.answer }}</p>
-        <p class="bg-light rounded text-muted small p-2" *ngIf="!response.citations.length">
+        <p class="bg-light rounded text-muted small p-2"
+           *ngIf="response.kind === 'INSUFFICIENT_EVIDENCE' || response.kind === 'OUT_OF_SCOPE'">
           This controlled response makes no factual claim about the selected candidates, so no source citation is required.
         </p>
         <div *ngIf="response.citations.length">
@@ -469,7 +470,8 @@
                  *ngIf="chatResponse as response" aria-live="polite">
           <h5>Answer</h5>
           <p>{{ response.answer }}</p>
-          <p class="bg-light rounded text-muted small p-2" *ngIf="!response.citations.length">
+          <p class="bg-light rounded text-muted small p-2"
+             *ngIf="response.kind === 'INSUFFICIENT_EVIDENCE' || response.kind === 'OUT_OF_SCOPE'">
             This controlled response makes no factual claim about the candidate, so no source citation is required.
           </p>
           <div *ngIf="response.citations.length">

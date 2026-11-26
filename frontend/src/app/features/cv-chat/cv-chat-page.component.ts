@@ -181,7 +181,7 @@ export class CvChatPageComponent implements OnInit {
           updatedAt: new Date().toISOString(),
         };
         this.timeline = [...this.timeline, {
-          role: 'ASSISTANT', content: turn.answer, citations: turn.citations,
+          role: 'ASSISTANT', kind: turn.kind, content: turn.answer, citations: turn.citations,
         }];
         this.upsertConversation(this.conversation);
       },

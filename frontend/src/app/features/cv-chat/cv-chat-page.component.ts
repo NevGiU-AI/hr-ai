@@ -158,7 +158,8 @@ export class CvChatPageComponent implements OnInit {
 
   send(): void {
     const content = this.message.trim();
-    if (!this.conversation || !content || content.length > 2000 || this.sendBusy) return;
+    // The editor shows a draft scope, not the scope the server would use for a message.
+    if (!this.conversation || !content || content.length > 2000 || this.sendBusy || this.scopeEditing) return;
     const conversationId = this.conversation.id;
     this.sendBusy = true;
     this.error = '';

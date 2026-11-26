@@ -44,7 +44,7 @@ export class CvChatPageComponent implements OnInit {
   searchResults: CvChatCandidateOption[] = [];
   discoveryMode: 'NAMES' | 'ORGANIZATION' = 'NAMES';
   naturalRequest = '';
-  naturalResults: CvChatCandidateOption[] = [];
+  naturalResultGroups: { requestedName: string | null; candidates: CvChatCandidateOption[]; truncated: boolean }[] = [];
   naturalBusy = false;
   pendingQuestion = '';
   searchBusy = false;
@@ -86,7 +86,7 @@ export class CvChatPageComponent implements OnInit {
     if (request.length < 2 || request.length > 2000 || this.naturalBusy) return;
     this.naturalBusy = true;
     this.error = '';
-    this.naturalResults = [];
+    this.naturalResultGroups = [];
     this.pendingQuestion = '';
     // A new natural-language request starts a new proposed scope. Never carry unconfirmed cards from an older request
     // into the next confirmation, because the recruiter could otherwise approve candidates they did not just ask for.
@@ -146,7 +146,7 @@ export class CvChatPageComponent implements OnInit {
           const confirmedQuestion = this.pendingQuestion;
           this.pendingQuestion = '';
           this.discoveryTimeline = [];
-          this.naturalResults = [];
+          this.naturalResultGroups = [];
           if (confirmedQuestion) {
             this.message = confirmedQuestion;
             this.send();
@@ -313,8 +313,8 @@ export class CvChatPageComponent implements OnInit {
   }
 
   private applyNamedDiscovery(request: string, response: CvChatToolDiscoveryResponse): void {
-    const candidates = response.candidateScope?.references.flatMap((reference) => reference.candidates) ?? [];
-    this.applyDiscovery(request, response.kind, response.message, candidates);
+    // Keep a match under every reference it answers; selection still deduplicates by candidate ID across groups.
+    this.applyDiscovery(request, response.kind, response.message, response.candidateScope?.references ?? []);
   }
 
   private loadConversationList(): void {
@@ -333,14 +333,19 @@ export class CvChatPageComponent implements OnInit {
   }
 
   private applyOrganizationDiscovery(request: string, response: CvChatOrganizationDiscoveryResponse): void {
-    this.applyDiscovery(request, response.kind, response.message, response.candidates);
+    this.applyDiscovery(request, response.kind, response.message, [
+      { requestedName: null, candidates: response.candidates, truncated: false },
+    ]);
   }
 
   private applyDiscovery(request: string, kind: string, message: string,
-                         candidates: CvChatCandidateOption[]): void {
+                         groups: typeof this.naturalResultGroups): void {
     this.discoveryTimeline = [...this.discoveryTimeline, { role: 'ASSISTANT', content: message }];
     if (kind !== 'CANDIDATE_CONFIRMATION_REQUIRED') return;
-    this.naturalResults = [...new Map(candidates.map((candidate) => [candidate.id, candidate])).values()];
+    this.naturalResultGroups = groups.filter((group) => group.candidates.length).map((group) => ({
+      ...group,
+      candidates: [...new Map(group.candidates.map((candidate) => [candidate.id, candidate])).values()],
+    }));
     this.pendingQuestion = request;
   }
 
@@ -351,7 +356,7 @@ export class CvChatPageComponent implements OnInit {
     this.selectedCandidates = [];
     this.selectedJobId = null;
     this.searchResults = [];
-    this.naturalResults = [];
+    this.naturalResultGroups = [];
     this.pendingQuestion = '';
     this.message = '';
     this.scopeEditing = false;

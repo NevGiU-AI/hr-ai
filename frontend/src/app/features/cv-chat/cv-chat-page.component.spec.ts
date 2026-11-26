@@ -94,6 +94,47 @@ describe('CvChatPageComponent', () => {
     expect(component.resumeError).toContain('no longer available');
   });
 
+  it('checks persisted history after an uncertain send without replaying the question', () => {
+    const url = `${environment.apiUrl}/chat/conversations/conversation-1`;
+    const conversation = {
+      id: 'conversation-1', version: 1, candidates: [], job: null, createdAt: '', updatedAt: '', expiresAt: '',
+    };
+    component.conversation = conversation;
+    component.message = 'Saved despite timeout?';
+    component.send();
+    http.expectOne({ method: 'POST', url: `${url}/messages` })
+      .flush(null, { status: 504, statusText: 'Gateway Timeout' });
+    expect(component.message).toBe('Saved despite timeout?');
+    expect(component.sendNeedsHistoryCheck).toBeTrue();
+    component.send();
+    http.expectNone({ method: 'POST', url: `${url}/messages` });
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.composer [role="status"] button').click();
+    http.expectOne({ method: 'GET', url }).flush({ ...conversation, version: 2 });
+    http.expectOne({ method: 'GET', url: `${url}/messages` }).flush({ messages: [
+      { role: 'USER', content: 'Saved despite timeout?' },
+      { role: 'ASSISTANT', content: 'Persisted answer' },
+    ] });
+    expect(component.timeline[1].content).toBe('Persisted answer');
+    expect(component.sendNeedsHistoryCheck).toBeFalse();
+    expect(component.sendFeedback).toContain('do not send it again');
+    http.expectNone({ method: 'POST', url: `${url}/messages` });
+  });
+
+  it('keeps an editable draft after a rejected send without requiring a history check', () => {
+    component.conversation = {
+      id: 'conversation-1', version: 1, candidates: [], job: null, createdAt: '', updatedAt: '', expiresAt: '',
+    };
+    component.message = 'Draft question';
+    component.send();
+    http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`)
+      .flush({ message: 'Invalid question' }, { status: 400, statusText: 'Bad Request' });
+    expect(component.message).toBe('Draft question');
+    expect(component.sendFeedback).toBe('Invalid question');
+    expect(component.sendNeedsHistoryCheck).toBeFalse();
+    expect(component.timeline).toEqual([]);
+  });
+
   it('creates an explicit candidate-scoped conversation and renders its scope', () => {
     component.selectedCandidates = [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }];
     component.createConversation();

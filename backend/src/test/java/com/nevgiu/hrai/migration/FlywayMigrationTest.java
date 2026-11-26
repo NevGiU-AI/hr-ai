@@ -148,6 +148,8 @@ class FlywayMigrationTest {
         assertThat(count("SELECT COUNT(*) FROM cv_chat_messages")).isZero();
         assertThat(count("SELECT COUNT(*) FROM cv_chat_message_citations")).isZero();
 
+        // Simulate adopting an existing schema: forget Flyway's bookkeeping, but keep the schema
+        // objects, including V9's answer_kind column and check constraint, in place for replay.
         execute("DROP TABLE flyway_schema_history");
         execute("ALTER TABLE security_audit_events ADD CONSTRAINT security_audit_events_event_type_check "
                 + "CHECK (event_type IN ('LOGIN_FAILED'))");

@@ -547,14 +547,14 @@ focused production checks, and recorded acceptance before the next dependent sli
    translate saved answers or backend error details.
    PR #252 passed staging acceptance, protected staging BDD, and production smoke tests.
 
-   **Proposed reply-language precedence for the remaining Step 6 work:** use an explicit supported reply
+   **Dedicated CV-chat reply-language precedence:** use an explicit supported reply
    selection first, then the current question's language when it can be identified reliably as English, French,
    or Portuguese, then the browser locale, and finally English. For example, a clear French question in an
    English browser receives a French controlled reply in automatic mode; an explicit Portuguese selection wins.
-   Short or ambiguous questions fall back to the browser locale instead of guessing. Rename the current
-   “Browser default” option to “Automatic” if that behavior changes. Keep interface language independent and
-   preserve saved wording on resume. Report language metadata only when known. This precedence is proposed,
-   not implemented by PR #252.
+   Automatic mode uses a conservative frontend heuristic for English, French, and Portuguese. Short or ambiguous
+   questions leave the request language to the browser; the backend falls back to English for unsupported locales.
+   This affects only new controlled replies in dedicated chat. Interface language, saved wording, provider-generated
+   answers, and workspace/API behavior are unchanged.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

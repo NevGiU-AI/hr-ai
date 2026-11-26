@@ -1,5 +1,7 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
+
 import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.security.AppUserPrincipal;
 import com.nevgiu.hrai.security.audit.SecurityAuditService;
@@ -181,10 +183,10 @@ class CvChatConversationControllerTest {
         var actor = actor();
         when(service.history("conversation-1", actor)).thenReturn(new CvChatConversationHistoryResponse(List.of(
                 new CvChatConversationHistoryResponse.TimelineMessage(
-                        "USER", "Which Java versions?", List.of()),
+                        "USER", "Which Java versions?", List.of(), null),
                 new CvChatConversationHistoryResponse.TimelineMessage(
                         "ASSISTANT", "Java 17 [CV-7].", List.of(new com.nevgiu.hrai.chat.CvChatResponse.Citation(
-                        "CV-7", 7L, 7L, null, ""))))));
+                        "CV-7", 7L, 7L, null, "")), CvChatAnswerKind.ANSWER))));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
         try {
@@ -192,6 +194,7 @@ class CvChatConversationControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.messages[0].role").value("USER"))
                     .andExpect(jsonPath("$.messages[1].content").value("Java 17 [CV-7]."))
+                    .andExpect(jsonPath("$.messages[1].kind").value("ANSWER"))
                     .andExpect(jsonPath("$.messages[1].citations[0].reference").value("CV-7"));
         } finally {
             SecurityContextHolder.clearContext();

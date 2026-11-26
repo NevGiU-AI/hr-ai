@@ -89,8 +89,8 @@ export interface CvChatConversation {
 }
 
 export interface CvChatTimelineMessage {
-  /** Set for new assistant turns; user messages and currently persisted history have no outcome metadata. */
-  kind?: CvChatAnswerKind;
+  /** New assistant turns retain their outcome on resume; legacy history and user turns have no outcome. */
+  kind?: CvChatAnswerKind | null;
   role: 'USER' | 'ASSISTANT';
   content: string;
   citations?: CvChatCitation[];

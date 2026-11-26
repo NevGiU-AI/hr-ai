@@ -1,5 +1,7 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
+
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateRepository;
 import com.nevgiu.hrai.chat.CvChatException;
@@ -125,9 +127,9 @@ class CvChatConversationServiceTest {
                 "conversation", actor(1L, "tenant-a"));
 
         assertThat(response.messages()).containsExactly(
-                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?", List.of()),
+                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?", List.of(), null),
                 new CvChatConversationHistoryResponse.TimelineMessage(
-                        "ASSISTANT", "Java 17 [CV-7].", List.of()));
+                        "ASSISTANT", "Java 17 [CV-7].", List.of(), null));
     }
 
     @Test
@@ -138,6 +140,7 @@ class CvChatConversationServiceTest {
         when(assistant.getId()).thenReturn(10L);
         when(assistant.getRole()).thenReturn("ASSISTANT");
         when(assistant.getContent()).thenReturn("Java 17 [CV-7].");
+        when(assistant.getAnswerKind()).thenReturn(CvChatAnswerKind.ANSWER);
         when(conversations.findByIdAndOrganizationIdAndOwnerUserIdAndExpiresAtAfter(
                 org.mockito.ArgumentMatchers.eq("conversation"), org.mockito.ArgumentMatchers.eq("tenant-a"),
                 org.mockito.ArgumentMatchers.eq(1L), any())).thenReturn(Optional.of(conversation));
@@ -151,6 +154,7 @@ class CvChatConversationServiceTest {
 
         assertThat(response.messages()).singleElement().satisfies(message -> {
             assertThat(message.role()).isEqualTo("ASSISTANT");
+            assertThat(message.kind()).isEqualTo(CvChatAnswerKind.ANSWER);
             assertThat(message.citations()).singleElement().satisfies(citation -> {
                 assertThat(citation.reference()).isEqualTo("CV-7");
                 assertThat(citation.excerpt()).isEmpty();
@@ -199,7 +203,7 @@ class CvChatConversationServiceTest {
         when(conversations.findLockedById("conversation")).thenReturn(Optional.of(conversation));
 
         assertThatThrownBy(() -> service.appendTurn("conversation", 1,
-                "Follow-up", "Generated answer", List.of(), actor(1L, "tenant-a")))
+                "Follow-up", "Generated answer", List.of(), CvChatAnswerKind.ANSWER, actor(1L, "tenant-a")))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("Conversation scope changed; retry the question");
 

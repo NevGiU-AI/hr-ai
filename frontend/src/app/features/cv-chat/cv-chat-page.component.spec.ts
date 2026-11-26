@@ -47,10 +47,14 @@ describe('CvChatPageComponent', () => {
       { role: 'ASSISTANT', content: 'Java 17 [CV-7].', citations: [
         { reference: 'CV-7', candidateId: 7, documentId: 7, pageNumber: null, excerpt: '' },
       ] },
+      { role: 'ASSISTANT', content: 'Text extraction used OCR.', kind: 'TOOL_STATUS', citations: [] },
     ] });
 
     expect(component.conversation?.id).toBe('conversation-1');
     expect(component.timeline[1].citations?.[0].reference).toBe('CV-7');
+    fixture.detectChanges();
+    const labels: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.message-outcome');
+    expect(Array.from(labels, (label) => label.textContent?.trim())).toEqual(['Operational information']);
   });
 
   it('retries a transient conversation resume without forgetting the saved ID', () => {

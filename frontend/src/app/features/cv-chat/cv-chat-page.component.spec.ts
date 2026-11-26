@@ -142,7 +142,7 @@ describe('CvChatPageComponent', () => {
       candidates: [{ id: 8, name: 'Grace', currentTitle: 'AI Engineer', evidenceReferences: ['CV-18'] }],
     });
 
-    expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([8]);
+    expect(component.naturalResultGroups.map((group) => group.requestedName)).toEqual([null]);
     expect(component.pendingQuestion).toBe('Find strong AI developers in this organization');
     expect(component.discoveryTimeline.map((item) => item.role)).toEqual(['USER', 'ASSISTANT']);
     expect(component.naturalRequest).toBe('');
@@ -161,7 +161,7 @@ describe('CvChatPageComponent', () => {
       .toContain('Confirm conversation scope');
   });
 
-  it('uses the reviewed name-discovery tools for natural-language candidate selection', () => {
+  it('groups name matches in reference order without selecting candidates or duplicating the scope', () => {
     component.selectedCandidates = [{ id: 99, name: 'Previous request', currentTitle: null }];
     component.naturalRequest = 'Compare Ada and Grace for Java';
     component.discoverNaturally();
@@ -170,15 +170,29 @@ describe('CvChatPageComponent', () => {
     request.flush({
       kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm cards.',
       candidateScope: { message: component.naturalRequest, references: [
-        { requestedName: 'Ada', status: 'CHOICES', truncated: false,
-          candidates: [{ id: 7, name: 'Ada', currentTitle: 'Engineer' }] },
+        { requestedName: 'Ada', status: 'CHOICES', truncated: true, candidates: [
+          { id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+          { id: 9, name: 'Ada Byron', currentTitle: null },
+        ] },
         { requestedName: 'Grace', status: 'CHOICES', truncated: false,
-          candidates: [{ id: 8, name: 'Grace', currentTitle: 'Architect' }] },
+          candidates: [{ id: 7, name: 'Ada Lovelace', currentTitle: 'Engineer' },
+            { id: 8, name: 'Grace', currentTitle: 'Architect' }] },
       ] },
     });
 
-    expect(component.naturalResults.map((candidate) => candidate.id)).toEqual([7, 8]);
     expect(component.selectedCandidates).toEqual([]);
+    fixture.detectChanges();
+    const groups = fixture.nativeElement.querySelectorAll('.candidate-match-group') as NodeListOf<HTMLElement>;
+    expect(Array.from(groups).map((group) => group.querySelector('h3')?.textContent))
+      .toEqual(['Matches for Ada', 'Matches for Grace']);
+    expect(groups[0].textContent).toContain('Ada Byron');
+    expect(groups[0].textContent).toContain('More matches exist');
+    expect(groups[1].textContent).not.toContain('Ada Byron');
+    groups[0].querySelector('button')?.click();
+    fixture.detectChanges();
+    expect(groups[1].querySelector('button')?.disabled).toBeTrue();
+    expect(component.selectedCandidates.map((candidate) => candidate.id)).toEqual([7]);
+    http.expectNone(`${environment.apiUrl}/chat/conversations`);
   });
 
   it('keeps clarification in the timeline without creating or widening candidate scope', () => {
@@ -192,7 +206,7 @@ describe('CvChatPageComponent', () => {
 
     fixture.detectChanges();
     expect(component.selectedCandidates).toEqual([]);
-    expect(component.naturalResults).toEqual([]);
+    expect(component.naturalResultGroups).toEqual([]);
     expect(component.pendingQuestion).toBe('');
     expect(component.discoveryTimeline.at(-1)?.content).toBe('Please name the candidates.');
     expect(fixture.nativeElement.querySelector('[aria-label="Candidate confirmation cards"]')).toBeNull();

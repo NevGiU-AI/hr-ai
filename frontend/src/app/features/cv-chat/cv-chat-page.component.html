@@ -23,17 +23,21 @@
       <p class="message-role">{{ item.role === 'USER' ? 'You' : 'NevGiU' }}</p>
       <p class="message-content">{{ item.content }}</p>
     </article>
-    <article class="message assistant candidate-confirmation" *ngIf="naturalResults.length"
+    <article class="message assistant candidate-confirmation" *ngIf="naturalResultGroups.length"
              aria-label="Candidate confirmation cards">
       <p class="message-role">NevGiU</p>
       <p class="message-content">Choose the candidate cards to include, then confirm the visible scope.</p>
-      <div class="results">
-        <button type="button" class="result" *ngFor="let candidate of naturalResults"
-                (click)="addCandidate(candidate)"
-                [disabled]="selectedCandidates.length >= 5 || isSelected(candidate.id)">
-          <strong>{{ candidate.name }}</strong>
-          <span>{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
-        </button>
+      <div class="candidate-match-group" *ngFor="let group of naturalResultGroups">
+        <h3 *ngIf="group.requestedName">Matches for {{ group.requestedName }}</h3>
+        <p *ngIf="group.truncated">More matches exist. Use candidate search to narrow the name.</p>
+        <div class="results">
+          <button type="button" class="result" *ngFor="let candidate of group.candidates"
+                  (click)="addCandidate(candidate)"
+                  [disabled]="selectedCandidates.length >= 5 || isSelected(candidate.id)">
+            <strong>{{ candidate.name }}</strong>
+            <span>{{ candidate.currentTitle || 'Current title not provided' }} · #{{ candidate.id }}</span>
+          </button>
+        </div>
       </div>
     </article>
     <p class="thinking" *ngIf="naturalBusy">Finding authorized candidate cards…</p>

@@ -6,6 +6,11 @@
   </header>
 
   <div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>
+  <div class="alert alert-danger" role="alert" *ngIf="resumeError && !conversation">
+    {{ resumeError }}
+    <button *ngIf="canRetryResume" class="btn btn-outline-secondary" type="button"
+            (click)="retryResume()" [disabled]="pageBusy">Retry loading conversation</button>
+  </div>
 
   <section class="timeline welcome-only" aria-live="polite" aria-label="Candidate discovery conversation"
            *ngIf="!conversation">

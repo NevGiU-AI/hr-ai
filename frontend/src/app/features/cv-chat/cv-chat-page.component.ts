@@ -53,6 +53,13 @@ export class CvChatPageComponent implements OnInit {
   scopeEditing = false;
   message = '';
   error = '';
+  resumeError = '';
+  private retryConversationId: string | null = null;
+  private readonly unavailableConversationIds = new Set<string>();
+
+  get canRetryResume(): boolean {
+    return this.retryConversationId !== null;
+  }
 
   ngOnInit(): void {
     this.candidates.getJobs().subscribe({ next: (jobs) => this.jobs = jobs });
@@ -251,10 +258,16 @@ export class CvChatPageComponent implements OnInit {
 
   startAnother(): void {
     this.resetLocalState();
+    this.resumeError = '';
+    this.retryConversationId = null;
   }
 
   resumeConversation(id: string): void {
     if (!this.pageBusy) this.loadConversation(id);
+  }
+
+  retryResume(): void {
+    if (this.retryConversationId) this.resumeConversation(this.retryConversationId);
   }
 
   citationFragment(citation: CvChatCitation): string {
@@ -263,6 +276,8 @@ export class CvChatPageComponent implements OnInit {
 
   private loadConversation(id: string): void {
     this.pageBusy = true;
+    this.resumeError = '';
+    this.retryConversationId = null;
     forkJoin({ conversation: this.chat.getConversation(id), history: this.chat.getConversationHistory(id) })
       .pipe(finalize(() => this.pageBusy = false))
       .subscribe({
@@ -275,8 +290,24 @@ export class CvChatPageComponent implements OnInit {
           this.upsertConversation(conversation);
         },
         error: (error) => {
-          this.resetLocalState();
-          this.error = this.apiError(error, 'The previous conversation is unavailable. Start a new one.');
+          if (error.status === 404) {
+            // A missing conversation should not be restored again on refresh. Leave other drafts and IDs alone.
+            if (typeof localStorage !== 'undefined'
+                && localStorage.getItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY) === id) {
+              localStorage.removeItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY);
+            }
+            this.unavailableConversationIds.add(id);
+            this.recentConversations = this.recentConversations.filter((item) => item.id !== id);
+            this.resumeError = 'This conversation is no longer available. Choose another chat or start a new one.';
+            return;
+          }
+          // Retry only the read requests. Do not discard the saved ID or anything already on screen.
+          if (error.status === 0 || error.status === 429 || error.status >= 500) {
+            this.retryConversationId = id;
+            this.resumeError = 'The conversation could not be loaded right now.';
+            return;
+          }
+          this.resumeError = this.apiError(error, 'The conversation could not be loaded.');
         },
       });
   }
@@ -288,7 +319,9 @@ export class CvChatPageComponent implements OnInit {
 
   private loadConversationList(): void {
     this.chat.listConversations().subscribe({
-      next: (conversations) => this.recentConversations = conversations,
+      // The initial list and automatic resume run independently; a late list must not restore a stale entry.
+      next: (conversations) => this.recentConversations = conversations.filter(
+        (item) => !this.unavailableConversationIds.has(item.id)),
       error: (error) => this.error = this.apiError(error, 'Recent conversations could not be loaded.'),
     });
   }

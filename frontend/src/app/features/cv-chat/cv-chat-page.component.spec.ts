@@ -3,6 +3,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environments';
+import { ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY } from '../../core/storage/application-storage-keys';
 import { CvChatPageComponent } from './cv-chat-page.component';
 
 describe('CvChatPageComponent', () => {
@@ -50,6 +51,47 @@ describe('CvChatPageComponent', () => {
 
     expect(component.conversation?.id).toBe('conversation-1');
     expect(component.timeline[1].citations?.[0].reference).toBe('CV-7');
+  });
+
+  it('retries a transient conversation resume without forgetting the saved ID', () => {
+    const id = 'conversation-1';
+    const url = `${environment.apiUrl}/chat/conversations/${id}`;
+    const conversation = {
+      id, version: 1, candidates: [], job: null, createdAt: '', updatedAt: '', expiresAt: '',
+    };
+    localStorage.setItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY, id);
+    component.resumeConversation(id);
+    http.expectOne(url).flush(conversation);
+    http.expectOne(`${url}/messages`).flush(null, { status: 502, statusText: 'Bad Gateway' });
+
+    expect(localStorage.getItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY)).toBe(id);
+    fixture.detectChanges();
+    const retry: HTMLButtonElement = fixture.nativeElement.querySelector('[role="alert"] button');
+    expect(retry.textContent).toContain('Retry loading conversation');
+    retry.click();
+
+    http.expectOne(url).flush(conversation);
+    http.expectOne(`${url}/messages`).flush({ messages: [{ role: 'USER', content: 'Saved question' }] });
+    expect(component.conversation?.id).toBe(id);
+    expect(component.timeline[0].content).toBe('Saved question');
+    expect(component.resumeError).toBe('');
+    expect(component.canRetryResume).toBe(false);
+  });
+
+  it('forgets an unavailable saved conversation without clearing the current discovery draft', () => {
+    const id = 'conversation-1';
+    const url = `${environment.apiUrl}/chat/conversations/${id}`;
+    localStorage.setItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY, id);
+    component.pendingQuestion = 'Compare backend experience';
+    component.resumeConversation(id);
+    const history = http.expectOne(`${url}/messages`);
+    http.expectOne(url).flush(null, { status: 404, statusText: 'Not Found' });
+
+    expect(history.cancelled).toBe(true);
+    expect(localStorage.getItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY)).toBeNull();
+    expect(component.pendingQuestion).toBe('Compare backend experience');
+    expect(component.canRetryResume).toBe(false);
+    expect(component.resumeError).toContain('no longer available');
   });
 
   it('creates an explicit candidate-scoped conversation and renders its scope', () => {

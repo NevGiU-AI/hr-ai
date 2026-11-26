@@ -99,7 +99,7 @@ class CvChatConversationControllerTest {
                 "conversation-1", 2, com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Grounded answer [CV-7].",
                 List.of(new CvChatConversationResponse.CandidateCard(7L, "Ada", "Engineer")),
                 null, List.of(new com.nevgiu.hrai.chat.CvChatResponse.Citation(
-                        "CV-7", 7L, 7L, null, "Evidence")), expiry));
+                        "CV-7", 7L, 7L, null, "Evidence")), expiry, null));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
         try {

@@ -7,7 +7,13 @@ public record CvChatComparisonResponse(
         CvChatAnswerKind kind,
         String answer,
         List<CandidateOption> candidates,
-        List<CvChatResponse.Citation> citations
+        List<CvChatResponse.Citation> citations,
+        String responseLanguage
 ) {
+    public CvChatComparisonResponse(CvChatAnswerKind kind, String answer, List<CandidateOption> candidates,
+                                    List<CvChatResponse.Citation> citations) {
+        this(kind, answer, candidates, citations, null);
+    }
+
     public record CandidateOption(Long id, String name, String currentTitle) { }
 }

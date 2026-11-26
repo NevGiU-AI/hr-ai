@@ -534,6 +534,10 @@ focused production checks, and recorded acceptance before the next dependent sli
 6. **Add response-language metadata and localization.** Preserve the recruiter question language and localize
    application-owned controlled responses, errors, clarification labels, and Angular presentation for English, French,
    and Portuguese. Retain the corrected French KLx paraphrase as a regression case.
+   First slice: application-owned insufficient-evidence and out-of-scope answers use the HTTP request locale
+   (English fallback) and expose the rendered language as `responseLanguage`. This metadata does not claim the
+   language of provider-generated answers or operational text. Question-language handling, remaining controlled
+   copy, Angular localization, and localized history metadata are separate follow-ups.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

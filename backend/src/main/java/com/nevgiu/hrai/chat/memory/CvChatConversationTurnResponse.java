@@ -15,6 +15,7 @@ record CvChatConversationTurnResponse(
         List<CvChatConversationResponse.CandidateCard> candidates,
         CvChatConversationResponse.JobCard job,
         List<CvChatResponse.Citation> citations,
-        Instant expiresAt
+        Instant expiresAt,
+        String responseLanguage
 ) {
 }

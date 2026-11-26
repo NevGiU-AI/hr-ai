@@ -38,6 +38,7 @@ class CvChatConversationTurnService {
 
         CvChatAnswerKind kind;
         String answer;
+        String responseLanguage = null;
         List<CvChatResponse.Citation> citations;
         // Document processing state is application data, not evidence extracted from the CV. Route it before the
         // semantic RAG services so questions about OCR, import, reprocessing, or warnings do not search CV chunks and
@@ -56,12 +57,14 @@ class CvChatConversationTurnService {
             kind = response.kind();
             answer = response.answer();
             citations = response.citations();
+            responseLanguage = response.responseLanguage();
         } else {
             CvChatComparisonResponse response = comparisonChat.compare(scope.candidateIds(), normalizedMessage,
                     scope.jobId(), scope.organizationId(), history);
             kind = response.kind();
             answer = response.answer();
             citations = response.citations();
+            responseLanguage = response.responseLanguage();
         }
 
         // Persist operational and grounded turns through the same optimistic version check. A concurrent candidate or
@@ -69,6 +72,6 @@ class CvChatConversationTurnService {
         CvChatConversationResponse updated = conversations.appendTurn(
                 conversationId, scope.version(), normalizedMessage, answer, citations, kind, actor);
         return new CvChatConversationTurnResponse(updated.id(), updated.version(), kind, answer, updated.candidates(),
-                updated.job(), citations, updated.expiresAt());
+                updated.job(), citations, updated.expiresAt(), responseLanguage);
     }
 }

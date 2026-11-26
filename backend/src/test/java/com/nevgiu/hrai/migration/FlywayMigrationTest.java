@@ -43,9 +43,18 @@ class FlywayMigrationTest {
                 + "('00000000-0000-0000-0000-000000000000', 'Legacy answer', 'ASSISTANT', CURRENT_TIMESTAMP, 2)");
 
         Flyway cleanDatabase = flyway(false);
-        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(1);
+        // V8 restores the visible timeline; V9 adds the outcome metadata.
+        assertThat(cleanDatabase.migrate().migrationsExecuted).isEqualTo(2);
         assertThat(count("SELECT COUNT(*) FROM cv_chat_messages "
                 + "WHERE conversation_id = '00000000-0000-0000-0000-000000000000'")).isEqualTo(2);
+        assertThat(count("SELECT COUNT(*) FROM cv_chat_messages "
+                + "WHERE conversation_id = '00000000-0000-0000-0000-000000000000' AND answer_kind IS NULL"))
+                .isEqualTo(2);
+        assertThatThrownBy(() -> execute("UPDATE cv_chat_messages SET answer_kind = 'ANSWER' "
+                + "WHERE conversation_id = '00000000-0000-0000-0000-000000000000' AND role = 'USER'"))
+                .hasMessageContaining("ck_cv_chat_messages_answer_kind");
+        execute("UPDATE cv_chat_messages SET answer_kind = 'ANSWER' "
+                + "WHERE conversation_id = '00000000-0000-0000-0000-000000000000' AND role = 'ASSISTANT'");
         execute("DELETE FROM cv_chat_conversations WHERE id = '00000000-0000-0000-0000-000000000000'");
         execute("DELETE FROM app_users WHERE id = 8990");
 
@@ -146,9 +155,9 @@ class FlywayMigrationTest {
                 + "CHECK (outcome IN ('SUCCESS'))");
 
         Flyway existingDatabase = flyway(true);
-        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(8);
-        // Baseline version 0 plus migrations V1-V8 must be recorded after adopting the existing schema.
-        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(9);
+        assertThat(existingDatabase.migrate().migrationsExecuted).isEqualTo(9);
+        // Baseline version 0 plus migrations V1-V9 must be recorded after adopting the existing schema.
+        assertThat(count("SELECT COUNT(*) FROM flyway_schema_history WHERE success")).isEqualTo(10);
         assertThat(count("SELECT COUNT(*) FROM pg_constraint "
                 + "WHERE conrelid = 'security_audit_events'::regclass AND contype = 'c'"))
                 .isEqualTo(0);

@@ -4,6 +4,7 @@ import java.util.List;
 
 /** Grounded comparison plus the verified minimal identities and authorized citations used to support it. */
 public record CvChatComparisonResponse(
+        CvChatAnswerKind kind,
         String answer,
         List<CandidateOption> candidates,
         List<CvChatResponse.Citation> citations

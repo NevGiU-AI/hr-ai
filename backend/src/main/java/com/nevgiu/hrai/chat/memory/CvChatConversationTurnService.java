@@ -1,5 +1,6 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
 import com.nevgiu.hrai.chat.CvChatComparisonResponse;
 import com.nevgiu.hrai.chat.CvChatComparisonService;
 import com.nevgiu.hrai.chat.CvChatResponse;
@@ -35,6 +36,7 @@ class CvChatConversationTurnService {
         var scope = conversations.executionScope(conversationId, actor);
         var history = conversations.history(conversationId);
 
+        CvChatAnswerKind kind;
         String answer;
         List<CvChatResponse.Citation> citations;
         // Document processing state is application data, not evidence extracted from the CV. Route it before the
@@ -43,6 +45,7 @@ class CvChatConversationTurnService {
         // preserves the existing single-candidate/comparison paths unchanged.
         var operationalAnswer = documentTools.answer(normalizedMessage, scope.candidates());
         if (operationalAnswer.isPresent()) {
+            kind = CvChatAnswerKind.TOOL_STATUS;
             answer = operationalAnswer.get();
             // CV citations prove claims from extracted candidate evidence. An operational status answer instead comes
             // from tenant-authorized database fields, so attaching a CV citation would misrepresent its provenance.
@@ -50,20 +53,24 @@ class CvChatConversationTurnService {
         } else if (scope.candidateIds().size() == 1) {
             CvChatResponse response = singleCandidateChat.ask(scope.candidateIds().getFirst(), normalizedMessage,
                     scope.jobId(), scope.organizationId(), history);
+            kind = response.kind();
             answer = response.answer();
             citations = response.citations();
         } else {
             CvChatComparisonResponse response = comparisonChat.compare(scope.candidateIds(), normalizedMessage,
                     scope.jobId(), scope.organizationId(), history);
+            kind = response.kind();
             answer = response.answer();
             citations = response.citations();
         }
 
         // Persist operational and grounded turns through the same optimistic version check. A concurrent candidate or
         // job-scope edit therefore cannot attach either kind of answer to an obsolete authorization snapshot.
+        // The current history schema stores text and citations, not kind. The outcome is returned for this
+        // live turn only; resumed history must not reconstruct it from the saved text or citation count.
         CvChatConversationResponse updated = conversations.appendTurn(
                 conversationId, scope.version(), normalizedMessage, answer, citations, actor);
-        return new CvChatConversationTurnResponse(updated.id(), updated.version(), answer, updated.candidates(),
+        return new CvChatConversationTurnResponse(updated.id(), updated.version(), kind, answer, updated.candidates(),
                 updated.job(), citations, updated.expiresAt());
     }
 }

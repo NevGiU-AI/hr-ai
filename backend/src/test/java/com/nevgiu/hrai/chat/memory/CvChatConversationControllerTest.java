@@ -94,7 +94,7 @@ class CvChatConversationControllerTest {
         var actor = actor();
         Instant expiry = Instant.parse("2026-11-12T05:00:00Z");
         when(turns.ask(any(), any(), any())).thenReturn(new CvChatConversationTurnResponse(
-                "conversation-1", 2, "Grounded answer [CV-7].",
+                "conversation-1", 2, com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Grounded answer [CV-7].",
                 List.of(new CvChatConversationResponse.CandidateCard(7L, "Ada", "Engineer")),
                 null, List.of(new com.nevgiu.hrai.chat.CvChatResponse.Citation(
                         "CV-7", 7L, 7L, null, "Evidence")), expiry));
@@ -107,6 +107,7 @@ class CvChatConversationControllerTest {
                                     + "\"jobId\":999,\"organizationId\":\"attacker\"}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.conversationId").value("conversation-1"))
+                    .andExpect(jsonPath("$.kind").value("ANSWER"))
                     .andExpect(jsonPath("$.answer").value("Grounded answer [CV-7]."))
                     .andExpect(jsonPath("$.candidates[0].id").value(7))
                     .andExpect(jsonPath("$.citations[0].candidateId").value(7));

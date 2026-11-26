@@ -189,7 +189,12 @@
       </article>
       <article *ngFor="let item of timeline" class="message" [class.recruiter]="item.role === 'USER'"
                [class.assistant]="item.role === 'ASSISTANT'">
-        <p class="message-role">{{ item.role === 'USER' ? 'You' : 'Grounded assistant' }}</p>
+        <p class="message-role">{{ item.role === 'USER' ? 'You' : 'NevGiU' }}</p>
+        <ng-container [ngSwitch]="item.kind">
+          <p class="message-outcome" *ngSwitchCase="'INSUFFICIENT_EVIDENCE'">Insufficient evidence</p>
+          <p class="message-outcome" *ngSwitchCase="'OUT_OF_SCOPE'">Outside CV chat scope</p>
+          <p class="message-outcome" *ngSwitchCase="'TOOL_STATUS'">Operational information</p>
+        </ng-container>
         <p class="message-content">{{ item.content }}</p>
         <div class="citations" *ngIf="item.citations?.length">
           <a *ngFor="let citation of item.citations" routerLink="/candidates/import"

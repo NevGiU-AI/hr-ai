@@ -67,7 +67,7 @@ public class CvChatComparisonService {
         if (policyResult != CvChatQuestionPolicyResult.JOB_RELEVANT) {
             LOGGER.info("CV comparison rejected for organizationId={} candidateCount={} stage={} policyResult={}",
                     organizationId, candidateIds.size(), "PRE_RETRIEVAL_POLICY", policyResult);
-            return response(OUT_OF_SCOPE_MESSAGE, candidates, List.of());
+            return response(CvChatAnswerKind.OUT_OF_SCOPE, OUT_OF_SCOPE_MESSAGE, candidates, List.of());
         }
 
         // Normalize once and reuse the exact same search intent for every selected candidate. Normalizing separately
@@ -83,7 +83,7 @@ public class CvChatComparisonService {
             // A fair comparison must have relevant evidence for every selected person; never let the model convert a
             // retrieval miss into a negative claim about that candidate.
             if (candidateEvidence.isEmpty()) {
-                return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
+                return response(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
             }
             evidence.addAll(candidateEvidence);
         }
@@ -107,10 +107,10 @@ public class CvChatComparisonService {
             // recruiter question, generated answer, candidate names, or CV evidence.
             LOGGER.info("CV comparison rejected for organizationId={} candidateCount={} stage={} policyResult={}",
                     organizationId, candidateIds.size(), "ANSWER_MODEL_POLICY", CvChatModel.OUT_OF_SCOPE);
-            return response(OUT_OF_SCOPE_MESSAGE, candidates, List.of());
+            return response(CvChatAnswerKind.OUT_OF_SCOPE, OUT_OF_SCOPE_MESSAGE, candidates, List.of());
         }
         if (CvChatModel.INSUFFICIENT_EVIDENCE.equals(normalizedAnswer)) {
-            return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
+            return response(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
 
         // Some providers occasionally append the protocol token on its own final line after an otherwise grounded
@@ -118,7 +118,7 @@ public class CvChatComparisonService {
         // terminal line; never rewrite an occurrence embedded in ordinary answer text.
         String displayAnswer = removeTrailingControlLine(normalizedAnswer, CvChatModel.INSUFFICIENT_EVIDENCE);
         if (displayAnswer.isBlank()) {
-            return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
+            return response(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
 
         List<CvChatResponse.Citation> citations = CvChatCitations.fromAnswer(displayAnswer, evidence);
@@ -131,9 +131,9 @@ public class CvChatComparisonService {
             // The log records only counts and tenant scope—never the question, answer, or CV evidence.
             LOGGER.info("CV comparison rejected for organizationId={} candidateCount={} stage={} citedCandidateCount={}",
                     organizationId, candidateIds.size(), "CITATION_COVERAGE", citedCandidateIds.size());
-            return response(INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
+            return response(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, candidates, List.of());
         }
-        return response(displayAnswer, candidates, citations);
+        return response(CvChatAnswerKind.ANSWER, displayAnswer, candidates, citations);
     }
 
     private CvChatComparisonJobContext authorizeJob(Long requestedJobId, String organizationId) {
@@ -162,13 +162,13 @@ public class CvChatComparisonService {
         return List.copyOf(distinct);
     }
 
-    private CvChatComparisonResponse response(String answer, List<CandidateIdentity> candidates,
+    private CvChatComparisonResponse response(CvChatAnswerKind kind, String answer, List<CandidateIdentity> candidates,
                                               List<CvChatResponse.Citation> citations) {
         List<CvChatComparisonResponse.CandidateOption> options = candidates.stream()
                 .map(candidate -> new CvChatComparisonResponse.CandidateOption(
                         candidate.id(), candidate.name(), candidate.currentTitle()))
                 .toList();
-        return new CvChatComparisonResponse(answer, options, citations);
+        return new CvChatComparisonResponse(kind, answer, options, citations);
     }
 
     private String removeTrailingControlLine(String answer, String controlToken) {

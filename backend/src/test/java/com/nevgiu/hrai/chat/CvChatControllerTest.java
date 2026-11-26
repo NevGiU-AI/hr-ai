@@ -132,7 +132,7 @@ class CvChatControllerTest {
     void comparesExplicitCandidatesInsideTheAuthenticatedOrganization() throws Exception {
         AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
                 java.util.List.of());
-        var response = new CvChatComparisonResponse("Comparison [CV-10] [CV-11]", List.of(
+        var response = new CvChatComparisonResponse(CvChatAnswerKind.ANSWER, "Comparison [CV-10] [CV-11]", List.of(
                 new CvChatComparisonResponse.CandidateOption(7L, "Ada", "Engineer"),
                 new CvChatComparisonResponse.CandidateOption(8L, "Grace", "Architect")), List.of());
         when(comparisonService.compare(List.of(7L, 8L), "Compare", 12L, "tenant-a")).thenReturn(response);
@@ -174,7 +174,7 @@ class CvChatControllerTest {
     void passesAuthenticatedOrganizationToTheChatService() throws Exception {
         AppUserPrincipal principal = new AppUserPrincipal(2L, "recruiter@example.com", "", "tenant-a", true,
                 java.util.List.of());
-        CvChatResponse response = new CvChatResponse("Answer [CV-3]",
+        CvChatResponse response = new CvChatResponse(CvChatAnswerKind.ANSWER, "Answer [CV-3]",
                 List.of(new CvChatResponse.Citation("CV-3", 7L, 3L, null, "Evidence")));
         when(service.ask(7L, "Question", "tenant-a")).thenReturn(response);
 

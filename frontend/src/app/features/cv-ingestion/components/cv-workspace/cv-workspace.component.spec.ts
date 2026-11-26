@@ -673,7 +673,8 @@ describe('CvWorkspaceComponent', () => {
 
   it('renders a controlled safe response without requiring citations', () => {
     chatService.ask.and.returnValue(of({
-      answer: 'The available CV evidence does not provide enough information to answer this question.',
+      kind: 'INSUFFICIENT_EVIDENCE',
+      answer: 'No supporting material was found for this question.',
       citations: [],
     }));
     component.chatQuestion = 'Does the CV state a Kubernetes certification?';
@@ -681,7 +682,7 @@ describe('CvWorkspaceComponent', () => {
     component.askCv();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('does not provide enough information');
+    expect(fixture.nativeElement.textContent).toContain('No supporting material was found');
     expect(fixture.nativeElement.textContent).toContain('no source citation is required');
   });
 

@@ -67,7 +67,7 @@ public class CvChatService {
             // Record only the decision stage and label. The untrusted question is intentionally excluded from logs.
             LOGGER.info("CV chat question rejected for candidateId={} organizationId={} stage={} policyResult={}",
                     candidateId, organizationId, "PRE_RETRIEVAL_POLICY", policyResult);
-            return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
+            return new CvChatResponse(CvChatAnswerKind.OUT_OF_SCOPE, OUT_OF_SCOPE_MESSAGE, List.of());
         }
         // Evidence is loaded in a short read transaction; no JDBC connection is held while OpenAI responds.
         String retrievalIntent = jobContext == null
@@ -77,7 +77,7 @@ public class CvChatService {
         // An empty semantic result is a normal evidence outcome, not a provider failure. Avoid sending unrelated
         // fallback text to the model and return wording controlled entirely by the backend.
         if (evidence.isEmpty()) {
-            return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
+            return new CvChatResponse(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
         }
         String answer;
         try {
@@ -105,13 +105,13 @@ public class CvChatService {
         // Only exact control results are trusted. Java supplies the displayed wording so provider prose cannot smuggle
         // uncited claims into a refusal or insufficient-evidence response.
         if (CvChatModel.INSUFFICIENT_EVIDENCE.equals(normalizedAnswer)) {
-            return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
+            return new CvChatResponse(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
         }
         if (CvChatModel.OUT_OF_SCOPE.equals(normalizedAnswer)) {
             // This second policy boundary is defense in depth after authorized evidence retrieval.
             LOGGER.info("CV chat question rejected for candidateId={} organizationId={} stage={}",
                     candidateId, organizationId, "ANSWER_MODEL_POLICY");
-            return new CvChatResponse(OUT_OF_SCOPE_MESSAGE, List.of());
+            return new CvChatResponse(CvChatAnswerKind.OUT_OF_SCOPE, OUT_OF_SCOPE_MESSAGE, List.of());
         }
         List<CvChatResponse.Citation> citations = CvChatCitations.fromAnswer(normalizedAnswer, evidence);
         if (citations.isEmpty()) {
@@ -120,9 +120,9 @@ public class CvChatService {
             // same safe application-owned outcome, while unsupported citation-shaped references still fail above.
             LOGGER.info("CV chat answer rejected for candidateId={} organizationId={} stage={} citedReferenceCount={}",
                     candidateId, organizationId, "CITATION_COVERAGE", 0);
-            return new CvChatResponse(INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
+            return new CvChatResponse(CvChatAnswerKind.INSUFFICIENT_EVIDENCE, INSUFFICIENT_EVIDENCE_MESSAGE, List.of());
         }
-        return new CvChatResponse(normalizedAnswer, citations);
+        return new CvChatResponse(CvChatAnswerKind.ANSWER, normalizedAnswer, citations);
     }
 
     private CvChatComparisonJobContext authorizeJob(Long requestedJobId, String organizationId) {

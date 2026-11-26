@@ -39,7 +39,7 @@ class CvChatSecurityTest {
     @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
     void permitsRolesThatMayReviewCandidateEvidence(String role) throws Exception {
         when(chat.ask(anyLong(), anyString(), anyString()))
-                .thenReturn(new CvChatResponse("Grounded answer [CV-CANDIDATE-7]", List.of()));
+                .thenReturn(new CvChatResponse(CvChatAnswerKind.ANSWER, "Grounded answer [CV-CANDIDATE-7]", List.of()));
 
         mvc.perform(post("/api/chat/candidates/7")
                         .contentType("application/json")
@@ -80,7 +80,7 @@ class CvChatSecurityTest {
     @ValueSource(strings = {"ROLE_ADMIN", "ROLE_RECRUITER", "ROLE_REVIEWER"})
     void permitsCandidateComparisonOnlyForCvChatRoles(String role) throws Exception {
         when(comparisonService.compare(List.of(7L, 8L), "Compare", null, "tenant-a"))
-                .thenReturn(new CvChatComparisonResponse("Comparison", List.of(), List.of()));
+                .thenReturn(new CvChatComparisonResponse(CvChatAnswerKind.ANSWER, "Comparison", List.of(), List.of()));
 
         mvc.perform(post("/api/chat/candidates/compare")
                         .contentType("application/json")

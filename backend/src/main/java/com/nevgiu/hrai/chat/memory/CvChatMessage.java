@@ -1,7 +1,10 @@
 package com.nevgiu.hrai.chat.memory;
 
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,20 +29,27 @@ class CvChatMessage {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    // Store the stable API name, not the enum ordinal. Legacy rows and user messages have no answer outcome.
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private CvChatAnswerKind answerKind;
+
     @Column(nullable = false)
     private Instant createdAt;
 
     protected CvChatMessage() {
     }
 
-    CvChatMessage(String conversationId, String role, String content, Instant createdAt) {
+    CvChatMessage(String conversationId, String role, String content, CvChatAnswerKind answerKind, Instant createdAt) {
         this.conversationId = conversationId;
         this.role = role;
         this.content = content;
+        this.answerKind = answerKind;
         this.createdAt = createdAt;
     }
 
     Long getId() { return id; }
     String getRole() { return role; }
     String getContent() { return content; }
+    CvChatAnswerKind getAnswerKind() { return answerKind; }
 }

@@ -522,6 +522,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    out-of-scope refusal, clarification, candidate confirmation, tool status, and provider unavailability. Angular must
    render the structured outcome rather than infer state by comparing English message text. The `kind` field is an
    application API contract, not a Spring AI convention.
+   PR #246 passed staging acceptance, protected staging BDD, and production smoke tests for live outcome metadata.
+   Flyway V9 adds a nullable outcome for saved assistant messages. New turns retain their label on resume; user
+   turns and older messages have no outcome, and are not backfilled from wording or citation count.
 6. **Add response-language metadata and localization.** Preserve the recruiter question language and localize
    application-owned controlled responses, errors, clarification labels, and Angular presentation for English, French,
    and Portuguese. Retain the corrected French KLx paraphrase as a regression case.

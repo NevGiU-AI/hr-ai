@@ -3,6 +3,7 @@ package com.nevgiu.hrai.chat.memory;
 import com.nevgiu.hrai.candidate.Candidate;
 import com.nevgiu.hrai.candidate.CandidateIdentity;
 import com.nevgiu.hrai.candidate.CandidateRepository;
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
 import com.nevgiu.hrai.chat.CvChatException;
 import com.nevgiu.hrai.chat.CvChatResponse;
 import com.nevgiu.hrai.job.Job;
@@ -114,7 +115,7 @@ class CvChatConversationService {
                         || message.getMessageType() == MessageType.ASSISTANT)
                 .map(message -> new CvChatConversationHistoryResponse.TimelineMessage(
                         message.getMessageType() == MessageType.USER ? "USER" : "ASSISTANT",
-                        message.getText(), List.of()))
+                        message.getText(), List.of(), null))
                 .toList();
         return new CvChatConversationHistoryResponse(legacyMessages);
     }
@@ -126,15 +127,16 @@ class CvChatConversationService {
     @Transactional
     CvChatConversationResponse appendTurn(String id, long expectedVersion, String question, String answer,
                                           List<CvChatResponse.Citation> citations,
-                                          AppUserPrincipal actor) {
+                                          CvChatAnswerKind kind, AppUserPrincipal actor) {
         var conversation = lockedOwnedActive(id, actor);
         if (conversation.getVersion() != expectedVersion) {
             throw new CvChatException(HttpStatus.CONFLICT, "Conversation scope changed; retry the question");
         }
         memory.add(id, List.of(new UserMessage(question), new AssistantMessage(answer)));
         Instant now = Instant.now();
-        messages.save(new CvChatMessage(id, "USER", question, now));
-        CvChatMessage assistant = messages.saveAndFlush(new CvChatMessage(id, "ASSISTANT", answer, now));
+        messages.save(new CvChatMessage(id, "USER", question, null, now));
+        // Persist the outcome with the visible answer, not in the model's bounded message context.
+        CvChatMessage assistant = messages.saveAndFlush(new CvChatMessage(id, "ASSISTANT", answer, kind, now));
         for (int index = 0; index < citations.size(); index++) {
             messageCitations.save(new CvChatMessageCitation(assistant.getId(), index, citations.get(index)));
         }
@@ -251,7 +253,7 @@ class CvChatConversationService {
                     .map(CvChatMessageCitation::response).toList()
                     : List.of();
             return new CvChatConversationHistoryResponse.TimelineMessage(
-                    message.getRole(), message.getContent(), citations);
+                    message.getRole(), message.getContent(), citations, message.getAnswerKind());
         }).toList();
     }
 

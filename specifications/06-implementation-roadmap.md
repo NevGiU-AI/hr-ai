@@ -513,6 +513,11 @@ focused production checks, and recorded acceptance before the next dependent sli
    PR #241 passed staging acceptance, protected staging BDD, and production smoke tests for saved-chat recovery.
    PR #242 passed production smoke tests for grouped named discovery.
    PR #243 passed production smoke tests for scope-edit clarity and history-reset warning.
+   PR #244 passed protected staging BDD and production smoke tests for failed-send recovery. An uncertain send
+   keeps the draft and offers a read-only history check; it never automatically resends the message.
+   The final deployed walkthrough passed: named discovery, scope confirmation and editing, a grounded answer with
+   citation navigation, and saved-chat resume. The full local Angular suite also passed (151 tests).
+   **Step 4 is complete.**
 5. **Add structured chat outcomes.** Return explicit application-owned metadata for answer, insufficient evidence,
    out-of-scope refusal, clarification, candidate confirmation, tool status, and provider unavailability. Angular must
    render the structured outcome rather than infer state by comparing English message text. The `kind` field is an

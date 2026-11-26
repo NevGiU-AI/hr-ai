@@ -66,6 +66,8 @@ class CvChatConversationTurnService {
 
         // Persist operational and grounded turns through the same optimistic version check. A concurrent candidate or
         // job-scope edit therefore cannot attach either kind of answer to an obsolete authorization snapshot.
+        // The current history schema stores text and citations, not kind. The outcome is returned for this
+        // live turn only; resumed history must not reconstruct it from the saved text or citation count.
         CvChatConversationResponse updated = conversations.appendTurn(
                 conversationId, scope.version(), normalizedMessage, answer, citations, actor);
         return new CvChatConversationTurnResponse(updated.id(), updated.version(), kind, answer, updated.candidates(),

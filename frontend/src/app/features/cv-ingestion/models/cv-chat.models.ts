@@ -6,6 +6,7 @@ export interface CvChatCitation {
   excerpt: string;
 }
 
+/** Stable backend outcome; labels can change or be translated without changing how Angular handles it. */
 export type CvChatAnswerKind = 'ANSWER' | 'INSUFFICIENT_EVIDENCE' | 'OUT_OF_SCOPE' | 'TOOL_STATUS';
 
 export interface CvChatResponse {
@@ -88,6 +89,7 @@ export interface CvChatConversation {
 }
 
 export interface CvChatTimelineMessage {
+  /** Set for new assistant turns; user messages and currently persisted history have no outcome metadata. */
   kind?: CvChatAnswerKind;
   role: 'USER' | 'ASSISTANT';
   content: string;

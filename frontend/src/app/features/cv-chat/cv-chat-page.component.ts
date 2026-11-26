@@ -11,6 +11,7 @@ import {
   CvChatCitation,
   CvChatConversation,
   CvChatOrganizationDiscoveryResponse,
+  CvChatResponseLanguage,
   CvChatTimelineMessage,
   CvChatToolDiscoveryResponse,
 } from '../cv-ingestion/models/cv-chat.models';
@@ -54,6 +55,7 @@ export class CvChatPageComponent implements OnInit {
   sendNeedsHistoryCheck = false;
   scopeEditing = false;
   message = '';
+  controlledResponseLanguage: CvChatResponseLanguage | null = null;
   error = '';
   resumeError = '';
   private retryConversationId: string | null = null;
@@ -169,7 +171,8 @@ export class CvChatPageComponent implements OnInit {
     this.error = '';
     this.timeline = [...this.timeline, { role: 'USER', content }];
     this.message = '';
-    this.chat.askConversation(conversationId, content).pipe(finalize(() => this.sendBusy = false)).subscribe({
+    this.chat.askConversation(conversationId, content, this.controlledResponseLanguage)
+      .pipe(finalize(() => this.sendBusy = false)).subscribe({
       next: (turn) => {
         if (this.conversation?.id !== conversationId) return;
         this.conversation = {

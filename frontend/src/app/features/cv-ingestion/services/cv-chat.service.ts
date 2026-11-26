@@ -10,6 +10,7 @@ import {
   CvChatOrganizationDiscoveryResponse,
   CvChatComparisonResponse,
   CvChatResponse,
+  CvChatResponseLanguage,
   CvChatToolDiscoveryResponse,
   CvChatToolOrchestrationOutcome,
 } from '../models/cv-chat.models';
@@ -89,8 +90,12 @@ export class CvChatService {
     return this.http.get<CvChatConversationHistory>(`${this.apiUrl}/chat/conversations/${id}/messages`);
   }
 
-  askConversation(id: string, message: string): Observable<CvChatConversationTurn> {
-    return this.http.post<CvChatConversationTurn>(`${this.apiUrl}/chat/conversations/${id}/messages`, { message });
+  askConversation(id: string, message: string, language: CvChatResponseLanguage | null = null):
+    Observable<CvChatConversationTurn> {
+    // Omit the override in browser-default mode so native locale negotiation still applies.
+    const options = language ? { headers: { 'Accept-Language': language } } : {};
+    return this.http.post<CvChatConversationTurn>(`${this.apiUrl}/chat/conversations/${id}/messages`,
+      { message }, options);
   }
 
   deleteConversation(id: string): Observable<void> {

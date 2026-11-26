@@ -3,6 +3,15 @@
     <p class="eyebrow">Grounded recruiting assistant</p>
     <h1>CV chat</h1>
     <p>Confirm candidates first, then continue a bounded conversation using only authorized CV evidence.</p>
+    <label for="cv-chat-response-language" class="form-label">Language for evidence limits and refusals</label>
+    <select id="cv-chat-response-language" class="form-select w-auto" [(ngModel)]="controlledResponseLanguage"
+            aria-describedby="cv-chat-response-language-hint">
+      <option [ngValue]="null">Browser default</option>
+      <option [ngValue]="'en'">English</option>
+      <option [ngValue]="'fr'">Français</option>
+      <option [ngValue]="'pt'">Português</option>
+    </select>
+    <p id="cv-chat-response-language-hint">Applies to new insufficient-evidence and out-of-scope replies only.</p>
   </header>
 
   <div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>

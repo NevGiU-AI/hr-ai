@@ -8,6 +8,7 @@ export interface CvChatCitation {
 
 /** Stable backend outcome; labels can change or be translated without changing how Angular handles it. */
 export type CvChatAnswerKind = 'ANSWER' | 'INSUFFICIENT_EVIDENCE' | 'OUT_OF_SCOPE' | 'TOOL_STATUS';
+export type CvChatResponseLanguage = 'en' | 'fr' | 'pt';
 
 export interface CvChatResponse {
   kind?: CvChatAnswerKind;

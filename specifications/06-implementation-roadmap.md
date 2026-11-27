@@ -577,6 +577,11 @@ focused production checks, and recorded acceptance before the next dependent sli
    Java 21 experience and an evidence gap for Kubernetes, without borrowing the earlier role or citation. The
    deterministic conversation tests cover passing the approved job and history into the answer path. The new
    approved-job follow-up case passed the opt-in live-provider run.
+   PR #259's exact single-candidate follow-up returned a grounded-answer outcome in staging instead of the
+   pre-retrieval refusal. The separate job-fit grounding issue is deferred until after the concurrency benchmark.
+   The next opt-in comparison case uses two confirmed candidates and one approved job. It checks that both current
+   CVs are cited and that an unconfirmed candidate mentioned in history stays out of the answer. The opt-in
+   live-provider run passed.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging
@@ -657,6 +662,15 @@ stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an i
 
 **Exit condition:** the selected thread model is supported by repeatable staging measurements and explicit resource
 limits, and can be reverted through configuration.
+
+### Deferred CV-chat job-fit grounding correction (after Phase 7)
+
+- [ ] Revisit inconsistent evidence coverage in broad approved-job assessments. The same staging CV surfaced Java 21
+  and production Kubernetes/ArgoCD in some turns but not others. Compare broad and targeted retrieval before
+  deciding whether the fix belongs in retrieval, answer generation, or both.
+- [ ] Add regressions for treating missing retrieved evidence as proof that a candidate lacks experience, listing one
+  requirement as both supported and unsupported, and overlooking deployment tools named in a cited passage.
+  Keep this separate from the approved-job follow-up classifier fix and Step 7 evaluation coverage.
 
 ## Phase 8 - Install and validate paired backup/restore
 

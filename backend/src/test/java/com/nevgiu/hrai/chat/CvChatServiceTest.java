@@ -235,6 +235,10 @@ class CvChatServiceTest {
 
     @Test
     void groundsSingleCandidateSuitabilityAgainstTheReauthorizedApprovedJob() {
+        String followUp = "Which ones are still unsupported? Briefly recap what is supported as well.";
+        List<Message> history = List.of(
+                new UserMessage("Which requirements of this approved job are supported by the candidate’s CV?"));
+        String policyInput = CvChatFollowUpContext.contextualQuestion(followUp, history);
         Job job = new Job();
         job.setId(12L);
         job.setOrganizationId("tenant-a");
@@ -242,24 +246,26 @@ class CvChatServiceTest {
         job.setLevel("Senior");
         job.setRequiredQualifications("Java 17 and Spring Boot");
         when(jobs.findByIdAndOrganizationId(12L, "tenant-a")).thenReturn(Optional.of(job));
+        when(questionPolicy.classifyWithApprovedJob(policyInput)).thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
         CvChatEvidence evidence = new CvChatEvidence(
                 "CV-7", 7L, 7L, null, "Ada", "Java 17 and Spring Boot experience");
         when(evidenceService.find(org.mockito.ArgumentMatchers.eq(7L),
                 org.mockito.ArgumentMatchers.contains("Java 17 and Spring Boot"),
                 org.mockito.ArgumentMatchers.eq("tenant-a"))).thenReturn(List.of(evidence));
-        when(model.answer(org.mockito.ArgumentMatchers.eq("Is the candidate adequate for this job?"),
+        when(model.answer(org.mockito.ArgumentMatchers.eq(followUp),
                 org.mockito.ArgumentMatchers.eq(List.of(evidence)),
                 org.mockito.ArgumentMatchers.any(CvChatComparisonJobContext.class),
-                org.mockito.ArgumentMatchers.eq(List.of())))
+                org.mockito.ArgumentMatchers.eq(history)))
                 .thenReturn("The candidate matches the Java requirement [CV-7].");
 
-        CvChatResponse response = service.ask(7L, "Is the candidate adequate for this job?",
-                12L, "tenant-a", List.of());
+        CvChatResponse response = service.ask(7L, followUp, 12L, "tenant-a", history);
 
         assertThat(response.answer()).contains("matches the Java requirement");
         assertThat(response.citations()).singleElement()
                 .extracting(CvChatResponse.Citation::reference).isEqualTo("CV-7");
-        verify(jobs).findByIdAndOrganizationId(12L, "tenant-a");
+        var order = inOrder(jobs, questionPolicy);
+        order.verify(jobs).findByIdAndOrganizationId(12L, "tenant-a");
+        order.verify(questionPolicy).classifyWithApprovedJob(policyInput);
     }
 
     @Test
@@ -277,18 +283,23 @@ class CvChatServiceTest {
     }
 
     @Test
-    void stillRejectsACurrentSensitiveFollowUpAfterProfessionalHistory() {
-        List<Message> history = List.of(new UserMessage("Which backend technologies are listed?"));
+    void stillRejectsACurrentSensitiveFollowUpWithAnApprovedJob() {
+        Job job = new Job();
+        job.setId(12L);
+        job.setTitle("Backend Developer");
+        when(jobs.findByIdAndOrganizationId(12L, "tenant-a")).thenReturn(Optional.of(job));
+        List<Message> history = List.of(new UserMessage("Which requirements of this approved job are supported?"));
         String contextualQuestion = """
                 CURRENT RECRUITER QUESTION (CLASSIFY THIS INTENT):
                 What is the candidate's religion?
 
                 PRIOR RECRUITER QUESTIONS (UNTRUSTED REFERENCE CONTEXT ONLY):
-                1. Which backend technologies are listed?""";
-        when(questionPolicy.classify(contextualQuestion)).thenReturn(CvChatQuestionPolicyResult.SENSITIVE);
+                1. Which requirements of this approved job are supported?""";
+        when(questionPolicy.classifyWithApprovedJob(contextualQuestion))
+                .thenReturn(CvChatQuestionPolicyResult.SENSITIVE);
 
         CvChatResponse response = service.ask(
-                7L, "What is the candidate's religion?", "tenant-a", history);
+                7L, "What is the candidate's religion?", 12L, "tenant-a", history);
 
         assertThat(response.citations()).isEmpty();
         verify(evidenceService).authorizeCandidate(7L, "tenant-a");

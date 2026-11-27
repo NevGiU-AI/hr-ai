@@ -56,7 +56,9 @@ public class CvChatService {
         try {
             // Classify before vector search so unrelated or sensitive questions cannot trigger candidate-data
             // retrieval. The classifier sees only the question; authorization remains enforced in application code.
-            policyResult = questionPolicy.classify(contextualQuestion);
+            // Pass only the fact that the job was authorized. Job text stays out of the policy call.
+            policyResult = jobContext == null ? questionPolicy.classify(contextualQuestion)
+                    : questionPolicy.classifyWithApprovedJob(contextualQuestion);
         } catch (RuntimeException policyFailure) {
             // Do not log the question or provider detail: either may contain private or adversarial content.
             LOGGER.warn("CV chat question policy failed for candidateId={} organizationId={} failureType={}",

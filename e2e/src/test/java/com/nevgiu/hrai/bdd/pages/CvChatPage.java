@@ -6,6 +6,10 @@ import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.options.WaitForSelectorState;
 
 import java.net.URI;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static com.microsoft.playwright.options.AriaRole.BUTTON;
@@ -98,6 +102,87 @@ public class CvChatPage {
         page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Send").setExact(true)).click();
         Locator citation = page.locator(".message.assistant .citations a").first();
         citation.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+    }
+
+    public void discoverOrganizationCandidates(String question) {
+        var form = page.locator(".discovery-composer");
+        form.getByLabel("All organization candidates").check();
+        form.getByLabel("Candidate discovery request").fill(question);
+        form.getByRole(BUTTON, new Locator.GetByRoleOptions().setName("Send").setExact(true)).click();
+    }
+
+    public void assertOrganizationShortlistUnconfirmed() {
+        // Require an unselected control card so this scenario exercises a real subset, not the whole shortlist.
+        assertThat(organizationCards().nth(2)).isVisible();
+        assertThat(page.locator(".scope-confirmation")).hasCount(0);
+        assertNoActiveConversationPointer();
+    }
+
+    public List<String> selectFirstTwoOrganizationMatches() {
+        var cards = organizationCards();
+        String first = candidateId(cards.nth(0));
+        String second = candidateId(cards.nth(1));
+        if (first.equals(second)) throw new AssertionError("Discovery returned duplicate candidate cards");
+        cards.nth(0).click();
+        cards.nth(1).click();
+        return List.of(first, second);
+    }
+
+    public void assertConfirmedScopeSize(int count) {
+        assertThat(page.getByLabel("Active conversation scope").locator(".scope-chip")).hasCount(count);
+    }
+
+    public void askComparison(String question, String endpoint) {
+        var message = page.getByLabel("Message", new Page.GetByLabelOptions().setExact(true));
+        // Confirmation may automatically submit the discovery text. Wait for it before testing the next turn.
+        assertThat(message).isEnabled(new com.microsoft.playwright.assertions.LocatorAssertions.IsEnabledOptions()
+                .setTimeout(60_000));
+        int priorAnswers = assistantAnswers().count();
+        message.fill(question);
+        // Wait for the scoped POST, not a five-second DOM poll while retrieval and generation are still running.
+        var response = page.waitForResponse(
+                result -> endpoint.equals(result.url()) && "POST".equals(result.request().method()),
+                new Page.WaitForResponseOptions().setTimeout(60_000),
+                () -> page.locator("form.composer").getByRole(BUTTON,
+                        new Locator.GetByRoleOptions().setName("Send").setExact(true)).click());
+        if (response.status() != 200) {
+            throw new AssertionError("Comparison message request returned HTTP " + response.status());
+        }
+        assertThat(assistantAnswers()).hasCount(priorAnswers + 1);
+    }
+
+    public void assertLatestCitationCandidateIds(List<String> expected) {
+        Set<String> actual = new HashSet<>();
+        var latest = assistantAnswers().last();
+        if (latest.locator(".message-outcome").isVisible()) {
+            throw new AssertionError("Expected a grounded comparison but got: "
+                    + latest.locator(".message-outcome").innerText());
+        }
+        var links = latest.locator(".citations a");
+        var candidateInLink = Pattern.compile("[?&]candidateId=(\\d+)(?:[&#]|$)");
+        for (var link : links.all()) {
+            String href = link.getAttribute("href");
+            var match = candidateInLink.matcher(href == null ? "" : href);
+            if (!match.find()) throw new AssertionError("Citation is missing a candidate identifier");
+            actual.add(match.group(1));
+        }
+        if (!actual.equals(Set.copyOf(expected))) {
+            throw new AssertionError("Comparison citations did not cover exactly the confirmed candidates");
+        }
+    }
+
+    private Locator organizationCards() {
+        return page.getByLabel("Candidate confirmation cards").locator("button.result");
+    }
+
+    private Locator assistantAnswers() {
+        return page.getByLabel("Conversation timeline").locator(".message.assistant:not(.welcome-message)");
+    }
+
+    private static String candidateId(Locator card) {
+        var match = Pattern.compile("#(\\d+)\\s*$").matcher(card.innerText());
+        if (!match.find()) throw new AssertionError("Discovery card is missing a candidate identifier");
+        return match.group(1);
     }
 
     public void openFirstCitationAndVerifyTarget() {

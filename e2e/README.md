@@ -42,11 +42,11 @@ mvn test-compile exec:java "-Dexec.classpathScope=test" "-Dexec.mainClass=com.mi
 mvn -Pbdd verify
 ```
 
-The default command excludes scenarios tagged `@provider` or `@destructive`. To reproduce the protected staging run,
+The default command excludes scenarios tagged `@provider`, `@destructive`, or `@editable-scope`. To reproduce the protected staging run,
 including the single controlled citation request, use:
 
 ```powershell
-mvn -Pbdd "-Dcucumber.filter.tags=not @destructive" verify
+mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope" verify
 ```
 
 The suite creates conversations through the recruiter UI and covers owner isolation, explicit resume after leaving the
@@ -107,4 +107,16 @@ and cleans up only its own conversation. The protected smoke gate does not requi
 
 ```powershell
 mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@named-discovery and not @destructive" verify
+```
+
+## Opt-in editable scope scenario
+
+Use the usual staging BDD configuration and an organization with at least one approved test job. No extra
+environment variables are needed. The test starts with one candidate and no job, creates history using a
+deterministic OCR-status question, and then adds an approved job. It checks that the original conversation ID,
+candidate, and new job survive reload, while the old timeline stays cleared. Cleanup deletes only the conversation
+created by the scenario. The protected smoke gate does not require this scenario.
+
+```powershell
+mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@editable-scope and not @destructive" verify
 ```

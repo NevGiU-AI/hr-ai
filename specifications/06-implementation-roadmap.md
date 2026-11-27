@@ -674,6 +674,10 @@ stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an i
 
 ### Post-OpenAPI frontend design refresh (before Phase 7)
 
+Redacted design references: [sign-in page](assets/frontend-refresh/sign-in-redacted.png) and
+[signed-in desktop menu](assets/frontend-refresh/desktop-menu-redacted.png). These references illustrate the
+existing branding and two-row navigation issue; they are not redesign mockups.
+
 - [ ] Use the NevGiU logo and reference screenshots to define a coordinated color palette for the Angular app.
   Check contrast for text, controls, and focus indicators before adopting the palette.
 - [ ] Keep the signed-in desktop header on one row, including when admin links are visible. Keep core recruiter

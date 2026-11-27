@@ -594,6 +594,19 @@ focused production checks, and recorded acceptance before the next dependent sli
    French follow-up after English history. With synthetic retrieval and model outputs, it checks valid citation
    ownership, rejects a stale citation with the reviewed provider error, and distinguishes incomplete citation
    coverage from the answer model's controlled refusal. The opt-in multilingual suite covers actual provider wording.
+   The opt-in answer-model baseline runs a grounded question, a French follow-up, and an approved-job question
+   three times each. It records quality pass counts, median/max latency, and provider-reported input/output tokens
+   where available. These are sequential synthetic answer-generation measurements, not HTTP latency, load-test
+   results, or a billing estimate. After fixing the wrapper to preserve OpenAI-specific options, the live run
+   with `gpt-4o-mini` passed all nine attempts and reported token usage for every attempt.
+
+   | Case | Passed | Median (ms) | Max (ms) | Input tokens | Output tokens |
+   | --- | ---: | ---: | ---: | ---: | ---: |
+   | Grounded | 3/3 | 953 | 3,618 | 1,911 | 48 |
+   | French follow-up | 3/3 | 946 | 969 | 1,986 | 57 |
+   | Approved job | 3/3 | 1,296 | 1,977 | 2,034 | 123 |
+
+   Token counts are totals across the three attempts per case. **Step 7 is complete.**
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging
@@ -658,6 +671,30 @@ stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an i
 - [ ] Publish or export the versioned OpenAPI document for consumers and keep it synchronized with releases.
 
 **Exit condition:** Backend consumers can discover and test the stable API through reviewed, versioned, security-conscious Swagger/OpenAPI documentation.
+
+### Post-OpenAPI frontend design refresh (before Phase 7)
+
+Redacted design references: [sign-in page](assets/frontend-refresh/sign-in-redacted.png) and
+[signed-in desktop menu](assets/frontend-refresh/desktop-menu-redacted.png). These references illustrate the
+existing branding and two-row navigation issue; they are not redesign mockups.
+
+- [ ] Use the NevGiU logo and reference screenshots to define a coordinated color palette for the Angular app.
+  Check contrast for text, controls, and focus indicators before adopting the palette.
+- [ ] Keep the signed-in desktop header on one row, including when admin links are visible. Keep core recruiter
+  links visible, group account actions and admin links in compact menus, and avoid putting the email and sign-out
+  controls on a second row. When space is tight, collapse navigation instead of letting it wrap or overflow.
+  Preserve active-page indicators, role-based visibility, and existing routes. Verify keyboard navigation.
+- [ ] Review the proposed palette and menu against the reference screenshots before implementation.
+
+### Post-OpenAPI provider test review (before Phase 7)
+
+- [ ] Inventory all live-provider tests, their enablement flags, required configuration, models, and expected case counts.
+- [ ] Audit existing pass claims against saved run output. Mark missing evidence as unverified; a skipped test or
+  Maven `BUILD SUCCESS` alone does not prove a live run passed.
+- [ ] Rerun unverified provider tests explicitly with synthetic fixtures and reviewed cost bounds. Verify that the
+  targeted tests and expected cases actually executed, with no skips before recording a pass.
+- [ ] Record run date, revision, model, executed/passed/failed/skipped counts, and the report location. Keep paid
+  runs opt-in and exclude credentials and personal data from evidence.
 
 ## Phase 7 - Benchmark concurrency and virtual threads
 

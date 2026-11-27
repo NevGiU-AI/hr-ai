@@ -95,3 +95,16 @@ From `e2e`, run:
 ```powershell
 mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@organization-discovery and not @destructive" verify
 ```
+
+## Opt-in named discovery scenario
+
+Set `BDD_NAMED_DISCOVERY_QUESTION` in addition to the usual staging BDD configuration. Use a request such as
+“Compare Alex and Morgan on Java experience” with disposable fixtures: the first reference must match at least two
+cards, and the first card in each group must identify a different candidate with a distinct display name.
+
+The scenario checks grouped results, no automatic selection, and the exact displayed scope after reload. It creates
+and cleans up only its own conversation. The protected smoke gate does not require this scenario.
+
+```powershell
+mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@named-discovery and not @destructive" verify
+```

@@ -555,6 +555,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    questions leave the request language to the browser; the backend falls back to English for unsupported locales.
    This affects only new controlled replies in dedicated chat. Interface language, saved wording, provider-generated
    answers, and workspace/API behavior are unchanged.
+   PR #254 passed staging acceptance, protected staging BDD, and production smoke tests.
+   Flyway V10 preserves known reply-language metadata on new assistant turns. Live and resumed replies carry
+   the same language tag for assistive technology; legacy and unknown languages remain unset without backfill.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

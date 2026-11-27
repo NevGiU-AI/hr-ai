@@ -35,6 +35,28 @@ class CvChatConversationTurnServiceTest {
             conversations, singleCandidateChat, comparisonChat, documentTools);
 
     @Test
+    void savesTheSameKnownLanguageReturnedInTheLiveReply() {
+        var actor = actor();
+        var candidates = List.of(candidate(7L, "Ada"));
+        String question = "Quelle est son expérience avec Kubernetes ?";
+        String answer = "Les éléments disponibles ne suffisent pas.";
+        var kind = CvChatAnswerKind.INSUFFICIENT_EVIDENCE;
+        when(conversations.executionScope("conversation-1", actor)).thenReturn(
+                new CvChatConversationService.ExecutionScope("conversation-1", 3, "tenant-a", candidates, null));
+        when(conversations.history("conversation-1")).thenReturn(List.of());
+        when(documentTools.answer(question, candidates)).thenReturn(java.util.Optional.empty());
+        when(singleCandidateChat.ask(7L, question, null, "tenant-a", List.of()))
+                .thenReturn(new CvChatResponse(kind, answer, List.of(), "fr"));
+        when(conversations.appendTurn("conversation-1", 3, question, answer, List.of(), kind, "fr", actor))
+                .thenReturn(conversationResponse(4));
+
+        var response = service.ask("conversation-1", question, actor);
+
+        assertThat(response.responseLanguage()).isEqualTo("fr");
+        verify(conversations).appendTurn("conversation-1", 3, question, answer, List.of(), kind, "fr", actor);
+    }
+
+    @Test
     void reusesAuthorizedSingleCandidateScopeAndPersistsTheCompletedTurn() {
         AppUserPrincipal actor = actor();
         List<Message> history = List.of(new AssistantMessage("Earlier grounded answer [CV-7]."));
@@ -47,7 +69,7 @@ class CvChatConversationTurnServiceTest {
         when(singleCandidateChat.ask(7L, "What about Spring?", null, "tenant-a", history)).thenReturn(
                 new CvChatResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Spring is listed [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-1", 3, "What about Spring?",
-                "Spring is listed [CV-7].", List.of(citation(7L)), CvChatAnswerKind.ANSWER, actor))
+                "Spring is listed [CV-7].", List.of(citation(7L)), CvChatAnswerKind.ANSWER, null, actor))
                 .thenReturn(conversationResponse(4));
 
         CvChatConversationTurnResponse response = service.ask(
@@ -76,7 +98,7 @@ class CvChatConversationTurnServiceTest {
                         List.of(), List.of(citation(7L), citation(8L))));
         when(conversations.appendTurn("conversation-2", 5, "Who better matches it?",
                 "Candidate 7 matches [CV-7] and 8 [CV-8].", List.of(citation(7L), citation(8L)),
-                CvChatAnswerKind.ANSWER, actor))
+                CvChatAnswerKind.ANSWER, null, actor))
                 .thenReturn(conversationResponse(6));
 
         CvChatConversationTurnResponse response = service.ask(
@@ -99,7 +121,7 @@ class CvChatConversationTurnServiceTest {
         when(singleCandidateChat.ask(7L, "Is the candidate suitable?", 12L, "tenant-a", List.of()))
                 .thenReturn(new CvChatResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "The candidate matches [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-3", 2, "Is the candidate suitable?",
-                "The candidate matches [CV-7].", List.of(citation(7L)), CvChatAnswerKind.ANSWER, actor))
+                "The candidate matches [CV-7].", List.of(citation(7L)), CvChatAnswerKind.ANSWER, null, actor))
                 .thenReturn(conversationResponse(3));
 
         service.ask("conversation-3", "Is the candidate suitable?", actor);
@@ -121,7 +143,7 @@ class CvChatConversationTurnServiceTest {
                                 + "Text extraction used OCR."));
         when(conversations.appendTurn("conversation-4", 4, "Was this CV processed with OCR?",
                 "Ada Lovelace (CANDIDATE-7): Current document status is IMPORTED. Text extraction used OCR.",
-                List.of(), CvChatAnswerKind.TOOL_STATUS, actor)).thenReturn(conversationResponse(5));
+                List.of(), CvChatAnswerKind.TOOL_STATUS, null, actor)).thenReturn(conversationResponse(5));
 
         CvChatConversationTurnResponse response = service.ask(
                 "conversation-4", "Was this CV processed with OCR?", actor);
@@ -144,7 +166,7 @@ class CvChatConversationTurnServiceTest {
                         + "history: Evaluation 9 is CURRENT."));
         when(conversations.appendTurn("conversation-5", 1, "What was the latest evaluation?",
                 "Ada Lovelace (CANDIDATE-7): Persisted AI-assisted evaluation history: Evaluation 9 is CURRENT.",
-                List.of(), CvChatAnswerKind.TOOL_STATUS, actor)).thenReturn(conversationResponse(2));
+                List.of(), CvChatAnswerKind.TOOL_STATUS, null, actor)).thenReturn(conversationResponse(2));
 
         CvChatConversationTurnResponse response = service.ask(
                 "conversation-5", "What was the latest evaluation?", actor);
@@ -183,7 +205,7 @@ class CvChatConversationTurnServiceTest {
         when(singleCandidateChat.ask(7L, "Which requirements are supported?", 12L, "tenant-a", untrustedHistory))
                 .thenReturn(new CvChatResponse(com.nevgiu.hrai.chat.CvChatAnswerKind.ANSWER, "Java is supported [CV-7].", List.of(citation(7L))));
         when(conversations.appendTurn("conversation-6", 6, "Which requirements are supported?",
-                "Java is supported [CV-7].", List.of(citation(7L)), CvChatAnswerKind.ANSWER, actor))
+                "Java is supported [CV-7].", List.of(citation(7L)), CvChatAnswerKind.ANSWER, null, actor))
                 .thenReturn(conversationResponse(7));
 
         service.ask("conversation-6", "Which requirements are supported?", actor);

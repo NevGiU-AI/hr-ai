@@ -205,7 +205,7 @@
           <p class="message-outcome" *ngSwitchCase="'OUT_OF_SCOPE'">{{ copy.outOfScope }}</p>
           <p class="message-outcome" *ngSwitchCase="'TOOL_STATUS'">{{ copy.operational }}</p>
         </ng-container>
-        <p class="message-content">{{ item.content }}</p>
+        <p class="message-content" [attr.lang]="item.responseLanguage">{{ item.content }}</p>
         <div class="citations" *ngIf="item.citations?.length">
           <a *ngFor="let citation of item.citations" routerLink="/candidates/import"
              [queryParams]="{ candidateId: citation.candidateId }" [fragment]="citationFragment(citation)">

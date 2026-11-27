@@ -115,7 +115,7 @@ class CvChatConversationService {
                         || message.getMessageType() == MessageType.ASSISTANT)
                 .map(message -> new CvChatConversationHistoryResponse.TimelineMessage(
                         message.getMessageType() == MessageType.USER ? "USER" : "ASSISTANT",
-                        message.getText(), List.of(), null))
+                        message.getText(), List.of(), null, null))
                 .toList();
         return new CvChatConversationHistoryResponse(legacyMessages);
     }
@@ -127,16 +127,17 @@ class CvChatConversationService {
     @Transactional
     CvChatConversationResponse appendTurn(String id, long expectedVersion, String question, String answer,
                                           List<CvChatResponse.Citation> citations,
-                                          CvChatAnswerKind kind, AppUserPrincipal actor) {
+                                          CvChatAnswerKind kind, String responseLanguage, AppUserPrincipal actor) {
         var conversation = lockedOwnedActive(id, actor);
         if (conversation.getVersion() != expectedVersion) {
             throw new CvChatException(HttpStatus.CONFLICT, "Conversation scope changed; retry the question");
         }
         memory.add(id, List.of(new UserMessage(question), new AssistantMessage(answer)));
         Instant now = Instant.now();
-        messages.save(new CvChatMessage(id, "USER", question, null, now));
+        messages.save(new CvChatMessage(id, "USER", question, null, null, now));
         // Persist the outcome with the visible answer, not in the model's bounded message context.
-        CvChatMessage assistant = messages.saveAndFlush(new CvChatMessage(id, "ASSISTANT", answer, kind, now));
+        CvChatMessage assistant = messages.saveAndFlush(
+                new CvChatMessage(id, "ASSISTANT", answer, kind, responseLanguage, now));
         for (int index = 0; index < citations.size(); index++) {
             messageCitations.save(new CvChatMessageCitation(assistant.getId(), index, citations.get(index)));
         }
@@ -253,7 +254,8 @@ class CvChatConversationService {
                     .map(CvChatMessageCitation::response).toList()
                     : List.of();
             return new CvChatConversationHistoryResponse.TimelineMessage(
-                    message.getRole(), message.getContent(), citations, message.getAnswerKind());
+                    message.getRole(), message.getContent(), citations, message.getAnswerKind(),
+                    message.getResponseLanguage());
         }).toList();
     }
 

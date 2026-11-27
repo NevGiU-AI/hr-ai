@@ -34,17 +34,22 @@ class CvChatMessage {
     @Column(length = 32)
     private CvChatAnswerKind answerKind;
 
+    @Column(length = 2)
+    private String responseLanguage;
+
     @Column(nullable = false)
     private Instant createdAt;
 
     protected CvChatMessage() {
     }
 
-    CvChatMessage(String conversationId, String role, String content, CvChatAnswerKind answerKind, Instant createdAt) {
+    CvChatMessage(String conversationId, String role, String content, CvChatAnswerKind answerKind,
+                  String responseLanguage, Instant createdAt) {
         this.conversationId = conversationId;
         this.role = role;
         this.content = content;
         this.answerKind = answerKind;
+        this.responseLanguage = responseLanguage;
         this.createdAt = createdAt;
     }
 
@@ -52,4 +57,5 @@ class CvChatMessage {
     String getRole() { return role; }
     String getContent() { return content; }
     CvChatAnswerKind getAnswerKind() { return answerKind; }
+    String getResponseLanguage() { return responseLanguage; }
 }

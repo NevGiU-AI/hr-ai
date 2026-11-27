@@ -70,7 +70,7 @@ class CvChatConversationTurnService {
         // Persist operational and grounded turns through the same optimistic version check. A concurrent candidate or
         // job-scope edit therefore cannot attach either kind of answer to an obsolete authorization snapshot.
         CvChatConversationResponse updated = conversations.appendTurn(
-                conversationId, scope.version(), normalizedMessage, answer, citations, kind, actor);
+                conversationId, scope.version(), normalizedMessage, answer, citations, kind, responseLanguage, actor);
         return new CvChatConversationTurnResponse(updated.id(), updated.version(), kind, answer, updated.candidates(),
                 updated.job(), citations, updated.expiresAt(), responseLanguage);
     }

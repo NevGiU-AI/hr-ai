@@ -127,9 +127,10 @@ class CvChatConversationServiceTest {
                 "conversation", actor(1L, "tenant-a"));
 
         assertThat(response.messages()).containsExactly(
-                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?", List.of(), null),
+                new CvChatConversationHistoryResponse.TimelineMessage("USER", "Which Java versions?",
+                        List.of(), null, null),
                 new CvChatConversationHistoryResponse.TimelineMessage(
-                        "ASSISTANT", "Java 17 [CV-7].", List.of(), null));
+                        "ASSISTANT", "Java 17 [CV-7].", List.of(), null, null));
     }
 
     @Test
@@ -203,7 +204,7 @@ class CvChatConversationServiceTest {
         when(conversations.findLockedById("conversation")).thenReturn(Optional.of(conversation));
 
         assertThatThrownBy(() -> service.appendTurn("conversation", 1,
-                "Follow-up", "Generated answer", List.of(), CvChatAnswerKind.ANSWER, actor(1L, "tenant-a")))
+                "Follow-up", "Generated answer", List.of(), CvChatAnswerKind.ANSWER, null, actor(1L, "tenant-a")))
                 .isInstanceOf(CvChatException.class)
                 .hasMessage("Conversation scope changed; retry the question");
 

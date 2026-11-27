@@ -183,10 +183,13 @@ class CvChatConversationControllerTest {
         var actor = actor();
         when(service.history("conversation-1", actor)).thenReturn(new CvChatConversationHistoryResponse(List.of(
                 new CvChatConversationHistoryResponse.TimelineMessage(
-                        "USER", "Which Java versions?", List.of(), null),
+                        "USER", "Which Java versions?", List.of(), null, null),
                 new CvChatConversationHistoryResponse.TimelineMessage(
                         "ASSISTANT", "Java 17 [CV-7].", List.of(new com.nevgiu.hrai.chat.CvChatResponse.Citation(
-                        "CV-7", 7L, 7L, null, "")), CvChatAnswerKind.ANSWER))));
+                        "CV-7", 7L, 7L, null, "")), CvChatAnswerKind.ANSWER, null),
+                new CvChatConversationHistoryResponse.TimelineMessage(
+                        "ASSISTANT", "Les éléments ne suffisent pas.", List.of(),
+                        CvChatAnswerKind.INSUFFICIENT_EVIDENCE, "fr"))));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(actor, null, actor.getAuthorities()));
         try {
@@ -195,7 +198,8 @@ class CvChatConversationControllerTest {
                     .andExpect(jsonPath("$.messages[0].role").value("USER"))
                     .andExpect(jsonPath("$.messages[1].content").value("Java 17 [CV-7]."))
                     .andExpect(jsonPath("$.messages[1].kind").value("ANSWER"))
-                    .andExpect(jsonPath("$.messages[1].citations[0].reference").value("CV-7"));
+                    .andExpect(jsonPath("$.messages[1].citations[0].reference").value("CV-7"))
+                    .andExpect(jsonPath("$.messages[2].responseLanguage").value("fr"));
         } finally {
             SecurityContextHolder.clearContext();
         }

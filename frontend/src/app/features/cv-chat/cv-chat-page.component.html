@@ -6,12 +6,13 @@
     <label for="cv-chat-response-language" class="form-label">Language for evidence limits and refusals</label>
     <select id="cv-chat-response-language" class="form-select w-auto" [(ngModel)]="controlledResponseLanguage"
             aria-describedby="cv-chat-response-language-hint">
-      <option [ngValue]="null">Browser default</option>
+      <option [ngValue]="null">Automatic</option>
       <option [ngValue]="'en'">English</option>
       <option [ngValue]="'fr'">Français</option>
       <option [ngValue]="'pt'">Português</option>
     </select>
-    <p id="cv-chat-response-language-hint">Applies to new insufficient-evidence and out-of-scope replies only.</p>
+    <p id="cv-chat-response-language-hint">Applies to new insufficient-evidence and out-of-scope replies only.
+      Automatic uses the question language when clear, or your browser language otherwise.</p>
   </header>
 
   <div class="alert alert-danger" role="alert" *ngIf="error">{{ error }}</div>

@@ -18,6 +18,7 @@ import {
 import { CvChatService } from '../cv-ingestion/services/cv-chat.service';
 import { CvIngestionService } from '../cv-ingestion/services/cv-ingestion.service';
 import { cvChatInterfaceCopy } from './cv-chat-interface-copy';
+import { cvChatQuestionLanguage } from './cv-chat-question-language';
 
 @Component({
   selector: 'app-cv-chat-page',
@@ -174,7 +175,9 @@ export class CvChatPageComponent implements OnInit {
     this.error = '';
     this.timeline = [...this.timeline, { role: 'USER', content }];
     this.message = '';
-    this.chat.askConversation(conversationId, content, this.controlledResponseLanguage)
+    // An explicit choice wins. If the question gives no clear signal, leave the header to the browser.
+    const replyLanguage = this.controlledResponseLanguage ?? cvChatQuestionLanguage(content);
+    this.chat.askConversation(conversationId, content, replyLanguage)
       .pipe(finalize(() => this.sendBusy = false)).subscribe({
       next: (turn) => {
         if (this.conversation?.id !== conversationId) return;

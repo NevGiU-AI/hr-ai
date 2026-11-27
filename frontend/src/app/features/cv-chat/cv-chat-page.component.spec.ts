@@ -202,21 +202,45 @@ describe('CvChatPageComponent', () => {
     };
     fixture.detectChanges();
     const select: HTMLSelectElement = fixture.nativeElement.querySelector('#cv-chat-response-language');
-    select.selectedIndex = 2;
+    select.selectedIndex = 3;
     select.dispatchEvent(new Event('change'));
 
-    component.message = 'Does the CV document Kubernetes certification?';
+    component.message = 'Quelle est son expérience avec Kubernetes ?';
     component.send();
 
     const request = http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`);
-    expect(request.request.headers.get('Accept-Language')).toBe('fr');
-    expect(request.request.body).toEqual({ message: 'Does the CV document Kubernetes certification?' });
+    expect(request.request.headers.get('Accept-Language')).toBe('pt');
+    expect(request.request.body).toEqual({ message: 'Quelle est son expérience avec Kubernetes ?' });
     request.flush({
       conversationId: 'conversation-1', version: 1, kind: 'INSUFFICIENT_EVIDENCE',
-      answer: 'Les éléments disponibles ne suffisent pas.', responseLanguage: 'fr',
+      answer: 'A informação disponível não é suficiente.', responseLanguage: 'pt',
       candidates: component.conversation.candidates, job: null, citations: [], expiresAt: '',
     });
     expect(component.timeline.at(-1)?.kind).toBe('INSUFFICIENT_EVIDENCE');
+  });
+
+  it('uses the question language in Automatic mode and leaves ambiguous requests to the browser', () => {
+    component.conversation = {
+      id: 'conversation-1', version: 0, candidates: [], job: null, createdAt: '', updatedAt: '', expiresAt: '',
+    };
+    const url = `${environment.apiUrl}/chat/conversations/conversation-1/messages`;
+    component.message = 'Quelle était son expérience professionnelle chez KLx ?';
+    component.send();
+    const french = http.expectOne(url);
+    expect(french.request.headers.get('Accept-Language')).toBe('fr');
+    french.flush({
+      conversationId: 'conversation-1', version: 1, answer: 'Réponse.', candidates: [], job: null,
+      citations: [], expiresAt: '',
+    });
+
+    component.message = 'OCR?';
+    component.send();
+    const ambiguous = http.expectOne(url);
+    expect(ambiguous.request.headers.has('Accept-Language')).toBeFalse();
+    ambiguous.flush({
+      conversationId: 'conversation-1', version: 2, answer: 'Operational status.', candidates: [], job: null,
+      citations: [], expiresAt: '',
+    });
   });
 
   it('uses natural language to discover organization candidates before confirmation', () => {

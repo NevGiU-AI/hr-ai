@@ -7,6 +7,13 @@ Feature: CV-chat conversation lifecycle
     When the recruiter leaves and resumes that conversation
     Then the same confirmed candidate scope survives a browser reload
 
+  @editable-scope
+  Scenario: A recruiter changes the approved job and clears the previous timeline
+    Given a recruiter owns an active CV-chat conversation
+    When the recruiter asks for the CV extraction status
+    And the recruiter adds an approved job to the confirmed scope
+    Then the same conversation keeps the edited scope and an empty timeline after reload
+
   @provider
   Scenario: A grounded answer navigates to its cited CV document
     Given a recruiter owns an active CV-chat conversation

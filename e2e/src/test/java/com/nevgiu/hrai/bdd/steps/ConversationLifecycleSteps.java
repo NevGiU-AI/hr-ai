@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Browser-level acceptance steps for persisted conversation lifecycle behavior. */
 public class ConversationLifecycleSteps {
     private final ScenarioContext context;
+    private String editedJobTitle;
 
     public ConversationLifecycleSteps(ScenarioContext context) {
         this.context = context;
@@ -26,6 +27,24 @@ public class ConversationLifecycleSteps {
     @Then("the same confirmed candidate scope survives a browser reload")
     public void candidateScopeSurvivesReload() {
         chat().reloadActiveConversation(context.configuration().candidateName(), context.conversationId());
+    }
+
+    @When("the recruiter asks for the CV extraction status")
+    public void recruiterAsksForExtractionStatus() {
+        chat().askForExtractionStatus();
+    }
+
+    @When("the recruiter adds an approved job to the confirmed scope")
+    public void recruiterAddsApprovedJob() {
+        editedJobTitle = chat().addApprovedJob();
+    }
+
+    @Then("the same conversation keeps the edited scope and an empty timeline after reload")
+    public void editedScopeSurvivesReload() {
+        CvChatPage chat = chat();
+        chat.assertEditedScope(context.configuration().candidateName(), context.conversationId(), editedJobTitle);
+        chat.reloadActiveConversation(context.configuration().candidateName(), context.conversationId());
+        chat.assertEditedScope(context.configuration().candidateName(), context.conversationId(), editedJobTitle);
     }
 
     @When("the recruiter asks the configured grounded question")

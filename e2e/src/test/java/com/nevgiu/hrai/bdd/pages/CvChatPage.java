@@ -97,6 +97,42 @@ public class CvChatPage {
         assertActiveConversation(candidateName, expectedConversationId);
     }
 
+    public void askForExtractionStatus() {
+        // The canonical OCR wording uses deterministic operational routing, so this creates history without a paid call.
+        String question = "Was this CV processed with OCR?";
+        page.getByLabel("Message").fill(question);
+        page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Send").setExact(true)).click();
+        assertThat(page.locator(".timeline .message.recruiter .message-content")).hasText(question);
+        assertThat(page.locator(".timeline .message.assistant .message-outcome")).hasText("Operational information");
+    }
+
+    public String addApprovedJob() {
+        assertThat(page.getByLabel("Active conversation scope").locator(".job-chip")).hasCount(0);
+        page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Edit scope").setExact(true)).click();
+        Locator editor = page.getByLabel("Edit confirmed scope");
+        Locator jobSelect = editor.getByLabel("Approved job context (optional)");
+        // The first option is the no-job placeholder. Wait for the approved jobs to load before selecting one.
+        Locator firstJob = jobSelect.locator("option").nth(1);
+        firstJob.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
+        String label = firstJob.innerText().trim();
+        String jobTitle = label.substring(0, label.lastIndexOf(" · "));
+        jobSelect.selectOption(firstJob.getAttribute("value"));
+        editor.getByRole(BUTTON,
+                new Locator.GetByRoleOptions().setName("Save scope and clear history").setExact(true)).click();
+        assertThat(editor).hasCount(0);
+        return jobTitle;
+    }
+
+    public void assertEditedScope(String candidateName, String conversationId, String jobTitle) {
+        assertActiveConversation(candidateName, conversationId);
+        Locator scope = page.getByLabel("Active conversation scope");
+        assertThat(scope.locator(".scope-chip")).hasCount(1);
+        assertThat(scope.locator(".job-chip")).hasText("Job: " + jobTitle);
+        // The welcome message is application copy, not stored conversation history.
+        assertThat(page.locator(".timeline .message:not(.welcome-message)")).hasCount(0);
+        assertThat(page.locator(".timeline .welcome-message")).hasCount(1);
+    }
+
     public void askGroundedQuestion(String question) {
         page.getByLabel("Message").fill(question);
         page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Send").setExact(true)).click();

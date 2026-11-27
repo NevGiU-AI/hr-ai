@@ -99,11 +99,40 @@ public class CvChatPage {
 
     public void askForExtractionStatus() {
         // The canonical OCR wording uses deterministic operational routing, so this creates history without a paid call.
-        String question = "Was this CV processed with OCR?";
+        askOperationalQuestion("Was this CV processed with OCR?", Pattern.compile("Text extraction used"));
+    }
+
+    public void askOperationalQuestion(String question, Pattern expectedContent) {
+        Locator replies = page.locator(".timeline .message.assistant:not(.welcome-message)");
+        int priorReplies = replies.count();
         page.getByLabel("Message").fill(question);
         page.getByRole(BUTTON, new Page.GetByRoleOptions().setName("Send").setExact(true)).click();
-        assertThat(page.locator(".timeline .message.recruiter .message-content")).hasText(question);
-        assertThat(page.locator(".timeline .message.assistant .message-outcome")).hasText("Operational information");
+        assertThat(replies).hasCount(priorReplies + 1);
+        Locator reply = replies.nth(priorReplies);
+        assertThat(reply.locator(".message-outcome")).hasText("Operational information");
+        assertThat(reply.locator(".message-content")).containsText(expectedContent);
+        assertThat(page.locator(".timeline .message.recruiter .message-content").last()).hasText(question);
+    }
+
+    public void assertOperationalHistory(String candidateName, String conversationId) {
+        assertActiveConversation(candidateName, conversationId);
+        assertConfirmedScopeSize(1);
+        Locator timeline = page.locator(".timeline");
+        Locator replies = timeline.locator(".message.assistant:not(.welcome-message)");
+        assertThat(timeline.locator(".message.recruiter")).hasCount(3);
+        assertThat(replies).hasCount(3);
+        Pattern confirmedCandidate = Pattern.compile("^" + Pattern.quote(candidateName)
+                + " \\(CANDIDATE-\\d+\\):");
+        for (int index = 0; index < 3; index++) {
+            // Pattern.quote emits Java's \Q…\E syntax, which the browser's regex engine does not support.
+            // The replies are already present, so apply the pattern to their rendered text in Java.
+            String content = replies.nth(index).locator(".message-content").innerText();
+            if (!confirmedCandidate.matcher(content).lookingAt()) {
+                throw new AssertionError("Operational reply " + (index + 1)
+                        + " did not start with the confirmed candidate label");
+            }
+        }
+        assertThat(timeline.locator(".citations")).hasCount(0);
     }
 
     public String addApprovedJob() {

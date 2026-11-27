@@ -42,11 +42,12 @@ mvn test-compile exec:java "-Dexec.classpathScope=test" "-Dexec.mainClass=com.mi
 mvn -Pbdd verify
 ```
 
-The default command excludes scenarios tagged `@provider`, `@destructive`, or `@editable-scope`. To reproduce the protected staging run,
+The default command excludes scenarios tagged `@provider`, `@destructive`, `@editable-scope`, or
+`@operational-follow-ups`. To reproduce the protected staging run,
 including the single controlled citation request, use:
 
 ```powershell
-mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope" verify
+mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope and not @operational-follow-ups" verify
 ```
 
 The suite creates conversations through the recruiter UI and covers owner isolation, explicit resume after leaving the
@@ -119,4 +120,18 @@ created by the scenario. The protected smoke gate does not require this scenario
 
 ```powershell
 mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@editable-scope and not @destructive" verify
+```
+
+## Opt-in operational follow-ups scenario
+
+Use a disposable staging candidate with a current CV extracted by NATIVE or OCR and at least one persisted
+evaluation (current or stale). Point the existing `BDD_CANDIDATE_QUERY` and `BDD_CANDIDATE_NAME` at that
+candidate; no new environment variables are required. The scenario asks about extraction, ingestion warnings,
+and stored evaluation scores in order. It accepts an empty warning list, but requires evaluation scores and
+state to be shown as stored decision-support information. All three replies must stay in the same confirmed
+conversation without CV citations. The questions use deterministic operational routing, with no paid provider
+calls. Cleanup deletes only the scenario's disposable conversation, not the candidate or evaluation.
+
+```powershell
+mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@operational-follow-ups and not @destructive" verify
 ```

@@ -562,10 +562,16 @@ focused production checks, and recorded acceptance before the next dependent sli
    The dedicated CV-chat page translates the remaining welcome, discovery, confirmation, scope, composer, and
    error copy. Discovery endpoints translate reviewed guidance by workflow kind using the request locale. The UI
    shows localized operation-specific errors rather than raw backend messages; reply-language selection is unchanged.
+   PR #256 passed multilingual staging acceptance, protected staging BDD, and production smoke tests.
+   **Step 6 is complete.**
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool
    selection/faithfulness, repeated-run stability, latency, and cost. Keep paid provider gates separate from ordinary CI.
+   First slice: opt-in language-switch follow-ups check English-to-French and French-to-Portuguese against fixed
+   synthetic English evidence. The answer must resolve the prior project reference, use only the current citation,
+   and follow the current question language. This isolates answer generation with bounded history; the existing
+   multilingual retrieval evaluation remains separate. Both language-switch cases passed the opt-in live-provider run.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

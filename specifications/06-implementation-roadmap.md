@@ -614,6 +614,8 @@ focused production checks, and recorded acceptance before the next dependent sli
    First scenario: organization-wide discovery proposes at least three cards; the recruiter confirms two and
    verifies that the comparison cites exactly those two candidates. This provider-backed browser scenario stays
    opt-in and passed its first live staging run. The existing protected smoke gate is unchanged.
+   Named-discovery coverage checks ambiguous name groups, explicit selection, and the selected scope after
+   reload. The opt-in scenario passed its first live staging run (one scenario, no failures).
 9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
    retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
    Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV

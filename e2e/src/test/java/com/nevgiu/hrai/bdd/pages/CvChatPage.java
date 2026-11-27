@@ -105,10 +105,65 @@ public class CvChatPage {
     }
 
     public void discoverOrganizationCandidates(String question) {
+        discover("All organization candidates", question);
+    }
+
+    public void discoverNamedCandidates(String question) {
+        discover("Named candidates", question);
+    }
+
+    private void discover(String mode, String question) {
         var form = page.locator(".discovery-composer");
-        form.getByLabel("All organization candidates").check();
+        form.getByLabel(mode, new Locator.GetByLabelOptions().setExact(true)).check();
         form.getByLabel("Candidate discovery request").fill(question);
         form.getByRole(BUTTON, new Locator.GetByRoleOptions().setName("Send").setExact(true)).click();
+    }
+
+    public void assertUnconfirmedNamedGroups() {
+        var groups = namedGroups();
+        assertThat(groups).hasCount(2);
+        assertThat(groups.locator("h3")).hasCount(2);
+        assertThat(groups.nth(0).locator("h3")).hasText(Pattern.compile("Matches for .+"));
+        assertThat(groups.nth(1).locator("h3")).hasText(Pattern.compile("Matches for .+"));
+        if (groups.nth(0).locator("h3").innerText().equalsIgnoreCase(groups.nth(1).locator("h3").innerText())) {
+            throw new AssertionError("Named discovery must show two distinct requested names");
+        }
+        // This fixture puts the ambiguous reference first. Both groups must offer a choice.
+        assertThat(groups.nth(0).locator("button.result").nth(1)).isVisible();
+        assertThat(groups.nth(1).locator("button.result").first()).isVisible();
+        assertThat(page.locator(".scope-confirmation")).hasCount(0);
+        assertNoActiveConversationPointer();
+    }
+
+    public List<String> selectOneFromEachNamedGroup() {
+        var groups = namedGroups();
+        var first = groups.nth(0).locator("button.result").first();
+        var second = groups.nth(1).locator("button.result").first();
+        if (candidateId(first).equals(candidateId(second))) {
+            throw new AssertionError("Named discovery fixture must offer distinct candidates as the first choices");
+        }
+        var selectedNames = List.of(first.locator("strong").innerText(), second.locator("strong").innerText());
+        if (selectedNames.get(0).equals(selectedNames.get(1))) {
+            throw new AssertionError("Named discovery fixture must have distinct selected display names");
+        }
+        first.click();
+        second.click();
+        assertNoActiveConversationPointer();
+        return selectedNames;
+    }
+
+    public void assertNamedScopeAfterReload(List<String> names, String conversationId) {
+        // Confirmation also submits the pending question; do not interrupt that write with a reload.
+        assertThat(page.getByLabel("Message", new Page.GetByLabelOptions().setExact(true)))
+                .isEnabled(new com.microsoft.playwright.assertions.LocatorAssertions.IsEnabledOptions()
+                        .setTimeout(60_000));
+        reloadActiveConversation(names.getFirst(), conversationId);
+        assertThat(page.getByLabel("Active conversation scope").locator(".scope-chip"))
+                .hasText(names.toArray(String[]::new));
+    }
+
+    private Locator namedGroups() {
+        return page.getByLabel("Candidate confirmation cards").locator(".candidate-match-group");
     }
 
     public void assertOrganizationShortlistUnconfirmed() {

@@ -672,6 +672,16 @@ stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an i
 
 **Exit condition:** Backend consumers can discover and test the stable API through reviewed, versioned, security-conscious Swagger/OpenAPI documentation.
 
+### Post-OpenAPI provider test review (before Phase 7)
+
+- [ ] Inventory all live-provider tests, their enablement flags, required configuration, models, and expected case counts.
+- [ ] Audit existing pass claims against saved run output. Mark missing evidence as unverified; a skipped test or
+  Maven `BUILD SUCCESS` alone does not prove a live run passed.
+- [ ] Rerun unverified provider tests explicitly with synthetic fixtures and reviewed cost bounds. Verify that the
+  targeted tests and expected cases actually executed, with no skips before recording a pass.
+- [ ] Record run date, revision, model, executed/passed/failed/skipped counts, and the report location. Keep paid
+  runs opt-in and exclude credentials and personal data from evidence.
+
 ## Phase 7 - Benchmark concurrency and virtual threads
 
 - [ ] Establish platform-thread load-test baselines for AI, JDBC, ingestion, chat, and dashboard workloads.

@@ -85,12 +85,12 @@ public class CvChatToolOrchestrationService {
             throw new CvChatException(HttpStatus.BAD_GATEWAY, "CV chat question policy is unavailable");
         }
         if (policyResult != CvChatQuestionPolicyResult.JOB_RELEVANT) {
-            return new CvChatOrganizationDiscoveryResponse(CvChatToolOrchestrationOutcome.Kind.REFUSED,
+            return CvChatOrganizationDiscoveryResponse.localized(CvChatToolOrchestrationOutcome.Kind.REFUSED,
                     REFUSAL_MESSAGE, List.of(), false);
         }
         var result = readTools.searchCandidatesByEvidence(normalizedMessage);
         if (result.candidates().isEmpty()) {
-            return new CvChatOrganizationDiscoveryResponse(
+            return CvChatOrganizationDiscoveryResponse.localized(
                     CvChatToolOrchestrationOutcome.Kind.CLARIFICATION_REQUIRED,
                     "No indexed candidates matched those professional criteria. Refine the request.",
                     List.of(), result.truncated());
@@ -99,7 +99,7 @@ public class CvChatToolOrchestrationService {
                 .map(candidate -> new CvChatOrganizationDiscoveryResponse.CandidateOption(
                         candidate.id(), candidate.name(), candidate.currentTitle(), candidate.evidenceReferences()))
                 .toList();
-        return new CvChatOrganizationDiscoveryResponse(
+        return CvChatOrganizationDiscoveryResponse.localized(
                 CvChatToolOrchestrationOutcome.Kind.CANDIDATE_CONFIRMATION_REQUIRED,
                 "Evidence-backed candidate matches were found. Confirm up to five candidates before continuing.",
                 cards, result.truncated());

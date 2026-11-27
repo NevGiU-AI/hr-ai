@@ -13,6 +13,7 @@ public record CvChatToolDiscoveryResponse(CvChatToolOrchestrationOutcome.Kind ki
 
     static CvChatToolDiscoveryResponse from(CvChatToolOrchestrationOutcome outcome,
                                             CvChatLanguageScopeResponse candidateScope) {
-        return new CvChatToolDiscoveryResponse(outcome.kind(), outcome.message(), candidateScope);
+        return new CvChatToolDiscoveryResponse(outcome.kind(),
+                CvChatDiscoveryText.localize(outcome.kind(), false, outcome.message()), candidateScope);
     }
 }

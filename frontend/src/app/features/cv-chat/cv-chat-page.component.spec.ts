@@ -42,6 +42,8 @@ describe('CvChatPageComponent', () => {
     http.expectOne(`${environment.apiUrl}/jobs`).flush([]);
     http.expectOne(`${environment.apiUrl}/chat/conversations`).flush([]);
     const alert: HTMLElement = frenchFixture.nativeElement.querySelector('[role="alert"]');
+    expect(frenchFixture.nativeElement.querySelector('h1')?.textContent).toBe('Chat CV');
+    expect(frenchFixture.nativeElement.querySelector('.welcome-message')?.textContent).toContain('Bonjour !');
     expect(alert.textContent).toContain('Impossible de charger la conversation pour le moment.');
     expect(alert.querySelector('button')?.textContent).toContain('Réessayer de charger la conversation');
   });
@@ -157,7 +159,7 @@ describe('CvChatPageComponent', () => {
     http.expectOne(`${environment.apiUrl}/chat/conversations/conversation-1/messages`)
       .flush({ message: 'Invalid question' }, { status: 400, statusText: 'Bad Request' });
     expect(component.message).toBe('Draft question');
-    expect(component.sendFeedback).toBe('Invalid question');
+    expect(component.sendFeedback).toBe('Message could not be sent.');
     expect(component.sendNeedsHistoryCheck).toBeFalse();
     expect(component.timeline).toEqual([]);
   });
@@ -342,7 +344,7 @@ describe('CvChatPageComponent', () => {
     );
 
     expect(component.naturalRequest).toBe('Compare Ada and Grace');
-    expect(component.error).toBe('Provider unavailable');
+    expect(component.error).toBe('Candidate discovery could not complete.');
     expect(component.pendingQuestion).toBe('');
   });
 

@@ -5,8 +5,11 @@ import com.nevgiu.hrai.job.Job;
 import com.nevgiu.hrai.job.JobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 
 import java.util.List;
@@ -22,6 +25,58 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class CvChatComparisonServiceTest {
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', textBlock = """
+            Ada utilise Java 21 [CV-10] et Grace utilise Java 17 [CV-11]. | ANSWER
+            Ada utilise Java 21 [CV-10] et Grace utilise Java 17 [CV-99]. | UNSUPPORTED_CITATION
+            Ada utilise Java 21 [CV-10]. | INSUFFICIENT_EVIDENCE
+            OUT_OF_SCOPE | OUT_OF_SCOPE
+            """)
+    void appliesCurrentCitationCoverageToFrenchFollowUps(String modelReply, String expectedOutcome) {
+        String question = "Quelles versions utilisent-elles ?";
+        List<Message> history = List.of(new UserMessage("Compare their Java experience."),
+                new AssistantMessage("Earlier comparison referred to an older source [CV-99]."));
+        String contextualQuestion = CvChatFollowUpContext.contextualQuestion(question, history);
+        var ada = evidence("CV-10", 7L, 10L, "Java 21");
+        var grace = evidence("CV-11", 8L, 11L, "Java 17");
+        var candidates = List.of(new CandidateIdentity(7L, "Ada Lovelace", "Engineer"),
+                new CandidateIdentity(8L, "Grace Hopper", "Architect"));
+        when(questionPolicy.classifySelectedCandidateComparison(contextualQuestion, false))
+                .thenReturn(CvChatQuestionPolicyResult.JOB_RELEVANT);
+        when(evidenceService.prepareRetrievalQueries(contextualQuestion, "tenant-a")).thenReturn(RETRIEVAL_QUERIES);
+        when(evidenceService.find(7L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(ada));
+        when(evidenceService.find(8L, RETRIEVAL_QUERIES, "tenant-a")).thenReturn(List.of(grace));
+        when(model.compare(question, candidates, List.of(ada, grace), null, history)).thenReturn(modelReply);
+
+        if ("UNSUPPORTED_CITATION".equals(expectedOutcome)) {
+            assertThatThrownBy(() -> service.compare(List.of(7L, 8L), question, null, "tenant-a", history))
+                    .isInstanceOfSatisfying(CvChatException.class, failure -> {
+                        assertThat(failure.status()).isEqualTo(HttpStatus.BAD_GATEWAY);
+                        assertThat(failure).hasMessage("CV chat provider returned an unsupported citation");
+                    });
+            return;
+        }
+        var expectedKind = CvChatAnswerKind.valueOf(expectedOutcome);
+        var response = service.compare(List.of(7L, 8L), question, null, "tenant-a", history);
+
+        assertThat(response.kind()).isEqualTo(expectedKind);
+        assertThat(response.candidates()).extracting(CvChatComparisonResponse.CandidateOption::id)
+                .containsExactly(7L, 8L);
+        if (expectedKind == CvChatAnswerKind.ANSWER) {
+            assertThat(response.citations()).extracting(CvChatResponse.Citation::reference)
+                    .containsExactly("CV-10", "CV-11");
+            assertThat(response.citations()).extracting(CvChatResponse.Citation::candidateId)
+                    .containsExactly(7L, 8L);
+            assertThat(response.answer()).contains("utilise Java 21", "utilise Java 17");
+        } else {
+            assertThat(response.answer()).isNotEqualTo(modelReply).doesNotContain("CV-99");
+            assertThat(response.citations()).isEmpty();
+        }
+        // The classifier and retrieval get only recruiter context; the answer model gets the bounded history.
+        assertThat(contextualQuestion).contains(question, "Compare their Java experience.").doesNotContain("CV-99");
+        verify(model).compare(question, candidates, List.of(ada, grace), null, history);
+    }
+
     private static final List<String> RETRIEVAL_QUERIES =
             List.of("Compare backend experience", "backend engineering experience");
     private final CvChatEvidenceService evidenceService = mock(CvChatEvidenceService.class);

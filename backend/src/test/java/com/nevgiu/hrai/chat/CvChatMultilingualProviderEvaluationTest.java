@@ -6,6 +6,9 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.evaluation.FactCheckingEvaluator;
 import org.springframework.ai.chat.evaluation.RelevancyEvaluator;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.evaluation.EvaluationRequest;
@@ -17,6 +20,8 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.LinkedHashMap;
 import java.util.Comparator;
 import java.util.Locale;
@@ -35,6 +40,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CvChatMultilingualProviderEvaluationTest {
     private static final String EVALUATION_ORGANIZATION = "tenant-a";
     private static final int ANSWER_REPETITIONS = 2;
+    private static final Pattern CV_REFERENCE = Pattern.compile("\\[(CV-[^\\]\\r\\n]+)\\]");
+
+    @Test
+    void followsTheCurrentQuestionLanguageWithoutCitingEarlierEvidence() {
+        String apiKey = requiredEnvironmentVariable("OPENAI_API_KEY");
+        String modelName = System.getenv().getOrDefault("AI_EVALUATION_CHAT_MODEL", "gpt-4o-mini");
+        var model = new SpringAiCvChatModel(ChatClient.builder(chatModel(apiKey, modelName)).build());
+        // The authorized passage is in English in every case. The old citation deliberately isn't in current scope.
+        var evidence = List.of(new CvChatEvidence("CV-61", 60L, 61L, null,
+                "At KLx the candidate used Java 17 for the Instant Payments project. "
+                        + "For the internal reporting project the candidate used Java 11."));
+        var cases = List.of(
+                new LanguageSwitch("en-to-fr", "Which project did we discuss?",
+                        "We discussed the Instant Payments project [CV-99].",
+                        "Quelle version de Java a été utilisée pour ce projet ?",
+                        List.of(" le ", " la ", " pour ", " utilisé ")),
+                new LanguageSwitch("fr-to-pt", "De quel projet avons-nous parlé ?",
+                        "Nous avons parlé du projet Instant Payments [CV-99].",
+                        "Qual foi a versão de Java utilizada nesse projeto?",
+                        List.of(" foi ", " nesse ", " utilizada ", " usou ")));
+        var results = new SoftAssertions();
+        for (var testCase : cases) {
+            List<Message> history = List.of(new UserMessage(testCase.historyQuestion()),
+                    new AssistantMessage(testCase.historyAnswer()));
+            long started = System.nanoTime();
+            String answer = model.answer(testCase.question(), evidence, history);
+            Set<String> references = CV_REFERENCE.matcher(answer).results().map(match -> match.group(1))
+                    .collect(Collectors.toSet());
+            results.assertThat(references).as("case=%s current evidence references", testCase.id())
+                    .containsExactly("CV-61");
+            results.assertThat(answer.contains("Java 17") && !answer.contains("Java 11") && !answer.contains("CV-99"))
+                    .as("case=%s resolves the project from history using current evidence", testCase.id()).isTrue();
+            results.assertThat(containsLanguageMarker(answer, testCase.markers()))
+                    .as("case=%s current question language", testCase.id()).isTrue();
+            System.out.printf(Locale.ROOT, "case=%s durationMs=%d model=%s%n", testCase.id(),
+                    (System.nanoTime() - started) / 1_000_000, modelName);
+        }
+        results.assertAll();
+    }
+
+    private record LanguageSwitch(String id, String historyQuestion, String historyAnswer,
+                                  String question, List<String> markers) { }
 
     @Test
     void retrievesExpectedTenantEvidenceAndGeneratesRelevantGroundedSameLanguageAnswers() {

@@ -252,7 +252,7 @@ describe('CvChatPageComponent', () => {
     });
   });
 
-  it('uses natural language to discover organization candidates before confirmation', () => {
+  it('carries only explicitly confirmed organization matches into a bounded comparison', () => {
     component.discoveryMode = 'ORGANIZATION';
     component.naturalRequest = 'Find strong AI developers in this organization';
     component.discoverNaturally();
@@ -260,7 +260,11 @@ describe('CvChatPageComponent', () => {
     const request = http.expectOne(`${environment.apiUrl}/chat/tools/organization-discover`);
     request.flush({
       kind: 'CANDIDATE_CONFIRMATION_REQUIRED', message: 'Confirm the shortlist.', truncated: false,
-      candidates: [{ id: 8, name: 'Grace', currentTitle: 'AI Engineer', evidenceReferences: ['CV-18'] }],
+      candidates: [
+        { id: 8, name: 'Grace', currentTitle: 'AI Engineer', evidenceReferences: ['CV-18'] },
+        { id: 7, name: 'Ada', currentTitle: 'Engineer', evidenceReferences: ['CV-17'] },
+        { id: 9, name: 'Morgan', currentTitle: null, evidenceReferences: ['CV-19'] },
+      ],
     });
 
     expect(component.naturalResultGroups.map((group) => group.requestedName)).toEqual([null]);
@@ -275,11 +279,38 @@ describe('CvChatPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.scope-confirmation')).toBeNull();
     http.expectNone(`${environment.apiUrl}/chat/conversations`);
 
-    confirmationCards.querySelector('button.result').click();
+    const cards = confirmationCards.querySelectorAll('button.result') as NodeListOf<HTMLButtonElement>;
+    cards[0].click();
+    cards[1].click();
     fixture.detectChanges();
-    expect(component.selectedCandidates.map((candidate) => candidate.id)).toEqual([8]);
-    expect(fixture.nativeElement.querySelector('.scope-confirmation').textContent)
-      .toContain('Confirm conversation scope');
+    expect(component.selectedCandidates.map((candidate) => candidate.id)).toEqual([8, 7]);
+    http.expectNone(`${environment.apiUrl}/chat/conversations`);
+
+    const scope: HTMLElement = fixture.nativeElement.querySelector('.scope-confirmation');
+    expect(scope.textContent).toContain('Confirm conversation scope');
+    expect(scope.textContent).not.toContain('Morgan');
+    scope.querySelector<HTMLButtonElement>('button.btn-primary')!.click();
+
+    const create = http.expectOne({ method: 'POST', url: `${environment.apiUrl}/chat/conversations` });
+    expect(create.request.body).toEqual({ candidateIds: [8, 7] });
+    const candidates = component.selectedCandidates;
+    create.flush({ id: 'confirmed-scope', version: 0, candidates, job: null, updatedAt: '' });
+
+    const compare = http.expectOne({
+      method: 'POST', url: `${environment.apiUrl}/chat/conversations/confirmed-scope/messages`,
+    });
+    // The follow-up uses the conversation's saved scope, not the original discovery shortlist or its references.
+    expect(compare.request.body).toEqual({ message: 'Find strong AI developers in this organization' });
+    compare.flush({
+      conversationId: 'confirmed-scope', version: 1, candidates, job: null, expiresAt: '',
+      kind: 'INSUFFICIENT_EVIDENCE', citations: [],
+      answer: 'The available CV evidence does not provide enough information to compare every selected candidate.',
+    });
+    fixture.detectChanges();
+    const timeline: HTMLElement = fixture.nativeElement.querySelector('[aria-label="Conversation timeline"]');
+    expect(timeline.querySelector('.message-outcome')?.textContent).toBe('Insufficient evidence');
+    expect(timeline.querySelector('.citations')).toBeNull();
+    expect(component.conversation?.candidates.map((candidate) => candidate.id)).toEqual([8, 7]);
   });
 
   it('groups name matches in reference order without selecting candidates or duplicating the scope', () => {

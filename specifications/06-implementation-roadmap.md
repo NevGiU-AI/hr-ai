@@ -582,6 +582,10 @@ focused production checks, and recorded acceptance before the next dependent sli
    The next opt-in comparison case uses two confirmed candidates and one approved job. It checks that both current
    CVs are cited and that an unconfirmed candidate mentioned in history stays out of the answer. The opt-in
    live-provider run passed.
+   Organization-wide discovery handoff: deterministic Angular coverage checks that a shortlist does not create
+   scope until explicit confirmation, that only selected IDs are submitted, and that the first message uses the
+   saved conversation rather than the shortlist. It renders a controlled insufficient-evidence comparison without
+   citations; the backend comparison regression separately verifies that missing evidence prevents a ranking.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

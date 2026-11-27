@@ -9,5 +9,11 @@ public record CvChatOrganizationDiscoveryResponse(
         List<CandidateOption> candidates,
         boolean truncated
 ) {
+    static CvChatOrganizationDiscoveryResponse localized(CvChatToolOrchestrationOutcome.Kind kind, String message,
+                                                          List<CandidateOption> candidates, boolean truncated) {
+        return new CvChatOrganizationDiscoveryResponse(
+                kind, CvChatDiscoveryText.localize(kind, true, message), candidates, truncated);
+    }
+
     public record CandidateOption(Long id, String name, String currentTitle, List<String> evidenceReferences) { }
 }

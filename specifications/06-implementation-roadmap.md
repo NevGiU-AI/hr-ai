@@ -558,6 +558,10 @@ focused production checks, and recorded acceptance before the next dependent sli
    PR #254 passed staging acceptance, protected staging BDD, and production smoke tests.
    Flyway V10 preserves known reply-language metadata on new assistant turns. Live and resumed replies carry
    the same language tag for assistive technology; legacy and unknown languages remain unset without backfill.
+   PR #255 passed staging acceptance, protected staging BDD, and production smoke tests.
+   The dedicated CV-chat page translates the remaining welcome, discovery, confirmation, scope, composer, and
+   error copy. Discovery endpoints translate reviewed guidance by workflow kind using the request locale. The UI
+   shows localized operation-specific errors rather than raw backend messages; reply-language selection is unchanged.
 7. **Evaluate the completed conversational surface.** Expand reviewed deterministic/provider datasets across
    multilingual follow-ups, approved-job assessments, comparisons, organization-wide discovery, processing-status
    answers, evaluation-history answers, groundedness, citation correctness/completeness, refusal quality, tool

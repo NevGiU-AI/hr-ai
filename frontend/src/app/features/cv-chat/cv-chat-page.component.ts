@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY } from '../../core/storage/application-storage-keys';
-import { ApiError, Job } from '../cv-ingestion/models/cv-ingestion.models';
+import { Job } from '../cv-ingestion/models/cv-ingestion.models';
 import {
   CvChatCandidateOption,
   CvChatCitation,
@@ -31,8 +30,7 @@ export class CvChatPageComponent implements OnInit {
   readonly copy = cvChatInterfaceCopy(typeof navigator === 'undefined' ? 'en' : navigator.language);
 
   /** Presentation-only greeting; it is never submitted to or persisted by the chat backend. */
-  readonly welcomeMessage = "Hey! I'm NevGiU—short for ‘Never Give Up.’ "
-    + "I'll always do my best to help you. 😊 How can I help with your candidates today?";
+  readonly welcomeMessage = this.copy.welcome;
 
   private readonly chat = inject(CvChatService);
   private readonly candidates = inject(CvIngestionService);
@@ -70,7 +68,10 @@ export class CvChatPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.candidates.getJobs().subscribe({ next: (jobs) => this.jobs = jobs });
+    this.candidates.getJobs().subscribe({
+      next: (jobs) => this.jobs = jobs,
+      error: () => this.error = this.copy.jobsFailed,
+    });
     this.loadConversationList();
     const storedId = typeof localStorage === 'undefined'
       ? null
@@ -85,7 +86,7 @@ export class CvChatPageComponent implements OnInit {
     this.error = '';
     this.chat.searchCandidates(query).pipe(finalize(() => this.searchBusy = false)).subscribe({
       next: (response) => this.searchResults = response.candidates,
-      error: (error) => this.error = this.apiError(error, 'Candidate search could not complete.'),
+      error: () => this.error = this.copy.searchFailed,
     });
   }
 
@@ -106,9 +107,9 @@ export class CvChatPageComponent implements OnInit {
         .pipe(finalize(() => this.naturalBusy = false))
         .subscribe({
           next: (response) => this.applyOrganizationDiscovery(request, response),
-          error: (error: HttpErrorResponse) => {
+          error: () => {
             this.naturalRequest = request;
-            this.error = this.apiError(error, 'Candidate discovery could not complete.');
+            this.error = this.copy.discoveryFailed;
           },
         });
       return;
@@ -117,9 +118,9 @@ export class CvChatPageComponent implements OnInit {
       .pipe(finalize(() => this.naturalBusy = false))
       .subscribe({
         next: (response) => this.applyNamedDiscovery(request, response),
-        error: (error: HttpErrorResponse) => {
+        error: () => {
           this.naturalRequest = request;
-          this.error = this.apiError(error, 'Candidate discovery could not complete.');
+          this.error = this.copy.discoveryFailed;
         },
       });
   }
@@ -160,7 +161,7 @@ export class CvChatPageComponent implements OnInit {
             this.send();
           }
         },
-        error: (error) => this.error = this.apiError(error, 'Conversation could not be created.'),
+        error: () => this.error = this.copy.createFailed,
       });
   }
 
@@ -200,10 +201,11 @@ export class CvChatPageComponent implements OnInit {
         this.timeline = this.timeline.slice(0, -1);
         this.message = content;
         // A transport or server error does not prove the write failed. Never replay the POST automatically.
+        // Choose reviewed UI copy here; backend diagnostics are not user-facing translations.
         this.sendNeedsHistoryCheck = error.status === 0 || error.status === 408 || error.status >= 500;
         this.sendFeedback = this.sendNeedsHistoryCheck
           ? this.copy.uncertainSend
-          : this.apiError(error, this.copy.sendFailed);
+          : this.copy.sendFailed;
       },
     });
   }
@@ -222,7 +224,7 @@ export class CvChatPageComponent implements OnInit {
         this.recentConversations = this.recentConversations.filter((value) => value.id !== id);
         this.resetLocalState();
       },
-      error: (error) => this.error = this.apiError(error, 'Conversation could not be deleted.'),
+      error: () => this.error = this.copy.deleteFailed,
     });
   }
 
@@ -268,7 +270,7 @@ export class CvChatPageComponent implements OnInit {
         this.scopeEditing = false;
         this.upsertConversation(conversation);
       },
-      error: (error) => this.error = this.apiError(error, 'Conversation scope could not be updated.'),
+      error: () => this.error = this.copy.scopeFailed,
     });
   }
 
@@ -344,7 +346,7 @@ export class CvChatPageComponent implements OnInit {
             this.resumeError = this.copy.resumeTemporary;
             return;
           }
-          this.resumeError = this.apiError(error, this.copy.resumeFailed);
+          this.resumeError = this.copy.resumeFailed;
         },
       });
   }
@@ -359,7 +361,7 @@ export class CvChatPageComponent implements OnInit {
       // The initial list and automatic resume run independently; a late list must not restore a stale entry.
       next: (conversations) => this.recentConversations = conversations.filter(
         (item) => !this.unavailableConversationIds.has(item.id)),
-      error: (error) => this.error = this.apiError(error, 'Recent conversations could not be loaded.'),
+      error: () => this.error = this.copy.recentFailed,
     });
   }
 
@@ -408,9 +410,5 @@ export class CvChatPageComponent implements OnInit {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(ACTIVE_CV_CHAT_CONVERSATION_STORAGE_KEY, id);
     }
-  }
-
-  private apiError(error: HttpErrorResponse, fallback: string): string {
-    return (error.error as ApiError | null)?.message || error.message || fallback;
   }
 }

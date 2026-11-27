@@ -586,6 +586,10 @@ focused production checks, and recorded acceptance before the next dependent sli
    scope until explicit confirmation, that only selected IDs are submitted, and that the first message uses the
    saved conversation rather than the shortlist. It renders a controlled insufficient-evidence comparison without
    citations; the backend comparison regression separately verifies that missing evidence prevents a ranking.
+   Tool-backed follow-up coverage switches from a grounded CV answer to OCR status, ingestion warnings, and
+   persisted evaluation history, then back to grounded chat in the same modeled conversation. The regression uses
+   real operational routing and rendering with synthetic tool results, verifies current/stale evaluation facts,
+   and checks that only grounded turns carry CV citations. No database or live provider is needed for this test.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

@@ -4,6 +4,10 @@ import com.nevgiu.hrai.candidate.CandidateIdentity;
 import com.nevgiu.hrai.candidate.CvExtractionMethod;
 import com.nevgiu.hrai.candidate.CvIngestionStatus;
 import com.nevgiu.hrai.chat.CvChatException;
+import com.nevgiu.hrai.chat.CvChatAnswerKind;
+import com.nevgiu.hrai.chat.CvChatComparisonService;
+import com.nevgiu.hrai.chat.CvChatResponse;
+import com.nevgiu.hrai.chat.CvChatService;
 import com.nevgiu.hrai.chat.tool.CurrentDocumentStatus;
 import com.nevgiu.hrai.chat.tool.CvChatDocumentToolState;
 import com.nevgiu.hrai.chat.tool.CvChatEvaluationToolState;
@@ -16,10 +20,15 @@ import com.nevgiu.hrai.chat.tool.IngestionWarningsResult;
 import com.nevgiu.hrai.chat.tool.EvaluationEvidenceItem;
 import com.nevgiu.hrai.chat.tool.EvaluationEvidenceResult;
 import com.nevgiu.hrai.chat.tool.EvaluationScores;
+import com.nevgiu.hrai.security.AppUserPrincipal;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +41,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class CvChatDocumentToolServiceTest {
@@ -43,6 +53,103 @@ class CvChatDocumentToolServiceTest {
     private final CvChatDocumentToolModel model = mock(CvChatDocumentToolModel.class);
     private final CvChatDocumentToolService service =
             new CvChatDocumentToolService(scope, registry, readTools, state, evaluationState, model);
+
+    @Test
+    void keepsGroundedAndOperationalSourcesSeparateAcrossConversationTurns() {
+        var conversations = mock(CvChatConversationService.class);
+        var grounded = mock(CvChatService.class);
+        var comparison = mock(CvChatComparisonService.class);
+        var actor = new AppUserPrincipal(1L, "owner@example.com", "hash", "tenant-a", true, List.of());
+        var candidates = candidates(7L, "Ada");
+        String id = "conversation-1";
+        Instant now = Instant.parse("2026-11-20T10:00:00Z");
+        String groundedQuestion = "Which Java version does the CV document?";
+        String groundedAnswer = "The CV documents Java 21 [CV-7].";
+        var citations = List.of(new CvChatResponse.Citation("CV-7", 7L, 70L, null, "Java 21"));
+        var history = new ArrayList<Message>();
+        var questions = List.of(groundedQuestion, "Was this CV processed with OCR?",
+                "Were any ingestion warnings recorded?", "What is the persisted evaluation history?",
+                "Which Java version was that?");
+
+        for (int index = 0; index < questions.size(); index++) {
+            // A conversation survives across requests; callback counts and results do not.
+            var requestStatus = new CvChatDocumentToolState();
+            var requestEvaluations = new CvChatEvaluationToolState();
+            var requestTools = mock(CvChatReadTools.class);
+            var requestModel = mock(CvChatDocumentToolModel.class);
+            var operational = new CvChatDocumentToolService(scope, registry, requestTools,
+                    requestStatus, requestEvaluations, requestModel);
+            var turns = new CvChatConversationTurnService(conversations, grounded, comparison, operational);
+            String question = questions.get(index);
+            long version = index;
+            var turnHistory = List.copyOf(history);
+            when(conversations.executionScope(id, actor)).thenReturn(
+                    new CvChatConversationService.ExecutionScope(id, version, "tenant-a", candidates, null));
+            when(conversations.history(id)).thenReturn(turnHistory);
+
+            boolean isGrounded = index == 0 || index == questions.size() - 1;
+            var expectedKind = isGrounded ? CvChatAnswerKind.ANSWER : CvChatAnswerKind.TOOL_STATUS;
+            var expectedCitations = isGrounded ? citations : List.<CvChatResponse.Citation>of();
+            when(conversations.appendTurn(eq(id), eq(version), eq(question), org.mockito.ArgumentMatchers.anyString(),
+                    eq(expectedCitations), eq(expectedKind), org.mockito.ArgumentMatchers.isNull(), eq(actor)))
+                    .thenReturn(new CvChatConversationResponse(id, version + 1,
+                            List.of(new CvChatConversationResponse.CandidateCard(7L, "Ada", null)),
+                            null, now, now, now.plusSeconds(600)));
+
+            switch (index) {
+                case 0, 4 -> {
+                    when(requestModel.respond(eq(question), eq(List.of(7L)), anyList()))
+                            .thenReturn(new CvChatDocumentToolOutcome(CvChatDocumentToolOutcome.Kind.NOT_APPLICABLE));
+                    when(grounded.ask(7L, question, null, "tenant-a", turnHistory))
+                            .thenReturn(new CvChatResponse(CvChatAnswerKind.ANSWER, groundedAnswer, citations));
+                }
+                case 1 -> when(requestTools.getDocumentStatus(7L)).thenAnswer(call -> {
+                    var result = new DocumentStatusResult(7L, new CurrentDocumentStatus(
+                            70L, CvIngestionStatus.IMPORTED, CvExtractionMethod.OCR, now, null));
+                    requestStatus.record(result);
+                    return result;
+                });
+                case 2 -> when(requestTools.getIngestionWarnings(7L)).thenAnswer(call -> {
+                    var result = new IngestionWarningsResult(7L, 70L, List.of(IngestionWarning.MANUAL_REVIEW_REQUIRED));
+                    requestStatus.record(result);
+                    return result;
+                });
+                case 3 -> when(requestTools.getEvaluationEvidence(7L)).thenAnswer(call -> {
+                    var result = new EvaluationEvidenceResult(7L, List.of(evaluation(9L, true, null),
+                            evaluation(8L, false, now)), false);
+                    requestEvaluations.record(result);
+                    return result;
+                });
+                default -> throw new AssertionError("Unexpected turn");
+            }
+
+            var response = turns.ask(id, question, actor);
+            assertThat(response.conversationId()).isEqualTo(id);
+            assertThat(response.version()).isEqualTo(version + 1);
+            assertThat(response.kind()).isEqualTo(expectedKind);
+            assertThat(response.citations()).isEqualTo(expectedCitations);
+            if (!isGrounded) assertThat(response.answer()).doesNotContain("[CV-");
+            switch (index) {
+                case 0, 4 -> {
+                    assertThat(response.answer()).isEqualTo(groundedAnswer);
+                    verify(grounded).ask(7L, question, null, "tenant-a", turnHistory);
+                    verifyNoInteractions(requestTools);
+                }
+                case 1 -> assertThat(response.answer()).contains("IMPORTED", "OCR");
+                case 2 -> assertThat(response.answer()).contains("MANUAL_REVIEW_REQUIRED");
+                case 3 -> assertThat(response.answer()).contains("Evaluation 9", "CURRENT", "Evaluation 8",
+                        "STALE", "Invalidated at", "overall fit 80/100");
+                default -> throw new AssertionError("Unexpected turn");
+            }
+            if (!isGrounded) verifyNoInteractions(requestModel);
+            verify(conversations).appendTurn(id, version, question, response.answer(),
+                    expectedCitations, expectedKind, null, actor);
+            history.add(new UserMessage(question));
+            history.add(new AssistantMessage(response.answer()));
+        }
+        verifyNoMoreInteractions(grounded);
+        verifyNoInteractions(comparison);
+    }
 
     @Test
     void returnsEmptyForProfessionalQuestionWithoutToolCalls() {

@@ -611,6 +611,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging
    BDD remains mandatory for production promotion.
+   First scenario: organization-wide discovery proposes at least three cards; the recruiter confirms two and
+   verifies that the comparison cites exactly those two candidates. This provider-backed browser scenario stays
+   opt-in and passed its first live staging run. The existing protected smoke gate is unchanged.
 9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
    retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
    Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV

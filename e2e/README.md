@@ -77,3 +77,21 @@ and must not be copied to a public issue or chat.
 
 The post-deployment `workflow_run` token has read-only cache access. The job intentionally does not enable Maven caching
 instead of granting cache-write capability to a workflow that receives protected staging secrets.
+
+## Opt-in organization discovery scenario
+
+Use the usual staging BDD configuration, plus:
+
+- `BDD_ORGANIZATION_DISCOVERY_QUESTION`: a professional search that returns at least three staging candidate cards.
+- `BDD_ORGANIZATION_COMPARISON_QUESTION`: a question that both of the first two cards' CVs can answer with citations.
+
+Use disposable staging data. The scenario confirms the first two cards and leaves the third unselected. It checks
+that there is no conversation before confirmation and that the comparison cites exactly the two selected candidates.
+Only the conversation created for the test is cleaned up. This scenario calls the live provider and is not yet part of
+the protected staging smoke gate.
+
+From `e2e`, run:
+
+```powershell
+mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@organization-discovery and not @destructive" verify
+```

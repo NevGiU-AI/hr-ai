@@ -672,6 +672,16 @@ stable job-offer, CV, evaluation, chat, and dashboard contracts rather than an i
 
 **Exit condition:** Backend consumers can discover and test the stable API through reviewed, versioned, security-conscious Swagger/OpenAPI documentation.
 
+### Post-OpenAPI frontend design refresh (before Phase 7)
+
+- [ ] Use the NevGiU logo and reference screenshots to define a coordinated color palette for the Angular app.
+  Check contrast for text, controls, and focus indicators before adopting the palette.
+- [ ] Keep the signed-in desktop header on one row, including when admin links are visible. Keep core recruiter
+  links visible, group account actions and admin links in compact menus, and avoid putting the email and sign-out
+  controls on a second row. When space is tight, collapse navigation instead of letting it wrap or overflow.
+  Preserve active-page indicators, role-based visibility, and existing routes. Verify keyboard navigation.
+- [ ] Review the proposed palette and menu against the reference screenshots before implementation.
+
 ### Post-OpenAPI provider test review (before Phase 7)
 
 - [ ] Inventory all live-provider tests, their enablement flags, required configuration, models, and expected case counts.

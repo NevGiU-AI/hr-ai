@@ -384,8 +384,9 @@ and production acceptance on 21 October 2026. Correction/reprocessing passed sta
 3. Review the complete codebase and add missing comments and Javadoc for non-obvious contracts, security boundaries,
    transactions, integrations, and business rules.
 4. Publish stable OpenAPI contracts for the completed dashboard and application APIs.
-5. After OpenAPI, audit live-provider test results and rerun unverified cases before benchmarking bounded concurrency
-   and Java virtual threads in staging. Skipped tests do not count as passes.
+5. After OpenAPI, refresh the frontend with a logo-inspired palette and improved navigation. Also audit live-provider
+   test results and rerun unverified cases before benchmarking bounded concurrency and Java virtual threads in staging.
+   Skipped tests do not count as passes.
 6. Install and validate encrypted paired backup/restore in staging.
 7. Install and validate paired backup/restore in production after staging acceptance.
 8. Persist versioned evaluation prompts, requested model/configuration, exact weights, and source-document version

@@ -8,6 +8,8 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 
@@ -37,11 +39,7 @@ class CvChatProviderBaselineTest {
                 .build();
         var usage = new AtomicReference<Usage>();
         // Observe the real provider response without changing the production answer model or making an extra call.
-        ChatModel measuredProvider = prompt -> {
-            var response = provider.call(prompt);
-            usage.set(response.getMetadata().getUsage());
-            return response;
-        };
+        ChatModel measuredProvider = measure(provider, usage);
         var model = new SpringAiCvChatModel(ChatClient.builder(measuredProvider).build());
         var evidence = List.of(new CvChatEvidence("CV-61", 60L, 61L, null,
                 "At KLx the candidate built the Instant Payments service using Java 17. "
@@ -103,6 +101,24 @@ class CvChatProviderBaselineTest {
                     measuredUsage == 0 ? "n/a" : completionTokens, modelName);
         }
         assertThat(failures).as("baseline cases that failed the quality checks or provider call").isEmpty();
+    }
+
+    static ChatModel measure(OpenAiChatModel provider, AtomicReference<Usage> usage) {
+        return new ChatModel() {
+            @Override
+            public OpenAiChatOptions getOptions() {
+                // ChatClient merges request options with model defaults. Keep the OpenAI-specific type rather
+                // than inheriting generic ChatModel defaults that can fail when options are merged or cast.
+                return provider.getOptions();
+            }
+
+            @Override
+            public ChatResponse call(Prompt prompt) {
+                var response = provider.call(prompt);
+                usage.set(response.getMetadata().getUsage());
+                return response;
+            }
+        };
     }
 
     private static boolean passes(String caseId, String answer) {

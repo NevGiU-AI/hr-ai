@@ -597,8 +597,16 @@ focused production checks, and recorded acceptance before the next dependent sli
    The opt-in answer-model baseline runs a grounded question, a French follow-up, and an approved-job question
    three times each. It records quality pass counts, median/max latency, and provider-reported input/output tokens
    where available. These are sequential synthetic answer-generation measurements, not HTTP latency, load-test
-   results, or a billing estimate. The first opt-in live run passed all nine attempts. The per-case latency and
-   token-usage summaries are pending documentation.
+   results, or a billing estimate. After fixing the wrapper to preserve OpenAI-specific options, the live run
+   with `gpt-4o-mini` passed all nine attempts and reported token usage for every attempt.
+
+   | Case | Passed | Median (ms) | Max (ms) | Input tokens | Output tokens |
+   | --- | ---: | ---: | ---: | ---: | ---: |
+   | Grounded | 3/3 | 953 | 3,618 | 1,911 | 48 |
+   | French follow-up | 3/3 | 946 | 969 | 1,986 | 57 |
+   | Approved job | 3/3 | 1,296 | 1,977 | 2,034 | 123 |
+
+   Token counts are totals across the three attempts per case. **Step 7 is complete.**
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

@@ -594,6 +594,11 @@ focused production checks, and recorded acceptance before the next dependent sli
    French follow-up after English history. With synthetic retrieval and model outputs, it checks valid citation
    ownership, rejects a stale citation with the reviewed provider error, and distinguishes incomplete citation
    coverage from the answer model's controlled refusal. The opt-in multilingual suite covers actual provider wording.
+   The opt-in answer-model baseline runs a grounded question, a French follow-up, and an approved-job question
+   three times each. It records quality pass counts, median/max latency, and provider-reported input/output tokens
+   where available. These are sequential synthetic answer-generation measurements, not HTTP latency, load-test
+   results, or a billing estimate. The first opt-in live run passed all nine attempts. The per-case latency and
+   token-usage summaries are pending documentation.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

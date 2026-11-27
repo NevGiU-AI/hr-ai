@@ -590,6 +590,10 @@ focused production checks, and recorded acceptance before the next dependent sli
    persisted evaluation history, then back to grounded chat in the same modeled conversation. The regression uses
    real operational routing and rendering with synthetic tool results, verifies current/stale evaluation facts,
    and checks that only grounded turns carry CV citations. No database or live provider is needed for this test.
+   Cross-cutting answer-quality coverage exercises the comparison service's conversation-history path with a
+   French follow-up after English history. With synthetic retrieval and model outputs, it checks valid citation
+   ownership, rejects a stale citation with the reviewed provider error, and distinguishes incomplete citation
+   coverage from the answer model's controlled refusal. The opt-in multilingual suite covers actual provider wording.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

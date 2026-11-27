@@ -572,6 +572,11 @@ focused production checks, and recorded acceptance before the next dependent sli
    synthetic English evidence. The answer must resolve the prior project reference, use only the current citation,
    and follow the current question language. This isolates answer generation with bounded history; the existing
    multilingual retrieval evaluation remains separate. Both language-switch cases passed the opt-in live-provider run.
+   Approved-job follow-up slice: the opt-in answer-model regression supplies a confirmed job, current synthetic CV
+   evidence, and history with an unrelated role and old citation. It checks that the answer identifies supported
+   Java 21 experience and an evidence gap for Kubernetes, without borrowing the earlier role or citation. The
+   deterministic conversation tests cover passing the approved job and history into the answer path. The new
+   approved-job follow-up case passed the opt-in live-provider run.
 8. **Expand browser BDD.** Cover language-first discovery/confirmation, picker fallback, editable scope, single- and
    multi-candidate turns, organization-wide discovery, tool-backed status and evaluation questions, localized
    controlled outcomes, resume/deletion, citation navigation, and owner/tenant isolation. Successful protected staging

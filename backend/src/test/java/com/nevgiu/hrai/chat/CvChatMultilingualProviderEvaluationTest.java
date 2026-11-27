@@ -47,7 +47,9 @@ class CvChatMultilingualProviderEvaluationTest {
         String apiKey = requiredEnvironmentVariable("OPENAI_API_KEY");
         String modelName = System.getenv().getOrDefault("AI_EVALUATION_CHAT_MODEL", "gpt-4o-mini");
         var model = new SpringAiCvChatModel(ChatClient.builder(chatModel(apiKey, modelName)).build());
-        // The authorized passage is in English in every case. The old citation deliberately isn't in current scope.
+        // Supply evidence directly to isolate answer generation from retrieval. The passage is always in English,
+        // so a French or Portuguese answer must follow the current question rather than the evidence language.
+        // The two Java versions make it possible to check whether the model understood which project was meant.
         var evidence = List.of(new CvChatEvidence("CV-61", 60L, 61L, null,
                 "At KLx the candidate used Java 17 for the Instant Payments project. "
                         + "For the internal reporting project the candidate used Java 11."));
@@ -62,16 +64,20 @@ class CvChatMultilingualProviderEvaluationTest {
                         List.of(" foi ", " nesse ", " utilizada ", " usou ")));
         var results = new SoftAssertions();
         for (var testCase : cases) {
+            // History identifies "this project" but does not supply the Java version. Its old CV-99 citation
+            // is deliberately absent from current evidence and must not carry over into the follow-up.
             List<Message> history = List.of(new UserMessage(testCase.historyQuestion()),
                     new AssistantMessage(testCase.historyAnswer()));
             long started = System.nanoTime();
             String answer = model.answer(testCase.question(), evidence, history);
+            // Compare the whole set of citations: finding CV-61 alone would not rule out an extra citation.
             Set<String> references = CV_REFERENCE.matcher(answer).results().map(match -> match.group(1))
                     .collect(Collectors.toSet());
             results.assertThat(references).as("case=%s current evidence references", testCase.id())
                     .containsExactly("CV-61");
             results.assertThat(answer.contains("Java 17") && !answer.contains("Java 11") && !answer.contains("CV-99"))
                     .as("case=%s resolves the project from history using current evidence", testCase.id()).isTrue();
+            // These markers are a lightweight check for these fixtures, not a general language detector.
             results.assertThat(containsLanguageMarker(answer, testCase.markers()))
                     .as("case=%s current question language", testCase.id()).isTrue();
             System.out.printf(Locale.ROOT, "case=%s durationMs=%d model=%s%n", testCase.id(),

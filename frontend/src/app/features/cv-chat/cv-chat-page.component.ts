@@ -191,6 +191,7 @@ export class CvChatPageComponent implements OnInit {
         };
         this.timeline = [...this.timeline, {
           role: 'ASSISTANT', kind: turn.kind, content: turn.answer, citations: turn.citations,
+          responseLanguage: turn.responseLanguage,
         }];
         this.upsertConversation(this.conversation);
       },

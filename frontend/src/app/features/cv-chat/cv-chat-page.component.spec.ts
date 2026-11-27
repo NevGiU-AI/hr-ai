@@ -66,14 +66,18 @@ describe('CvChatPageComponent', () => {
       { role: 'ASSISTANT', content: 'Java 17 [CV-7].', citations: [
         { reference: 'CV-7', candidateId: 7, documentId: 7, pageNumber: null, excerpt: '' },
       ] },
-      { role: 'ASSISTANT', content: 'Text extraction used OCR.', kind: 'TOOL_STATUS', citations: [] },
+      { role: 'ASSISTANT', content: 'Les éléments ne suffisent pas.', kind: 'INSUFFICIENT_EVIDENCE',
+        responseLanguage: 'fr', citations: [] },
     ] });
 
     expect(component.conversation?.id).toBe('conversation-1');
     expect(component.timeline[1].citations?.[0].reference).toBe('CV-7');
     fixture.detectChanges();
     const labels: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.message-outcome');
-    expect(Array.from(labels, (label) => label.textContent?.trim())).toEqual(['Operational information']);
+    expect(Array.from(labels, (label) => label.textContent?.trim())).toEqual(['Insufficient evidence']);
+    expect(fixture.nativeElement.querySelector('.message-content[lang="fr"]')?.textContent)
+      .toContain('Les éléments ne suffisent pas.');
+    expect(fixture.nativeElement.querySelectorAll('.message-content[lang]').length).toBe(1);
   });
 
   it('retries a transient conversation resume without forgetting the saved ID', () => {
@@ -217,6 +221,9 @@ describe('CvChatPageComponent', () => {
       candidates: component.conversation.candidates, job: null, citations: [], expiresAt: '',
     });
     expect(component.timeline.at(-1)?.kind).toBe('INSUFFICIENT_EVIDENCE');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.message-content[lang="pt"]')?.textContent)
+      .toContain('A informação disponível não é suficiente.');
   });
 
   it('uses the question language in Automatic mode and leaves ambiguous requests to the browser', () => {

@@ -90,6 +90,7 @@ export interface CvChatConversation {
 }
 
 export interface CvChatTimelineMessage {
+  responseLanguage?: CvChatResponseLanguage | null;
   /** New assistant turns retain their outcome on resume; legacy history and user turns have no outcome. */
   kind?: CvChatAnswerKind | null;
   role: 'USER' | 'ASSISTANT';
@@ -102,6 +103,7 @@ export interface CvChatConversationHistory {
 }
 
 export interface CvChatConversationTurn {
+  responseLanguage?: CvChatResponseLanguage | null;
   kind?: CvChatAnswerKind;
   conversationId: string;
   version: number;

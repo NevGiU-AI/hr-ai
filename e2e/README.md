@@ -43,11 +43,11 @@ mvn -Pbdd verify
 ```
 
 The default command excludes scenarios tagged `@provider`, `@destructive`, `@editable-scope`, or
-`@operational-follow-ups`. To reproduce the protected staging run,
+`@operational-follow-ups`, or `@tenant-isolation`. To reproduce the protected staging run,
 including the single controlled citation request, use:
 
 ```powershell
-mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope and not @operational-follow-ups and not @localized-outcomes" verify
+mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope and not @operational-follow-ups and not @localized-outcomes and not @tenant-isolation" verify
 ```
 
 The suite creates conversations through the recruiter UI and covers owner isolation, explicit resume after leaving the
@@ -147,3 +147,38 @@ for English, French, and Portuguese. This scenario uses live provider calls and 
 ```powershell
 mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@localized-outcomes and not @destructive" verify
 ```
+
+## Opt-in tenant isolation scenario
+
+Use the usual staging BDD configuration and a processed test CV. Set `BDD_OTHER_TENANT_EMAIL` and
+`BDD_OTHER_TENANT_PASSWORD` locally for a dedicated staging recruiter in a different organization. The test
+verifies the organizations from the authenticated sessions, then checks that the owner can read the disposable
+conversation and its history while the second account receives an opaque 404 for both. It makes no paid provider
+calls and is not part of the protected smoke gate. Cleanup logs out both identities and deletes only the
+scenario-owned conversation.
+
+```powershell
+mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@tenant-isolation and not @destructive" verify
+```
+
+### Running with two local test organizations
+
+If staging has only one organization, use a fresh local deployment with its own empty PostgreSQL and Redis
+storage and unused host ports. A different Compose project name alone does not isolate the root Compose
+file's PostgreSQL and CV bind mounts. Use a separate checkout or override those mounts to dedicated test
+storage. Do not reuse or relabel existing environment records.
+
+1. Start the backend with a unique bootstrap administrator and `BOOTSTRAP_ADMIN_ORGANIZATION=tenant-bdd-a`
+   (or the corresponding `APP_SECURITY_BOOTSTRAP_ADMIN_*` backend environment variables).
+2. Sign in as that administrator. In Users, create a dedicated recruiter and finish any required password
+   change. Import a synthetic CV under the first organization and verify its extraction completed.
+3. Recreate only the test backend with a different bootstrap administrator email and
+   `BOOTSTRAP_ADMIN_ORGANIZATION=tenant-bdd-b`, keeping the same isolated database. Sign in as the second
+   administrator and create a second dedicated recruiter. Remove bootstrap credentials from the test
+   backend configuration after provisioning.
+4. Set the usual BDD URLs to the local frontend and API. Set the regular recruiter and candidate variables
+   for the first organization and `BDD_OTHER_TENANT_*` for the second. Run the tagged command above.
+   The test verifies the organization IDs from the authenticated sessions before checking access.
+
+Two accounts created by the same administrator belong to the same organization and will fail the fixture
+check. Never weaken that check to make a single-organization run pass.

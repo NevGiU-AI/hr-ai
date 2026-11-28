@@ -44,8 +44,10 @@ public class BrowserHooks {
             // BDD accounts and prevents misleading SESSION_LIMIT_ENFORCED audit events. It remains best effort so an
             // unavailable logout endpoint cannot replace the scenario's real result during cleanup.
             logoutQuietly(context.administratorPage());
+            logoutQuietly(context.otherTenantPage());
             logoutQuietly(context.recruiterPage());
             closeQuietly(context.administratorBrowserContext());
+            closeQuietly(context.otherTenantBrowserContext());
             closeQuietly(context.recruiterBrowserContext());
             if (context.browser() != null) context.browser().close();
             if (context.playwright() != null) context.playwright().close();

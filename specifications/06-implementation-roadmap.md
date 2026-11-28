@@ -626,6 +626,10 @@ focused production checks, and recorded acceptance before the next dependent sli
    Localized controlled-reply coverage checks insufficient evidence and policy refusals in English, French, and
    Portuguese, with English interface badges and no CV citations. This provider-backed scenario is opt-in;
    all three language examples passed in live staging with no failures or skips for those examples.
+   Tenant isolation checks that authenticated fixture accounts belong to different organizations and that only
+   the owner can read the disposable conversation and its history. The single-organization staging run stopped at the
+   fixture check before testing either endpoint. Live verification is deferred until after the CV-chat job-fit grounding
+   correction below. It does not block Step 8 closeout, and the protected staging gate is unchanged.
 9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
    retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
    Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV
@@ -735,6 +739,9 @@ limits, and can be reverted through configuration.
 - [ ] Add regressions for treating missing retrieved evidence as proof that a candidate lacks experience, listing one
   requirement as both supported and unsupported, and overlooking deployment tools named in a cited passage.
   Keep this separate from the approved-job follow-up classifier fix and Step 7 evaluation coverage.
+- [ ] After the grounding correction, provision two synthetic organizations in an isolated deployment and run
+  the opt-in `@tenant-isolation` browser scenario. Record the result separately from single-organization staging
+  acceptance. See the browser BDD README for setup.
 
 ## Phase 8 - Install and validate paired backup/restore
 

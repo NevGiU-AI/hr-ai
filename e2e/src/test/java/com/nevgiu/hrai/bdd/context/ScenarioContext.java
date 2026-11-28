@@ -21,6 +21,8 @@ public class ScenarioContext {
     private BrowserContext administratorBrowserContext;
     private Page recruiterPage;
     private Page administratorPage;
+    private BrowserContext otherTenantBrowserContext;
+    private Page otherTenantPage;
     private String conversationId;
     private String deletedConversationId;
     private APIResponse lastApiResponse;
@@ -39,6 +41,10 @@ public class ScenarioContext {
     public void recruiterPage(Page value) { recruiterPage = value; }
     public Page administratorPage() { return administratorPage; }
     public void administratorPage(Page value) { administratorPage = value; }
+    public BrowserContext otherTenantBrowserContext() { return otherTenantBrowserContext; }
+    public void otherTenantBrowserContext(BrowserContext value) { otherTenantBrowserContext = value; }
+    public Page otherTenantPage() { return otherTenantPage; }
+    public void otherTenantPage(Page value) { otherTenantPage = value; }
     public String conversationId() { return conversationId; }
     public void conversationId(String value) { conversationId = value; }
     public String deletedConversationId() { return deletedConversationId; }

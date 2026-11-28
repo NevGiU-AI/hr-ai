@@ -30,7 +30,7 @@
             because they incur cost and can vary with the external model. Callers may override this Maven property,
             but the protected staging workflow continues to exclude @destructive scenarios.
         -->
-        <cucumber.filter.tags>not @provider and not @destructive and not @editable-scope and not @operational-follow-ups</cucumber.filter.tags>
+        <cucumber.filter.tags>not @provider and not @destructive and not @editable-scope and not @operational-follow-ups and not @tenant-isolation</cucumber.filter.tags>
     </properties>
 
     <dependencyManagement>

@@ -620,6 +620,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    the same conversation retains the edited scope and does not restore the previous timeline after reload.
    This opt-in scenario requires an approved staging job and passed its first live staging run (14.05 seconds,
    no failures or skips for the scenario).
+   Operational follow-up coverage checks OCR status, ingestion warnings, and stored evaluation scores in one
+   confirmed conversation without CV citations. The opt-in scenario requires a staging candidate with a current
+   CV and persisted evaluation. The corrected scenario passed in live staging (10.764 seconds, no failures or skips).
 9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
    retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
    Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV

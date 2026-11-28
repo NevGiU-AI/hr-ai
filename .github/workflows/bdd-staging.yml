@@ -94,13 +94,13 @@ jobs:
       - name: Run browser BDD smoke tests
         working-directory: e2e
         # This override deliberately admits the controlled provider-backed citation scenario while keeping the
-        # editable-scope scenario opt-in until an approved test job is guaranteed. Discovery remains opt-in with disposable
-        # fixtures. Boolean Cucumber syntax means "not @destructive" still skips
+        # discovery, editable-scope, and operational scenarios opt-in because they need dedicated fixture data.
+        # Boolean Cucumber syntax means "not @destructive" still skips
         # every scenario explicitly tagged @destructive; do not remove that boundary merely to increase coverage.
         # A scenario that erases shared candidates, CVs, jobs, accounts, or retention state must carry that tag.
         run: >-
           mvn -B --no-transfer-progress -Pbdd
-          "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope"
+          "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope and not @operational-follow-ups"
           verify
 
       - name: Set lowercase image names

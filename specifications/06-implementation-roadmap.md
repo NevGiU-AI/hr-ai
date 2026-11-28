@@ -630,10 +630,20 @@ focused production checks, and recorded acceptance before the next dependent sli
    the owner can read the disposable conversation and its history. The single-organization staging run stopped at the
    fixture check before testing either endpoint. Live verification is deferred until after the CV-chat job-fit grounding
    correction below. It does not block Step 8 closeout, and the protected staging gate is unchanged.
+   **Step 8 is complete.** On 28 November 2026, staging deployment and protected browser BDD passed for
+   PR #270's merge revision (`9d82b1e`). The separate live staging run passed all seven selected opt-in scenarios:
+   organization-wide discovery, named discovery, editable scope, operational follow-ups, and three localized
+   reply examples. The two-organization scenario was not part of that run and remains deferred.
 9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
    retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
    Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV
    content, names, questions, prompts, or credentials, and never place them in metric labels.
+   Start with bounded Micrometer timers for single-candidate CV chat: policy classification, evidence retrieval, and
+   answer generation. Record success and failure timings with fixed labels, without changing chat behavior or exposing
+   a new metrics endpoint. Then break down retrieval into normalization, embedding, and search, and extend coverage
+   to comparison, discovery, and operational tools. Use synthetic staging fixtures to establish serial and concurrent
+   baselines before tuning thresholds or defining release targets. Keep the two-organization browser validation
+   deferred until after the job-fit grounding correction.
 10. **Add editable speech-to-text.** Provide push-to-talk, visible recording state, cancellation/retry, microphone
     permission and accessibility handling, and an editable transcript before submission. Delete raw audio after
     transcription by default unless a separately approved retention exception is documented.
@@ -739,7 +749,9 @@ limits, and can be reverted through configuration.
 - [ ] Add regressions for treating missing retrieved evidence as proof that a candidate lacks experience, listing one
   requirement as both supported and unsupported, and overlooking deployment tools named in a cited passage.
   Keep this separate from the approved-job follow-up classifier fix and Step 7 evaluation coverage.
-- [ ] After the grounding correction, provision two synthetic organizations in an isolated deployment and run
+- [ ] Add manual GitHub Actions coverage for the seven staging-compatible opt-in BDD scenarios before live
+  two-organization validation. Keep the manual job independent of the protected production promotion gate.
+- [ ] After the grounding correction and the manual opt-in BDD work above, provision two synthetic organizations in an isolated deployment and run
   the opt-in `@tenant-isolation` browser scenario. Record the result separately from single-organization staging
   acceptance. See the browser BDD README for setup.
 

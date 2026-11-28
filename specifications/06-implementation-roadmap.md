@@ -640,7 +640,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    content, names, questions, prompts, or credentials, and never place them in metric labels.
    Start with bounded Micrometer timers for single-candidate CV chat: policy classification, evidence retrieval, and
    answer generation. Record success and failure timings with fixed labels, without changing chat behavior or exposing
-   a new metrics endpoint. Then break down retrieval into normalization, embedding, and search, and extend coverage
+   a new metrics endpoint. The initial `hr.ai.cv.chat.stage` timer uses only `stage` and `outcome` labels.
+   A stage that returns normally counts as completed even if chat ultimately refuses or finds insufficient evidence;
+   a thrown failure counts as failed, and unreached stages are not timed. Then break down retrieval into normalization, embedding, and search, and extend coverage
    to comparison, discovery, and operational tools. Use synthetic staging fixtures to establish serial and concurrent
    baselines before tuning thresholds or defining release targets. Keep the two-organization browser validation
    deferred until after the job-fit grounding correction.

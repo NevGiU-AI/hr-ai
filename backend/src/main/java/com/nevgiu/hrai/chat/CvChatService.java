@@ -22,13 +22,15 @@ public class CvChatService {
     private final CvChatQuestionPolicy questionPolicy;
     private final CvChatModel model;
     private final JobRepository jobs;
+    private final CvChatStageTimers stageTimers;
 
     public CvChatService(CvChatEvidenceService evidenceService, CvChatQuestionPolicy questionPolicy,
-                         CvChatModel model, JobRepository jobs) {
+                         CvChatModel model, JobRepository jobs, CvChatStageTimers stageTimers) {
         this.evidenceService = evidenceService;
         this.questionPolicy = questionPolicy;
         this.model = model;
         this.jobs = jobs;
+        this.stageTimers = stageTimers;
     }
 
     /**
@@ -57,8 +59,9 @@ public class CvChatService {
             // Classify before vector search so unrelated or sensitive questions cannot trigger candidate-data
             // retrieval. The classifier sees only the question; authorization remains enforced in application code.
             // Pass only the fact that the job was authorized. Job text stays out of the policy call.
-            policyResult = jobContext == null ? questionPolicy.classify(contextualQuestion)
-                    : questionPolicy.classifyWithApprovedJob(contextualQuestion);
+            policyResult = stageTimers.measure(CvChatStageTimers.Stage.POLICY,
+                    () -> jobContext == null ? questionPolicy.classify(contextualQuestion)
+                            : questionPolicy.classifyWithApprovedJob(contextualQuestion));
         } catch (RuntimeException policyFailure) {
             // Do not log the question or provider detail: either may contain private or adversarial content.
             LOGGER.warn("CV chat question policy failed for candidateId={} organizationId={} failureType={}",
@@ -75,7 +78,8 @@ public class CvChatService {
         String retrievalIntent = jobContext == null
                 ? contextualQuestion
                 : contextualQuestion + "\n\nAUTHORIZED APPROVED JOB REQUIREMENTS:\n" + jobContext.promptText();
-        List<CvChatEvidence> evidence = evidenceService.find(candidateId, retrievalIntent, organizationId);
+        List<CvChatEvidence> evidence = stageTimers.measure(CvChatStageTimers.Stage.RETRIEVAL,
+                () -> evidenceService.find(candidateId, retrievalIntent, organizationId));
         // An empty semantic result is a normal evidence outcome, not a provider failure. Avoid sending unrelated
         // fallback text to the model and return wording controlled entirely by the backend.
         if (evidence.isEmpty()) {
@@ -85,15 +89,16 @@ public class CvChatService {
         try {
             // Preserve the established non-conversational provider contract when no history exists. This also keeps
             // first-turn behavior identical while the follow-up path opts into the history-aware overload.
-            if (jobContext != null) {
-                answer = model.answer(normalizedQuestion, evidence, jobContext, history);
-            } else {
+            answer = stageTimers.measure(CvChatStageTimers.Stage.GENERATION, () -> {
+                if (jobContext != null) {
+                    return model.answer(normalizedQuestion, evidence, jobContext, history);
+                }
                 // Keep both established no-job contracts intact: first turns use the original overload and follow-up
                 // turns use only bounded history. The job-aware overload is reserved for an explicitly confirmed job.
-                answer = history.isEmpty()
+                return history.isEmpty()
                         ? model.answer(normalizedQuestion, evidence)
                         : model.answer(normalizedQuestion, evidence, history);
-            }
+            });
         } catch (RuntimeException providerFailure) {
             // Keep provider internals and potentially sensitive prompt fragments out of the API response.
             LOGGER.warn("CV chat provider call failed for candidateId={} organizationId={} failureType={}",

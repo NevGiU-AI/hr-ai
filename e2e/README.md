@@ -47,7 +47,7 @@ The default command excludes scenarios tagged `@provider`, `@destructive`, `@edi
 including the single controlled citation request, use:
 
 ```powershell
-mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope and not @operational-follow-ups" verify
+mvn -Pbdd "-Dcucumber.filter.tags=not @destructive and not @organization-discovery and not @named-discovery and not @editable-scope and not @operational-follow-ups and not @localized-outcomes" verify
 ```
 
 The suite creates conversations through the recruiter UI and covers owner isolation, explicit resume after leaving the
@@ -134,4 +134,16 @@ calls. Cleanup deletes only the scenario's disposable conversation, not the cand
 
 ```powershell
 mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@operational-follow-ups and not @destructive" verify
+```
+
+## Opt-in localized controlled replies
+
+Use the usual staging BDD configuration with a disposable candidate whose CV does not document an exact p99
+latency measurement for a production REST API. No additional environment variables are needed. Each example
+creates its own conversation and asks one question about the missing measurement and one about a sensitive
+attribute. It verifies the English outcome badge, localized reply text and `lang` attribute, and no CV citations
+for English, French, and Portuguese. This scenario uses live provider calls and is excluded from the protected smoke gate.
+
+```powershell
+mvn -B --no-transfer-progress -Pbdd "-Dcucumber.filter.tags=@localized-outcomes and not @destructive" verify
 ```

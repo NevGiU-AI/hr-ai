@@ -623,6 +623,9 @@ focused production checks, and recorded acceptance before the next dependent sli
    Operational follow-up coverage checks OCR status, ingestion warnings, and stored evaluation scores in one
    confirmed conversation without CV citations. The opt-in scenario requires a staging candidate with a current
    CV and persisted evaluation. The corrected scenario passed in live staging (10.764 seconds, no failures or skips).
+   Localized controlled-reply coverage checks insufficient evidence and policy refusals in English, French, and
+   Portuguese, with English interface badges and no CV citations. This provider-backed scenario is opt-in;
+   all three language examples passed in live staging with no failures or skips for those examples.
 9. **Complete the performance and observability milestone.** Measure policy classification, normalization, embedding,
    retrieval, tool, and answer latency; define and validate p50/p95/p99 targets before optimization. Add privacy-safe
    Micrometer/OpenTelemetry instrumentation and evaluate Prometheus/Grafana for aggregate monitoring. Never export CV

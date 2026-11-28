@@ -253,6 +253,27 @@ public class CvChatPage {
     }
 
     public void askComparison(String question, String endpoint) {
+        sendAndWaitForReply(question, endpoint);
+    }
+
+    public void selectControlledReplyLanguage(String language) {
+        page.getByLabel("Language for evidence limits and refusals").selectOption(
+                new com.microsoft.playwright.options.SelectOption().setLabel(language));
+    }
+
+    public void askAndVerifyControlledReply(String question, String endpoint, String language, String badge,
+                                            String localizedOpening) {
+        sendAndWaitForReply(question, endpoint);
+        // The badge belongs to the English interface; the text and its accessibility language belong to the reply.
+        Locator reply = assistantAnswers().last();
+        assertThat(reply.locator(".message-outcome")).hasText(badge);
+        Locator content = reply.locator(".message-content");
+        assertThat(content).hasAttribute("lang", language);
+        assertThat(content).containsText(localizedOpening);
+        assertThat(reply.locator(".citations a")).hasCount(0);
+    }
+
+    private void sendAndWaitForReply(String question, String endpoint) {
         var message = page.getByLabel("Message", new Page.GetByLabelOptions().setExact(true));
         // Confirmation may automatically submit the discovery text. Wait for it before testing the next turn.
         assertThat(message).isEnabled(new com.microsoft.playwright.assertions.LocatorAssertions.IsEnabledOptions()
@@ -266,7 +287,7 @@ public class CvChatPage {
                 () -> page.locator("form.composer").getByRole(BUTTON,
                         new Locator.GetByRoleOptions().setName("Send").setExact(true)).click());
         if (response.status() != 200) {
-            throw new AssertionError("Comparison message request returned HTTP " + response.status());
+            throw new AssertionError("Conversation message request returned HTTP " + response.status());
         }
         assertThat(assistantAnswers()).hasCount(priorAnswers + 1);
     }

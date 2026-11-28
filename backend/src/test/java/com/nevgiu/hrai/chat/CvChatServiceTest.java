@@ -2,6 +2,7 @@ package com.nevgiu.hrai.chat;
 
 import com.nevgiu.hrai.job.JobRepository;
 import com.nevgiu.hrai.job.Job;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.ai.chat.messages.Message;
@@ -25,7 +26,9 @@ class CvChatServiceTest {
     private final CvChatQuestionPolicy questionPolicy = mock(CvChatQuestionPolicy.class);
     private final CvChatModel model = mock(CvChatModel.class);
     private final JobRepository jobs = mock(JobRepository.class);
-    private final CvChatService service = new CvChatService(evidenceService, questionPolicy, model, jobs);
+    private final SimpleMeterRegistry metrics = new SimpleMeterRegistry();
+    private final CvChatService service = new CvChatService(evidenceService, questionPolicy, model, jobs,
+            new CvChatStageTimers(metrics));
 
     CvChatServiceTest() {
         when(questionPolicy.classify(org.mockito.ArgumentMatchers.anyString()))
@@ -49,11 +52,37 @@ class CvChatServiceTest {
         order.verify(questionPolicy).classify("Does this candidate know Java?");
         order.verify(evidenceService).find(7L, "Does this candidate know Java?", "tenant-a");
         assertThat(response.answer()).contains("[CV-CANDIDATE-7]");
+        assertThat(stageCount("policy", "completed")).isEqualTo(1);
+        assertThat(stageCount("retrieval", "completed")).isEqualTo(1);
+        assertThat(stageCount("generation", "completed")).isEqualTo(1);
         assertThat(response.citations()).singleElement().satisfies(citation -> {
             assertThat(citation.candidateId()).isEqualTo(7L);
             assertThat(citation.reference()).isEqualTo("CV-CANDIDATE-7");
             assertThat(citation.excerpt()).contains("PostgreSQL");
         });
+    }
+
+    @Test
+    void recordsRetrievalFailureWithoutTimingAnUnreachedGenerationStage() {
+        String question = "Summarize the candidate's Java experience";
+        var failure = new CvChatException(HttpStatus.BAD_GATEWAY, "Retrieval unavailable");
+        when(evidenceService.find(7L, question, "tenant-a")).thenThrow(failure);
+
+        assertThatThrownBy(() -> service.ask(7L, question, "tenant-a")).isSameAs(failure);
+
+        assertThat(stageCount("policy", "completed")).isEqualTo(1);
+        assertThat(stageCount("retrieval", "failed")).isEqualTo(1);
+        assertThat(stageCount("retrieval", "completed")).isZero();
+        assertThat(stageCount("generation", "completed")).isZero();
+        assertThat(stageCount("generation", "failed")).isZero();
+        assertThat(metrics.getMeters()).hasSize(6).allSatisfy(meter ->
+                assertThat(meter.getId().getTags()).extracting(tag -> tag.getKey())
+                        .containsExactlyInAnyOrder("stage", "outcome"));
+        verifyNoInteractions(model);
+    }
+
+    private long stageCount(String stage, String outcome) {
+        return metrics.get(CvChatStageTimers.METRIC).tags("stage", stage, "outcome", outcome).timer().count();
     }
 
     @Test
